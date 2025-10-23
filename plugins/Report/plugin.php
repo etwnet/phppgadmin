@@ -261,10 +261,10 @@ class Report extends Plugin {
 							= $_REQUEST[$_REQUEST['subject']];
 
 						$params['navlinks']['report_link']['attr']['href']['urlvars']['sortkey']
-							= isset($_REQUEST['sortkey']) ? $_REQUEST['sortkey'] : '';
+							= $_REQUEST['sortkey'] ?? '';
 
 						$params['navlinks']['report_link']['attr']['href']['urlvars']['sortdir']
-							= isset($_REQUEST['sortdir']) ? $_REQUEST['sortdir'] : '';
+							= $_REQUEST['sortdir'] ?? '';
 					}
 					else {
 						unset($params['navlinks']['report_link']);
@@ -544,7 +544,7 @@ class Report extends Plugin {
 				$_REQUEST['report_sql'] = $_SESSION['sqlquery'];
 			}
 			else {
-				$_REQUEST['sortkey'] = isset($_REQUEST['sortkey']) ? $_REQUEST['sortkey'] : '';
+				$_REQUEST['sortkey'] = $_REQUEST['sortkey'] ?? '';
 				if (preg_match('/^[0-9]+$/', $_REQUEST['sortkey']) && $_REQUEST['sortkey'] > 0) $orderby = array($_REQUEST['sortkey'] => $_REQUEST['sortdir']);
 					else $orderby = array();
 
@@ -804,4 +804,4 @@ class Report extends Plugin {
 		$misc->printFooter();
 	}
 }
-?>
+

@@ -212,4 +212,4 @@ class RulesTest extends PreconditionSet{
         return TRUE; 
     }                        
 }
-?>
+

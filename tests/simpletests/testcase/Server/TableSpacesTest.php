@@ -250,4 +250,4 @@ class TableSpacesTest extends PreconditionSet
         return TRUE;
     }
 }
-?>
+

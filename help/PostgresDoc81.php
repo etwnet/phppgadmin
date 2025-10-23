@@ -15,4 +15,4 @@ $this->help_page['pg.role.create'] = array('sql-createrole.html','user-manag.htm
 $this->help_page['pg.role.alter'] = array('sql-alterrole.html','role-attributes.html');
 $this->help_page['pg.role.drop'] = array('sql-droprole.html','user-manag.html#DATABASE-ROLES');
 
-?>
+

@@ -21,4 +21,4 @@ $POWER_USER_PASSWORD = 'power';
 
 $NORMAL_USER_NAME = 'ppatests_guest';
 $NORMAL_USER_PASSWORD = 'guest';
-?>
+

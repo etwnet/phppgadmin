@@ -29,4 +29,4 @@ class TableGroupTest extends GroupTest {
         $this->addTestClass(new DeadlockTest());
     }
 }
-?>
+

@@ -902,4 +902,4 @@
 	$lang['strpluginnotfound'] = 'Error: el plugin \'%s\' no se encontró. Chequea si existe en la carpeta plugins/ , o si el plugin contiene un archivo llamado plugin.php. Los nombres de los plugin son sensibles a las mayúsculas';
 	$lang['stractionnotfound'] = 'Error: la acción \'%s\'  no se encontró en el \'%s\' del plugin, o no se especificó como acción.';
 	$lang['strhooknotfound'] = 'Error: el hook \'%s\' no está disponible.';
-?>
+

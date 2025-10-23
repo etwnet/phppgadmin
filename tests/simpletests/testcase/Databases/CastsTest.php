@@ -72,4 +72,4 @@ class CastsTest extends PreconditionSet
     }
 }
 
-?>
+

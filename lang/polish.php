@@ -742,4 +742,4 @@ $lang['straggrneedsstype']  =  'You must specify the data type for the aggregate
 	$lang['strpreparedxacts']  =  'Przygotowane transakcje';
 	$lang['strxactid']  =  'ID transakcji';
 	$lang['strgid']  =  'Globalny ID';
-?>
+

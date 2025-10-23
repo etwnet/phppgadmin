@@ -103,7 +103,7 @@
 		exit;
 	}
 	
-	$subject = isset($_REQUEST['subject'])? $_REQUEST['subject'] : '';
+	$subject = $_REQUEST['subject'] ?? '';
 	$misc->printHeader($lang['strqueryresults']);
 	$misc->printBody();
 	$misc->printTrail('database');
@@ -260,4 +260,4 @@
 	$misc->printNavLinks($navlinks, 'sql-form', get_defined_vars());
 	
 	$misc->printFooter();
-?>
+

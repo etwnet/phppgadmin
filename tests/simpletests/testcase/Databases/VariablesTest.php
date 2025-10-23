@@ -69,4 +69,4 @@ class VariablesTest extends PreconditionSet
     }
 }
 
-?>
+

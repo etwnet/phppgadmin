@@ -128,4 +128,4 @@ class SecurityTest extends PreconditionSet
     }
 
 }
-?>
+

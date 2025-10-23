@@ -321,4 +321,4 @@ class ColumnTest extends PreconditionSet{
         return TRUE;  
     }                       
 }
-?>
+

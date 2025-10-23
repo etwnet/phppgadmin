@@ -140,4 +140,4 @@ class SequenceTest extends PreconditionSet
         return TRUE;   
     }
 }
-?>
+

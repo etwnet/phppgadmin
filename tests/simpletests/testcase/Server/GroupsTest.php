@@ -157,4 +157,4 @@ class GroupsTest extends PreconditionSet
         return TRUE;
     }
 }
-?>
+

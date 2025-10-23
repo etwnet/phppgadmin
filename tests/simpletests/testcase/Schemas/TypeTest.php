@@ -204,4 +204,4 @@ class TypeTest extends PreconditionSet
         return TRUE;
     } 
 }    
-?>
+

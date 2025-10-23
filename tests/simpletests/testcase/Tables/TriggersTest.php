@@ -211,4 +211,4 @@ class TriggersTest extends PreconditionSet{
         return TRUE; 
     }                          
 }
-?>
+

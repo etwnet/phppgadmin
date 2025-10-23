@@ -285,9 +285,9 @@
 
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"save_alter\" />\n";
 			echo "<input type=\"hidden\" name=\"rolename\" value=\"", htmlspecialchars($_REQUEST['rolename']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"memberofold\" value=\"", isset($_POST['memberofold']) ? $_POST['memberofold'] : htmlspecialchars($memberofold), "\" />\n";
-			echo "<input type=\"hidden\" name=\"membersold\" value=\"", isset($_POST['membersold']) ? $_POST['membersold'] : htmlspecialchars($membersold), "\" />\n";
-			echo "<input type=\"hidden\" name=\"adminmembersold\" value=\"", isset($_POST['adminmembersold']) ? $_POST['adminmembersold'] : htmlspecialchars($adminmembersold), "\" />\n";
+			echo "<input type=\"hidden\" name=\"memberofold\" value=\"", $_POST['memberofold'] ?? htmlspecialchars($memberofold), "\" />\n";
+			echo "<input type=\"hidden\" name=\"membersold\" value=\"", $_POST['membersold'] ?? htmlspecialchars($membersold), "\" />\n";
+			echo "<input type=\"hidden\" name=\"adminmembersold\" value=\"", $_POST['adminmembersold'] ?? htmlspecialchars($adminmembersold), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"alter\" value=\"{$lang['stralter']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -740,4 +740,4 @@
 
 	$misc->printFooter();
 
-?>
+

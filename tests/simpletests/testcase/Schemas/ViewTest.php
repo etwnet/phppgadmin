@@ -349,4 +349,4 @@ class ViewTest extends PreconditionSet
         return TRUE;   
     } 
 }
-?>
+

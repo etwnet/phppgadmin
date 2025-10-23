@@ -849,4 +849,4 @@
 	$lang['strftstabconfigs'] = 'Volltextsuch-Konfigurationen';
 	$lang['strftstabdicts'] = 'Wörterbücher';
 	$lang['strftstabparsers'] = 'Parser';
-?>
+

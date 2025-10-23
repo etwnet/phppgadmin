@@ -231,4 +231,4 @@ class UsersTest extends PreconditionSet
         return TRUE;
     }
 }
-?>
+

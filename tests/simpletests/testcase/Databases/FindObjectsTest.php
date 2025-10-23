@@ -235,4 +235,4 @@ class FindObjectsTest extends PreconditionSet
     }
 }
 
-?>
+

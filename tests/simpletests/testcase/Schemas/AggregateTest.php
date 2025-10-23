@@ -124,4 +124,4 @@ class AggregateTest extends PreconditionSet
         return TRUE;
     } 
 }
-?>
+

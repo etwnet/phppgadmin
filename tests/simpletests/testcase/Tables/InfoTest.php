@@ -133,4 +133,4 @@ class InfoTest extends PreconditionSet{
         return TRUE;         
     }    
 }
-?>
+

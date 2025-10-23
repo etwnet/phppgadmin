@@ -899,4 +899,4 @@
 	$lang['strpluginnotfound']  =  '错误：没有找到\'%s\'插件。请检查该插件是否在plugins/目录下，或插件是否包含plugin.php。注意插件名大小写敏感。';
 	$lang['stractionnotfound']  =  '错误：动作\'%s\'不在插件\'%s\'中，或没有被指定为合法的动作。';
 	$lang['strhooknotfound']  =  '错误：连接\'%s\'不可用.';
-?>
+

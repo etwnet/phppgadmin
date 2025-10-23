@@ -76,4 +76,4 @@
 
 	$misc->printFooter();
 
-?>
+

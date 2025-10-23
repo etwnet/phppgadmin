@@ -145,4 +145,4 @@ class OperatorTest extends PreconditionSet
     } 
 }
 
-?>
+

@@ -70,4 +70,4 @@ class ProcessesTest extends PreconditionSet
     }
 }
 
-?>
+

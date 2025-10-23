@@ -894,4 +894,4 @@
 	$lang['strftstabdicts'] = 'Slovníky';
 	$lang['strftstabparsers'] = 'Analyzátory';
 	$lang['strftscantparsercopy'] = 'Při vytváření nastavení textového vyhledávání nemůžete naráz zadat analyzátor i šablonu.';
-?>
+

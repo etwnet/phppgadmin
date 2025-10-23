@@ -129,4 +129,3 @@ function _adodb_export(&$rs,$sep,$sepreplace,$fp=false,$addtitles=true,$quote = 
 	
 	return $s;
 }
-?>

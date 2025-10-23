@@ -32,4 +32,4 @@ $POWER_USER_PASSWORD = 'tester';
 
 global $NORMAL_USER_PASSWORD;
 $NORMAL_USER_PASSWORD = 'guest';
-?>
+

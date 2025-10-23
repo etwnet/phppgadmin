@@ -612,4 +612,4 @@
 	$lang['strtimefmt'] = 'jS M, Y g:iA';
 	$lang['strhelp'] = 'עזרה';
 
-?>
+

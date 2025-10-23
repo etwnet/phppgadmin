@@ -310,4 +310,4 @@ class ADORecordSet_assoc_postgres7 extends ADORecordSet_postgres64{
 		return false;
 	}
 }
-?>
+

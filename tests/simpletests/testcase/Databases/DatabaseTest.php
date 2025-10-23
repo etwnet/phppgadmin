@@ -176,4 +176,4 @@ class DatabaseTest extends PreconditionSet
     }
 }
 
-?>
+

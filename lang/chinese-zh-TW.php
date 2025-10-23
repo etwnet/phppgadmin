@@ -860,4 +860,4 @@
 	$lang['strftstabconfigs'] = '組態';
 	$lang['strftstabdicts'] = '字典';
 	$lang['strftstabparsers'] = '分析器';
-?>
+

@@ -25,4 +25,4 @@ class CommonGroupTest extends GroupTest
         $this->addTestClass(new ImportTest());
     }
 }
-?>
+

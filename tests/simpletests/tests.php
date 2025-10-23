@@ -9,4 +9,4 @@ set_include_path($PHP_SIMPLETEST_HOME . ':' . './testcase' . ':' . get_include_p
 
 require_once('testcase/testphpPgAdminMain.php');
 
-?>
+

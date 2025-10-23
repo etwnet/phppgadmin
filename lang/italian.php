@@ -717,4 +717,4 @@
 	$lang['strpreparedxacts'] = 'Transazioni preparate';
 	$lang['strxactid'] = 'ID della transazione';
 	$lang['strgid'] = 'ID globale';
-?>
+

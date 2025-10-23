@@ -223,4 +223,4 @@
 	$misc->setWindowName('history');
 	$misc->printFooter();
 	
-?>
+

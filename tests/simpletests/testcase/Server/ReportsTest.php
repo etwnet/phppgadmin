@@ -153,4 +153,4 @@ class ReportsTest extends PreconditionSet
         return TRUE;
     }
 }
-?>
+

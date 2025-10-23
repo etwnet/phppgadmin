@@ -560,4 +560,4 @@
 	// Miscellaneous
 	$lang['strhelp'] = 'Hjälp';
 
-?>
+

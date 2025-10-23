@@ -1426,4 +1426,3 @@ global $ADODB_DATE_LOCALE;
 }
 
 
-?>

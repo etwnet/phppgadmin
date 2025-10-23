@@ -33,8 +33,8 @@
 			$_POST['original_arguments'], $_POST['original_returns'], $def,
 			$_POST['original_lang'], $_POST['formProperties'], isset($_POST['original_setof']),
 			$_POST['original_owner'],  $_POST['formFuncOwn'], $_POST['original_schema'],
-			$_POST['formFuncSchema'], isset($_POST['formCost']) ? $_POST['formCost'] : null,
-			isset($_POST['formRows']) ? $_POST['formRows'] : 0, $_POST['formComment']);
+			$_POST['formFuncSchema'], $_POST['formCost'] ?? null,
+			$_POST['formRows'] ?? 0, $_POST['formComment']);
 
 		if ($status == 0) {
 			// If function has had schema altered, need to change to the new schema
@@ -493,7 +493,7 @@
 		if (!isset($_POST['formFunction'])) $_POST['formFunction'] = '';
 		if (!isset($_POST['formArguments'])) $_POST['formArguments'] = '';
 		if (!isset($_POST['formReturns'])) $_POST['formReturns'] = '';
-		if (!isset($_POST['formLanguage'])) $_POST['formLanguage'] = isset($_REQUEST['language']) ? $_REQUEST['language'] : 'sql';
+		if (!isset($_POST['formLanguage'])) $_POST['formLanguage'] = $_REQUEST['language'] ?? 'sql';
 		if (!isset($_POST['formDefinition'])) $_POST['formDefinition'] = '';
 		if (!isset($_POST['formObjectFile'])) $_POST['formObjectFile'] = '';
 		if (!isset($_POST['formLinkSymbol'])) $_POST['formLinkSymbol'] = '';
@@ -1035,4 +1035,4 @@
 
 	$misc->printFooter();
 
-?>
+

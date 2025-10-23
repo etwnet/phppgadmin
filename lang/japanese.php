@@ -852,4 +852,4 @@ $lang['strftsinit']  =  'Init';
 	$lang['strftstabconfigs']  =  '設定';
 	$lang['strftstabdicts']  =  '辞書';
 	$lang['strftstabparsers']  =  'パーサー';
-?>
+

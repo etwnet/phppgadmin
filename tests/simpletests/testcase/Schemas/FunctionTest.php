@@ -245,4 +245,4 @@ class FunctionTest extends PreconditionSet
         return TRUE;
     } 
 }
-?>
+

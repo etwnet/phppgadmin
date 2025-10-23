@@ -348,4 +348,4 @@ class ADODB_base {
 	}
 }
 
-?>
+

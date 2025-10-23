@@ -160,4 +160,4 @@ class AdminTest extends PreconditionSet
     }
 }
 
-?>
+

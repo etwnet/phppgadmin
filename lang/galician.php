@@ -906,4 +906,4 @@
 	$lang['strftstabdicts'] = 'Dicionarios';
 	$lang['strftstabparsers'] = 'Analizadores';
 	$lang['strftscantparsercopy'] = 'Non se pode especificar tanto un analizador coma un modelo durante a creación dunha configuración de busca de texto.';
-?>
+

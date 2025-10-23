@@ -27,4 +27,4 @@ class Postgres92 extends Postgres93 {
 	}
 
 }
-?>
+

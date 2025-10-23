@@ -42,4 +42,4 @@ $phpPgAdminTest = &new phpPgAdminGroupTest();
 
 $phpPgAdminTest->run(new HtmlReporter());
 
-?>
+

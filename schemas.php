@@ -481,4 +481,4 @@
 
 	$misc->printFooter();
 
-?>
+

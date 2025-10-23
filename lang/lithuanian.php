@@ -895,4 +895,4 @@ $lang['strftsinit'] = 'Init';
 	$lang['strftstabdicts'] = 'Žodynai';
 	$lang['strftstabparsers'] = 'Analizatoriai';
 	$lang['strftscantparsercopy'] = 'Negalima nurodyti kartu ir analizatoriaus, ir šablono, teksto paieškos konfikūracijos kūrimo metu.';
-?>
+

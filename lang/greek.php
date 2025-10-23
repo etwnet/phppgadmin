@@ -741,4 +741,4 @@
 	$lang['strpreparedxacts'] = 'Ετοιμες συναλλαγές';
 	$lang['strxactid'] = 'Ταυτότητα';
 	$lang['strgid'] = 'Γενική ταυτότητα';
-?>
+

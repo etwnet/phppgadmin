@@ -40,4 +40,4 @@ class SchemasGroupTest extends GroupTest
 		$this->addTestClass(new ConversionTest());
     }
 }
-?>
+

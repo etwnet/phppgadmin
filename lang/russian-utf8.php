@@ -891,4 +891,4 @@
 	$lang['strftstabdicts'] = 'Словари';
 	$lang['strftstabparsers'] = 'Парсеры';
 	$lang['strftscantparsercopy'] = 'При создании конфигурации поиска нельзя указывать одновременно парсер и шаблон.';
-?>
+

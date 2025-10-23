@@ -684,7 +684,7 @@
 		}
 		else {
 			// $_REQUEST['table'] is no set if we are in the schema page
-			$_REQUEST['object'] = (isset($_REQUEST['table']) ? $_REQUEST['table']:'');
+			$_REQUEST['object'] = ($_REQUEST['table'] ?? '');
 			$script = 'tables.php';
 		}
 
@@ -750,4 +750,4 @@
 		return true;
 	}
 
-?>
+

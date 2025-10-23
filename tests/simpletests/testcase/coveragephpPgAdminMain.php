@@ -67,4 +67,4 @@ $cov->generateReport($xml);
 
 $reporter->printTextSummary();
 
-?>
+

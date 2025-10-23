@@ -52,4 +52,4 @@
 		$t->logout();
 		unset($t);
 	}
-?>
+

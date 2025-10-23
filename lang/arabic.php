@@ -578,4 +578,4 @@ $lang['strloginfailed'] = 'لم تنجح عملية الدخول';
  $lang['strtimefmt'] = 'jS M, Y g:iA';
  $lang['strhelp'] = 'مساعدة';
 
-?>
+

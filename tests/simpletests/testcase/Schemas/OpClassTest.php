@@ -72,4 +72,4 @@ class OpClassTest extends PreconditionSet
     } 
 }    
 
-?>
+

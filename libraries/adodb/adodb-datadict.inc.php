@@ -620,7 +620,7 @@ class ADODB_DataDict {
 				}
 				// 'index' token without a name means single column index: name it after column
 				if (array_key_exists('INDEX', $f1) && $f1['INDEX'] == '') {
-					$f1['INDEX'] = isset($f0['NAME']) ? $f0['NAME'] : $f0[0];
+					$f1['INDEX'] = $f0['NAME'] ?? $f0[0];
 					// check if column name used to create an index name was quoted
 					if (($f1['INDEX'][0] == '"' || $f1['INDEX'][0] == "'" || $f1['INDEX'][0] == "`") &&
 						($f1['INDEX'][0] == substr($f1['INDEX'], -1))) {
@@ -1029,4 +1029,3 @@ class ADODB_DataDict {
 		return $sql;
 	}
 } // class
-?>

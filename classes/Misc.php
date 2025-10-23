@@ -260,7 +260,7 @@
 			// Clip the value if the 'clip' parameter is true.
 			if (isset($params['clip']) && $params['clip'] === true) {
 				$maxlen = isset($params['cliplen']) && is_integer($params['cliplen']) ? $params['cliplen'] : $conf['max_chars'];
-				$ellipsis = isset($params['ellipsis']) ? $params['ellipsis'] : $lang['strellipsis'];
+				$ellipsis = $params['ellipsis'] ?? $lang['strellipsis'];
 				if (mb_strlen($str, 'UTF-8') > $maxlen) {
 					$str = mb_substr($str, 0, $maxlen-1, 'UTF-8') . $ellipsis;
 				}
@@ -292,11 +292,11 @@
 					if (is_bool($str)) $str = $str ? 't' : 'f';
 					switch ($str) {
 						case 't':
-							$out = (isset($params['true']) ? $params['true'] : $lang['strtrue']);
+							$out = ($params['true'] ?? $lang['strtrue']);
 							$align = 'center';
 							break;
 						case 'f':
-							$out = (isset($params['false']) ? $params['false'] : $lang['strfalse']);
+							$out = ($params['false'] ?? $lang['strfalse']);
 							$align = 'center';
 							break;
 						default:
@@ -2047,8 +2047,8 @@
 										$misc->printUrlVars($column['vars'], $tabledata->fields);
 										echo "\">";
 									}
-									$type = isset($column['type']) ? $column['type'] : null;
-									$params = isset($column['params']) ? $column['params'] : array();
+									$type = $column['type'] ?? null;
+									$params = $column['params'] ?? array();
 									echo $misc->printVal($val, $type, $params);
 									if (isset($column['url'])) echo "</a>";
 								}
@@ -2186,7 +2186,7 @@
 					echo " />\n";
 				}
 			} else {
-				$msg = isset($attrs['nodata']) ? $attrs['nodata'] : $lang['strnoobjects'];
+				$msg = $attrs['nodata'] ?? $lang['strnoobjects'];
 				echo "<tree text=\"{$msg}\" onaction=\"tree.getSelected().getParent().reload()\" icon=\"", $this->icon('ObjectNotFound'), "\" />\n";
 			}
 
@@ -2650,4 +2650,4 @@
 			return $fksprops;
 		}
 	}
-?>
+

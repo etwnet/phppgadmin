@@ -666,4 +666,4 @@ class TableTest extends PreconditionSet
         return TRUE;   
     } 
 }
-?>
+
