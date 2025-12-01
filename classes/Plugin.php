@@ -65,4 +65,4 @@ abstract class Plugin {
 		return array($this->name, $img);
 	}
 }
-
+?>

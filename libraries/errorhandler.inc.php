@@ -75,4 +75,4 @@ function Error_Handler($dbms, $fn, $errno, $errmsg, $p1=false, $p2=false)
 			error_log("($t) $s", ADODB_ERROR_LOG_TYPE);
 	}
 }
-
+?>

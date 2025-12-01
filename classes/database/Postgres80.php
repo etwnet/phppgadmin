@@ -351,4 +351,4 @@ class Postgres80 extends Postgres81 {
 	function hasAlterSequenceSchema() { return false; }
 	function hasServerAdminFuncs() { return false; }
 }
-
+?>

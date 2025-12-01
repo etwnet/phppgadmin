@@ -30,4 +30,4 @@ class Postgres90 extends Postgres91 {
 	// Capabilities
 
 }
-
+?>

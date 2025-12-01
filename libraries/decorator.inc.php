@@ -89,6 +89,7 @@ function value_url(&$var, &$fields) {
 
 // Underlying classes:
 
+#[\AllowDynamicProperties]
 class Decorator
 {
 	function __construct($value) {
@@ -108,7 +109,7 @@ class FieldDecorator extends Decorator
 	}
 	
 	function value($fields) {
-		return isset($fields[$this->f]) ? value($fields[$this->f], $fields) : ($this->d ?? null);
+		return isset($fields[$this->f]) ? value($fields[$this->f], $fields) : (isset($this->d) ? $this->d : null);
 	}
 }
 
@@ -212,4 +213,4 @@ class replaceDecorator extends Decorator
 		return $str;
 	}
 }
-
+?>

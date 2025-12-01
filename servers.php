@@ -34,7 +34,7 @@
 		
 		$misc->printTabs('root','servers');
 		$misc->printMsg($msg);
-		$group = $_GET['group'] ?? false;
+		$group = isset($_GET['group']) ? $_GET['group'] : false;
 		
 		$groups = $misc->getServersGroups(true,$group);
 
@@ -112,7 +112,7 @@
 		global $misc, $conf;
 
 		$nodes = array();
-		$group_id = $_GET['group'] ?? false;
+		$group_id = isset($_GET['group']) ? $_GET['group'] : false;
 
 		/* root with srv_groups */
 		if (isset($conf['srv_groups']) and count($conf['srv_groups']) > 0
@@ -172,4 +172,4 @@
 	}
 
 	$misc->printFooter();
-
+?>

@@ -4,7 +4,7 @@
     "type": "Application",
     "license": "GPL-2.0+",
     "require": {
-        "php": ">=7.2",
+        "php": ">=7.1",
 		"ext-pgsql": "*",
         "ext-mbstring": "*"
     },

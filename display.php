@@ -442,7 +442,7 @@
 			$subject = '';
 		}
 
-		$misc->printTrail($subject ?? 'database');
+		$misc->printTrail(isset($subject) ? $subject : 'database');
 		$misc->printTabs($subject,'browse');
 
 		/* This code is used when browsing FK in pure-xHTML (without js) */
@@ -495,9 +495,9 @@
 		}
 
 		// Retrieve page from query.  $max_pages is returned by reference.
-		$rs = $data->browseQuery($type,
-			$object ?? null,
-			$_SESSION['sqlquery'] ?? null,
+		$rs = $data->browseQuery($type, 
+			isset($object) ? $object : null, 
+			isset($_SESSION['sqlquery']) ? $_SESSION['sqlquery'] : null,
 			$_REQUEST['sortkey'], $_REQUEST['sortdir'], $_REQUEST['page'],
 			$conf['max_rows'], $max_pages);
 
@@ -599,8 +599,10 @@
 				);
 			}
 
-			$edit_params = $actions['actionbuttons']['edit'] ?? array();
-			$delete_params = $actions['actionbuttons']['delete'] ?? array();
+			$edit_params = isset($actions['actionbuttons']['edit'])?
+				$actions['actionbuttons']['edit']:array();
+			$delete_params = isset($actions['actionbuttons']['delete'])?
+				$actions['actionbuttons']['delete']:array();
 
 			// Display edit and delete actions if we have a key
 			$colspan = count($buttons);
@@ -874,4 +876,4 @@
 	}
 
 	$misc->printFooter();
-
+?>

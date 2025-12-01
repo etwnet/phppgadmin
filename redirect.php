@@ -1,5 +1,5 @@
 <?php
-	$subject = $_REQUEST['subject'] ?? 'root';
+	$subject = isset($_REQUEST['subject']) ? $_REQUEST['subject'] : 'root'; 
 	
 	if ($subject == 'root')
 		$_no_db_connection = true;
@@ -26,4 +26,4 @@
 	}
 	
 	require $url['url'];
-
+?>

@@ -275,4 +275,4 @@
 	}
 
 	$plugin_manager = new PluginManager($_language);
-
+?>

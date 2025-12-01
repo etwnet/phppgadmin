@@ -11,6 +11,9 @@ include_once('./libraries/adodb/adodb.inc.php');
 
 class ADODB_base {
 
+	/**
+	 * @var ADOConnection
+	 */
 	var $conn;
 	
 	// The backend platform.  Set to UNKNOWN by default.
@@ -348,4 +351,4 @@ class ADODB_base {
 	}
 }
 
-
+?>

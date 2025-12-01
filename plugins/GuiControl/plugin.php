@@ -142,3 +142,4 @@ class GuiControl extends Plugin {
         return;
     }
 }
+?>

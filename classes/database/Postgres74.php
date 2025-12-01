@@ -632,4 +632,4 @@ class Postgres74 extends Postgres80 {
 	function hasTablespaces() { return false; }
 	function hasMagicTypes() { return false; }
 }
-
+?>

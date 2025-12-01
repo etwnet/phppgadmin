@@ -183,7 +183,7 @@ class Postgres extends ADODB_base {
 	function clean(&$str) {
 		if ($str === null) return null;
 		$str = str_replace("\r\n","\n",$str);
-		$str = pg_escape_string($str);
+		$str = pg_escape_string($this->conn->_connectionID, $str);
 		return $str;
 	}
 
@@ -8074,4 +8074,4 @@ class Postgres extends ADODB_base {
 	function hasServerOids() { return false; }
 	
 }
-
+?>
