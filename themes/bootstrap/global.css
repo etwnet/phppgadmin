@@ -6,7 +6,7 @@
 frame {border-right: 1px solid #CCC;}
 .label {
 	color:#336699 !important;
-	font-size: 12px;
+	font-size: 1em;
 }
 
 /** ELEMENTS */
@@ -14,11 +14,12 @@ body {
 	background-color: #FFFFFF;
 	margin:	4px;
 	padding: 0px;
+	font-size: 15px;
 }
 
 body.browser {
 	background-color: #FFFFFF !important;
-	font-size: 12px !important; /*1em;*/
+	font-size: 14px !important; /*1em;*/
 	border-right: 1px #c0c0c0;
 }
 body.bottombar {
