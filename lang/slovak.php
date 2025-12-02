@@ -645,4 +645,4 @@ $lang['strcluster']  =  'Cluster';
 	$lang['strerrorloading']  =  'Chyba spracovania';
 	$lang['strclicktoreload']  =  'Klikni pre obnovenie';
 
-?>
+

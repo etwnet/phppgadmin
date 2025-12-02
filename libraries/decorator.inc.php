@@ -213,4 +213,4 @@ class replaceDecorator extends Decorator
 		return $str;
 	}
 }
-?>
+

@@ -260,4 +260,4 @@
 	$misc->printNavLinks($navlinks, 'sql-form', get_defined_vars());
 	
 	$misc->printFooter();
-?>
+

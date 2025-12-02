@@ -1035,4 +1035,4 @@
 
 	$misc->printFooter();
 
-?>
+

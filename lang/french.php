@@ -902,4 +902,4 @@ $lang['strconfcluster']  =  'Are you sure you want to cluster on "%s"?';
 	$lang['strpluginnotfound']  =  'Erreur: greffon \'%s\' non trouvé. Vérifiez si le greffon existe dans le répertoire plugins/, ou si ce greffon a un fichier plugin.php. Les noms des greffons sont sensibles aux majuscules.';
 	$lang['stractionnotfound']  =  'Erreur: action \'%s\' non trouvée dans le greffon \'%s\', ou elle n\'a pas été déclarée comme une action.';
 	$lang['strhooknotfound']  =  'Erreur: Le hook \'%s\' n\'est pas disponible.';
-?>
+

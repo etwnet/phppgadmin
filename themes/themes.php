@@ -13,4 +13,4 @@
 		'gotar' => 'Blue/Green',
 		'bootstrap' => 'Bootstrap3'
 	);
-?>
+

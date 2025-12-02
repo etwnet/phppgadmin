@@ -804,4 +804,4 @@ class Report extends Plugin {
 		$misc->printFooter();
 	}
 }
-?>
+

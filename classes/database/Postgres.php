@@ -8074,4 +8074,4 @@ class Postgres extends ADODB_base {
 	function hasServerOids() { return false; }
 	
 }
-?>
+

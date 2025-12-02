@@ -65,4 +65,4 @@ class Postgres11 extends Postgres {
 	function hasServerOids() { return true; }
 
 }
-?>
+

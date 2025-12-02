@@ -464,4 +464,4 @@
 	$lang['stroperatordroppedbad'] = 'Verwijderen van de operator mislukt.';
 	$lang['strhelp'] = 'Help';
 
-?>
+

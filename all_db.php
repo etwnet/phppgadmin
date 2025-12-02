@@ -533,4 +533,4 @@
 
 	$misc->printFooter();
 
-?>
+

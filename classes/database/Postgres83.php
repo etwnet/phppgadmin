@@ -360,4 +360,4 @@ class Postgres83 extends Postgres84 {
 	function hasAlterSequenceStart() { return false; }
 }
 
-?>
+

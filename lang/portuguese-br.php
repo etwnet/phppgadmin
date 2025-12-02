@@ -895,4 +895,4 @@
 	$lang['strftstabdicts'] = 'Dicionários';
 	$lang['strftstabparsers'] = 'Parsers';
 	$lang['strftscantparsercopy'] = 'Não é possível especificar ambos parser e modelo durante a criação da configuração de busca de texto.';
-?>
+

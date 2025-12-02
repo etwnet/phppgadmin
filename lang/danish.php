@@ -614,4 +614,4 @@
 	$lang['strhelp'] = 'Hjælp';
 	$lang['strhelpicon'] = '?';
 
-?>
+

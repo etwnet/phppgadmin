@@ -14,12 +14,12 @@ body {
 	background-color: #FFFFFF;
 	margin:	4px;
 	padding: 0px;
-	font-size: 15px;
+	font-size: 1.32em;
 }
 
 body.browser {
 	background-color: #FFFFFF !important;
-	font-size: 14px !important; /*1em;*/
+	/*font-size: 14px !important;*/ /*1em;*/
 	border-right: 1px #c0c0c0;
 }
 body.bottombar {

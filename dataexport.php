@@ -342,4 +342,4 @@
 		$misc->printFooter();
 	}
 
-?>
+

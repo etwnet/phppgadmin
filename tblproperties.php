@@ -779,4 +779,4 @@
 
 	$misc->printFooter();
 
-?>
+

@@ -30,4 +30,4 @@ class Postgres12 extends Postgres13 {
 	// Capabilities
 
 }
-?>
+

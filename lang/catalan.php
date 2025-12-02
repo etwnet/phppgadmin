@@ -894,4 +894,4 @@
 	$lang['strftstabdicts'] = 'Diccionaris';
 	$lang['strftstabparsers'] = 'Analitzadors';
 	$lang['strftscantparsercopy'] = 'No es pot especificar alhora un analitzador i una plantilla durant la creació de la configuració de la cerca de text.';
-?>
+

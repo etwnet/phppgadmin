@@ -725,4 +725,4 @@
 	// Print footer
 	$misc->printFooter();
 
-?>
+

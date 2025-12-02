@@ -581,4 +581,4 @@
         $lang['strtimefmt'] = ' j-m-Y  g:i';
         $lang['strhelp'] = 'Допомога';
 
-?>
+

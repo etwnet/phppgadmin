@@ -898,4 +898,4 @@
 	$lang['strftscantparsercopy'] = 'Nem állíthat be együtt elemzőt és sablont szövegkereső beállítás közben.';
     
     
-?>
+

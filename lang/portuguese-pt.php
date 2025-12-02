@@ -605,4 +605,4 @@ $lang['strtablespacealteredbad'] = 'Alteração do Espaçamento de Tabela falhou
 $lang['strhelp'] = 'Ajuda';
 $lang['strhelpicon'] = '?';
 
-?>
+
