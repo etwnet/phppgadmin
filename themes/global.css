@@ -147,10 +147,9 @@ p.comment {
 /** bottom link back to top **/
 .bottom_link {
 	position: fixed;
-	bottom: 0;
-	right: 0;
+	bottom: 0px;
+	right: 7px;
 	margin: 0;
-	padding: 3px;
 	text-decoration: none !important;
 	opacity: .5;
 }

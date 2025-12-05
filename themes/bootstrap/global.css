@@ -34,8 +34,8 @@ h2 {
 	color: #336699;
 	font-size: 1.7em;
 	font-weight: bold;
-	border: 2px solid #f1f1f1;
-	background-color: #FDFDFD;
+	/*border: 2px solid #f1f1f1;*/
+	/*background-color: #FDFDFD;*/
 	padding: 2px 1em;
 	margin: 0 0 1ex 0;
 }
@@ -150,7 +150,7 @@ table.navbar td {
 	background-color: #FDFDFD;
 	text-align: center;
 
-	font-size: smaller; /* 0.9em */
+	/*font-size: smaller;*/ /* 0.9em */
 	font-weight: bold;
 }
 
@@ -165,10 +165,20 @@ table#data {
 th.data {
 	color: #000000;
 	background: #f5f5f5 linear-gradient(180deg, #fff 0%, #ddd 100%);
-	font-size: smaller; /* 0.9em */
+	/*font-size: smaller;*/ /* 0.9em */
+	padding: 3px;
+	/*
 	transform: scaleY(1.2);
 	line-height: 2;
 	padding: 0 3px 3px;
+	transform-origin: top;
+	*/
+}
+
+span.small {
+	display: inline-block;
+	transform: scaleY(1.2);
+	line-height: 2;
 	transform-origin: top;
 }
 
@@ -338,13 +348,13 @@ td[class^="opbutton"] img.icon {
 	/*font-size: smaller;*/
 }
 
-.trail, .tab {
+.trail {
 	/*border: 2px solid #eee;*/
-	background-color: #eee;
+	background: linear-gradient(0deg, #fff 50%, #dedede 100%);
 }
 
 .trail .crumb {
-	background-color: #FDFDFD
+	/*background-color: #FDFDFD*/
 }
 
 .crumb, .tab {
@@ -363,11 +373,13 @@ table.tabs {
 }
 
 .tab {
-	text-align: center
+	text-align: center;
+	background: linear-gradient(0deg, #ededed 0%, #fff 100%);
+	border-right: 1px solid #dcdcdc;
 }
 
 .tabs .active {
-	background-color: #CBE9FF
+	background: linear-gradient(0deg, #FFF 0%, #f3f3f3 100%);
 }
 
 .tab .icon {
