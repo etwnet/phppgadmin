@@ -10,7 +10,7 @@
 	include_once('./libraries/lib.inc.php');
 	include_once('./classes/class.select.php');
 		
-	$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : '';
+	$action = $_REQUEST['action'] ?? '';
 
 	/**
 	 * Show confirmation of cluster index and perform actual cluster
@@ -31,8 +31,8 @@
 			echo "<form action=\"indexes.php\" method=\"post\">\n";
 			echo "<p><input type=\"checkbox\" id=\"analyze\" name=\"analyze\"", (isset($_REQUEST['analyze']) ? ' checked="checked"' : ''), " /><label for=\"analyze\">{$lang['stranalyze']}</label></p>\n";
 			echo "<input type=\"hidden\" name=\"action\" value=\"cluster_index\" />\n";
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"index\" value=\"", htmlspecialchars($_REQUEST['index']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"index\" value=\"", htmlspecialchars_nc($_REQUEST['index']), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"cluster\" value=\"{$lang['strclusterindex']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" />\n";
@@ -115,7 +115,7 @@
 		echo "<tr><th class=\"data required\" colspan=\"3\">{$lang['strindexname']}</th></tr>";
 		echo "<tr>";
 		echo "<td class=\"data1\" colspan=\"3\"><input type=\"text\" name=\"formIndexName\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"", 
-			htmlspecialchars($_POST['formIndexName']), "\" /></td></tr>";
+			htmlspecialchars_nc($_POST['formIndexName']), "\" /></td></tr>";
 		echo "<tr><th class=\"data\">{$lang['strtablecolumnlist']}</th><th class=\"data\">&nbsp;</th>";
 		echo "<th class=\"data required\">{$lang['strindexcolumnlist']}</th></tr>\n";
 		echo "<tr><td class=\"data1\">" . $selColumns->fetch() . "</td>\n";
@@ -128,8 +128,8 @@
 		echo "<th class=\"data left required\" scope=\"row\">{$lang['strindextype']}</th>";
 		echo "<td class=\"data1\"><select name=\"formIndexType\">";
 		foreach ($data->typIndexes as $v) {
-			echo "<option value=\"", htmlspecialchars($v), "\"",
-				($v == $_POST['formIndexType']) ? ' selected="selected"' : '', ">", htmlspecialchars($v), "</option>\n";
+			echo "<option value=\"", htmlspecialchars_nc($v), "\"",
+				($v == $_POST['formIndexType']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($v), "</option>\n";
 		}
 		echo "</select></td></tr>\n";				
 		echo "<tr>";
@@ -139,7 +139,7 @@
 		echo "<tr>";
 		echo "<th class=\"data left\" scope=\"row\">{$lang['strwhere']}</th>";
 		echo "<td class=\"data1\">(<input name=\"formWhere\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"", 
-			htmlspecialchars($_POST['formWhere']), "\" />)</td>";
+			htmlspecialchars_nc($_POST['formWhere']), "\" />)</td>";
 		echo "</tr>";
 		
 		// Tablespace (if there are any)
@@ -151,7 +151,7 @@
 				($_POST['formSpc'] == '') ? ' selected="selected"' : '', "></option>\n";
 			// Display all other tablespaces
 			while (!$tablespaces->EOF) {
-				$spcname = htmlspecialchars($tablespaces->fields['spcname']);
+				$spcname = htmlspecialchars_nc($tablespaces->fields['spcname']);
 				echo "\t\t\t\t<option value=\"{$spcname}\"",
 					($spcname == $_POST['formSpc']) ? ' selected="selected"' : '', ">{$spcname}</option>\n";
 				$tablespaces->moveNext();
@@ -170,7 +170,7 @@
 
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"save_create_index\" />\n";
 		echo $misc->form;
-		echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
 		echo "<input type=\"submit\" value=\"{$lang['strcreate']}\" />\n";
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 		echo "</form>\n";
@@ -218,8 +218,8 @@
 
 			echo "<form action=\"indexes.php\" method=\"post\">\n";
 			echo "<input type=\"hidden\" name=\"action\" value=\"drop_index\" />\n";
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"index\" value=\"", htmlspecialchars($_REQUEST['index']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"index\" value=\"", htmlspecialchars_nc($_REQUEST['index']), "\" />\n";
 			echo $misc->form;
 			echo "<p><input type=\"checkbox\" id=\"cascade\" name=\"cascade\" /> <label for=\"cascade\">{$lang['strcascade']}</label></p>\n";
 			echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";
@@ -237,6 +237,7 @@
 	}
 
 	function doDefault($msg = '') {
+		/** @var Postgres $data */
 		global $data, $misc;
 		global $lang;
 		
@@ -267,10 +268,12 @@
 			'index' => array(
 				'title' => $lang['strname'],
 				'field' => field('indname'),
+				//'class' => 'emphasize',
 			),
 			'definition' => array(
 				'title' => $lang['strdefinition'],
 				'field' => field('inddef'),
+				'type'  => 'pre',
 			),
 			'constraints' => array(
 				'title' => $lang['strconstraints'],
@@ -294,6 +297,7 @@
 
 		$actions = array(
 			'cluster' => array(
+				'icon' => 'images/themes/default/Cluster.png',
 				'content' => $lang['strclusterindex'],
 				'attr'=> array (
 					'href' => array (
@@ -307,6 +311,7 @@
 				)
 			),
 			'reindex' => array(
+				'icon' => 'images/themes/default/Index.png',
 				'content' => $lang['strreindex'],
 				'attr'=> array (
 					'href' => array (
@@ -320,6 +325,7 @@
 				)
 			),
 			'drop' => array(
+				'icon' => 'images/themes/default/Delete.png',
 				'content' => $lang['strdrop'],
 				'attr'=> array (
 					'href' => array (

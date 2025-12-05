@@ -9,7 +9,7 @@
 	// Include application functions
 	include_once('./libraries/lib.inc.php');
 
-	$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : '';
+	$action = $_REQUEST['action'] ?? '';
 	if (!isset($msg)) $msg = '';
 
 	/**
@@ -53,7 +53,7 @@
 		
 		echo "<form action=\"database.php\" method=\"post\" target=\"detail\">\n";
 		_printConnection();
-		echo "<p><input name=\"term\" value=\"", htmlspecialchars($_REQUEST['term']), 
+		echo "<p><input name=\"term\" value=\"", htmlspecialchars_nc($_REQUEST['term']), 
 			"\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" />\n";
 			
 		// Output list of filters.  This is complex due to all the 'has' and 'conf' feature possibilities
@@ -113,10 +113,10 @@
 		echo "<p><label>";
 		$misc->printHelp($lang['strsearchpath'], 'pg.schema.search_path');
 		echo ": <input type=\"text\" name=\"search_path\" size=\"50\" value=\"",
-			htmlspecialchars($_REQUEST['search_path']), "\" /></label></p>\n";
+			htmlspecialchars_nc($_REQUEST['search_path']), "\" /></label></p>\n";
 		
 		echo "<textarea style=\"width:98%;\" rows=\"10\" cols=\"50\" name=\"query\">",
-			htmlspecialchars($_SESSION['sqlquery']), "</textarea>\n";
+			htmlspecialchars_nc($_SESSION['sqlquery']), "</textarea>\n";
 
 		// Check that file uploads are enabled
 		if (ini_get('file_uploads')) {

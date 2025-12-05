@@ -284,8 +284,8 @@ class dbTable extends dbObject {
 				// Add a field
 				$fieldName = $attributes['NAME'];
 				$fieldType = $attributes['TYPE'];
-				$fieldSize = isset( $attributes['SIZE'] ) ? $attributes['SIZE'] : NULL;
-				$fieldOpts = isset( $attributes['OPTS'] ) ? $attributes['OPTS'] : NULL;
+				$fieldSize = $attributes['SIZE'] ?? NULL;
+				$fieldOpts = $attributes['OPTS'] ?? NULL;
 
 				$this->addField( $fieldName, $fieldType, $fieldSize, $fieldOpts );
 				break;

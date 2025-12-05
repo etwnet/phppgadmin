@@ -9,7 +9,7 @@
 	// Include application functions
 	include_once('./libraries/lib.inc.php');
 
-	$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : '';
+	$action = $_REQUEST['action'] ?? '';
 	if (!isset($msg)) $msg = '';
 	
 	/**
@@ -35,11 +35,11 @@
 		echo "<form action=\"roles.php\" method=\"post\">\n";
 		echo "<table>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left required\" style=\"width: 130px\">{$lang['strname']}</th>\n";
-		echo "\t\t<td class=\"data1\"><input size=\"15\" maxlength=\"{$data->_maxNameLen}\" name=\"formRolename\" value=\"", htmlspecialchars($_POST['formRolename']), "\" /></td>\n\t</tr>\n";
+		echo "\t\t<td class=\"data1\"><input size=\"15\" maxlength=\"{$data->_maxNameLen}\" name=\"formRolename\" value=\"", htmlspecialchars_nc($_POST['formRolename']), "\" /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strpassword']}</th>\n";
-		echo "\t\t<td class=\"data1\"><input size=\"15\" type=\"password\" name=\"formPassword\" value=\"", htmlspecialchars($_POST['formPassword']), "\" /></td>\n\t</tr>\n";
+		echo "\t\t<td class=\"data1\"><input size=\"15\" type=\"password\" name=\"formPassword\" value=\"", htmlspecialchars_nc($_POST['formPassword']), "\" /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strconfirm']}</th>\n";
-		echo "\t\t<td class=\"data1\"><input size=\"15\" type=\"password\" name=\"formConfirm\" value=\"", htmlspecialchars($_POST['formConfirm']), "\" /></td>\n\t</tr>\n";
+		echo "\t\t<td class=\"data1\"><input size=\"15\" type=\"password\" name=\"formConfirm\" value=\"", htmlspecialchars_nc($_POST['formConfirm']), "\" /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left\"><label for=\"formSuper\">{$lang['strsuper']}</label></th>\n";
 		echo "\t\t<td class=\"data1\"><input type=\"checkbox\" id=\"formSuper\" name=\"formSuper\"", 
 			(isset($_POST['formSuper'])) ? ' checked="checked"' : '', " /></td>\n\t</tr>\n";
@@ -56,9 +56,9 @@
 		echo "\t\t<td class=\"data1\"><input type=\"checkbox\" id=\"formCanLogin\" name=\"formCanLogin\"", 
 			(isset($_POST['formCanLogin'])) ? ' checked="checked"' : '', " /></td>\n\t</tr>\n";			
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strconnlimit']}</th>\n";
-		echo "\t\t<td class=\"data1\"><input size=\"4\" name=\"formConnLimit\" value=\"", htmlspecialchars($_POST['formConnLimit']), "\" /></td>\n\t</tr>\n";
+		echo "\t\t<td class=\"data1\"><input size=\"4\" name=\"formConnLimit\" value=\"", htmlspecialchars_nc($_POST['formConnLimit']), "\" /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strexpires']}</th>\n";
-		echo "\t\t<td class=\"data1\"><input size=\"23\" name=\"formExpires\" value=\"", htmlspecialchars($_POST['formExpires']), "\" /></td>\n\t</tr>\n";
+		echo "\t\t<td class=\"data1\"><input size=\"23\" name=\"formExpires\" value=\"", htmlspecialchars_nc($_POST['formExpires']), "\" /></td>\n\t</tr>\n";
 		
 		$roles = $data->getRoles();
 		if ($roles->recordCount() > 0) {
@@ -113,6 +113,7 @@
 	 * Actually creates the new role in the database
 	 */
 	function doSaveCreate() {
+		/** @var Postgres $data */
 		global $data, $lang;
 
 		if(!isset($_POST['memberof'])) $_POST['memberof'] = array();
@@ -173,9 +174,9 @@
 			echo "<form action=\"roles.php\" method=\"post\">\n";
 			echo "<table>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left\" style=\"width: 130px\">{$lang['strname']}</th>\n";
-			echo "\t\t<td class=\"data1\">", ($canRename ? "<input name=\"formNewRoleName\" size=\"15\" maxlength=\"{$data->_maxNameLen}\" value=\"" . htmlspecialchars($_POST['formNewRoleName']) . "\" />" : $misc->printVal($roledata->fields['rolname'])), "</td>\n\t</tr>\n";
+			echo "\t\t<td class=\"data1\">", ($canRename ? "<input name=\"formNewRoleName\" size=\"15\" maxlength=\"{$data->_maxNameLen}\" value=\"" . htmlspecialchars_nc($_POST['formNewRoleName']) . "\" />" : $misc->printVal($roledata->fields['rolname'])), "</td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strpassword']}</th>\n";
-			echo "\t\t<td class=\"data1\"><input type=\"password\" size=\"15\" name=\"formPassword\" value=\"", htmlspecialchars($_POST['formPassword']), "\" /></td>\n\t</tr>\n";
+			echo "\t\t<td class=\"data1\"><input type=\"password\" size=\"15\" name=\"formPassword\" value=\"", htmlspecialchars_nc($_POST['formPassword']), "\" /></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strconfirm']}</th>\n";
 			echo "\t\t<td class=\"data1\"><input type=\"password\" size=\"15\" name=\"formConfirm\" value=\"\" /></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left\"><label for=\"formSuper\">{$lang['strsuper']}</label></th>\n";
@@ -194,9 +195,9 @@
 			echo "\t\t<td class=\"data1\"><input type=\"checkbox\" id=\"formCanLogin\" name=\"formCanLogin\"", 
 				(isset($_POST['formCanLogin'])) ? ' checked="checked"' : '', " /></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strconnlimit']}</th>\n";
-			echo "\t\t<td class=\"data1\"><input size=\"4\" name=\"formConnLimit\" value=\"", htmlspecialchars($_POST['formConnLimit']), "\" /></td>\n\t</tr>\n";
+			echo "\t\t<td class=\"data1\"><input size=\"4\" name=\"formConnLimit\" value=\"", htmlspecialchars_nc($_POST['formConnLimit']), "\" /></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strexpires']}</th>\n";
-			echo "\t\t<td class=\"data1\"><input size=\"23\" name=\"formExpires\" value=\"", htmlspecialchars($_POST['formExpires']), "\" /></td>\n\t</tr>\n";
+			echo "\t\t<td class=\"data1\"><input size=\"23\" name=\"formExpires\" value=\"", htmlspecialchars_nc($_POST['formExpires']), "\" /></td>\n\t</tr>\n";
 
 			if (!isset($_POST['memberof']))
 			{
@@ -284,10 +285,10 @@
 			echo "</table>\n";
 
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"save_alter\" />\n";
-			echo "<input type=\"hidden\" name=\"rolename\" value=\"", htmlspecialchars($_REQUEST['rolename']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"memberofold\" value=\"", isset($_POST['memberofold']) ? $_POST['memberofold'] : htmlspecialchars($memberofold), "\" />\n";
-			echo "<input type=\"hidden\" name=\"membersold\" value=\"", isset($_POST['membersold']) ? $_POST['membersold'] : htmlspecialchars($membersold), "\" />\n";
-			echo "<input type=\"hidden\" name=\"adminmembersold\" value=\"", isset($_POST['adminmembersold']) ? $_POST['adminmembersold'] : htmlspecialchars($adminmembersold), "\" />\n";
+			echo "<input type=\"hidden\" name=\"rolename\" value=\"", htmlspecialchars_nc($_REQUEST['rolename']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"memberofold\" value=\"", $_POST['memberofold'] ?? htmlspecialchars_nc($memberofold), "\" />\n";
+			echo "<input type=\"hidden\" name=\"membersold\" value=\"", $_POST['membersold'] ?? htmlspecialchars_nc($membersold), "\" />\n";
+			echo "<input type=\"hidden\" name=\"adminmembersold\" value=\"", $_POST['adminmembersold'] ?? htmlspecialchars_nc($adminmembersold), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"alter\" value=\"{$lang['stralter']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -336,7 +337,7 @@
 			
 			echo "<form action=\"roles.php\" method=\"post\">\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"drop\" />\n";
-			echo "<input type=\"hidden\" name=\"rolename\" value=\"", htmlspecialchars($_REQUEST['rolename']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"rolename\" value=\"", htmlspecialchars_nc($_REQUEST['rolename']), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -374,7 +375,7 @@
 			echo "\t<tr>\n\t\t<th class=\"data\" style=\"width: 130px\">Description</th>\n";
 			echo "\t\t<th class=\"data\" style=\"width: 120\">Value</th>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<td class=\"data1\">{$lang['strname']}</td>\n";
-			echo "\t\t<td class=\"data1\">", htmlspecialchars($_REQUEST['rolename']), "</td>\n\t</tr>\n";
+			echo "\t\t<td class=\"data1\">", htmlspecialchars_nc($_REQUEST['rolename']), "</td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<td class=\"data2\">{$lang['strsuper']}</td>\n";
 			echo "\t\t<td class=\"data2\">", (($roledata->fields['rolsuper']) ? $lang['stryes'] : $lang['strno']), "</td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<td class=\"data1\">{$lang['strcreatedb']}</td>\n";
@@ -550,7 +551,7 @@
 			echo "<table>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strpassword']}</th>\n";
 			echo "\t\t<td><input type=\"password\" name=\"password\" size=\"32\" value=\"", 
-				htmlspecialchars($_POST['password']), "\" /></td>\n\t</tr>\n";
+				htmlspecialchars_nc($_POST['password']), "\" /></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strconfirm']}</th>\n";
 			echo "\t\t<td><input type=\"password\" name=\"confirm\" size=\"32\" value=\"\" /></td>\n\t</tr>\n";
 			echo "</table>\n";
@@ -587,12 +588,12 @@
 		
 		function renderRoleConnLimit($val) {
 			global $lang;
-			return $val == '-1' ? $lang['strnolimit'] : htmlspecialchars($val);
+			return $val == '-1' ? $lang['strnolimit'] : htmlspecialchars_nc($val);
  		}
 		
 		function renderRoleExpires($val) {
 			global $lang;
-			return $val == 'infinity' ? $lang['strnever'] : htmlspecialchars($val);
+			return $val == 'infinity' ? $lang['strnever'] : htmlspecialchars_nc($val);
  		}
 		
 		$misc->printTrail('server');
@@ -652,6 +653,7 @@
 		
 		$actions = array(
 			'alter' => array(
+				'icon' => 'images/themes/default/Edit.png',
 				'content' => $lang['stralter'],
 				'attr'=> array (
 					'href' => array (
@@ -664,6 +666,7 @@
 				)
 			),
 			'drop' => array(
+				'icon' => 'images/themes/default/Delete.png',
 				'content' => $lang['strdrop'],
 				'attr'=> array (
 					'href' => array (

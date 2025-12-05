@@ -19,7 +19,7 @@
 
 	global $conf, $lang;
 
-	$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : '';
+	$action = $_REQUEST['action'] ?? '';
 
 	/**
 	 * Show confirmation of edit and perform actual update
@@ -73,11 +73,11 @@
 					echo "<td style=\"white-space:nowrap;\">", $misc->printVal($attrs->fields['attname']), "</td>";
 					echo "<td style=\"white-space:nowrap;\">\n";
 					echo $misc->printVal($data->formatType($attrs->fields['type'], $attrs->fields['atttypmod']));
-					echo "<input type=\"hidden\" name=\"types[", htmlspecialchars($attrs->fields['attname']), "]\" value=\"", 
-						htmlspecialchars($attrs->fields['type']), "\" /></td>";
+					echo "<input type=\"hidden\" name=\"types[", htmlspecialchars_nc($attrs->fields['attname']), "]\" value=\"", 
+						htmlspecialchars_nc($attrs->fields['type']), "\" /></td>";
 					$elements++;
 					echo "<td style=\"white-space:nowrap;\">\n";
-					echo "<select name=\"format[", htmlspecialchars($attrs->fields['attname']), "]\">\n";
+					echo "<select name=\"format[", htmlspecialchars_nc($attrs->fields['attname']), "]\">\n";
 					echo "<option value=\"VALUE\"", ($_REQUEST['format'][$attrs->fields['attname']] == 'VALUE') ? ' selected="selected"' : '', ">{$lang['strvalue']}</option>\n";
 					echo "<option value=\"EXPRESSION\"", ($_REQUEST['format'][$attrs->fields['attname']] == 'EXPRESSION') ? ' selected="selected"' : '', ">{$lang['strexpression']}</option>\n";
 					echo "</select>\n</td>\n";
@@ -135,20 +135,20 @@
 			echo "<input type=\"hidden\" name=\"action\" value=\"editrow\" />\n";
 			echo $misc->form;
 			if (isset($_REQUEST['table']))
-				echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
 			if (isset($_REQUEST['subject']))
-				echo "<input type=\"hidden\" name=\"subject\" value=\"", htmlspecialchars($_REQUEST['subject']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"subject\" value=\"", htmlspecialchars_nc($_REQUEST['subject']), "\" />\n";
 			if (isset($_REQUEST['query']))
-				echo "<input type=\"hidden\" name=\"query\" value=\"", htmlspecialchars($_REQUEST['query']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"query\" value=\"", htmlspecialchars_nc($_REQUEST['query']), "\" />\n";
 			if (isset($_REQUEST['count']))
-				echo "<input type=\"hidden\" name=\"count\" value=\"", htmlspecialchars($_REQUEST['count']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"count\" value=\"", htmlspecialchars_nc($_REQUEST['count']), "\" />\n";
 			if (isset($_REQUEST['return']))
-				echo "<input type=\"hidden\" name=\"return\" value=\"", htmlspecialchars($_REQUEST['return']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"page\" value=\"", htmlspecialchars($_REQUEST['page']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"sortkey\" value=\"", htmlspecialchars($_REQUEST['sortkey']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"sortdir\" value=\"", htmlspecialchars($_REQUEST['sortdir']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"strings\" value=\"", htmlspecialchars($_REQUEST['strings']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"key\" value=\"", htmlspecialchars(urlencode(serialize($key))), "\" />\n";
+				echo "<input type=\"hidden\" name=\"return\" value=\"", htmlspecialchars_nc($_REQUEST['return']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"page\" value=\"", htmlspecialchars_nc($_REQUEST['page']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"sortkey\" value=\"", htmlspecialchars_nc($_REQUEST['sortkey']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"sortdir\" value=\"", htmlspecialchars_nc($_REQUEST['sortdir']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"strings\" value=\"", htmlspecialchars_nc($_REQUEST['strings']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"key\" value=\"", htmlspecialchars_nc(urlencode(serialize($key))), "\" />\n";
 			echo "<p>";
 			if (!$error) echo "<input type=\"submit\" name=\"save\" accesskey=\"r\" value=\"{$lang['strsave']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" />\n";
@@ -221,20 +221,20 @@
 				echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" />\n";
 			}
 			if (isset($_REQUEST['table']))
-				echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
 			if (isset($_REQUEST['subject']))
-				echo "<input type=\"hidden\" name=\"subject\" value=\"", htmlspecialchars($_REQUEST['subject']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"subject\" value=\"", htmlspecialchars_nc($_REQUEST['subject']), "\" />\n";
 			if (isset($_REQUEST['query']))
-				echo "<input type=\"hidden\" name=\"query\" value=\"", htmlspecialchars($_REQUEST['query']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"query\" value=\"", htmlspecialchars_nc($_REQUEST['query']), "\" />\n";
 			if (isset($_REQUEST['count']))
-				echo "<input type=\"hidden\" name=\"count\" value=\"", htmlspecialchars($_REQUEST['count']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"count\" value=\"", htmlspecialchars_nc($_REQUEST['count']), "\" />\n";
 			if (isset($_REQUEST['return']))
-				echo "<input type=\"hidden\" name=\"return\" value=\"", htmlspecialchars($_REQUEST['return']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"page\" value=\"", htmlspecialchars($_REQUEST['page']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"sortkey\" value=\"", htmlspecialchars($_REQUEST['sortkey']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"sortdir\" value=\"", htmlspecialchars($_REQUEST['sortdir']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"strings\" value=\"", htmlspecialchars($_REQUEST['strings']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"key\" value=\"", htmlspecialchars(urlencode(serialize($_REQUEST['key']))), "\" />\n";
+				echo "<input type=\"hidden\" name=\"return\" value=\"", htmlspecialchars_nc($_REQUEST['return']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"page\" value=\"", htmlspecialchars_nc($_REQUEST['page']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"sortkey\" value=\"", htmlspecialchars_nc($_REQUEST['sortkey']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"sortdir\" value=\"", htmlspecialchars_nc($_REQUEST['sortdir']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"strings\" value=\"", htmlspecialchars_nc($_REQUEST['strings']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"key\" value=\"", htmlspecialchars_nc(urlencode(serialize($_REQUEST['key']))), "\" />\n";
 			echo "</form>\n";
 		}
 		else {
@@ -425,6 +425,7 @@
 	 * Displays requested data
 	 */
 	function doBrowse($msg = '') {
+		/** @var Postgres $data */
 		global $data, $conf, $misc, $lang, $plugin_manager;
 
 		$save_history = false;
@@ -442,7 +443,7 @@
 			$subject = '';
 		}
 
-		$misc->printTrail(isset($subject) ? $subject : 'database');
+		$misc->printTrail($subject ?? 'database');
 		$misc->printTabs($subject,'browse');
 
 		/* This code is used when browsing FK in pure-xHTML (without js) */
@@ -495,9 +496,9 @@
 		}
 
 		// Retrieve page from query.  $max_pages is returned by reference.
-		$rs = $data->browseQuery($type, 
-			isset($object) ? $object : null, 
-			isset($_SESSION['sqlquery']) ? $_SESSION['sqlquery'] : null,
+		$rs = $data->browseQuery($type,
+			$object ?? null,
+			$_SESSION['sqlquery'] ?? null,
 			$_REQUEST['sortkey'], $_REQUEST['sortdir'], $_REQUEST['page'],
 			$conf['max_rows'], $max_pages);
 
@@ -529,15 +530,15 @@
 		if (isset($_REQUEST['query'])) {
 			$query = $_REQUEST['query'];
 		} else {
-			$query = "SELECT * FROM ".pg_escape_identifier($_REQUEST['schema']);
+			$query = "SELECT * FROM ".pg_escape_id($_REQUEST['schema']);
 			if ($_REQUEST['subject'] == 'view') {
-				$query = "{$query}.".pg_escape_identifier($_REQUEST['view']).";";
+				$query = "{$query}.".pg_escape_id($_REQUEST['view']).";";
 			} else {
-				$query = "{$query}.".pg_escape_identifier($_REQUEST['table']).";";
+				$query = "{$query}.".pg_escape_id($_REQUEST['table']).";";
 			}
 		}
 		//$query = isset($_REQUEST['query'])? $_REQUEST['query'] : "select * from {$_REQUEST['schema']}.{$_REQUEST['table']};";
-		echo htmlspecialchars($query);
+		echo htmlspecialchars_nc($query);
 		echo '</textarea><br><input type="submit"/></form>';
 
 		if (is_object($rs) && $rs->recordCount() > 0) {
@@ -560,6 +561,7 @@
 
 			$buttons = array(
 				'edit' => array (
+					'icon' => 'images/themes/default/Edit.png',
 					'content' => $lang['stredit'],
 					'attr'=> array (
 						'href' => array (
@@ -573,6 +575,7 @@
 					)
 				),
 				'delete' => array (
+					'icon' => 'images/themes/default/Delete.png',
 					'content' => $lang['strdelete'],
 					'attr'=> array (
 						'href' => array (
@@ -599,10 +602,8 @@
 				);
 			}
 
-			$edit_params = isset($actions['actionbuttons']['edit'])?
-				$actions['actionbuttons']['edit']:array();
-			$delete_params = isset($actions['actionbuttons']['delete'])?
-				$actions['actionbuttons']['delete']:array();
+			$edit_params = $actions['actionbuttons']['edit'] ?? array();
+			$delete_params = $actions['actionbuttons']['delete'] ?? array();
 
 			// Display edit and delete actions if we have a key
 			$colspan = count($buttons);

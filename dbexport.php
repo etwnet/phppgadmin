@@ -10,7 +10,7 @@
 	if (!ini_get('safe_mode')) set_time_limit(0);
 
 	// Include application functions
-	$_no_output = true;
+	$_no_html_frame = true;
 	$f_schema = $f_object = '';
 	include_once('./libraries/lib.inc.php');
 

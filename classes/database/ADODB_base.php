@@ -23,7 +23,7 @@ class ADODB_base {
 	 * Base constructor
 	 * @param &$conn The connection object
 	 */
-	function __construct(&$conn) {
+	function __construct($conn) {
 		$this->conn = $conn;
 	}
 
@@ -40,7 +40,7 @@ class ADODB_base {
 	 * @param $str The string to clean, by reference
 	 * @return The cleaned string
 	 */
-	function clean(&$str) {
+	function clean($str) {
 		$str = addslashes($str);
 		return $str;
 	}
@@ -50,7 +50,7 @@ class ADODB_base {
 	 * @param $str The string to clean, by reference
 	 * @return The cleaned string
 	 */
-	function fieldClean(&$str) {
+	function fieldClean($str) {
 		$str = str_replace('"', '""', $str);
 		return $str;
 	}
@@ -60,7 +60,7 @@ class ADODB_base {
 	 * @param $arr The array to clean, by reference
 	 * @return The cleaned array
 	 */
-	function arrayClean(&$arr) {
+	function arrayClean($arr) {
 		return $arr = array_map('addslashes', $arr);
 	}
 	
@@ -87,8 +87,8 @@ class ADODB_base {
 
 	/**
 	 * Retrieves a ResultSet from a query
-	 * @param $sql The SQL statement to be executed
-	 * @return A recordset
+	 * @param $sql string The SQL statement to be executed
+	 * @return ADORecordSet|int A recordset
 	 */
 	function selectSet($sql) {
 		// Execute the statement
@@ -104,9 +104,9 @@ class ADODB_base {
 	 *
 	 * @@ assumes that the query will return only one row - returns field value in the first row
 	 *
-	 * @param $sql The SQL statement to be executed
-	 * @param $field The field name to be returned
-	 * @return A single field value
+	 * @param $sql string The SQL statement to be executed
+	 * @param $field string The field name to be returned
+	 * @return mixed A single field value
 	 * @return -1 No rows were found
 	 */
 	function selectField($sql, $field) {

@@ -9,7 +9,7 @@
 	// Include application functions
 	include_once('./libraries/lib.inc.php');
 
-	$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : '';
+	$action = $_REQUEST['action'] ?? '';
 	if (!isset($msg)) $msg = '';
 		
 	/**
@@ -83,7 +83,7 @@
 			echo "<table>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strpassword']}</th>\n";
 			echo "\t\t<td><input type=\"password\" name=\"password\" size=\"32\" value=\"", 
-				htmlspecialchars($_POST['password']), "\" /></td>\n\t</tr>\n";
+				htmlspecialchars_nc($_POST['password']), "\" /></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strconfirm']}</th>\n";
 			echo "\t\t<td><input type=\"password\" name=\"confirm\" size=\"32\" value=\"\" /></td>\n\t</tr>\n";
 			echo "</table>\n";
@@ -141,7 +141,7 @@
 			echo "<form action=\"users.php\" method=\"post\">\n";
 			echo "<table>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strusername']}</th>\n";
-			echo "\t\t<td class=\"data1\">", ($canRename ? "<input name=\"newname\" size=\"15\" maxlength=\"{$data->_maxNameLen}\" value=\"" . htmlspecialchars($_POST['newname']) . "\" />" : $misc->printVal($userdata->fields['usename'])), "</td>\n\t</tr>\n";
+			echo "\t\t<td class=\"data1\">", ($canRename ? "<input name=\"newname\" size=\"15\" maxlength=\"{$data->_maxNameLen}\" value=\"" . htmlspecialchars_nc($_POST['newname']) . "\" />" : $misc->printVal($userdata->fields['usename'])), "</td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left\"><label for=\"formSuper\">{$lang['strsuper']}</label></th>\n";
 			echo "\t\t<td class=\"data1\"><input type=\"checkbox\" id=\"formSuper\" name=\"formSuper\"", 
 				(isset($_POST['formSuper'])) ? ' checked="checked"' : '', " /></td>\n\t</tr>\n";
@@ -149,14 +149,14 @@
 			echo "\t\t<td class=\"data1\"><input type=\"checkbox\" id=\"formCreateDB\" name=\"formCreateDB\"", 
 				(isset($_POST['formCreateDB'])) ? ' checked="checked"' : '', " /></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strexpires']}</th>\n";
-			echo "\t\t<td class=\"data1\"><input size=\"16\" name=\"formExpires\" value=\"", htmlspecialchars($_POST['formExpires']), "\" /></td>\n\t</tr>\n";
+			echo "\t\t<td class=\"data1\"><input size=\"16\" name=\"formExpires\" value=\"", htmlspecialchars_nc($_POST['formExpires']), "\" /></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strpassword']}</th>\n";
-			echo "\t\t<td class=\"data1\"><input type=\"password\" size=\"16\" name=\"formPassword\" value=\"", htmlspecialchars($_POST['formPassword']), "\" /></td>\n\t</tr>\n";
+			echo "\t\t<td class=\"data1\"><input type=\"password\" size=\"16\" name=\"formPassword\" value=\"", htmlspecialchars_nc($_POST['formPassword']), "\" /></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strconfirm']}</th>\n";
 			echo "\t\t<td class=\"data1\"><input type=\"password\" size=\"16\" name=\"formConfirm\" value=\"\" /></td>\n\t</tr>\n";
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"save_edit\" />\n";
-			echo "<input type=\"hidden\" name=\"username\" value=\"", htmlspecialchars($_REQUEST['username']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"username\" value=\"", htmlspecialchars_nc($_REQUEST['username']), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"alter\" value=\"{$lang['stralter']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -201,7 +201,7 @@
 			
 			echo "<form action=\"users.php\" method=\"post\">\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"drop\" />\n";
-			echo "<input type=\"hidden\" name=\"username\" value=\"", htmlspecialchars($_REQUEST['username']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"username\" value=\"", htmlspecialchars_nc($_REQUEST['username']), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -235,11 +235,11 @@
 		echo "<form action=\"users.php\" method=\"post\">\n";
 		echo "<table>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strusername']}</th>\n";
-		echo "\t\t<td class=\"data1\"><input size=\"15\" maxlength=\"{$data->_maxNameLen}\" name=\"formUsername\" value=\"", htmlspecialchars($_POST['formUsername']), "\" /></td>\n\t</tr>\n";
+		echo "\t\t<td class=\"data1\"><input size=\"15\" maxlength=\"{$data->_maxNameLen}\" name=\"formUsername\" value=\"", htmlspecialchars_nc($_POST['formUsername']), "\" /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strpassword']}</th>\n";
-		echo "\t\t<td class=\"data1\"><input size=\"15\" type=\"password\" name=\"formPassword\" value=\"", htmlspecialchars($_POST['formPassword']), "\" /></td>\n\t</tr>\n";
+		echo "\t\t<td class=\"data1\"><input size=\"15\" type=\"password\" name=\"formPassword\" value=\"", htmlspecialchars_nc($_POST['formPassword']), "\" /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strconfirm']}</th>\n";
-		echo "\t\t<td class=\"data1\"><input size=\"15\" type=\"password\" name=\"formConfirm\" value=\"", htmlspecialchars($_POST['formConfirm']), "\" /></td>\n\t</tr>\n";
+		echo "\t\t<td class=\"data1\"><input size=\"15\" type=\"password\" name=\"formConfirm\" value=\"", htmlspecialchars_nc($_POST['formConfirm']), "\" /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left\"><label for=\"formSuper\">{$lang['strsuper']}</label></th>\n";
 		echo "\t\t<td class=\"data1\"><input type=\"checkbox\" id=\"formSuper\" name=\"formSuper\"", 
 			(isset($_POST['formSuper'])) ? ' checked="checked"' : '', " /></td>\n\t</tr>\n";
@@ -247,7 +247,7 @@
 		echo "\t\t<td class=\"data1\"><input type=\"checkbox\" id=\"formCreateDB\" name=\"formCreateDB\"", 
 			(isset($_POST['formCreateDB'])) ? ' checked="checked"' : '', " /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strexpires']}</th>\n";
-		echo "\t\t<td class=\"data1\"><input size=\"30\" name=\"formExpires\" value=\"", htmlspecialchars($_POST['formExpires']), "\" /></td>\n\t</tr>\n";
+		echo "\t\t<td class=\"data1\"><input size=\"30\" name=\"formExpires\" value=\"", htmlspecialchars_nc($_POST['formExpires']), "\" /></td>\n\t</tr>\n";
 		echo "</table>\n";
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"save_create\" />\n";
 		echo $misc->form;
@@ -287,7 +287,7 @@
 		
 		function renderUseExpires($val) {
 			global $lang;
-			return $val == 'infinity' ? $lang['strnever'] : htmlspecialchars($val);
+			return $val == 'infinity' ? $lang['strnever'] : htmlspecialchars_nc($val);
  		}
 		
 		$misc->printTrail('server');
@@ -328,6 +328,7 @@
 		
 		$actions = array(
 			'alter' => array(
+				'icon' => 'images/themes/default/Edit.png',
 				'content' => $lang['stralter'],
 				'attr'=> array (
 					'href' => array (
@@ -340,6 +341,7 @@
 				)
 			),
 			'drop' => array(
+				'icon' => 'images/themes/default/Delete.png',
 				'content' => $lang['strdrop'],
 				'attr'=> array (
 					'href' => array (

@@ -10,7 +10,7 @@
 	include_once('./libraries/lib.inc.php');
 	include_once('./classes/class.select.php');
 	
-	$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : '';
+	$action = $_REQUEST['action'] ?? '';
 
 	/** 
 	 * Function to save after altering a trigger
@@ -47,11 +47,11 @@
 			echo "<tr><th class=\"data\">{$lang['strname']}</th>\n";
 			echo "<td class=\"data1\">";
 			echo "<input name=\"name\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"", 
-				htmlspecialchars($_POST['name']), "\" />\n";
+				htmlspecialchars_nc($_POST['name']), "\" />\n";
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"alter\" />\n";
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"trigger\" value=\"", htmlspecialchars($_REQUEST['trigger']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"trigger\" value=\"", htmlspecialchars_nc($_REQUEST['trigger']), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"alter\" value=\"{$lang['strok']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -76,8 +76,8 @@
 
 			echo "<form action=\"triggers.php\" method=\"post\">\n";
 			echo "<input type=\"hidden\" name=\"action\" value=\"drop\" />\n";
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"trigger\" value=\"", htmlspecialchars($_REQUEST['trigger']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"trigger\" value=\"", htmlspecialchars_nc($_REQUEST['trigger']), "\" />\n";
 			echo $misc->form;
 			echo "<p><input type=\"checkbox\" id=\"cascade\" name=\"cascade\" /> <label for=\"cascade\">{$lang['strcascade']}</label></p>\n";
 			echo "<input type=\"submit\" name=\"yes\" value=\"{$lang['stryes']}\" />\n";
@@ -110,8 +110,8 @@
 
 			echo "<form action=\"triggers.php\" method=\"post\">\n";
 			echo "<input type=\"hidden\" name=\"action\" value=\"enable\" />\n";
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"trigger\" value=\"", htmlspecialchars($_REQUEST['trigger']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"trigger\" value=\"", htmlspecialchars_nc($_REQUEST['trigger']), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"yes\" value=\"{$lang['stryes']}\" />\n";
 			echo "<input type=\"submit\" name=\"no\" value=\"{$lang['strno']}\" />\n";
@@ -143,8 +143,8 @@
 
 			echo "<form action=\"triggers.php\" method=\"post\">\n";
 			echo "<input type=\"hidden\" name=\"action\" value=\"disable\" />\n";
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"trigger\" value=\"", htmlspecialchars($_REQUEST['trigger']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"trigger\" value=\"", htmlspecialchars_nc($_REQUEST['trigger']), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"yes\" value=\"{$lang['stryes']}\" />\n";
 			echo "<input type=\"submit\" name=\"no\" value=\"{$lang['strno']}\" />\n";
@@ -223,7 +223,7 @@
 		echo "<p><input type=\"submit\" value=\"{$lang['strcreate']}\" />\n";
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 		echo "<input type=\"hidden\" name=\"action\" value=\"save_create\" />\n";
-		echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
 		echo $misc->form;
 		echo "</form>\n";
 	}
@@ -306,6 +306,7 @@
 
 		$actions = array(
 			'alter' => array(
+				'icon' => 'images/themes/default/Edit.png',
 				'content' => $lang['stralter'],
 					'attr'=> array (
 						'href' => array (
@@ -319,6 +320,7 @@
 					)
 			),
 			'drop' => array(
+				'icon' => 'images/themes/default/Delete.png',
 				'content' => $lang['strdrop'],
 					'attr'=> array (
 						'href' => array (
@@ -334,6 +336,7 @@
 		);
 		if($data->hasDisableTriggers()) {
 			$actions['enable'] = array(
+				'icon' => 'images/themes/default/Show.png',
 				'content' => $lang['strenable'],
 				'attr'=> array (
 					'href' => array (
@@ -347,6 +350,7 @@
 				)
 			);
 			$actions['disable'] = array(
+				'icon' => 'images/themes/default/Hide.png',
 				'content' => $lang['strdisable'],
 				'attr'=> array (
 					'href' => array (

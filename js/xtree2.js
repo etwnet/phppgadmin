@@ -814,7 +814,7 @@ _p.getLabelHtml = function () {
 	return "<a href=\"" + webFXTreeHandler.textToHtml(link) +
 		"\" class=\"webfx-tree-item-label\" tabindex=\"-1\"" +
 		(toolTip ? " title=\"" + webFXTreeHandler.textToHtml(toolTip) + "\"" : "") +
-		(target ? " target=\"" + target + "\"" : "") +
+		(target ? " target=\"" + webFXTreeHandler._textToHtml(target) + "\"" : "") +
 		" onfocus=\"webFXTreeHandler.handleEvent(event)\"" +
 		" onblur=\"webFXTreeHandler.handleEvent(event)\">" +
 		this.getHtml() + "</a>";
@@ -1178,7 +1178,8 @@ _p._onclick = function (e) {
 	if (typeof doAction == "function") {
 		doAction();
 	} else if (doAction != null) {
-		window.open(doAction, this.target || "_self");
+		//window.open(doAction, this.target || "_self");
+		console.log("skip action", doAction);
 	}
 	return false;
 };
@@ -1530,8 +1531,12 @@ _p.create = function () {
 	return el;
 };
 
-_p.write = function () {
-	document.write(this.toHtml());
+_p.write = function (id='') {
+	if (id) {
+		document.getElementById(id).innerHTML = this.toHtml();
+	} else {
+		document.write(this.toHtml());
+	}
 	this.setTabIndex(this.tabIndex);
 	this.rendered = true;
 };
@@ -1612,10 +1617,10 @@ _p.getIconSrc = function () {
 
 
 
-
-if (window.attachEvent) {
-	window.attachEvent("onunload", function () {
-		for (var id in webFXTreeHandler.all)
+window.addEventListener("unload", function () {
+	for (var id in webFXTreeHandler.all) {
+		if (webFXTreeHandler.all.hasOwnProperty(id)) {
 			webFXTreeHandler.all[id].dispose();
-	});
-}
+		}
+	}
+});

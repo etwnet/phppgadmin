@@ -9,7 +9,7 @@
 	// Include application functions
 	include_once('./libraries/lib.inc.php');
 
-	$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : '';
+	$action = $_REQUEST['action'] ?? '';
 
 	/** 
 	 * Function to save after editing a view
@@ -48,13 +48,13 @@
 			echo "<table style=\"width: 100%\">\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strdefinition']}</th>\n";
 			echo "\t\t<td class=\"data1\"><textarea style=\"width: 100%;\" rows=\"20\" cols=\"50\" name=\"formDefinition\">", 
-				htmlspecialchars($_POST['formDefinition']), "</textarea></td>\n\t</tr>\n";
+				htmlspecialchars_nc($_POST['formDefinition']), "</textarea></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
 			echo "\t\t<td class=\"data1\"><textarea rows=\"3\" cols=\"32\" name=\"formComment\">", 
-				htmlspecialchars($_POST['formComment']), "</textarea></td>\n\t</tr>\n";
+				htmlspecialchars_nc($_POST['formComment']), "</textarea></td>\n\t</tr>\n";
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"save_edit\" />\n";
-			echo "<input type=\"hidden\" name=\"view\" value=\"", htmlspecialchars($_REQUEST['view']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"view\" value=\"", htmlspecialchars_nc($_REQUEST['view']), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" value=\"{$lang['stralter']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -119,7 +119,7 @@
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"export\" />\n";
 		echo $misc->form;
 		echo "<input type=\"hidden\" name=\"subject\" value=\"view\" />\n";
-		echo "<input type=\"hidden\" name=\"view\" value=\"", htmlspecialchars($_REQUEST['view']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"view\" value=\"", htmlspecialchars_nc($_REQUEST['view']), "\" />\n";
 		echo "<input type=\"submit\" value=\"{$lang['strexport']}\" /></p>\n";
 		echo "</form>\n";
 	}
@@ -200,21 +200,21 @@
 				}
 
 				echo "<tr><td><input name=\"field\" size=\"32\" value=\"",
-					htmlspecialchars($_REQUEST['field']), "\" /></td>";
+					htmlspecialchars_nc($_REQUEST['field']), "\" /></td>";
 				
 				echo "<td>", $misc->printVal($data->formatType($column->fields['type'], $column->fields['atttypmod'])), "</td>";
 				echo "<td><input name=\"default\" size=\"20\" value=\"", 
-					htmlspecialchars($_REQUEST['default']), "\" /></td>";
+					htmlspecialchars_nc($_REQUEST['default']), "\" /></td>";
 				echo "<td><input name=\"comment\" size=\"32\" value=\"", 
-					htmlspecialchars($_REQUEST['comment']), "\" /></td>";
+					htmlspecialchars_nc($_REQUEST['comment']), "\" /></td>";
 				
 				echo "</table>\n";
 				echo "<p><input type=\"hidden\" name=\"action\" value=\"properties\" />\n";
 				echo "<input type=\"hidden\" name=\"stage\" value=\"2\" />\n";
 				echo $misc->form;
-				echo "<input type=\"hidden\" name=\"view\" value=\"", htmlspecialchars($_REQUEST['view']), "\" />\n";
-				echo "<input type=\"hidden\" name=\"column\" value=\"", htmlspecialchars($_REQUEST['column']), "\" />\n";
-				echo "<input type=\"hidden\" name=\"olddefault\" value=\"", htmlspecialchars($_REQUEST['olddefault']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"view\" value=\"", htmlspecialchars_nc($_REQUEST['view']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"column\" value=\"", htmlspecialchars_nc($_REQUEST['column']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"olddefault\" value=\"", htmlspecialchars_nc($_REQUEST['olddefault']), "\" />\n";
 				echo "<input type=\"submit\" value=\"{$lang['stralter']}\" />\n";
 				echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 				echo "</form>\n";
@@ -269,7 +269,7 @@
 	            echo "<tr><th class=\"data left required\">{$lang['strname']}</th>\n";
 				echo "<td class=\"data1\">";
 				echo "<input name=\"name\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-					htmlspecialchars($_POST['name']), "\" /></td></tr>\n";
+					htmlspecialchars_nc($_POST['name']), "\" /></td></tr>\n";
 
 				if ($data->isSuperUser()) {
 
@@ -280,8 +280,8 @@
 					echo "<td class=\"data1\"><select name=\"owner\">";
 					while (!$users->EOF) {
 						$uname = $users->fields['usename'];
-						echo "<option value=\"", htmlspecialchars($uname), "\"",
-						($uname == $_POST['owner']) ? ' selected="selected"' : '', ">", htmlspecialchars($uname), "</option>\n";
+						echo "<option value=\"", htmlspecialchars_nc($uname), "\"",
+						($uname == $_POST['owner']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($uname), "</option>\n";
 						$users->moveNext();
 					}
 					echo "</select></td></tr>\n";
@@ -293,8 +293,8 @@
 					echo "<td class=\"data1\"><select name=\"newschema\">";
 					while (!$schemas->EOF) {
 						$schema = $schemas->fields['nspname'];
-						echo "<option value=\"", htmlspecialchars($schema), "\"",
-							($schema == $_POST['newschema']) ? ' selected="selected"' : '', ">", htmlspecialchars($schema), "</option>\n";
+						echo "<option value=\"", htmlspecialchars_nc($schema), "\"",
+							($schema == $_POST['newschema']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($schema), "</option>\n";
 						$schemas->moveNext();
 					}
 					echo "</select></td></tr>\n";
@@ -303,10 +303,10 @@
 				echo "<tr><th class=\"data left\">{$lang['strcomment']}</th>\n";
 				echo "<td class=\"data1\">";
 				echo "<textarea rows=\"3\" cols=\"32\" name=\"comment\">",
-	                htmlspecialchars($_POST['comment']), "</textarea></td></tr>\n";
+	                htmlspecialchars_nc($_POST['comment']), "</textarea></td></tr>\n";
 				echo "</table>\n";
 				echo "<input type=\"hidden\" name=\"action\" value=\"alter\" />\n";
-				echo "<input type=\"hidden\" name=\"view\" value=\"", htmlspecialchars($_REQUEST['view']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"view\" value=\"", htmlspecialchars_nc($_REQUEST['view']), "\" />\n";
 				echo $misc->form;
 				echo "<p><input type=\"submit\" name=\"alter\" value=\"{$lang['stralter']}\" />\n";
 	            echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -315,7 +315,7 @@
 			else echo "<p>{$lang['strnodata']}</p>\n";
 		}
 		else{
-			global $data, $lang, $_reload_browser, $misc;
+			global $data, $lang, $_reload_tree, $misc;
 
 			// For databases that don't allow owner change
 	        if (!isset($_POST['owner'])) $_POST['owner'] = '';
@@ -329,13 +329,13 @@
 					// Jump them to the new view name
 					$_REQUEST['view'] = $_POST['name'];
 	                // Force a browser reload
-					$_reload_browser = true;
+					$_reload_tree = true;
 				}
 				// If schema has changed, need to change to the new schema and reload the browser
 				if (!empty($_POST['newschema']) && ($_POST['newschema'] != $data->_schema)) {
 					// Jump them to the new sequence schema
 					$misc->setCurrentSchema($_POST['newschema']);
-					$_reload_browser = true;
+					$_reload_tree = true;
 				}
 				doDefault($lang['strviewaltered']);
 			}
@@ -434,6 +434,7 @@
 		
 		$actions = array(
 			'alter' => array(
+				'icon' => 'images/themes/default/Edit.png',
 				'content' => $lang['stralter'],
 				'attr'=> array (
 					'href' => array (

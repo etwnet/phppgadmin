@@ -10,7 +10,7 @@
 	include_once('./libraries/lib.inc.php');
 	include_once('./classes/class.select.php');
 
-	$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : '';
+	$action = $_REQUEST['action'] ?? '';
 
 	/**
 	 * Confirm and then actually add a FOREIGN KEY constraint
@@ -117,10 +117,10 @@
 
 					echo "<p><input type=\"hidden\" name=\"action\" value=\"save_add_foreign_key\" />\n";
 					echo $misc->form;
-					echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
-					echo "<input type=\"hidden\" name=\"name\" value=\"", htmlspecialchars($_REQUEST['name']), "\" />\n";
-					echo "<input type=\"hidden\" name=\"target\" value=\"", htmlspecialchars(serialize($_REQUEST['target'])), "\" />\n";
-					echo "<input type=\"hidden\" name=\"SourceColumnList\" value=\"", htmlspecialchars($_REQUEST['SourceColumnList']), "\" />\n";
+					echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+					echo "<input type=\"hidden\" name=\"name\" value=\"", htmlspecialchars_nc($_REQUEST['name']), "\" />\n";
+					echo "<input type=\"hidden\" name=\"target\" value=\"", htmlspecialchars_nc(serialize($_REQUEST['target'])), "\" />\n";
+					echo "<input type=\"hidden\" name=\"SourceColumnList\" value=\"", htmlspecialchars_nc($_REQUEST['SourceColumnList']), "\" />\n";
 					echo "<input type=\"hidden\" name=\"stage\" value=\"3\" />\n";
 					echo "<input type=\"submit\" value=\"{$lang['stradd']}\" />\n";
 					echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -191,11 +191,11 @@
 				while (!$tables->EOF) {
 					$key = array('schemaname' => $tables->fields['nspname'], 'tablename' => $tables->fields['relname']);
 					$key = serialize($key);
-					echo "<option value=\"", htmlspecialchars($key), "\">";
+					echo "<option value=\"", htmlspecialchars_nc($key), "\">";
 					if ($tables->fields['nspname'] != $_REQUEST['schema']) {
-							echo htmlspecialchars($tables->fields['nspname']), '.';
+							echo htmlspecialchars_nc($tables->fields['nspname']), '.';
 					}
-					echo htmlspecialchars($tables->fields['relname']), "</option>\n";
+					echo htmlspecialchars_nc($tables->fields['relname']), "</option>\n";
 					$tables->moveNext();
 				}
 				echo "</select>\n";
@@ -204,7 +204,7 @@
 
 				echo "<p><input type=\"hidden\" name=\"action\" value=\"save_add_foreign_key\" />\n";
 				echo $misc->form;
-				echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
 				echo "<input type=\"hidden\" name=\"stage\" value=\"2\" />\n";
 				echo "<input type=\"submit\" value=\"{$lang['stradd']}\" />\n";
 				echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -275,7 +275,7 @@
 			echo "<table>\n";
 			echo "<tr><th class=\"data\" colspan=\"3\">{$lang['strname']}</th></tr>";
 			echo "<tr>";
-			echo "<td class=\"data1\" colspan=\"3\"><input type=\"text\" name=\"name\" value=\"", htmlspecialchars($_POST['name']),
+			echo "<td class=\"data1\" colspan=\"3\"><input type=\"text\" name=\"name\" value=\"", htmlspecialchars_nc($_POST['name']),
 				"\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" /></td></tr>";
 			echo "<tr><th class=\"data\">{$lang['strtablecolumnlist']}</th><th class=\"data\">&nbsp;</th><th class=\"data required\">{$lang['strindexcolumnlist']}</th></tr>\n";
 			echo "<tr><td class=\"data1\">" . $selColumns->fetch() . "</td>\n";
@@ -291,7 +291,7 @@
 					($_POST['tablespace'] == '') ? ' selected="selected"' : '', "></option>\n";
 				// Display all other tablespaces
 				while (!$tablespaces->EOF) {
-					$spcname = htmlspecialchars($tablespaces->fields['spcname']);
+					$spcname = htmlspecialchars_nc($tablespaces->fields['spcname']);
 					echo "\t\t\t\t<option value=\"{$spcname}\"",
 						($spcname == $_POST['tablespace']) ? ' selected="selected"' : '', ">{$spcname}</option>\n";
 					$tablespaces->moveNext();
@@ -303,8 +303,8 @@
 
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"save_add_primary_key\" />\n";
 			echo $misc->form;
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"type\" value=\"", htmlspecialchars($type), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"type\" value=\"", htmlspecialchars_nc($type), "\" />\n";
 			echo "<input type=\"submit\" value=\"{$lang['stradd']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 			echo "</form>\n";
@@ -362,14 +362,14 @@
 			echo "<th class=\"data required\">{$lang['strdefinition']}</th></tr>\n";
 
 			echo "<tr><td class=\"data1\"><input name=\"name\" size=\"16\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-				htmlspecialchars($_POST['name']), "\" /></td>\n";
+				htmlspecialchars_nc($_POST['name']), "\" /></td>\n";
 
 			echo "<td class=\"data1\">(<input name=\"definition\" size=\"32\" value=\"",
-				htmlspecialchars($_POST['definition']), "\" />)</td></tr>\n";
+				htmlspecialchars_nc($_POST['definition']), "\" />)</td></tr>\n";
 			echo "</table>\n";
 
 			echo "<input type=\"hidden\" name=\"action\" value=\"save_add_check\" />\n";
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
 			echo $misc->form;
 			echo "<p><input type=\"submit\" name=\"ok\" value=\"{$lang['stradd']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -406,9 +406,9 @@
 
 			echo "<form action=\"constraints.php\" method=\"post\">\n";
 			echo "<input type=\"hidden\" name=\"action\" value=\"drop\" />\n";
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"constraint\" value=\"", htmlspecialchars($_REQUEST['constraint']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"type\" value=\"", htmlspecialchars($_REQUEST['type']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"constraint\" value=\"", htmlspecialchars_nc($_REQUEST['constraint']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"type\" value=\"", htmlspecialchars_nc($_REQUEST['type']), "\" />\n";
 			echo $misc->form;
 			echo "<p><input type=\"checkbox\" id=\"cascade\" name=\"cascade\" /> <label for=\"cascade\">{$lang['strcascade']}</label></p>\n";
 			echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";
@@ -467,6 +467,7 @@
 
 		$actions = array(
 			'drop' => array(
+				'icon' => 'images/themes/default/Delete.png',
 				'content' => $lang['strdrop'],
 				'attr'=> array (
 					'href' => array (

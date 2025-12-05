@@ -9,7 +9,7 @@
 	// Include application functions
 	include_once('./libraries/lib.inc.php');
 
-	$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : '';
+	$action = $_REQUEST['action'] ?? '';
 
 	/**
 	 * List all the information on the table
@@ -70,6 +70,7 @@
 
 				$actions = array (
 					'properties' => array (
+						'icon' => 'images/themes/default/Constrains.png',
 						'content' => $lang['strproperties'],
 						'attr'=> array (
 							'href' => array (
@@ -106,6 +107,7 @@
 
 				$actions = array (
 					'properties' => array (
+						'icon' => 'images/themes/default/Constrains.png',
 						'content' => $lang['strproperties'],
 						'attr'=> array (
 							'href' => array (
@@ -142,6 +144,7 @@
 				
 				$actions = array (
 					'properties' => array (
+						'icon' => 'images/themes/default/Constrains.png',
 						'content' => $lang['strproperties'],
 						'attr'=> array (
 							'href' => array (

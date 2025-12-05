@@ -9,7 +9,7 @@
 	// Include application functions
 	include_once('./libraries/lib.inc.php');
 
-	$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : '';
+	$action = $_REQUEST['action'] ?? '';
 	if (!isset($msg)) $msg = '';
 	$scripts = '';
 
@@ -45,7 +45,7 @@
 		$misc->printMsg($msg);
 		
 		echo "<form action=\"database.php\" method=\"post\">\n";
-		echo "<p><input name=\"term\" value=\"", htmlspecialchars($_REQUEST['term']), 
+		echo "<p><input name=\"term\" value=\"", htmlspecialchars_nc($_REQUEST['term']), 
 			"\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" />\n";
 		// Output list of filters.  This is complex due to all the 'has' and 'conf' feature possibilities
 		echo "<select name=\"filter\">\n";
@@ -470,6 +470,7 @@
 		if ($data->hasUserSignals() || $data->isSuperUser()) {
 			$actions = array(
 				'cancel' => array(
+					'icon' => 'images/themes/default/Cancel.png',
 					'content' => $lang['strcancel'],
 					'attr'=> array (
 						'href' => array (
@@ -483,6 +484,7 @@
 					)
 				),
 				'kill' => array(
+					'icon' => 'images/themes/default/Delete.png',
 					'content' => $lang['strkill'],
 					'attr'=> array (
 						'href' => array (
@@ -590,7 +592,7 @@
 		echo "<form action=\"sql.php\" method=\"post\" enctype=\"multipart/form-data\">\n";
 		echo "<p>{$lang['strsql']}<br />\n";
 		echo "<textarea style=\"width:100%;\" rows=\"20\" cols=\"50\" name=\"query\">",
-			htmlspecialchars($_SESSION['sqlquery']), "</textarea></p>\n";
+			htmlspecialchars_nc($_SESSION['sqlquery']), "</textarea></p>\n";
 
 		// Check that file uploads are enabled
 		if (ini_get('file_uploads')) {

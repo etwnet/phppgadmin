@@ -2069,7 +2069,7 @@ if (!defined('_ADODB_LAYER')) {
 		$rs2->sql = $rs->sql;
 		$rs2->dataProvider = $this->dataProvider;
 		$rs2->InitArrayFields($arr,$flds);
-		$rs2->fetchMode = isset($rs->adodbFetchMode) ? $rs->adodbFetchMode : $rs->fetchMode;
+		$rs2->fetchMode = $rs->adodbFetchMode ?? $rs->fetchMode;
 		return $rs2;
 	}
 
@@ -5346,7 +5346,7 @@ class ADORecordSet implements IteratorAggregate {
 		 * @return mixed
 		 */
 		function Fields($colname) {
-			$mode = isset($this->adodbFetchMode) ? $this->adodbFetchMode : $this->fetchMode;
+			$mode = $this->adodbFetchMode ?? $this->fetchMode;
 
 			if ($mode & ADODB_FETCH_ASSOC) {
 				if (!isset($this->fields[$colname]) && !is_null($this->fields[$colname])) {

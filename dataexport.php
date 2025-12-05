@@ -26,7 +26,7 @@
 	if (isset($_REQUEST['what'])) {
 		
 		// Include application functions
-		$_no_output = true;
+		$_no_html_frame = true;
 		include_once('./libraries/lib.inc.php');
 		
 		switch ($_REQUEST['what']) {
@@ -185,8 +185,8 @@
 					echo "\t<header>\n";
 					foreach ($rs->fields as $k => $v) {
 						$finfo = $rs->fetchField($j++);
-						$name = htmlspecialchars($finfo->name);
-						$type = htmlspecialchars($finfo->type);
+						$name = htmlspecialchars_nc($finfo->name);
+						$type = htmlspecialchars_nc($finfo->type);
 						echo "\t\t<column name=\"{$name}\" type=\"{$type}\" />\n";
 					}
 					echo "\t</header>\n";
@@ -197,8 +197,8 @@
 					echo "\t\t<row>\n";
 					foreach ($rs->fields as $k => $v) {
 						$finfo = $rs->fetchField($j++);
-						$name = htmlspecialchars($finfo->name);
-						if (!is_null($v)) $v = htmlspecialchars($v);
+						$name = htmlspecialchars_nc($finfo->name);
+						if (!is_null($v)) $v = htmlspecialchars_nc($v);
 						echo "\t\t\t<column name=\"{$name}\"", (is_null($v) ? ' null="null"' : ''), ">{$v}</column>\n";
 					}
 					echo "\t\t</row>\n";
@@ -303,7 +303,7 @@
 
 		$misc->printHeader($lang['strexport']);
 		$misc->printBody();
-		$misc->printTrail(isset($_REQUEST['subject']) ? $_REQUEST['subject'] : 'database');
+		$misc->printTrail($_REQUEST['subject'] ?? 'database');
 		$misc->printTitle($lang['strexport']);
 		if (isset($msg)) $misc->printMsg($msg);
 
@@ -329,11 +329,11 @@
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"export\" />\n";
 		echo "<input type=\"hidden\" name=\"what\" value=\"dataonly\" />\n";
 		if (isset($_REQUEST['table'])) {
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
 		}
-		echo "<input type=\"hidden\" name=\"query\" value=\"", htmlspecialchars(urlencode($_REQUEST['query'])), "\" />\n";
+		echo "<input type=\"hidden\" name=\"query\" value=\"", htmlspecialchars_nc(urlencode($_REQUEST['query'])), "\" />\n";
 		if (isset($_REQUEST['search_path'])) {
-			echo "<input type=\"hidden\" name=\"search_path\" value=\"", htmlspecialchars($_REQUEST['search_path']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"search_path\" value=\"", htmlspecialchars_nc($_REQUEST['search_path']), "\" />\n";
 		}
 		echo $misc->form;
 		echo "<input type=\"submit\" value=\"{$lang['strexport']}\" /></p>\n";

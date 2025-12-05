@@ -302,7 +302,7 @@ class dbTable extends dbObject {
 				// Add a field
 				$fieldName = $attributes['NAME'];
 				$fieldType = $attributes['TYPE'];
-				$fieldSize = isset( $attributes['SIZE'] ) ? $attributes['SIZE'] : NULL;
+				$fieldSize = $attributes['SIZE'] ?? NULL;
 				$fieldOpts = !empty( $attributes['OPTS'] ) ? $attributes['OPTS'] : NULL;
 
 				$this->addField( $fieldName, $fieldType, $fieldSize, $fieldOpts );

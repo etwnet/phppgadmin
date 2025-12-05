@@ -9,7 +9,7 @@
 	// Include application functions
 	include_once('./libraries/lib.inc.php');
 
-	$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : '';
+	$action = $_REQUEST['action'] ?? '';
 	if (!isset($msg)) $msg = '';
 
 	/**
@@ -42,8 +42,8 @@
 			echo "<form action=\"groups.php\" method=\"post\">\n";
 			echo $misc->form;
 			echo "<input type=\"hidden\" name=\"action\" value=\"drop_member\" />\n";
-			echo "<input type=\"hidden\" name=\"group\" value=\"", htmlspecialchars($_REQUEST['group']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"user\" value=\"", htmlspecialchars($_REQUEST['user']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"group\" value=\"", htmlspecialchars_nc($_REQUEST['group']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"user\" value=\"", htmlspecialchars_nc($_REQUEST['user']), "\" />\n";
 			echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" />\n";
 			echo "</form>\n";
@@ -86,6 +86,7 @@
 
 			$actions = array (
 				'drop' => array (
+					'icon' => 'images/themes/default/Delete.png',
 					'content' => $lang['strdrop'],
 						'attr'=> array (
 							'href' => array (
@@ -115,7 +116,7 @@
 		echo "</select>\n";
 		echo "<input type=\"submit\" value=\"{$lang['straddmember']}\" />\n";
 		echo $misc->form;
-		echo "<input type=\"hidden\" name=\"group\" value=\"", htmlspecialchars($_REQUEST['group']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"group\" value=\"", htmlspecialchars_nc($_REQUEST['group']), "\" />\n";
 		echo "<input type=\"hidden\" name=\"action\" value=\"add_member\" />\n";
 		echo "</form>\n";
 		
@@ -148,7 +149,7 @@
 			echo "<form action=\"groups.php\" method=\"post\">\n";
 			echo $misc->form;
 			echo "<input type=\"hidden\" name=\"action\" value=\"drop\" />\n";
-			echo "<input type=\"hidden\" name=\"group\" value=\"", htmlspecialchars($_REQUEST['group']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"group\" value=\"", htmlspecialchars_nc($_REQUEST['group']), "\" />\n";
 			echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" />\n";
 			echo "</form>\n";
@@ -183,7 +184,7 @@
 		echo $misc->form;
 		echo "<table>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
-		echo "\t\t<td class=\"data\"><input size=\"32\" maxlength=\"{$data->_maxNameLen}\" name=\"name\" value=\"", htmlspecialchars($_POST['name']), "\" /></td>\n\t</tr>\n";
+		echo "\t\t<td class=\"data\"><input size=\"32\" maxlength=\"{$data->_maxNameLen}\" name=\"name\" value=\"", htmlspecialchars_nc($_POST['name']), "\" /></td>\n\t</tr>\n";
 		if ($users->recordCount() > 0) {
 			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strmembers']}</th>\n";
 

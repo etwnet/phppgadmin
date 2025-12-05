@@ -74,7 +74,7 @@ $ADODB_INCLUDED_CSV = 1;
 			$flds[] = $o;
 		}
 
-		$savefetch = isset($rs->adodbFetchMode) ? $rs->adodbFetchMode : $rs->fetchMode;
+		$savefetch = $rs->adodbFetchMode ?? $rs->fetchMode;
 		$class = $rs->connection->arrayClass;
 		/** @var ADORecordSet $rs2 */
 		$rs2 = new $class(ADORecordSet::DUMMY_QUERY_ID);

@@ -10,14 +10,14 @@
 	include_once('./libraries/lib.inc.php');
 	include_once('./classes/Gui.php');
 	
-	$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : '';
+	$action = $_REQUEST['action'] ?? '';
 	if (!isset($msg)) $msg = '';
 
 	/**
 	 * Ask for select parameters and perform select
 	 */
 	function doSelectRows($confirm, $msg = '') {
-		global $data, $misc, $_no_output;  
+		global $data, $misc, $_no_html_frame;  
 		global $lang;
 
 		if ($confirm) {
@@ -60,15 +60,15 @@
 					$id = (($i % 2) == 0 ? '1' : '2');
 					echo "<tr class=\"data{$id}\">\n";
 					echo "<td style=\"white-space:nowrap;\">";
-					echo "<input type=\"checkbox\" name=\"show[", htmlspecialchars($attrs->fields['attname']), "]\"",
+					echo "<input type=\"checkbox\" name=\"show[", htmlspecialchars_nc($attrs->fields['attname']), "]\"",
 						isset($_REQUEST['show'][$attrs->fields['attname']]) ? ' checked="checked"' : '', " /></td>";
 					echo "<td style=\"white-space:nowrap;\">", $misc->printVal($attrs->fields['attname']), "</td>";
 					echo "<td style=\"white-space:nowrap;\">", $misc->printVal($data->formatType($attrs->fields['type'], $attrs->fields['atttypmod'])), "</td>";
 					echo "<td style=\"white-space:nowrap;\">";
 					echo "<select name=\"ops[{$attrs->fields['attname']}]\">\n";
 					foreach (array_keys($data->selectOps) as $v) {
-						echo "<option value=\"", htmlspecialchars($v), "\"", ($v == $_REQUEST['ops'][$attrs->fields['attname']]) ? ' selected="selected"' : '', 
-						">", htmlspecialchars($v), "</option>\n";
+						echo "<option value=\"", htmlspecialchars_nc($v), "\"", ($v == $_REQUEST['ops'][$attrs->fields['attname']]) ? ' selected="selected"' : '', 
+						">", htmlspecialchars_nc($v), "</option>\n";
 					}
 					echo "</select></td>\n";
 					echo "<td style=\"white-space:nowrap;\">", $data->printField("values[{$attrs->fields['attname']}]",
@@ -84,7 +84,7 @@
 			else echo "<p>{$lang['strinvalidparam']}</p>\n";
 
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"selectrows\" />\n";
-			echo "<input type=\"hidden\" name=\"view\" value=\"", htmlspecialchars($_REQUEST['view']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"view\" value=\"", htmlspecialchars_nc($_REQUEST['view']), "\" />\n";
 			echo "<input type=\"hidden\" name=\"subject\" value=\"view\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"select\" accesskey=\"r\" value=\"{$lang['strselect']}\" />\n";
@@ -112,7 +112,7 @@
 				$_POST['values'], $_POST['ops']);
 				$_REQUEST['query'] = $query;
 				$_REQUEST['return'] = "schema";
-				$_no_output = true;
+				$_no_html_frame = true;
 				include('./display.php');
 				exit;
 			}
@@ -125,7 +125,7 @@
 	 */
 	function doDrop($confirm) {
 		global $data, $misc;
-		global $lang, $_reload_browser;
+		global $lang, $_reload_tree;
 
 		if (empty($_REQUEST['view']) && empty($_REQUEST['ma'])) {
 			doDefault($lang['strspecifyviewtodrop']);
@@ -143,12 +143,12 @@
 				foreach($_REQUEST['ma'] as $v) {
 					$a = unserialize(htmlspecialchars_decode($v, ENT_QUOTES));
 					echo "<p>", sprintf($lang['strconfdropview'], $misc->printVal($a['view'])), "</p>\n";
-					echo '<input type="hidden" name="view[]" value="', htmlspecialchars($a['view']), "\" />\n";
+					echo '<input type="hidden" name="view[]" value="', htmlspecialchars_nc($a['view']), "\" />\n";
 				}
 			}
 			else {
 				echo "<p>", sprintf($lang['strconfdropview'], $misc->printVal($_REQUEST['view'])), "</p>\n";
-				echo "<input type=\"hidden\" name=\"view\" value=\"", htmlspecialchars($_REQUEST['view']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"view\" value=\"", htmlspecialchars_nc($_REQUEST['view']), "\" />\n";
 			}
 			
 			echo "<input type=\"hidden\" name=\"action\" value=\"drop\" />\n";
@@ -177,7 +177,7 @@
 				}
 				if($data->endTransaction() == 0) {
 					// Everything went fine, back to the Default page....
-					$_reload_browser = true;
+					$_reload_tree = true;
 					doDefault($msg);
 				}
 				else doDefault($lang['strviewdroppedbad']);
@@ -185,7 +185,7 @@
 			else{
 				$status = $data->dropView($_POST['view'], isset($_POST['cascade']));
 				if ($status == 0) {
-					$_reload_browser = true;
+					$_reload_tree = true;
 					doDefault($lang['strviewdropped']);
 				}
 				else
@@ -254,13 +254,13 @@
 			echo "<tr><th class=\"data\">{$lang['strviewname']}</th></tr>";
 			echo "<tr>\n<td class=\"data1\">\n";
 			// View name
-			echo "<input name=\"formView\" value=\"", htmlspecialchars($_REQUEST['formView']), "\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" />\n";
+			echo "<input name=\"formView\" value=\"", htmlspecialchars_nc($_REQUEST['formView']), "\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" />\n";
 			echo "</td>\n</tr>\n";
 			echo "<tr><th class=\"data\">{$lang['strcomment']}</th></tr>";
 			echo "<tr>\n<td class=\"data1\">\n";
 			// View comments
 			echo "<textarea name=\"formComment\" rows=\"3\" cols=\"32\">", 
-				htmlspecialchars($_REQUEST['formComment']), "</textarea>\n";
+				htmlspecialchars_nc($_REQUEST['formComment']), "</textarea>\n";
 			echo "</td>\n</tr>\n";
 			echo "</table>\n";
 			
@@ -284,8 +284,8 @@
 				echo "<tr>\n<td class=\"$rowClass\">\n";
 				
 				if (!$rsLinkKeys->EOF) {
-					$curLeftLink = htmlspecialchars(serialize(array('schemaname' => $rsLinkKeys->fields['p_schema'], 'tablename' => $rsLinkKeys->fields['p_table'], 'fieldname' => $rsLinkKeys->fields['p_field']) ) );
-					$curRightLink = htmlspecialchars(serialize(array('schemaname' => $rsLinkKeys->fields['f_schema'], 'tablename' => $rsLinkKeys->fields['f_table'], 'fieldname' => $rsLinkKeys->fields['f_field']) ) );
+					$curLeftLink = htmlspecialchars_nc(serialize(array('schemaname' => $rsLinkKeys->fields['p_schema'], 'tablename' => $rsLinkKeys->fields['p_table'], 'fieldname' => $rsLinkKeys->fields['p_field']) ) );
+					$curRightLink = htmlspecialchars_nc(serialize(array('schemaname' => $rsLinkKeys->fields['f_schema'], 'tablename' => $rsLinkKeys->fields['f_table'], 'fieldname' => $rsLinkKeys->fields['f_field']) ) );
 					$rsLinkKeys->moveNext();
 				}
 				else {
@@ -324,7 +324,7 @@
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"save_create_wiz\" />\n";
 			
 			foreach ($arrSelTables as $curTable) {
-				echo "<input type=\"hidden\" name=\"formTables[]\" value=\"" . htmlspecialchars(serialize($curTable) ) . "\" />\n";
+				echo "<input type=\"hidden\" name=\"formTables[]\" value=\"" . htmlspecialchars_nc(serialize($curTable) ) . "\" />\n";
 			}
 			
 			echo $misc->form;
@@ -394,13 +394,13 @@
 		echo "<table style=\"width: 100%\">\n";
 		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
 		echo "\t<td class=\"data1\"><input name=\"formView\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"", 
-			htmlspecialchars($_REQUEST['formView']), "\" /></td>\n\t</tr>\n";
+			htmlspecialchars_nc($_REQUEST['formView']), "\" /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strdefinition']}</th>\n";
 		echo "\t<td class=\"data1\"><textarea style=\"width:100%;\" rows=\"10\" cols=\"50\" name=\"formDefinition\">", 
-			htmlspecialchars($_REQUEST['formDefinition']), "</textarea></td>\n\t</tr>\n";
+			htmlspecialchars_nc($_REQUEST['formDefinition']), "</textarea></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
 		echo "\t\t<td class=\"data1\"><textarea name=\"formComment\" rows=\"3\" cols=\"32\">", 
-			htmlspecialchars($_REQUEST['formComment']), "</textarea></td>\n\t</tr>\n";
+			htmlspecialchars_nc($_REQUEST['formComment']), "</textarea></td>\n\t</tr>\n";
 		echo "</table>\n";
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"save_create\" />\n";
 		echo $misc->form;
@@ -413,7 +413,7 @@
 	 * Actually creates the new view in the database
 	 */
 	function doSaveCreate() {
-		global $data, $lang, $_reload_browser;
+		global $data, $lang, $_reload_tree;
 		
 		// Check that they've given a name and a definition
 		if ($_POST['formView'] == '') doCreate($lang['strviewneedsname']);
@@ -421,7 +421,7 @@
 		else {		 
 			$status = $data->createView($_POST['formView'], $_POST['formDefinition'], false, $_POST['formComment']);
 			if ($status == 0) {
-				$_reload_browser = true;
+				$_reload_tree = true;
 				doDefault($lang['strviewcreated']);
 			}
 			else
@@ -433,7 +433,7 @@
 	 * Actually creates the new wizard view in the database
 	 */
 	function doSaveCreateWiz() {
-		global $data, $lang, $_reload_browser;
+		global $data, $lang, $_reload_tree;
 		
 		// Check that they've given a name and fields they want to select		
 	
@@ -542,7 +542,7 @@
 			
 			$status = $data->createView($_POST['formView'], $viewQuery, false, $_POST['formComment']);
 			if ($status == 0) {
-				$_reload_browser = true;
+				$_reload_tree = true;
 				doDefault($lang['strviewcreated']);
 			}
 			else
@@ -589,6 +589,7 @@
 				'url' => 'views.php',
 			),
 			'browse' => array(
+				'icon' => 'images/themes/default/Table.png',
 				'content' => $lang['strbrowse'],
 				'attr'=> array (
 					'href' => array (
@@ -603,6 +604,7 @@
 				)
 			),
 			'select' => array(
+				'icon' => 'images/themes/default/Search.png',
 				'content' => $lang['strselect'],
 				'attr'=> array (
 					'href' => array (
@@ -623,6 +625,7 @@
 			//			),
 
 			'alter' => array(
+				'icon' => 'images/themes/default/Edit.png',
 				'content' => $lang['stralter'],
 				'attr'=> array (
 					'href' => array (
@@ -636,6 +639,7 @@
 			),
 			'drop' => array(
 				'multiaction' => 'confirm_drop',
+				'icon' => 'images/themes/default/Delete.png',
 				'content' => $lang['strdrop'],
 				'attr'=> array (
 					'href' => array (

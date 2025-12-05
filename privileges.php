@@ -9,7 +9,7 @@
 	// Include application functions
 	include_once('./libraries/lib.inc.php');
 	
-	$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : '';
+	$action = $_REQUEST['action'] ?? '';
 	if (!isset($msg)) $msg = '';
 
 	/**
@@ -49,7 +49,7 @@
 			echo "<tr><th class=\"data left\">{$lang['strusers']}</th>\n";
 			echo "<td class=\"data1\"><select name=\"username[]\" multiple=\"multiple\" size=\"", min(6, $users->recordCount()), "\">\n";
 			while (!$users->EOF) {
-				$uname = htmlspecialchars($users->fields['usename']);
+				$uname = htmlspecialchars_nc($users->fields['usename']);
 				echo "<option value=\"{$uname}\"",
 					in_array($users->fields['usename'], $_REQUEST['username']) ? ' selected="selected"' : '', ">{$uname}</option>\n";
 				$users->moveNext();
@@ -62,7 +62,7 @@
 			if ($groups->recordCount() > 0) {
 				echo "<br /><select name=\"groupname[]\" multiple=\"multiple\" size=\"", min(6, $groups->recordCount()), "\">\n";
 				while (!$groups->EOF) {
-					$gname = htmlspecialchars($groups->fields['groname']);
+					$gname = htmlspecialchars_nc($groups->fields['groname']);
 					echo "<option value=\"{$gname}\"",
 						in_array($groups->fields['groname'], $_REQUEST['groupname']) ? ' selected="selected"' : '', ">{$gname}</option>\n";
 					$groups->moveNext();
@@ -73,7 +73,7 @@
 			echo "<tr><th class=\"data left required\">{$lang['strprivileges']}</th>\n";
 			echo "<td class=\"data1\">\n";
 			foreach ($data->privlist[$_REQUEST['subject']] as $v) {
-				$v = htmlspecialchars($v);
+				$v = htmlspecialchars_nc($v);
 				echo "<input type=\"checkbox\" id=\"privilege[$v]\" name=\"privilege[$v]\"", 
 							isset($_REQUEST['privilege'][$v]) ? ' checked="checked"' : '', " /><label for=\"privilege[$v]\">{$v}</label><br />\n";
 			}
@@ -97,16 +97,16 @@
 			echo "</table>\n";
 
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"save\" />\n";
-			echo "<input type=\"hidden\" name=\"mode\" value=\"", htmlspecialchars($mode), "\" />\n";
-			echo "<input type=\"hidden\" name=\"subject\" value=\"", htmlspecialchars($_REQUEST['subject']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"mode\" value=\"", htmlspecialchars_nc($mode), "\" />\n";
+			echo "<input type=\"hidden\" name=\"subject\" value=\"", htmlspecialchars_nc($_REQUEST['subject']), "\" />\n";
 			if (isset($_REQUEST[$_REQUEST['subject'].'_oid']))
-				echo "<input type=\"hidden\" name=\"", htmlspecialchars($_REQUEST['subject'].'_oid'),
-					"\" value=\"", htmlspecialchars($_REQUEST[$_REQUEST['subject'].'_oid']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"", htmlspecialchars($_REQUEST['subject']),
-				"\" value=\"", htmlspecialchars($_REQUEST[$_REQUEST['subject']]), "\" />\n";
+				echo "<input type=\"hidden\" name=\"", htmlspecialchars_nc($_REQUEST['subject'].'_oid'),
+					"\" value=\"", htmlspecialchars_nc($_REQUEST[$_REQUEST['subject'].'_oid']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"", htmlspecialchars_nc($_REQUEST['subject']),
+				"\" value=\"", htmlspecialchars_nc($_REQUEST[$_REQUEST['subject']]), "\" />\n";
 			if ($_REQUEST['subject'] == 'column')
 				echo "<input type=\"hidden\" name=\"table\" value=\"",
-					htmlspecialchars($_REQUEST['table']), "\" />\n";
+					htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
 			echo $misc->form;
 			if ($mode == 'grant')
 				echo "<input type=\"submit\" name=\"grant\" value=\"{$lang['strgrant']}\" />\n";
@@ -141,6 +141,8 @@
 	 * Show permissions on a database, namespace, relation, language or function
 	 */
 	function doDefault($msg = '') {
+		/** @var Postgres $data */
+		/** @var Misc $misc */
 		global $data, $misc, $database;
 		global $lang;
 
@@ -175,7 +177,8 @@
 		else
 			$privileges = $data->getPrivileges($object, $_REQUEST['subject']);
 
-		if (sizeof($privileges) > 0) {
+		//var_dump($privileges);
+		if (count($privileges) > 0) {
 			echo "<table>\n";
 			if ($data->hasRoles())
 				echo "<tr><th class=\"data\">{$lang['strrole']}</th>";

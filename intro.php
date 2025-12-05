@@ -27,7 +27,7 @@
 		<td>
 			<select name="language" onchange="this.form.submit()">
 			<?php
-			$language = isset($_SESSION['webdbLanguage']) ? $_SESSION['webdbLanguage'] : 'english';
+			$language = $_SESSION['webdbLanguage'] ?? 'english';
 			foreach ($appLangFiles as $k => $v) {
 				echo "\t<option value=\"{$k}\"",
 					($k == $language) ? ' selected="selected"' : '',
@@ -68,4 +68,3 @@
 <?php
 	if (isset($_GET['language'])) $_reload_browser = true;
 	$misc->printFooter();
-?>

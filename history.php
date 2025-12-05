@@ -9,7 +9,7 @@
 	// Include application functions
 	include_once('./libraries/lib.inc.php');
 
-	$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : '';
+	$action = $_REQUEST['action'] ?? '';
 
 	function doDefault() {
 		global $misc, $lang;
@@ -52,6 +52,7 @@
 
 			$actions = array(
 				'run' => array(
+					'icon' => 'images/themes/default/Execute.png',
 					'content' => $lang['strexecute'],
 					'attr'=> array (
 						'href' => array (
@@ -67,6 +68,7 @@
 					)
 				),
 				'remove' => array(
+					'icon' => 'images/themes/default/Delete.png',
 					'content' => $lang['strdelete'],
 					'attr'=> array (
 						'href' => array (

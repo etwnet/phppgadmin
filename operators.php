@@ -9,7 +9,7 @@
 	// Include application functions
 	include_once('./libraries/lib.inc.php');
 	
-	$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : '';
+	$action = $_REQUEST['action'] ?? '';
 	if (!isset($msg)) $msg = '';
 
 	/**
@@ -100,8 +100,8 @@
 			echo "<form action=\"operators.php\" method=\"post\">\n";
 			echo "<p><input type=\"checkbox\" id=\"cascade\" name=\"cascade\" /> <label for=\"cascade\">{$lang['strcascade']}</label></p>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"drop\" />\n";
-			echo "<input type=\"hidden\" name=\"operator\" value=\"", htmlspecialchars($_REQUEST['operator']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"operator_oid\" value=\"", htmlspecialchars($_REQUEST['operator_oid']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"operator\" value=\"", htmlspecialchars_nc($_REQUEST['operator']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"operator_oid\" value=\"", htmlspecialchars_nc($_REQUEST['operator_oid']), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -163,6 +163,7 @@
 				// 'title' => $lang['strdrop'],
 				// 'url'   => "operators.php?action=confirm_drop&amp;{$misc->href}&amp;",
 				// 'vars'  => array('operator' => 'oprname', 'operator_oid' => 'oid'),
+				'icon' => 'images/themes/default/Delete.png',
 				'content' => $lang['strdrop'],
 				'attr'=> array (
 					'href' => array (

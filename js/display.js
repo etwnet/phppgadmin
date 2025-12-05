@@ -10,6 +10,7 @@ $(function() {
 	};
 	
 	$("a.fk").on('click', function (event) {
+		console.log("click", event);
 		/* make the cursor being a waiting cursor */
 		$('body').css('cursor','wait');
 

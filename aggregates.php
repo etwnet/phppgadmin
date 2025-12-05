@@ -9,7 +9,7 @@
 	// Include application functions
 	include_once('./libraries/lib.inc.php');
 	
-	$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : '';
+	$action = $_REQUEST['action'] ?? '';
 	if (!isset($msg)) $msg = '';
 
 	/**
@@ -72,28 +72,28 @@
 		echo "<table>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
 		echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"", 
-			htmlspecialchars($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
+			htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['straggrbasetype']}</th>\n";
 		echo "\t\t<td class=\"data\"><input name=\"basetype\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"", 
-			htmlspecialchars($_REQUEST['basetype']), "\" /></td>\n\t</tr>\n";
+			htmlspecialchars_nc($_REQUEST['basetype']), "\" /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['straggrsfunc']}</th>\n";
 		echo "\t\t<td class=\"data\"><input name=\"sfunc\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"", 
-			htmlspecialchars($_REQUEST['sfunc']), "\" /></td>\n\t</tr>\n";
+			htmlspecialchars_nc($_REQUEST['sfunc']), "\" /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['straggrstype']}</th>\n";
 		echo "\t\t<td class=\"data\"><input name=\"stype\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"", 
-			htmlspecialchars($_REQUEST['stype']), "\" /></td>\n\t</tr>\n";
+			htmlspecialchars_nc($_REQUEST['stype']), "\" /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['straggrffunc']}</th>\n";
 		echo "\t\t<td class=\"data\"><input name=\"ffunc\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"", 
-			htmlspecialchars($_REQUEST['ffunc']), "\" /></td>\n\t</tr>\n";
+			htmlspecialchars_nc($_REQUEST['ffunc']), "\" /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['straggrinitcond']}</th>\n";
 		echo "\t\t<td class=\"data\"><input name=\"initcond\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"", 
-			htmlspecialchars($_REQUEST['initcond']), "\" /></td>\n\t</tr>\n";
+			htmlspecialchars_nc($_REQUEST['initcond']), "\" /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['straggrsortop']}</th>\n";
 		echo "\t\t<td class=\"data\"><input name=\"sortop\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"", 
-			htmlspecialchars($_REQUEST['sortop']), "\" /></td>\n\t</tr>\n";
+			htmlspecialchars_nc($_REQUEST['sortop']), "\" /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
 		echo "\t\t<td><textarea name=\"aggrcomment\" rows=\"3\" cols=\"32\">", 
-			htmlspecialchars($_REQUEST['aggrcomment']), "</textarea></td>\n\t</tr>\n";
+			htmlspecialchars_nc($_REQUEST['aggrcomment']), "</textarea></td>\n\t</tr>\n";
 
 		echo "</table>\n";
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"save_create\" />\n";
@@ -148,20 +148,20 @@
 			echo "<th class=\"data required\">{$lang['strschema']}</th>\n\t</tr>\n";
 
 			// Display aggregate's name, owner and schema
-			echo "\t<tr>\n\t\t<td><input name=\"newaggrname\" size=\"32\" maxlength=\"32\" value=\"", htmlspecialchars($_REQUEST['aggrname']), "\" /></td>";
-			echo "<td><input name=\"newaggrowner\" size=\"32\" maxlength=\"32\" value=\"", htmlspecialchars($aggrdata->fields['usename']), "\" /></td>";
-			echo "<td><input name=\"newaggrschema\" size=\"32\" maxlength=\"32\" value=\"", htmlspecialchars($_REQUEST['schema']), "\" /></td>\n\t</tr>\n";
+			echo "\t<tr>\n\t\t<td><input name=\"newaggrname\" size=\"32\" maxlength=\"32\" value=\"", htmlspecialchars_nc($_REQUEST['aggrname']), "\" /></td>";
+			echo "<td><input name=\"newaggrowner\" size=\"32\" maxlength=\"32\" value=\"", htmlspecialchars_nc($aggrdata->fields['usename']), "\" /></td>";
+			echo "<td><input name=\"newaggrschema\" size=\"32\" maxlength=\"32\" value=\"", htmlspecialchars_nc($_REQUEST['schema']), "\" /></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
 			echo "\t\t<td><textarea name=\"newaggrcomment\" rows=\"3\" cols=\"32\">", 
-				htmlspecialchars($aggrdata->fields['aggrcomment']), "</textarea></td>\n\t</tr>\n";
+				htmlspecialchars_nc($aggrdata->fields['aggrcomment']), "</textarea></td>\n\t</tr>\n";
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"save_alter\" />\n";
 			echo $misc->form;
-			echo "<input type=\"hidden\" name=\"aggrname\" value=\"", htmlspecialchars($_REQUEST['aggrname']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"aggrtype\" value=\"", htmlspecialchars($_REQUEST['aggrtype']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"aggrowner\" value=\"", htmlspecialchars($aggrdata->fields['usename']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"aggrschema\" value=\"", htmlspecialchars($_REQUEST['schema']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"aggrcomment\" value=\"", htmlspecialchars($aggrdata->fields['aggrcomment']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"aggrname\" value=\"", htmlspecialchars_nc($_REQUEST['aggrname']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"aggrtype\" value=\"", htmlspecialchars_nc($_REQUEST['aggrtype']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"aggrowner\" value=\"", htmlspecialchars_nc($aggrdata->fields['usename']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"aggrschema\" value=\"", htmlspecialchars_nc($_REQUEST['schema']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"aggrcomment\" value=\"", htmlspecialchars_nc($aggrdata->fields['aggrcomment']), "\" />\n";
 			echo "<input type=\"submit\" name=\"alter\" value=\"{$lang['stralter']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 		} else {
@@ -182,13 +182,13 @@
 			$misc->printTrail('aggregate');
 			$misc->printTitle($lang['strdrop'], 'pg.aggregate.drop');
 
-			echo "<p>", sprintf($lang['strconfdropaggregate'], htmlspecialchars($_REQUEST['aggrname'])), "</p>\n";
+			echo "<p>", sprintf($lang['strconfdropaggregate'], htmlspecialchars_nc($_REQUEST['aggrname'])), "</p>\n";
 
 			echo "<form action=\"aggregates.php\" method=\"post\">\n";
 			echo "<p><input type=\"checkbox\" id=\"cascade\" name=\"cascade\" /> <label for=\"cascade\">{$lang['strcascade']}</label></p>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"drop\" />\n";
-			echo "<input type=\"hidden\" name=\"aggrname\" value=\"", htmlspecialchars($_REQUEST['aggrname']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"aggrtype\" value=\"", htmlspecialchars($_REQUEST['aggrtype']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"aggrname\" value=\"", htmlspecialchars_nc($_REQUEST['aggrname']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"aggrtype\" value=\"", htmlspecialchars_nc($_REQUEST['aggrtype']), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -222,23 +222,23 @@
 			// Display aggregate's info
 			echo "<table>\n";
 			echo "<tr>\n\t<th class=\"data left\">{$lang['strname']}</th>\n";
-			echo "\t<td class=\"data1\">", htmlspecialchars($_REQUEST['aggrname']), "</td>\n</tr>\n";
+			echo "\t<td class=\"data1\">", htmlspecialchars_nc($_REQUEST['aggrname']), "</td>\n</tr>\n";
 			echo "<tr>\n\t<th class=\"data left\">{$lang['straggrbasetype']}</th>\n";
-			echo "\t<td class=\"data1\">", htmlspecialchars($_REQUEST['aggrtype']), "</td>\n</tr>\n";
+			echo "\t<td class=\"data1\">", htmlspecialchars_nc($_REQUEST['aggrtype']), "</td>\n</tr>\n";
 			echo "<tr>\n\t<th class=\"data left\">{$lang['straggrsfunc']}</th>\n";
-			echo "\t<td class=\"data1\">", htmlspecialchars($aggrdata->fields['aggtransfn']), "</td>\n</tr>\n";
+			echo "\t<td class=\"data1\">", htmlspecialchars_nc($aggrdata->fields['aggtransfn']), "</td>\n</tr>\n";
 			echo "<tr>\n\t<th class=\"data left\">{$lang['straggrstype']}</th>\n";
-			echo "\t<td class=\"data1\">", htmlspecialchars($aggrdata->fields['aggstype']), "</td>\n</tr>\n";
+			echo "\t<td class=\"data1\">", htmlspecialchars_nc($aggrdata->fields['aggstype']), "</td>\n</tr>\n";
 			echo "<tr>\n\t<th class=\"data left\">{$lang['straggrffunc']}</th>\n";
-			echo "\t<td class=\"data1\">", htmlspecialchars($aggrdata->fields['aggfinalfn']), "</td>\n</tr>\n";
+			echo "\t<td class=\"data1\">", htmlspecialchars_nc($aggrdata->fields['aggfinalfn']), "</td>\n</tr>\n";
 			echo "<tr>\n\t<th class=\"data left\">{$lang['straggrinitcond']}</th>\n";
-			echo "\t<td class=\"data1\">", htmlspecialchars($aggrdata->fields['agginitval']), "</td>\n</tr>\n";
+			echo "\t<td class=\"data1\">", htmlspecialchars_nc($aggrdata->fields['agginitval']), "</td>\n</tr>\n";
 			if($data->hasAggregateSortOp()) {
 				echo "<tr>\n\t<th class=\"data left\">{$lang['straggrsortop']}</th>\n";
-				echo "\t<td class=\"data1\">", htmlspecialchars($aggrdata->fields['aggsortop']), "</td>\n</tr>\n";
+				echo "\t<td class=\"data1\">", htmlspecialchars_nc($aggrdata->fields['aggsortop']), "</td>\n</tr>\n";
 			}
 			echo "<tr>\n\t<th class=\"data left\">{$lang['strowner']}</th>\n";
-			echo "\t<td class=\"data1\">", htmlspecialchars($aggrdata->fields['usename']), "</td>\n</tr>\n";
+			echo "\t<td class=\"data1\">", htmlspecialchars_nc($aggrdata->fields['usename']), "</td>\n</tr>\n";
 			echo "<tr>\n\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
 			echo "\t<td class=\"data1\">", $misc->printVal($aggrdata->fields['aggrcomment']), "</td>\n</tr>\n";
 			echo "</table>\n";
@@ -344,6 +344,7 @@
 		
 		$actions = array(
 			'alter' => array(
+				'icon' => 'images/themes/default/Edit.png',
 				'content' => $lang['stralter'],
 				'attr'=> array (
 					'href' => array (
@@ -357,6 +358,7 @@
 				)
 			),
 			'drop' => array(
+				'icon' => 'images/themes/default/Delete.png',
 				'content' => $lang['strdrop'],
 				'attr'=> array (
 					'href' => array (

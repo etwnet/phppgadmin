@@ -2,6 +2,43 @@
  * This is the mandatory CSS file to include on top of every CSS theme file 
  **/
 
+body {
+}
+
+#frameset {
+	display: flex;
+	flex-direction: row;
+	height: 100vh;
+	margin: 0;
+}
+
+html[dir="rtl"] #frameset {
+	flex-direction: row-reverse;
+}
+
+#tree {
+	width: 250px;
+	min-width: 0px;
+	max-width: 600px;
+	overflow: auto;
+}
+
+#resizer {
+	width: 5px;
+	cursor: col-resize;
+	background: #c4c4c4 linear-gradient(90deg,#fff 20%,#c4c4c4 50%,#fff 80%);
+}
+
+#content {
+	flex: 1;
+	background: #fff;
+	overflow: auto;
+}
+
+.no-select {
+	user-select: none;
+}
+
 img {
 	border: none;
 }
@@ -25,14 +62,6 @@ p.comment {
 .arg_icon {
 	padding-right: 5pt;
 	padding-left: 5pt;
-}
-
-/** Browser Tree using XLoadTree 2 **/
-body.browser {
-	height: 100%;
-	margin: 0px;
-	padding: 0px;
-	text-align: left;
 }
 
 .refreshTree {
@@ -121,11 +150,13 @@ body.browser {
 	bottom: 0;
 	right: 0;
 	margin: 0;
-	padding: 4px;
-	background: #eee;
-	border-top: 1px dotted #999;
-	border-left: 1px dotted #999;
-	font-size: smaller;
+	padding: 3px;
+	text-decoration: none !important;
+	opacity: .5;
+}
+
+.bottom_link:hover {
+	opacity: 1;
 }
 
 /** FK browsing **/
@@ -164,4 +195,35 @@ div.fk_value {
 
 .literal {
 	color: #808080
+}
+
+img.icon, .icon img {
+	width: 16px;
+}
+
+td[class^="opbutton"] img.icon {
+	width: 12px;
+	padding-bottom: 2px;
+}
+
+.pagenav-container {
+	margin-top: 1em;
+	margin-bottom: 1em;
+}
+
+.pagenav-container >* {
+	display: inline-block;
+}
+
+.pagenav {
+	text-decoration: none !important;
+}
+
+.pagenav.current {
+	color: #000;
+}
+
+.disabled {
+	opacity: .5;
+	pointer-events: none;
 }

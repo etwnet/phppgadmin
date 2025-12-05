@@ -22,7 +22,7 @@
 				foreach($_REQUEST['ma'] as $v) {
 					$a = unserialize(htmlspecialchars_decode($v, ENT_QUOTES));
 					echo "<p>", sprintf($lang['strconfclustertable'], $misc->printVal($a['table'])), "</p>\n";
-					echo "<input type=\"hidden\" name=\"table[]\" value=\"", htmlspecialchars($a['table']), "\" />\n";
+					echo "<input type=\"hidden\" name=\"table[]\" value=\"", htmlspecialchars_nc($a['table']), "\" />\n";
 				}
 			} // END if multi cluster
 			else {
@@ -33,7 +33,7 @@
 				
 				if ($type == 'table') {
 					echo "<p>", sprintf($lang['strconfclustertable'], $misc->printVal($_REQUEST['object'])), "</p>\n";
-					echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['object']), "\" />\n";
+					echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['object']), "\" />\n";
 				}
 				else {
 					echo "<p>", sprintf($lang['strconfclusterdatabase'], $misc->printVal($_REQUEST['object'])), "</p>\n";
@@ -105,7 +105,7 @@
 				foreach($_REQUEST['ma'] as $v) {
 					$a = unserialize(htmlspecialchars_decode($v, ENT_QUOTES));
 					echo "<p>", sprintf($lang['strconfreindextable'], $misc->printVal($a['table'])), "</p>\n";
-					echo "<input type=\"hidden\" name=\"table[]\" value=\"", htmlspecialchars($a['table']), "\" />\n";
+					echo "<input type=\"hidden\" name=\"table[]\" value=\"", htmlspecialchars_nc($a['table']), "\" />\n";
 				}
 			} // END if multi reindex
 			else {
@@ -116,7 +116,7 @@
 				
 				if ($type == 'table') {
 					echo "<p>", sprintf($lang['strconfreindextable'], $misc->printVal($_REQUEST['object'])), "</p>\n";
-					echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['object']), "\" />\n";
+					echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['object']), "\" />\n";
 				}
 				else {
 					echo "<p>", sprintf($lang['strconfreindexdatabase'], $misc->printVal($_REQUEST['object'])), "</p>\n";
@@ -183,7 +183,7 @@
 				foreach($_REQUEST['ma'] as $v) {
 					$a = unserialize(htmlspecialchars_decode($v, ENT_QUOTES));
 					echo "<p>", sprintf($lang['strconfanalyzetable'], $misc->printVal($a['table'])), "</p>\n";
-					echo "<input type=\"hidden\" name=\"table[]\" value=\"", htmlspecialchars($a['table']), "\" />\n";
+					echo "<input type=\"hidden\" name=\"table[]\" value=\"", htmlspecialchars_nc($a['table']), "\" />\n";
 				}
 			} // END if multi analyze
 			else {
@@ -194,7 +194,7 @@
 				
 				if ($type == 'table') {
 					echo "<p>", sprintf($lang['strconfanalyzetable'], $misc->printVal($_REQUEST['object'])), "</p>\n";
-					echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['object']), "\" />\n";
+					echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['object']), "\" />\n";
 				}
 				else {
 					echo "<p>", sprintf($lang['strconfanalyzedatabase'], $misc->printVal($_REQUEST['object'])), "</p>\n";
@@ -258,7 +258,7 @@
 				foreach($_REQUEST['ma'] as $v) {
 					$a = unserialize(htmlspecialchars_decode($v, ENT_QUOTES));
 					echo "<p>", sprintf($lang['strconfvacuumtable'], $misc->printVal($a['table'])), "</p>\n";
-					echo "<input type=\"hidden\" name=\"table[]\" value=\"", htmlspecialchars($a['table']), "\" />\n";
+					echo "<input type=\"hidden\" name=\"table[]\" value=\"", htmlspecialchars_nc($a['table']), "\" />\n";
 				}
 			} // END if multi vacuum
 			else {
@@ -269,7 +269,7 @@
 				
 				if ($type == 'table') {
 					echo "<p>", sprintf($lang['strconfvacuumtable'], $misc->printVal($_REQUEST['object'])), "</p>\n";
-					echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['object']), "\" />\n";
+					echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['object']), "\" />\n";
 				}
 				else {
 					echo "<p>", sprintf($lang['strconfvacuumdatabase'], $misc->printVal($_REQUEST['object'])), "</p>\n";
@@ -361,7 +361,7 @@
 			echo "<form action=\"{$script}\" method=\"post\">\n";
 			echo $misc->form;
 			echo "<input type=\"hidden\" name=\"action\" value=\"editautovac\" />\n";
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
 
 			echo "<br />\n<br />\n<table>\n";
 			echo "\t<tr><td>&nbsp;</td>\n";
@@ -432,14 +432,14 @@
 			echo "<form style=\"float: left\" action=\"{$script}\" method=\"post\">\n";
 			echo "<input type=\"hidden\" name=\"action\" value=\"delautovac\" />\n";
 			echo $misc->form;
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"rel\" value=\"", htmlspecialchars(serialize(array($_REQUEST['schema'], $_REQUEST['table']))), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"rel\" value=\"", htmlspecialchars_nc(serialize(array($_REQUEST['schema'], $_REQUEST['table']))), "\" />\n";
 			echo "<input type=\"submit\" name=\"yes\" value=\"{$lang['stryes']}\" />\n";
 			echo "</form>\n";
 			
 			echo "<form action=\"{$script}\" method=\"post\">\n";
 			echo "<input type=\"hidden\" name=\"action\" value=\"admin\" />\n";
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"no\" value=\"{$lang['strno']}\" />\n";
 			echo "</form>\n";
@@ -500,10 +500,10 @@
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"confirm_vacuum\" />\n";
 		echo $misc->form;
 		if ($type == 'table') {
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['object']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['object']), "\" />\n";
 			echo "<input type=\"hidden\" name=\"subject\" value=\"table\" />\n";
 		}
-		echo "<input type=\"submit\" value=\"{$lang['strvacuum']}\" /></p>\n";
+		echo "<button type=\"submit\"><img class='icon' src='images/themes/default/Broom.png'> {$lang['strvacuum']}</button></p>\n";
 		echo "</form>\n";								
 		echo "</td>\n";
 
@@ -513,10 +513,10 @@
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"confirm_analyze\" />\n";
 		echo $misc->form;
 		if ($type == 'table') {
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['object']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['object']), "\" />\n";
 			echo "<input type=\"hidden\" name=\"subject\" value=\"table\" />\n";
 		}
-		echo "<input type=\"submit\" value=\"{$lang['stranalyze']}\" /></p>\n";
+		echo "<button type=\"submit\"><img class='icon' src='images/themes/default/Analyze.png'> {$lang['stranalyze']}</button></p>\n";
 		echo "</form>\n";
 		echo "</td>\n";
 		
@@ -527,7 +527,7 @@
 			echo "<form action=\"{$script}\" method=\"post\">\n";
 			echo $misc->form;
 			if ($type == 'table') {
-				echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['object']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['object']), "\" />\n";
 				echo "<input type=\"hidden\" name=\"subject\" value=\"table\" />\n";
 				if (!$data->alreadyClustered($_REQUEST['object'])) {
 					$disabled = 'disabled="disabled" ';
@@ -535,7 +535,7 @@
 				}
 			}
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"confirm_cluster\" />\n";
-			echo "<input type=\"submit\" value=\"{$lang['strclusterindex']}\" $disabled/></p>\n";
+			echo "<button type=\"submit\" $disabled><img class='icon' src='images/themes/default/Cluster.png'> {$lang['strclusterindex']}</button></p>\n";
 			echo "</form>\n";
 			echo "</td>\n";
 		}
@@ -546,10 +546,10 @@
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"confirm_reindex\" />\n";
 		echo $misc->form;
 		if ($type == 'table') {
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['object']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['object']), "\" />\n";
 			echo "<input type=\"hidden\" name=\"subject\" value=\"table\" />\n";
 		}
-		echo "<input type=\"submit\" value=\"{$lang['strreindex']}\" /></p>\n";
+		echo "<button type=\"submit\"><img class='icon' src='images/themes/default/Index.png'> {$lang['strreindex']}</button></p>\n";
 		echo "</form>\n";
 		echo "</td>\n";
 		echo "</tr>\n";
@@ -569,8 +569,8 @@
 			
 			function enlight($f, $p) {
 				if ( isset($f[$p[0]]) and ($f[$p[0]] != $p[1]))
-					return "<span style=\"color:#F33;font-weight:bold\">". htmlspecialchars($f[$p[0]]) ."</span>";
-				return htmlspecialchars($p[1]);
+					return "<span style=\"color:#F33;font-weight:bold\">". htmlspecialchars_nc($f[$p[0]]) ."</span>";
+				return htmlspecialchars_nc($p[1]);
 			}
 			
 			$columns = array(
@@ -628,6 +628,7 @@
 
 			$actions = array(
 				'edit' => array(
+					'icon' => 'images/themes/default/Edit.png',
 					'content' => $lang['stredit'],
 					'attr'=> array (
 						'href' => array (
@@ -642,6 +643,7 @@
 					)
 				),
 				'delete' => array(
+					'icon' => 'images/themes/default/Delete.png',
 					'content' => $lang['strdelete'],
 					'attr'=> array (
 						'href' => array (
@@ -669,7 +671,7 @@
 			
 			if (($type == 'table') and ($autovac->recordCount() == 0)) {
 				echo "<br />";
-				echo "<a href=\"tables.php?action=confeditautovac&amp;{$misc->href}&amp;table=", htmlspecialchars($_REQUEST['table'])
+				echo "<a href=\"tables.php?action=confeditautovac&amp;{$misc->href}&amp;table=", htmlspecialchars_nc($_REQUEST['table'])
 					,"\">{$lang['straddvacuumtable']}</a>";
 			}
 		}
@@ -684,7 +686,7 @@
 		}
 		else {
 			// $_REQUEST['table'] is no set if we are in the schema page
-			$_REQUEST['object'] = (isset($_REQUEST['table']) ? $_REQUEST['table']:'');
+			$_REQUEST['object'] = ($_REQUEST['table'] ?? '');
 			$script = 'tables.php';
 		}
 

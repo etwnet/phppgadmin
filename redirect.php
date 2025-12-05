@@ -1,5 +1,5 @@
 <?php
-	$subject = isset($_REQUEST['subject']) ? $_REQUEST['subject'] : 'root'; 
+	$subject = $_REQUEST['subject'] ?? 'root';
 	
 	if ($subject == 'root')
 		$_no_db_connection = true;
@@ -24,6 +24,8 @@
 		$_REQUEST = array_merge($_REQUEST, $urlvars);
 		$_GET = array_merge($_GET, $urlvars);
 	}
-	
+
+	//var_dump($url['url']);
+	//exit;
 	require $url['url'];
 

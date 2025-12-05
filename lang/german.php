@@ -39,7 +39,7 @@
 	$lang['strname'] = 'Name';
 	$lang['strdefinition'] = 'Definition';
 	$lang['strproperties'] = 'Eigenschaften';
-	$lang['strbrowse'] = 'Durchsuchen';
+	$lang['strbrowse'] = 'Anzeigen';
 	$lang['strenable'] = 'Einschalten';
 	$lang['strdisable'] = 'Ausschalten';
 	$lang['strdrop'] = 'Löschen';
@@ -63,7 +63,7 @@
 	$lang['strsave'] = 'Speichern';
 	$lang['strreset'] = 'Zurücksetzen';
 	$lang['strinsert'] = 'Einfügen';
-	$lang['strselect'] = 'Abfrage';
+	$lang['strselect'] = 'Suche';
 	$lang['strdelete'] = 'Löschen';
 	$lang['strupdate'] = 'Ändern';
 	$lang['strreferences'] = 'Verweise';
@@ -240,7 +240,7 @@
 	$lang['strauto'] = 'Automatisch';
 	$lang['strconfvacuumtable'] = 'Sind sie sicher, dass Sie VACUUM auf "%s" ausführen wollen?';
 	$lang['strconfanalyzetable'] = 'Sind sie sicher, dass Sie ANALYZE auf "%s" ausführen wollen?';
-	$lang['strestimatedrowcount'] = 'Geschätzte Anzahl von Datensätzen';
+	$lang['strestimatedrowcount'] = 'Datensätze';
 	$lang['strspecifytabletoanalyze'] = 'Sie müssen mindestens eine Tabelle angeben, die analysiert werden soll.';
 	$lang['strspecifytabletoempty'] = 'Sie müssen mindestens eine Tabelle angeben, deren Inhalt gelöscht werden soll.';
 	$lang['strspecifytabletodrop'] = 'Sie müssen mindestens eine Tabelle angeben, die gelöscht werden soll.';

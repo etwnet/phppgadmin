@@ -9,7 +9,7 @@
 	// Include application functions
 	include_once('./libraries/lib.inc.php');
 
-	$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : '';
+	$action = $_REQUEST['action'] ?? '';
 	if (!isset($msg)) $msg = '';
 
 	function doDefault($msg = '') {
@@ -45,6 +45,7 @@
 
 		$actions = array(
 			'drop' => array(
+				'icon' => 'images/themes/default/Delete.png',
 				'content' => $lang['strdrop'],
 				'attr'=> array (
 					'href' => array (
@@ -57,6 +58,7 @@
 				)
 			),
 			'alter' => array(
+				'icon' => 'images/themes/default/Edit.png',
 				'content' => $lang['stralter'],
 				'attr'=> array (
 					'href' => array (
@@ -105,8 +107,8 @@
 			echo "<form action=\"fulltext.php\" method=\"post\">\n";
 			echo "<p><input type=\"checkbox\" id=\"cascade\" name=\"cascade\" /> <label for=\"cascade\">{$lang['strcascade']}</label></p>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"dropconfig\" />\n";
-			echo "<input type=\"hidden\" name=\"database\" value=\"", htmlspecialchars($_REQUEST['database']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"ftscfg\" value=\"", htmlspecialchars($_REQUEST['ftscfg']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"database\" value=\"", htmlspecialchars_nc($_REQUEST['database']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"ftscfg\" value=\"", htmlspecialchars_nc($_REQUEST['ftscfg']), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -137,9 +139,9 @@
 			echo "<form action=\"fulltext.php\" method=\"post\">\n";
 			echo "<p><input type=\"checkbox\" id=\"cascade\" name=\"cascade\" /> <label for=\"cascade\">{$lang['strcascade']}</label></p>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"dropdict\" />\n";
-			echo "<input type=\"hidden\" name=\"database\" value=\"", htmlspecialchars($_REQUEST['database']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"ftsdict\" value=\"", htmlspecialchars($_REQUEST['ftsdict']), "\" />\n";
-			//echo "<input type=\"hidden\" name=\"ftscfg\" value=\"", htmlspecialchars($_REQUEST['ftscfg']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"database\" value=\"", htmlspecialchars_nc($_REQUEST['database']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"ftsdict\" value=\"", htmlspecialchars_nc($_REQUEST['ftsdict']), "\" />\n";
+			//echo "<input type=\"hidden\" name=\"ftscfg\" value=\"", htmlspecialchars_nc($_REQUEST['ftscfg']), "\" />\n";
 			echo "<input type=\"hidden\" name=\"prev_action\" value=\"viewdicts\" /></p>\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";
@@ -189,7 +191,7 @@
 		/* conf name */
 		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
 		echo "\t\t<td class=\"data1\"><input name=\"formName\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-			htmlspecialchars($_POST['formName']), "\" /></td>\n\t</tr>\n";
+			htmlspecialchars_nc($_POST['formName']), "\" /></td>\n\t</tr>\n";
 
 		// Template
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strftstemplate']}</th>\n";
@@ -206,7 +208,7 @@
 				'schema' => $ftscfgs->fields['schema']
 			));
 			if ($_POST['formTemplate'] == $tpls[$tplname]) {
-				$tplsel = htmlspecialchars($tpls[$tplname]);
+				$tplsel = htmlspecialchars_nc($tpls[$tplname]);
 			}
 			$ftscfgs->moveNext();
 		}
@@ -228,7 +230,7 @@
 				'schema' => $ftsparsers->fields['schema']
 			));
 			if ($_POST['formParser'] == $ftsparsers_[$parsername]) {
-				$ftsparsel = htmlspecialchars($ftsparsers_[$parsername]);
+				$ftsparsel = htmlspecialchars_nc($ftsparsers_[$parsername]);
 			}
 			$ftsparsers->moveNext();
 		}
@@ -238,12 +240,12 @@
 		// Comment
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
 		echo "\t\t<td class=\"data1\"><textarea name=\"formComment\" rows=\"3\" cols=\"32\">",
-			htmlspecialchars($_POST['formComment']), "</textarea></td>\n\t</tr>\n";
+			htmlspecialchars_nc($_POST['formComment']), "</textarea></td>\n\t</tr>\n";
 
 		echo "</table>\n";
 		echo "<p>\n";
 		echo "<input type=\"hidden\" name=\"action\" value=\"createconfig\" />\n";
-		echo "<input type=\"hidden\" name=\"database\" value=\"", htmlspecialchars($_REQUEST['database']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"database\" value=\"", htmlspecialchars_nc($_REQUEST['database']), "\" />\n";
 		echo $misc->form;
 		echo "<input type=\"submit\" name=\"create\" value=\"{$lang['strcreate']}\" />\n";
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" />\n";
@@ -305,18 +307,18 @@
 			echo "\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
 			echo "\t\t<td class=\"data1\">";
 			echo "\t\t\t<input name=\"formName\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-				htmlspecialchars($_POST['formName']), "\" />\n";
+				htmlspecialchars_nc($_POST['formName']), "\" />\n";
 			echo "\t\t</td>\n";
 			echo "\t</tr>\n";
 
 			// Comment
 			echo "\t<tr>\n";
 			echo "\t\t<th class=\"data\">{$lang['strcomment']}</th>\n";
-			echo "\t\t<td class=\"data1\"><textarea cols=\"32\" rows=\"3\"name=\"formComment\">", htmlspecialchars($_POST['formComment']), "</textarea></td>\n";
+			echo "\t\t<td class=\"data1\"><textarea cols=\"32\" rows=\"3\"name=\"formComment\">", htmlspecialchars_nc($_POST['formComment']), "</textarea></td>\n";
 			echo "\t</tr>\n";
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"alterconfig\" />\n";
-			echo "<input type=\"hidden\" name=\"ftscfg\" value=\"", htmlspecialchars($_POST['ftscfg']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"ftscfg\" value=\"", htmlspecialchars_nc($_POST['ftscfg']), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"alter\" value=\"{$lang['stralter']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -410,6 +412,7 @@
 
 		$actions = array(
 			'drop' => array(
+				'icon' => 'images/themes/default/Delete.png',
 				'content' => $lang['strdrop'],
 				'attr'=> array (
 					'href' => array (
@@ -422,6 +425,7 @@
 				)
 			),
 			'alter' => array(
+				'icon' => 'images/themes/default/Edit.png',
 				'content' => $lang['stralter'],
 				'attr'=> array (
 					'href' => array (
@@ -495,6 +499,7 @@
 		$actions = array(
 			'drop' => array(
 				'multiaction' => 'dropmapping',
+				'icon' => 'images/themes/default/Delete.png',
 				'content' => $lang['strdrop'],
 				'attr'=> array (
 					'href' => array (
@@ -508,6 +513,7 @@
 				)
 			),
 			'alter' => array(
+				'icon' => 'images/themes/default/Edit.png',
 				'content' => $lang['stralter'],
 				'attr'=> array (
 					'href' => array (
@@ -583,7 +589,7 @@
 		echo "<table>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
 		echo "\t\t<td class=\"data1\"><input name=\"formName\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-			htmlspecialchars($_POST['formName']), "\" />&nbsp;",
+			htmlspecialchars_nc($_POST['formName']), "\" />&nbsp;",
 			"<input type=\"checkbox\" name=\"formIsTemplate\" id=\"formIsTemplate\"", $_POST['formIsTemplate'] ? ' checked="checked" ' : '', " />\n",
 			"<label for=\"formIsTemplate\">{$lang['strftscreatedicttemplate']}</label></td>\n\t</tr>\n";
 
@@ -601,7 +607,7 @@
 				'schema' => $ftstpls->fields['schema']
 			));
 			if ($_POST['formTemplate'] == $tpls[$tplname]) {
-				$tplsel = htmlspecialchars($tpls[$tplname]);
+				$tplsel = htmlspecialchars_nc($tpls[$tplname]);
 			}
 			$ftstpls->moveNext();
 		}
@@ -612,29 +618,29 @@
 		// Lexize
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strftslexize']}</th>\n";
 		echo "\t\t<td class=\"data1\"><input name=\"formLexize\" size=\"32\" maxlength=\"1000\" value=\"",
-			htmlspecialchars($_POST['formLexize']), "\" ", isset($_POST['formIsTemplate']) ? '' : ' disabled="disabled" ',
+			htmlspecialchars_nc($_POST['formLexize']), "\" ", isset($_POST['formIsTemplate']) ? '' : ' disabled="disabled" ',
 			"/></td>\n\t</tr>\n";
 
 		// Init
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strftsinit']}</th>\n";
 		echo "\t\t<td class=\"data1\"><input name=\"formInit\" size=\"32\" maxlength=\"1000\" value=\"",
-			htmlspecialchars($_POST['formInit']), "\"", @$_POST['formIsTemplate'] ? '' : ' disabled="disabled" ',
+			htmlspecialchars_nc($_POST['formInit']), "\"", @$_POST['formIsTemplate'] ? '' : ' disabled="disabled" ',
 			"/></td>\n\t</tr>\n";
 
 		// Option
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strftsoptionsvalues']}</th>\n";
 		echo "\t\t<td class=\"data1\"><input name=\"formOption\" size=\"32\" maxlength=\"1000\" value=\"",
-			htmlspecialchars($_POST['formOption']), "\" /></td>\n\t</tr>\n";
+			htmlspecialchars_nc($_POST['formOption']), "\" /></td>\n\t</tr>\n";
 
 		// Comment
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
 		echo "\t\t<td class=\"data1\"><textarea name=\"formComment\" rows=\"3\" cols=\"32\">",
-			htmlspecialchars($_POST['formComment']), "</textarea></td>\n\t</tr>\n";
+			htmlspecialchars_nc($_POST['formComment']), "</textarea></td>\n\t</tr>\n";
 
 		echo "</table>\n";
 		echo "<p>\n";
 		echo "<input type=\"hidden\" name=\"action\" value=\"createdict\" />\n";
-		echo "<input type=\"hidden\" name=\"database\" value=\"", htmlspecialchars($_REQUEST['database']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"database\" value=\"", htmlspecialchars_nc($_REQUEST['database']), "\" />\n";
 		echo $misc->form;
 		echo "<input type=\"submit\" name=\"create\" value=\"{$lang['strcreate']}\" />\n";
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" />\n";
@@ -711,18 +717,18 @@
 			echo "\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
 			echo "\t\t<td class=\"data1\">";
 			echo "\t\t\t<input name=\"formName\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-				htmlspecialchars($_POST['formName']), "\" />\n";
+				htmlspecialchars_nc($_POST['formName']), "\" />\n";
 			echo "\t\t</td>\n";
 			echo "\t</tr>\n";
 
 			// Comment
 			echo "\t<tr>\n";
 			echo "\t\t<th class=\"data\">{$lang['strcomment']}</th>\n";
-			echo "\t\t<td class=\"data1\"><textarea cols=\"32\" rows=\"3\"name=\"formComment\">", htmlspecialchars($_POST['formComment']), "</textarea></td>\n";
+			echo "\t\t<td class=\"data1\"><textarea cols=\"32\" rows=\"3\"name=\"formComment\">", htmlspecialchars_nc($_POST['formComment']), "</textarea></td>\n";
 			echo "\t</tr>\n";
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"alterdict\" />\n";
-			echo "<input type=\"hidden\" name=\"ftsdict\" value=\"", htmlspecialchars($_POST['ftsdict']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"ftsdict\" value=\"", htmlspecialchars_nc($_POST['ftsdict']), "\" />\n";
 			echo "<input type=\"hidden\" name=\"prev_action\" value=\"viewdicts\" /></p>\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"alter\" value=\"{$lang['stralter']}\" />\n";
@@ -775,12 +781,12 @@
 				foreach($_REQUEST['ma'] as $v) {
 					$a = unserialize(htmlspecialchars_decode($v, ENT_QUOTES));
 					echo "<p>", sprintf($lang['strconfdropftsmapping'], $misc->printVal($a['mapping']), $misc->printVal($_REQUEST['ftscfg'])), "</p>\n";
-					printf('<input type="hidden" name="mapping[]" value="%s" />', htmlspecialchars($a['mapping']));
+					printf('<input type="hidden" name="mapping[]" value="%s" />', htmlspecialchars_nc($a['mapping']));
 				}
 
 			} else {
 				echo "<p>", sprintf($lang['strconfdropftsmapping'], $misc->printVal($_REQUEST['mapping']), $misc->printVal($_REQUEST['ftscfg'])), "</p>\n";
-				echo "<input type=\"hidden\" name=\"mapping\" value=\"", htmlspecialchars($_REQUEST['mapping']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"mapping\" value=\"", htmlspecialchars_nc($_REQUEST['mapping']), "\" />\n";
 			}
 
 			echo "<input type=\"hidden\" name=\"ftscfg\" value=\"{$_REQUEST['ftscfg']}\" />\n";
@@ -836,7 +842,7 @@
 				$ma_mappings_names = array();
 				foreach($_REQUEST['ma'] as $v) {
 					$a = unserialize(htmlspecialchars_decode($v, ENT_QUOTES));
-					printf('<input type="hidden" name="formMapping[]" value="%s" />', htmlspecialchars($a['mapping']));
+					printf('<input type="hidden" name="formMapping[]" value="%s" />', htmlspecialchars_nc($a['mapping']));
 					$ma_mappings[] = $data->getFtsMappingByName($_POST['ftscfg'], $a['mapping']);
 					$ma_mappings_names[] = $a['mapping'];
 				}
@@ -844,7 +850,7 @@
 			} else {
 				$mapping = $data->getFtsMappingByName($_POST['ftscfg'], $_POST['formMapping']);
 				echo $mapping->fields['name'];
-				echo "<input type=\"hidden\" name=\"formMapping\" value=\"", htmlspecialchars($_POST['formMapping']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"formMapping\" value=\"", htmlspecialchars_nc($_POST['formMapping']), "\" />\n";
 			}
 
 			echo "\t\t</td>\n";
@@ -857,7 +863,7 @@
 			echo "\t\t<td class=\"data1\">";
 			echo "\t\t\t<select name=\"formDictionary\">\n";
 			while (!$ftsdicts->EOF) {
-				$ftsdict = htmlspecialchars($ftsdicts->fields['name']);
+				$ftsdict = htmlspecialchars_nc($ftsdicts->fields['name']);
 				echo "\t\t\t\t<option value=\"{$ftsdict}\"",
 					($ftsdict == $_POST['formDictionary'] || $ftsdict == @$mapping->fields['dictionaries'] || $ftsdict == @$ma_mappings[0]->fields['dictionaries']) ? ' selected="selected"' : '', ">{$ftsdict}</option>\n";
 				$ftsdicts->moveNext();
@@ -868,7 +874,7 @@
 
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"altermapping\" />\n";
-			echo "<input type=\"hidden\" name=\"ftscfg\" value=\"", htmlspecialchars($_POST['ftscfg']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"ftscfg\" value=\"", htmlspecialchars_nc($_POST['ftscfg']), "\" />\n";
             echo "<input type=\"hidden\" name=\"prev_action\" value=\"viewconfig\" /></p>\n";
             
 			echo $misc->form;
@@ -918,8 +924,8 @@
 			echo "\t\t<td class=\"data1\">";
 			echo "\t\t\t<select name=\"formMapping\">\n";
 			while (!$mappings->EOF) {
-				$mapping = htmlspecialchars($mappings->fields['name']);
-				$mapping_desc = htmlspecialchars($mappings->fields['description']);
+				$mapping = htmlspecialchars_nc($mappings->fields['name']);
+				$mapping_desc = htmlspecialchars_nc($mappings->fields['description']);
 				echo "\t\t\t\t<option value=\"{$mapping}\"",
 					$mapping == $_POST['formMapping'] ? ' selected="selected"' : '', ">{$mapping}", $mapping_desc ? " - {$mapping_desc}" : "", "</option>\n";
 				$mappings->moveNext();
@@ -934,7 +940,7 @@
 			echo "\t\t<td class=\"data1\">";
 			echo "\t\t\t<select name=\"formDictionary\">\n";
 			while (!$ftsdicts->EOF) {
-				$ftsdict = htmlspecialchars($ftsdicts->fields['name']);
+				$ftsdict = htmlspecialchars_nc($ftsdicts->fields['name']);
 				echo "\t\t\t\t<option value=\"{$ftsdict}\"",
 					$ftsdict == $_POST['formDictionary'] ? ' selected="selected"' : '', ">{$ftsdict}</option>\n";
 				$ftsdicts->moveNext();
@@ -945,7 +951,7 @@
 
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"addmapping\" />\n";
-			echo "<input type=\"hidden\" name=\"ftscfg\" value=\"", htmlspecialchars($_POST['ftscfg']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"ftscfg\" value=\"", htmlspecialchars_nc($_POST['ftscfg']), "\" />\n";
 			echo "<input type=\"hidden\" name=\"prev_action\" value=\"viewconfig\" /></p>\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"add\" value=\"{$lang['stradd']}\" />\n";

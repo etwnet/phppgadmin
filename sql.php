@@ -25,7 +25,7 @@
 		global $data, $misc, $lang, $_connection;
 		// Check if $rs is false, if so then there was a fatal error
 		if ($rs === false) {
-			echo htmlspecialchars($_FILES['script']['name']), ':', $lineno, ': ', nl2br(htmlspecialchars($_connection->getLastError())), "<br/>\n";
+			echo htmlspecialchars_nc($_FILES['script']['name']), ':', $lineno, ': ', nl2br(htmlspecialchars_nc($_connection->getLastError())), "<br/>\n";
 		}
 		else {
 			// Print query results
@@ -56,7 +56,7 @@
 				case PGSQL_COMMAND_OK:
 					// If we have the command completion tag
 					if (version_compare(phpversion(), '4.3', '>=')) {
-						echo htmlspecialchars(pg_result_status($rs, PGSQL_STATUS_STRING)), "<br/>\n";
+						echo htmlspecialchars_nc(pg_result_status($rs, PGSQL_STATUS_STRING)), "<br/>\n";
 					}
 					// Otherwise if any rows have been affected
 					elseif ($data->conn->Affected_Rows() > 0) {
@@ -103,7 +103,7 @@
 		exit;
 	}
 	
-	$subject = isset($_REQUEST['subject'])? $_REQUEST['subject'] : '';
+	$subject = $_REQUEST['subject'] ?? '';
 	$misc->printHeader($lang['strqueryresults']);
 	$misc->printBody();
 	$misc->printTrail('database');

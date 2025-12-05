@@ -916,7 +916,7 @@ Committed_AS:   348732 kB
 
 
 		$PHP_SELF = htmlspecialchars($_SERVER['PHP_SELF']);
-		$sql = isset($_REQUEST['sql']) ? $_REQUEST['sql'] : '';
+		$sql = $_REQUEST['sql'] ?? '';
 
 		if (isset($_SESSION['phplens_sqlrows'])) $rows = $_SESSION['phplens_sqlrows'];
 		else $rows = 3;

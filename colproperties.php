@@ -9,7 +9,7 @@
 	// Include application functions
 	include_once('./libraries/lib.inc.php');
 
-	$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : '';
+	$action = $_REQUEST['action'] ?? '';
 	if (isset($_REQUEST['table']))
 		$tableName =& $_REQUEST['table'];
 	elseif (isset($_REQUEST['view']))
@@ -79,7 +79,7 @@
 
 				// Column name
 				echo "<tr><td><input name=\"field\" size=\"16\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-					htmlspecialchars($_REQUEST['field']), "\" /></td>\n";
+					htmlspecialchars_nc($_REQUEST['field']), "\" /></td>\n";
 					
 				// Column type
 				$escaped_predef_types = array(); // the JS escaped array elements
@@ -92,7 +92,7 @@
 					while (!$types->EOF) {
 						$typname = $types->fields['typname'];
 						$types_for_js[] = $typname;
-						echo "\t<option value=\"", htmlspecialchars($typname), "\"", ($typname == $_REQUEST['type']) ? ' selected="selected"' : '', ">",
+						echo "\t<option value=\"", htmlspecialchars_nc($typname), "\"", ($typname == $_REQUEST['type']) ? ' selected="selected"' : '', ">",
 							$misc->printVal($typname), "</option>\n";
 						$types->moveNext();
 					}
@@ -109,7 +109,7 @@
 					}
 	
 					echo "<td><input name=\"length\" id=\"lengths\" size=\"8\" value=\"",
-						htmlspecialchars($_REQUEST['length']), "\" /></td>\n";
+						htmlspecialchars_nc($_REQUEST['length']), "\" /></td>\n";
 				} else {
 					// Otherwise draw the read-only type name
 					echo "<td>", $misc->printVal($data->formatType($column->fields['type'], $column->fields['atttypmod'])), "</td>\n";
@@ -117,23 +117,23 @@
 				
 				echo "<td><input type=\"checkbox\" name=\"notnull\"", (isset($_REQUEST['notnull'])) ? ' checked="checked"' : '', " /></td>\n";
 				echo "<td><input name=\"default\" size=\"20\" value=\"", 
-					htmlspecialchars($_REQUEST['default']), "\" /></td>\n";
+					htmlspecialchars_nc($_REQUEST['default']), "\" /></td>\n";
 				echo "<td><input name=\"comment\" size=\"40\" value=\"", 
-					htmlspecialchars($_REQUEST['comment']), "\" /></td></tr>\n";
+					htmlspecialchars_nc($_REQUEST['comment']), "\" /></td></tr>\n";
 				echo "</table>\n";
 				echo "<p><input type=\"hidden\" name=\"action\" value=\"properties\" />\n";
 				echo "<input type=\"hidden\" name=\"stage\" value=\"2\" />\n";
 				echo $misc->form;
-				echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
-				echo "<input type=\"hidden\" name=\"column\" value=\"", htmlspecialchars($_REQUEST['column']), "\" />\n";
-				echo "<input type=\"hidden\" name=\"olddefault\" value=\"", htmlspecialchars($_REQUEST['olddefault']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"column\" value=\"", htmlspecialchars_nc($_REQUEST['column']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"olddefault\" value=\"", htmlspecialchars_nc($_REQUEST['olddefault']), "\" />\n";
 				if ($column->fields['attnotnull']) echo "<input type=\"hidden\" name=\"oldnotnull\" value=\"on\" />\n";
-				echo "<input type=\"hidden\" name=\"oldtype\" value=\"", htmlspecialchars($data->formatType($column->fields['type'], $column->fields['atttypmod'])), "\" />\n";
+				echo "<input type=\"hidden\" name=\"oldtype\" value=\"", htmlspecialchars_nc($data->formatType($column->fields['type'], $column->fields['atttypmod'])), "\" />\n";
 				// Add hidden variables to suppress error notices if we don't support altering column type
 				if (!$data->hasAlterColumnType()) {
-					echo "<input type=\"hidden\" name=\"type\" value=\"", htmlspecialchars($_REQUEST['type']), "\" />\n";				
-					echo "<input type=\"hidden\" name=\"length\" value=\"", htmlspecialchars($_REQUEST['length']), "\" />\n";				
-					echo "<input type=\"hidden\" name=\"array\" value=\"", htmlspecialchars($_REQUEST['array']), "\" />\n";				
+					echo "<input type=\"hidden\" name=\"type\" value=\"", htmlspecialchars_nc($_REQUEST['type']), "\" />\n";				
+					echo "<input type=\"hidden\" name=\"length\" value=\"", htmlspecialchars_nc($_REQUEST['length']), "\" />\n";				
+					echo "<input type=\"hidden\" name=\"array\" value=\"", htmlspecialchars_nc($_REQUEST['array']), "\" />\n";				
 				}
 				echo "<input type=\"submit\" value=\"{$lang['stralter']}\" />\n";
 				echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
