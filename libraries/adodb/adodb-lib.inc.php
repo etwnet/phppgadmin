@@ -1217,28 +1217,31 @@ function _adodb_debug_execute($zthis, $sql, $inputarr)
 		$myDatabaseType .= '-' . $zthis->dsnType;
 	}
 
+	// Now execute the query
+	$start = microtime(true);
+	$qID = $zthis->_query($sql, $inputarr);
+	$elapsed = microtime(true) - $start;
+
 	if ($inBrowser) {
 		if ($ss) {
 			// Default formatting for passed parameter
 			$ss = sprintf('<code class="adodb-debug">%s</code>', htmlspecialchars($ss));
 		}
 		if ($zthis->debug === -1) {
-			$outString = "<br class='adodb-debug'>(%s):  %s &nbsp; %s<br class='adodb-debug'>";
-			ADOConnection::outp(sprintf($outString, $myDatabaseType, htmlspecialchars($sqlTxt), $ss), false);
+			$outString = "<br class='adodb-debug'>(%s):  %s &nbsp; %s (%.4f s)<br class='adodb-debug'>";
+			ADOConnection::outp(sprintf($outString, $myDatabaseType, htmlspecialchars($sqlTxt), $ss, $elapsed), false);
 		} elseif ($zthis->debug !== -99) {
-			$outString = "<hr class='adodb-debug'>(%s):  %s &nbsp; %s<hr class='adodb-debug'>";
-			ADOConnection::outp(sprintf($outString, $myDatabaseType, htmlspecialchars($sqlTxt), $ss), false);
+			$outString = "<hr class='adodb-debug'>(%s):  %s &nbsp; %s (%.4f s)<hr class='adodb-debug'>";
+			ADOConnection::outp(sprintf($outString, $myDatabaseType, htmlspecialchars($sqlTxt), $ss, $elapsed), false);
 		}
 	} else {
 		// CLI output
 		if ($zthis->debug !== -99) {
-			$outString = sprintf("%s\n%s\n    %s %s \n%s\n", str_repeat('-', 78), $myDatabaseType, $sqlTxt, $ss, str_repeat('-', 78));
+			$outString = sprintf("%s\n%s\n    %s %s (%.4f s)\n%s\n", str_repeat('-', 78), $myDatabaseType, $sqlTxt, $ss, $elapsed, str_repeat('-', 78));
 			ADOConnection::outp($outString, false);
 		}
 	}
 
-	// Now execute the query
-	$qID = $zthis->_query($sql, $inputarr);
 
 	// Alexios Fakios notes that ErrorMsg() must be called before ErrorNo() for mssql
 	// because ErrorNo() calls Execute('SELECT @ERROR'), causing recursion

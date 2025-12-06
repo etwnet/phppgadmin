@@ -21,10 +21,11 @@ class ADODB_base {
 
 	/**
 	 * Base constructor
-	 * @param &$conn The connection object
+	 * @param $conn ADOConnection The connection object
 	 */
 	function __construct($conn) {
 		$this->conn = $conn;
+		//$conn->LogSQL(true);
 	}
 
 	/**
@@ -85,19 +86,31 @@ class ADODB_base {
 		$this->conn->close();
 	}
 
+	public $lastQueryTime = null;
+
 	/**
 	 * Retrieves a ResultSet from a query
 	 * @param $sql string The SQL statement to be executed
 	 * @return ADORecordSet|int A recordset
 	 */
 	function selectSet($sql) {
+
+		$start = microtime(true);
+
 		// Execute the statement
 		$rs = $this->conn->Execute($sql);
-		
+
+		$end = microtime(true);
+		$this->lastQueryTime = $end - $start;
+
 		if (!$rs) return $this->conn->ErrorNo();
  
  		return $rs;	
  	}
+
+	public function getLastQueryTime() {
+		return $this->lastQueryTime;
+	}
  	
 	/**
 	 * Retrieves a single value from a query

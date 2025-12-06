@@ -348,6 +348,7 @@
 	 * Ask for select parameters and perform select
 	 */
 	function doSelectRows($confirm, $msg = '') {
+		/** @var Postgres $data */
 		global $data, $misc, $_no_html_frame;
 		global $lang;
 
@@ -435,19 +436,22 @@
 				}
 			}
 
+			/*
 			if (sizeof($_POST['show']) == 0)
 				doSelectRows(true, $lang['strselectneedscol']);
 			else {
-				// Generate query SQL
-				$query = $data->getSelectSQL($_REQUEST['table'], array_keys($_POST['show']),
-					$_POST['values'], $_POST['ops']);
-				$_REQUEST['query'] = $query;
-				$_REQUEST['return'] = 'selectrows';
-
-				$_no_html_frame = true;
-				include('./display.php');
-				exit;
 			}
+			*/
+
+			// Generate query SQL
+			$query = $data->getSelectSQL($_REQUEST['table'], array_keys($_POST['show']),
+				$_POST['values'], $_POST['ops']);
+			$_REQUEST['query'] = $query;
+			$_REQUEST['return'] = 'selectrows';
+
+			$_no_html_frame = true;
+			include('./display.php');
+			exit;
 		}
 	}
 

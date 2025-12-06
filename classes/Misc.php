@@ -253,7 +253,7 @@ class Misc {
 		// Shortcircuit for a NULL value
 		if (is_null($str))
 			return isset($params['null'])
-				? ($params['null'] === true ? '<i>NULL</i>' : $params['null'])
+				? ($params['null'] === true ? '<i class="null">NULL</i>' : $params['null'])
 				: '';
 
 		if (isset($params['map']) && isset($params['map'][$str])) $str = $params['map'][$str];
@@ -543,6 +543,8 @@ class Misc {
 			<script src="js/xtree2.js" type="text/javascript"></script>
 			<script src="js/xloadtree2.js" type="text/javascript"></script>
 			<script src="js/frameset.js" defer type="text/javascript"></script>
+			<script src="libraries/ace/src-min-noconflict/ace.js" defer type="text/javascript"></script>
+			<script src="libraries/ace/src-min-noconflict/mode-pgsql.js" defer type="text/javascript"></script>
 			<script src="js/misc.js" defer type="text/javascript"></script>
 			<style>
 			 .webfx-tree-children {

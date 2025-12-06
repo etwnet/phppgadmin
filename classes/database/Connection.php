@@ -20,7 +20,7 @@ class Connection {
 	 * @param $fetchMode int Defaults to associative.  Override for different behaviour
 	 */
 	function __construct($host, $port, $sslmode, $user, $password, $database, $fetchMode = ADODB_FETCH_ASSOC) {
-		$this->conn = ADONewConnection('postgres7');
+		$this->conn = ADONewConnection('postgres8');
 		$this->conn->setFetchMode($fetchMode);
 
 		// Ignore host if null

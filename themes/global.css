@@ -226,3 +226,26 @@ td[class^="opbutton"] img.icon {
 	opacity: .5;
 	pointer-events: none;
 }
+
+.query-result-line {
+	margin-top: 10px;
+	text-align: center;
+	padding: 5px;
+	background: #eee;
+}
+
+.sql-editor {
+	font-size: 1em;
+}
+
+.sql-editor.frame {
+	border: 1px solid #999;
+}
+
+.sql-editor.resizable {
+	resize: vertical;
+	overflow: auto;
+	min-height: 20px;
+	height: 90px;
+	/*max-height: 600px;*/
+}

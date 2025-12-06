@@ -64,10 +64,11 @@
 
 			setContent(html);
 
+			const urlObj = new URL(res.url || url, window.location.href);
+			urlObj.searchParams.delete('target');
+			finalUrl = urlObj.toString();
+
 			if (addToHistory) {
-				const urlObj = new URL(res.url || url, window.location.href);
-				urlObj.searchParams.delete('target');
-				finalUrl = urlObj.toString();
 				const data = {};
 				if (/post/i.test(options.method ?? '')) {
 					data.html = html;
@@ -76,6 +77,12 @@
 				// Scroll back to the top
 				content.scrollTo(0, 0);
 			}
+
+			const event = new CustomEvent("frameLoaded", {
+				detail: { url: finalUrl },
+				target: content,
+			});
+			document.dispatchEvent(event);
 
 		} catch (err) {
 			console.error("Error:", err);

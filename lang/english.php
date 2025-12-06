@@ -272,6 +272,7 @@
 	$lang['strspecifytabletoreindex'] = 'You must specify at least one table to reindex.';
 	$lang['strspecifytabletocluster'] = 'You must specify at least one table to cluster.';
 	$lang['strnofieldsforinsert'] = 'You cannot insert a row into a table with no column.';
+	$lang['strbrowsestatistics'] = 'Showing records {first:d} - {last:d} of {total:d} total (query took {duration} seconds)';
 
 	// Columns
 	$lang['strcolprop'] = 'Column properties';

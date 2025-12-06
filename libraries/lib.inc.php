@@ -7,6 +7,7 @@
  */
 
 include_once('./libraries/decorator.inc.php');
+include_once('./libraries/helper.inc.php');
 include_once('./lang/translations.php');
 
 // Set error reporting level to max
@@ -204,7 +205,7 @@ if (!isset($_language))
 
 // Import the language file
 if (isset($_language)) {
-	include("./lang/{$_language}.php");
+	include_once("./lang/{$_language}.php");
 	$_SESSION['webdbLanguage'] = $_language;
 }
 
@@ -275,18 +276,3 @@ if (!isset($_no_db_connection)) {
 }
 
 $plugin_manager = new PluginManager($_language);
-
-function pg_escape_id ($id = ''): string {
-	/** @var Postgres $data */
-	global $data;
-	return pg_escape_identifier($data->conn->_connectionID, $id);
-}
-
-function htmlspecialchars_nc(
-	$string, $flags = ENT_QUOTES | ENT_SUBSTITUTE, $encoding = 'UTF-8', $double_encode = true
-) {
-	if ($string === null) {
-		return '';
-	}
-	return htmlspecialchars($string, $flags, $encoding, $double_encode);
-}

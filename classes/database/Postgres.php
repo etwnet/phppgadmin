@@ -168,7 +168,7 @@ class Postgres extends ADODB_base {
 
 	/**
 	 * Constructor
-	 * @param $conn The database connection
+	 * @param ADOConnection $conn The database connection
 	 */
 	function __construct($conn) {
 		parent::__construct($conn);
@@ -178,8 +178,8 @@ class Postgres extends ADODB_base {
 
 	/**
 	 * Cleans (escapes) a string
-	 * @param $str The string to clean, by reference
-	 * @return The cleaned string
+	 * @param string $str The string to clean, by reference
+	 * @return string The cleaned string
 	 */
 	function clean($str) {
 		if ($str === null) return null;
@@ -190,8 +190,8 @@ class Postgres extends ADODB_base {
 
 	/**
 	 * Cleans (escapes) an object name (eg. table, field)
-	 * @param $str The string to clean, by reference
-	 * @return The cleaned string
+	 * @param string $str The string to clean, by reference
+	 * @return string The cleaned string
 	 */
 	function fieldClean($str) {
 		if ($str === null) return null;
@@ -201,8 +201,8 @@ class Postgres extends ADODB_base {
 
 	/**
 	 * Cleans (escapes) an array of field names
-	 * @param $arr The array to clean, by reference
-	 * @return The cleaned array
+	 * @param array $arr The array to clean, by reference
+	 * @return array The cleaned array
 	 */
 	function fieldArrayClean($arr) {
 		foreach ($arr as $k => $v) {
@@ -214,8 +214,8 @@ class Postgres extends ADODB_base {
 
 	/**
 	 * Cleans (escapes) an array
-	 * @param $arr The array to clean, by reference
-	 * @return The cleaned array
+	 * @param array $arr The array to clean, by reference
+	 * @return array The cleaned array
 	 */
 	function arrayClean($arr) {
 		foreach ($arr as $k => $v) {
@@ -1090,9 +1090,9 @@ class Postgres extends ADODB_base {
 
 	/**
 	 * Retrieve the attribute definition of a table
-	 * @param $table The name of the table
-	 * @param $field (optional) The name of a field to return
-	 * @return All attributes in order
+	 * @param string $table The name of the table
+	 * @param string $field (optional) The name of a field to return
+	 * @return ADORecordSet All attributes in order
 	 */
 	function getTableAttributes($table, $field = '') {
 		$c_schema = $this->_schema;
@@ -2501,67 +2501,68 @@ class Postgres extends ADODB_base {
 
 	/**
 	 * Updates a row in a table
-	 * @param $table The table in which to update
-	 * @param $vars An array mapping new values for the row
-	 * @param $nulls An array mapping column => something if it is to be null
-	 * @param $format An array of the data type (VALUE or EXPRESSION)
-	 * @param $types An array of field types
-	 * @param $keyarr An array mapping column => value to update
-	 * @return 0 success
+	 * @param string $table The table in which to update
+	 * @param array $vars An array mapping new values for the row
+	 * @param array $nulls An array mapping column => something if it is to be null
+	 * @param array $format An array of the data type (VALUE or EXPRESSION)
+	 * @param array $types An array of field types
+	 * @param array $keyarr An array mapping column => value to update
+	 * @return int 0 success
 	 * @return -1 invalid parameters
 	 */
 	function editRow($table, $vars, $nulls, $format, $types, $keyarr) {
 		if (!is_array($vars) || !is_array($nulls) || !is_array($format) || !is_array($types))
 			return -1;
-		else {
-			$f_schema = $this->_schema;
-			$this->fieldClean($f_schema);
-			$this->fieldClean($table);
 
-			// Build clause
-			if (sizeof($vars) > 0) {
+		$f_schema = $this->_schema;
+		$this->fieldClean($f_schema);
+		$this->fieldClean($table);
 
-				foreach ($vars as $key => $value) {
-					$this->fieldClean($key);
+		// Build clause
+		if (sizeof($vars) > 0) {
 
-					// Handle NULL values
-					if (isset($nulls[$key])) $tmp = 'NULL';
-					else $tmp = $this->formatValue($types[$key], $format[$key], $value);
+			foreach ($vars as $key => $value) {
+				$this->fieldClean($key);
 
-					if (isset($sql)) $sql .= ", \"{$key}\"={$tmp}";
-					else $sql = "UPDATE \"{$f_schema}\".\"{$table}\" SET \"{$key}\"={$tmp}";
+				// Handle NULL values
+				if (isset($nulls[$key])) $tmp = 'NULL';
+				else $tmp = $this->formatValue($types[$key], $format[$key], $value);
+
+				if (isset($sql)) $sql .= ", \"{$key}\"={$tmp}";
+				else $sql = "UPDATE \"{$f_schema}\".\"{$table}\" SET \"{$key}\"={$tmp}";
+			}
+			$first = true;
+			foreach ($keyarr as $k => $v) {
+				$this->fieldClean($k);
+				$this->clean($v);
+				if ($first) {
+					$sql .= " WHERE \"{$k}\"='{$v}'";
+					$first = false;
+				} else {
+					$sql .= " AND \"{$k}\"='{$v}'";
 				}
-				$first = true;
-				foreach ($keyarr as $k => $v) {
-					$this->fieldClean($k);
-					$this->clean($v);
-					if ($first) {
-						$sql .= " WHERE \"{$k}\"='{$v}'";
-						$first = false;
-					} else $sql .= " AND \"{$k}\"='{$v}'";
-				}
 			}
-
-			// Begin transaction.  We do this so that we can ensure only one row is
-			// edited
-			$status = $this->beginTransaction();
-			if ($status != 0) {
-				$this->rollbackTransaction();
-				return -1;
-			}
-
-			$status = $this->execute($sql);
-			if ($status != 0) { // update failed
-				$this->rollbackTransaction();
-				return -1;
-			} elseif ($this->conn->Affected_Rows() != 1) { // more than one row could be updated
-				$this->rollbackTransaction();
-				return -2;
-			}
-
-			// End transaction
-			return $this->endTransaction();
 		}
+
+		// Begin transaction.  We do this so that we can ensure only one row is
+		// edited
+		$status = $this->beginTransaction();
+		if ($status != 0) {
+			$this->rollbackTransaction();
+			return -1;
+		}
+
+		$status = $this->execute($sql);
+		if ($status != 0) { // update failed
+			$this->rollbackTransaction();
+			return -1;
+		} elseif ($this->conn->Affected_Rows() != 1) { // more than one row could be updated
+			$this->rollbackTransaction();
+			return -2;
+		}
+
+		// End transaction
+		return $this->endTransaction();
 	}
 
 	/**
@@ -7628,11 +7629,11 @@ class Postgres extends ADODB_base {
 
 	/**
 	 * Generates the SQL for the 'select' function
-	 * @param $table The table from which to select
-	 * @param $show An array of columns to show.  Empty array means all columns.
-	 * @param $values An array mapping columns to values
-	 * @param $ops An array of the operators to use
-	 * @param $orderby (optional) An array of column numbers or names (one based)
+	 * @param $table string The table from which to select
+	 * @param $show array An array of columns to show.  Empty array means all columns.
+	 * @param $values array An array mapping columns to values
+	 * @param $ops array An array of the operators to use
+	 * @param $orderby array (optional) An array of column numbers or names (one based)
 	 *        mapped to sort direction (asc or desc or '' or null) to order by
 	 * @return The SQL query
 	 */
@@ -7721,6 +7722,10 @@ class Postgres extends ADODB_base {
 		return $sql;
 	}
 
+	public $totalRowsFound = 0;
+	public $lastQueryLimit = 0;
+	public $lastQueryOffset = 0;
+
 	/**
 	 * Returns a recordset of all columns in a query.  Supports paging.
 	 * @param $type string Either 'QUERY' if it is an SQL query, or 'TABLE' if it is a table identifier,
@@ -7781,11 +7786,12 @@ class Postgres extends ADODB_base {
 
 
 		// Count the number of rows
-		$total = $this->browseQueryCount($query, $count);
+		$total = (int)$this->selectField($count, 'total');
 		if ($total < 0) {
 			$this->rollbackTransaction();
 			return -2;
 		}
+		$this->totalRowsFound = $total;
 
 		// Calculate max pages
 		$max_pages = ceil($total / $page_size);
@@ -7812,8 +7818,10 @@ class Postgres extends ADODB_base {
 				$orderby .= ' ASC';
 		} else $orderby = '';
 
+		$this->lastQueryLimit = $page_size;
+		$this->lastQueryOffset = ($page - 1) * $page_size;
 		// Actually retrieve the rows, with offset and limit
-		$rs = $this->selectSet("SELECT * FROM ({$query}) AS sub {$orderby} LIMIT {$page_size} OFFSET " . ($page - 1) * $page_size);
+		$rs = $this->selectSet("SELECT * FROM ({$query}) AS sub {$orderby} LIMIT {$page_size} OFFSET {$this->lastQueryOffset}");
 		$status = $this->endTransaction();
 		if ($status != 0) {
 			$this->rollbackTransaction();
@@ -7824,22 +7832,10 @@ class Postgres extends ADODB_base {
 	}
 
 	/**
-	 * Finds the number of rows that would be returned by a
-	 * query.
-	 * @param $query The SQL query
-	 * @param $count The count query
-	 * @return The count of rows
-	 * @return -1 error
-	 */
-	function browseQueryCount($query, $count) {
-		return $this->selectField($count, 'total');
-	}
-
-	/**
 	 * Returns a recordset of all columns in a table
-	 * @param $table The name of a table
-	 * @param $key The associative array holding the key to retrieve
-	 * @return A recordset
+	 * @param string $table The name of a table
+	 * @param array $key The associative array holding the key to retrieve
+	 * @return ADORecordSet A recordset
 	 */
 	function browseRow($table, $key) {
 		$f_schema = $this->_schema;
@@ -7874,7 +7870,8 @@ class Postgres extends ADODB_base {
 
 	/**
 	 * Change a parameter from 't' or 'f' to a boolean, (others evaluate to false)
-	 * @param $parameter the parameter
+	 * @param string $parameter the parameter
+	 * @return bool
 	 */
 	function phpBool($parameter) {
 		$parameter = ($parameter == 't');
