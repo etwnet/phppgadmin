@@ -163,7 +163,7 @@
 				// 'title' => $lang['strdrop'],
 				// 'url'   => "operators.php?action=confirm_drop&amp;{$misc->href}&amp;",
 				// 'vars'  => array('operator' => 'oprname', 'operator_oid' => 'oid'),
-				'icon' => 'images/themes/default/Delete.png',
+				'icon' => $misc->icon('Delete'),
 				'content' => $lang['strdrop'],
 				'attr'=> array (
 					'href' => array (

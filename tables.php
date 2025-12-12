@@ -359,18 +359,16 @@
 
 			$attrs = $data->getTableAttributes($_REQUEST['table']);
 
-			echo "<form action=\"tables.php\" method=\"post\" id=\"selectform\">\n";
+			echo "<form action=\"tables.php\" method=\"get\" id=\"selectform\">\n";
 			if ($attrs->recordCount() > 0) {
 				// JavaScript for select all feature
-				echo "<script type=\"text/javascript\">\n";
-				echo "//<![CDATA[\n";
+				echo "<script>\n";
 				echo "	function selectAll() {\n";
 				echo "		for (var i=0; i<document.getElementById('selectform').elements.length; i++) {\n";
 				echo "			var e = document.getElementById('selectform').elements[i];\n";
 				echo "			if (e.name.indexOf('show') == 0) e.checked = document.getElementById('selectform').selectall.checked;\n";
 				echo "		}\n";
 				echo "	}\n";
-				echo "//]]>\n";
 				echo "</script>\n";
 
 				echo "<table>\n";
@@ -410,7 +408,7 @@
 					$attrs->moveNext();
 				}
 				// Select all checkbox
-				echo "<tr><td colspan=\"5\"><input type=\"checkbox\" id=\"selectall\" name=\"selectall\" accesskey=\"a\" onclick=\"javascript:selectAll()\" /><label for=\"selectall\">{$lang['strselectallfields']}</label></td>";
+				echo "<tr><td colspan=\"5\"><input type=\"checkbox\" id=\"selectall\" name=\"selectall\" accesskey=\"a\" onclick=\"javascript:selectAll()\" /> <label for=\"selectall\">{$lang['strselectallfields']}</label></td>";
 				echo "</tr></table>\n";
 			}
 			else echo "<p>{$lang['strinvalidparam']}</p>\n";
@@ -424,13 +422,13 @@
 			echo "</form>\n";
 		}
 		else {
-			if (!isset($_POST['show'])) $_POST['show'] = array();
-			if (!isset($_POST['values'])) $_POST['values'] = array();
-			if (!isset($_POST['nulls'])) $_POST['nulls'] = array();
+			if (!isset($_REQUEST['show'])) $_REQUEST['show'] = array();
+			if (!isset($_REQUEST['values'])) $_REQUEST['values'] = array();
+			if (!isset($_REQUEST['nulls'])) $_REQUEST['nulls'] = array();
 
 			// Verify that they haven't supplied a value for unary operators
-			foreach ($_POST['ops'] as $k => $v) {
-				if ($data->selectOps[$v] == 'p' && $_POST['values'][$k] != '') {
+			foreach ($_REQUEST['ops'] as $k => $v) {
+				if ($data->selectOps[$v] == 'p' && $_REQUEST['values'][$k] != '') {
 					doSelectRows(true, $lang['strselectunary']);
 					return;
 				}
@@ -444,21 +442,26 @@
 			*/
 
 			// Generate query SQL
-			$query = $data->getSelectSQL($_REQUEST['table'], array_keys($_POST['show']),
-				$_POST['values'], $_POST['ops']);
+			$query = $data->getSelectSQL($_REQUEST['table'], array_keys($_REQUEST['show']),
+				$_REQUEST['values'], $_REQUEST['ops']);
 			$_REQUEST['query'] = $query;
 			$_REQUEST['return'] = 'selectrows';
+			//var_dump($_REQUEST);
 
 			$_no_html_frame = true;
-			include('./display.php');
+			include './display.php';
 			exit;
 		}
 	}
 
 	/**
 	 * Ask for insert parameters and then actually insert row
+	 * @deprecated
 	 */
 	function doInsertRow($confirm, $msg = '') {
+
+		throw new Exception("Insert here is disabled, please use display.php instead");
+
 		global $data, $misc, $conf;
 		global $lang;
 
@@ -522,7 +525,7 @@
 					}
 					echo "<td id=\"row_att_{$attrs->fields['attnum']}\" style=\"white-space:nowrap;\">";
 					if (($fksprops !== false) && isset($fksprops['byfield'][$attrs->fields['attnum']])) {
-						echo $data->printField("values[{$attrs->fields['attnum']}]", $_REQUEST['values'][$attrs->fields['attnum']], 'fktype'/*force FK*/,
+						$data->printField("values[{$attrs->fields['attnum']}]", $_REQUEST['values'][$attrs->fields['attnum']], 'fktype'/*force FK*/,
 							array(
 								'id' => "attr_{$attrs->fields['attnum']}",
 								'autocomplete' => 'off'
@@ -530,7 +533,7 @@
 						);
 					}
 					else {
-						echo $data->printField("values[{$attrs->fields['attnum']}]", $_REQUEST['values'][$attrs->fields['attnum']], $attrs->fields['type']);
+						$data->printField("values[{$attrs->fields['attnum']}]", $_REQUEST['values'][$attrs->fields['attnum']], $attrs->fields['type']);
 					}
 					echo "</td>\n";
 					echo "</tr>\n";
@@ -779,7 +782,7 @@
 				'default' => 'analyze',
 			),
 			'browse' => array(
-				'icon' => 'images/themes/default/Table.png',
+				'icon' => $misc->icon('Table'),
 				'content' => $lang['strbrowse'],
 				'attr'=> array (
 					'href' => array (
@@ -793,7 +796,7 @@
 				)
 			),
 			'select' => array(
-				'icon' => 'images/themes/default/Search.png',
+				'icon' => $misc->icon('Search'),
 				'content' => $lang['strselect'],
 				'attr'=> array (
 					'href' => array (
@@ -806,7 +809,7 @@
 				)
 			),
 			'insert' => array(
-				'icon' => 'images/themes/default/Operator.png',
+				'icon' => $misc->icon('Operator'),
 				'content' => $lang['strinsert'],
 				'attr'=> array (
 					'href' => array (
@@ -820,7 +823,7 @@
 			),
 			'empty' => array(
 				'multiaction' => 'confirm_empty',
-				'icon' => 'images/themes/default/Shredder.png',
+				'icon' => $misc->icon('Shredder'),
 				'content' => $lang['strempty'],
 				'attr'=> array (
 					'href' => array (
@@ -833,7 +836,7 @@
 				)
 			),
 			'alter' => array(
-				'icon' => 'images/themes/default/Edit.png',
+				'icon' => $misc->icon('Edit'),
 				'content' => $lang['stralter'],
 				'attr'=> array (
 					'href' => array (
@@ -847,7 +850,7 @@
 			),
 			'drop' => array(
 				'multiaction' => 'confirm_drop',
-				'icon' => 'images/themes/default/Delete.png',
+				'icon' => $misc->icon('Delete'),
 				'content' => $lang['strdrop'],
 				'attr'=> array (
 					'href' => array (
@@ -861,7 +864,7 @@
 			),
 			'vacuum' => array(
 				'multiaction' => 'confirm_vacuum',
-				'icon' => 'images/themes/default/Broom.png',
+				'icon' => $misc->icon('Broom'),
 				'content' => $lang['strvacuum'],
 				'attr'=> array (
 					'href' => array (
@@ -875,7 +878,7 @@
 			),
 			'analyze' => array(
 				'multiaction' => 'confirm_analyze',
-				'icon' => 'images/themes/default/Analyze.png',
+				'icon' => $misc->icon('Analyze'),
 				'content' => $lang['stranalyze'],
 				'attr'=> array (
 					'href' => array (
@@ -889,7 +892,7 @@
 			),
 			'reindex' => array(
 				'multiaction' => 'confirm_reindex',
-				'icon' => 'images/themes/default/Index.png',
+				'icon' => $misc->icon('Index'),
 				'content' => $lang['strreindex'],
 				'attr'=> array (
 					'href' => array (

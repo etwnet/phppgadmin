@@ -322,6 +322,11 @@ class Misc {
 			$tag = 'pre';
 			$out = $str;
 			break;
+		case 'sql':
+			$tag = 'pre';
+			$class = 'sql-viewer';
+			$out = htmlspecialchars($str);
+			break;
 		case 'nbsp':
 			$out = nl2br(str_replace(' ', '&nbsp;', htmlspecialchars($str)));
 			break;
@@ -362,6 +367,7 @@ class Misc {
 			}
 			break;
 		default:
+			/*
 			// If the string contains at least one instance of >1 space in a row, a tab
 			// character, a space at the start of a line, or a space at the start of
 			// the whole string then render within a pre-formatted element (<pre>).
@@ -372,6 +378,8 @@ class Misc {
 			} else {
 				$out = nl2br(htmlspecialchars($str));
 			}
+			*/
+			$out = nl2br(htmlspecialchars($str));
 		}
 
 		if (isset($params['class'])) $class = $params['class'];
@@ -428,7 +436,7 @@ class Misc {
 
 	/**
 	 * Print out the page heading and help link
-	 * @param $title Title, already escaped
+	 * @param string $title Title, already escaped
 	 * @param $help (optional) The identifier for the help link
 	 */
 	function printTitle($title, $help = null) {
@@ -507,25 +515,48 @@ class Misc {
 		return $data;
 	}
 
+	public $ajaxRequest = false;
+	public $frameContentRequest = false;
 
 	/**
 	 * Prints the page header.  If global variable $_no_html_frame is
 	 * set then no header is drawn.
-	 * @param $title string The title of the page
-	 * @param $script string script tag
+	 * @param string $title The title of the page
+	 * @param string $scripts script tags
 	 */
-	function printHeader($title = '', $script = null) {
+	function printHeader($title = '', $scripts = '') {
 		global $appName, $lang, $_no_html_frame, $conf, $plugin_manager;
+
+		// capture ajax/json requests
+		if (!empty($_REQUEST['ajax'])) {
+			$this->ajaxRequest = true;
+			if ($_REQUEST['ajax'] == 'json') {
+				header("Content-Type: application/json; charset=utf-8");
+			} else {
+				header("Content-Type: text/html; charset=utf-8");
+			}
+			return;
+		}
+
+		$title = htmlspecialchars($appName . (empty($title) ? '' : " - $title"));
 
 		// skip html frame for inner content links
 		if ($_REQUEST['target'] ?? '' == 'content') {
+			$this->frameContentRequest = true;
 			$_no_html_frame = true;
+			// update title through javascript
+			echo "<script>\n";
+			echo "document.title = \"$title\";\n";
+			echo "</script>\n";
 		}
 
+		// just output scripts and return
 		if (!empty($_no_html_frame)) {
+			echo $scripts;
 			return;
 		}
-		$title = htmlspecialchars($appName . (empty($title) ? '' : " - $title"));
+
+		$langIso2 = substr($lang['applocale'], 0, 2);
 
 		header("Content-Type: text/html; charset=utf-8");
 		echo "<!DOCTYPE html>\n";
@@ -536,25 +567,31 @@ class Misc {
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-			<link rel="stylesheet" href="themes/<?= $conf['theme'] ?>/global.css" type="text/css" id="csstheme"/>
-			<link rel="shortcut icon" href="images/themes/<?= $conf['theme'] ?>/pgadmin.ico" type="image/vnd.microsoft.icon"/>
+			<link rel="stylesheet" href="js/flatpickr/flatpickr.css" type="text/css">
+			<link rel="stylesheet" href="themes/<?= $conf['theme'] ?>/global.css" type="text/css" id="csstheme">
 			<link rel="icon" type="image/png" href="images/themes/<?= $conf['theme'] ?>/pgadmin.png"/>
 			<script src="js/jquery.js" type="text/javascript"></script>
 			<script src="js/xtree2.js" type="text/javascript"></script>
 			<script src="js/xloadtree2.js" type="text/javascript"></script>
-			<script src="js/frameset.js" defer type="text/javascript"></script>
+			<script src="js/popper.js" defer type="text/javascript"></script>
+			<script src="js/flatpickr/flatpickr.js" defer type="text/javascript"></script>
+			<?php if ($langIso2 != 'en') : ?>
+				<script src="js/flatpickr/l10n/<?= $langIso2 ?>.js" defer type="text/javascript"></script>
+			<?php endif ?>
 			<script src="libraries/ace/src-min-noconflict/ace.js" defer type="text/javascript"></script>
 			<script src="libraries/ace/src-min-noconflict/mode-pgsql.js" defer type="text/javascript"></script>
+			<script src="js/frameset.js" defer type="text/javascript"></script>
 			<script src="js/misc.js" defer type="text/javascript"></script>
 			<style>
 			 .webfx-tree-children {
 				 background-image: url("<?= $this->icon('I') ?> ");
 			 }
+			 .calendar-icon-bg {
+				background-image: url("<?= $this->icon('Calendar') ?> ");
+			 }
 			</style>
 			<title><?= $title ?></title>
-			<?php if ($script): ?>
-				<?= $script ?>
-			<?php endif; ?>
+			<?= $scripts ?>
 
 			<?php
 			$plugins_head = [];
@@ -576,13 +613,21 @@ class Misc {
 	function printBody() {
 		global $_no_html_frame, $lang;
 
-		if (!empty($_no_html_frame)) {
+		if (!empty($_no_html_frame) || $this->ajaxRequest) {
 			return;
 		}
 		$this->hasFrameset = true;
-		//$rtl = $lang['applangdir'] === "rtl";
 		echo <<<EOT
 		<body>
+		<div id="tooltip" role="tooltip">
+		  <div id="tooltip-content"></div>
+		  <div class="arrow" data-popper-arrow></div>
+		</div>
+		<div id="loading-indicator">
+			<svg class="spinner" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+			   <circle class="path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30"></circle>
+			</svg>
+		</div>
 		<div id="frameset">
 			<div id="tree" dir="ltr">
 EOT;
@@ -590,7 +635,9 @@ EOT;
 		echo <<<EOT
 			</div>
 			<div id="resizer"></div>
-			<div id="content">
+			<div id="content-container">
+				<!-- anything inside #content will be overwritten... -->
+				<div id="content">
 EOT;
 	}
 
@@ -601,11 +648,23 @@ EOT;
 		global $_reload_browser, $_reload_tree;
 		global $lang, $_no_bottom_link, $_no_html_frame;
 
+		if ($this->ajaxRequest) {
+			return;
+		}
+
 		if (isset($_reload_browser)) {
 			$this->printReload(false);
 		} elseif (isset($_reload_tree)) {
 			$this->printReload(true);
 		}
+
+		if ($this->hasFrameset || $this->frameContentRequest) {
+			echo "<hr>\n";
+			echo "<div class=\"clearfix bottom-footer\">\n";
+			echo "<a href=\"\" target=\"_blank\" class=\"new_window\" title=\"", htmlspecialchars($lang['strnewwindow']), "\"><img src=\"", $this->icon("NewWindow"), "\" ></a>";
+			echo "</div>\n";
+		}
+
 		if (!isset($_no_bottom_link)) {
 			echo "<a href=\"#\" class=\"bottom_link\">⇱</a>";
 		}
@@ -615,6 +674,7 @@ EOT;
 		}
 		if ($this->hasFrameset) {
 			echo "</div>\n"; // close #content div
+			echo "</div>\n"; // close #content-container div
 			echo "</div>\n"; // close #frameset div
 		}
 		echo "</body>\n";
@@ -630,7 +690,7 @@ EOT;
 			</a>
 		</div>
 		<div class="refreshTree">
-			<a href="#" onclick="writeTree()"><img src="<?= $this->icon('Refresh'); ?>" alt="<?= $lang['strrefresh']; ?>" title="<?= $lang['strrefresh']; ?>"/></a>
+			<a href="#" onclick="writeTree()"><img class="icon" src="<?= $this->icon('Refresh'); ?>" alt="<?= $lang['strrefresh']; ?>" title="<?= $lang['strrefresh']; ?>"/></a>
 		</div>
 		<div id="wfxt-container"></div>
 		<script>
@@ -714,7 +774,7 @@ EOT;
 
 	/**
 	 * Display a link
-	 * @param $link An associative array of link parameters to print
+	 * @param array $link An associative array of link parameters to print
 	 *     link = array(
 	 *       'attr' => array( // list of A tag attribute
 	 *          'attrname' => attribute value
@@ -741,9 +801,11 @@ EOT;
 		}
 		$tag .= ">";
 		if (!empty($link['icon'])) {
-			$tag .= "<img class=\"icon\" src=\"{$link['icon']}\" alt=\"" . htmlspecialchars($link['content']) . "\">";
+			$tag .= "<img class=\"icon\" src=\"{$link['icon']}\" alt=\"" . htmlspecialchars($link['content'] ?? '') . "\">";
 		}
-		$tag .= value($link['content'], $link['fields'], 'html');
+		if (!empty($link['content'])) {
+			$tag .= value($link['content'], $link['fields'], 'html');
+		}
 		$tag .= "</a>\n";
 		echo $tag;
 		//var_dump($link['content']);
@@ -1133,10 +1195,11 @@ EOT;
 				),
 				'insert' => array(
 					'title' => $lang['strinsert'],
-					'url' => 'tables.php',
+					'url' => 'display.php',
 					'urlvars' => array(
 						'action' => 'confinsertrow',
-						'table' => field('table')
+						'subject' => 'table',
+						'table' => field('table'),
 					),
 					'help' => 'pg.sql.insert',
 					'icon' => 'Operator'
@@ -1774,10 +1837,12 @@ EOT;
 	/**
 	 * Display the navlinks
 	 *
-	 * @param $navlinks - An array with the the attributes and values that will be shown. See printLinksList for array format.
-	 * @param $place - Place where the $navlinks are displayed. Like 'display-browse', where 'display' is the file (display.php)
-	 * @param $env - Associative array of defined variables in the scope of the caller.
-	 *               Allows to give some environment details to plugins.
+	 * @param array $navlinks - An array with the the attributes and values that
+	 * will be shown. See printLinksList for array format.
+	 * @param string $place - Place where the $navlinks are displayed.
+	 * Like 'display-browse', where 'display' is the file (display.php)
+	 * @param array $env - Associative array of defined variables in the scope
+	 * of the caller. Allows to give some environment details to plugins.
 	 * and 'browse' is the place inside that code (doBrowse).
 	 */
 	function printNavLinks($navlinks, $place, $env = array()) {
@@ -1803,8 +1868,14 @@ EOT;
 	 * @param $pages int - the maximum number of pages
 	 * @param $gets array -  the parameters to include in the link to the wanted page
 	 */
-	function printPages($page, $pages, $gets) {
-		$window = 3; // Anzahl Seiten links/rechts vom aktuellen Fenster
+	function printPageNavigation($page, $pages, $gets) {
+		global $conf, $lang;
+		static $limits = null;
+		if (!isset($limits)) {
+			$limits = [10, 50, 100, 250, 500, 1000, $conf['max_rows']];
+			sort($limits, SORT_NUMERIC);
+		}
+		$window = 3;
 
 		if ($page < 1 || $page > $pages) return;
 		if ($pages < 1) return;
@@ -1812,16 +1883,17 @@ EOT;
 		unset($gets['page']);
 		$url = http_build_query($gets);
 
-		echo "<div class=\"pagenav-container\" style=\"text-align:center\">\n";
+		echo "<div class=\"pagenav-container\">\n";
 
 		echo "<form method=\"get\" action=\"?$url\" class=\"pagenav-form\">";
-		echo "<input type=\"number\" id=\"pagejump\" name=\"page\" min=\"1\" max=\"$pages\" value=\"$page\">";
-		echo "<button type=\"submit\">➡</button>";
+		echo "<span class=\"me-1\">{$lang['strjumppage']}</span>\n";
+		echo "<input type=\"number\" class=\"page\" name=\"page\" min=\"1\" max=\"$pages\" value=\"$page\">\n";
+		echo "<button type=\"submit\">↩</button>\n";
 		echo "</form>\n";
 
 
 		$class = ($page > 1) ? "pagenav" : "pagenav disabled";
-		echo "<a class=\"$class\" href=\"?{$url}&page=" . max(1, $page-1) . "\">◀</a>\n";
+		echo "<a class=\"$class\" href=\"?{$url}&page=" . max(1, $page-1) . "\">⮜</a>\n";
 
 		echo "<a class=\"pagenav" . ($page == 1 ? " current" : "") . "\" href=\"?{$url}&page=1\">1</a>\n";
 
@@ -1858,15 +1930,29 @@ EOT;
 		}
 
 		$class = ($page < $pages) ? "pagenav" : "pagenav disabled";
-		echo "<a class=\"$class\" href=\"?{$url}&page=" . ($page+1) . "\">▶</a>\n";
+		echo "<a class=\"$class\" href=\"?{$url}&page=" . ($page+1) . "\">⮞</a>\n";
+
+		$query_params = $gets;
+		unset($query_params['max_rows']);
+		$sub_url = http_build_query($query_params);
+		echo "<form method=\"get\" action=\"?$sub_url\" class=\"pagenav-form ml-2\">";
+		echo "<span class=\"me-1\">{$lang['strselectmaxrows']}</span>\n";
+		echo "<select name=\"max_rows\" class=\"max_rows\" onchange=\"this.form.querySelector('button[type=submit]').click()\">\n";
+		foreach ($limits as $limit) {
+			$selected = ($limit == $gets['max_rows']) ? ' selected' : '';
+			echo "<option value=\"$limit\"{$selected}>$limit</option>\n";
+		}
+		echo "</select>\n";
+		echo "<button type=\"submit\" style=\"display:none;\"></button>\n";
+		echo "</form>\n";
 
 		echo "</div>\n";
 	}
 
 	/**
 	 * Displays link to the context help.
-	 * @param $str - the string that the context help is related to (already escaped)
-	 * @param $help - help section identifier
+	 * @param string $str - the string that the context help is related to (already escaped)
+	 * @param string $help - help section identifier
 	 */
 	function printHelp($str, $help) {
 		global $lang, $data;
@@ -1881,7 +1967,7 @@ EOT;
 
 	/**
 	 * Outputs JavaScript to set default focus
-	 * @param $object eg. forms[0].username
+	 * @param string $object eg. forms[0].username
 	 */
 	function setFocus($object) {
 		echo "<script type=\"text/javascript\">\n";
@@ -1938,13 +2024,13 @@ EOT;
 	/**
 	 * Returns URL given an action associative array.
 	 * NOTE: this function does not html-escape, only url-escape
-	 * @param $action An associative array of the follow properties:
+	 * @param array $action An associative array of the follow properties:
 	 *         'url'  => The first part of the URL (before the ?)
 	 *         'urlvars' => Associative array of (URL variable => field name)
 	 *                  these are appended to the URL
-	 * @param $fields Field data from which 'urlfield' and 'vars' are obtained.
+	 * @param array $fields Field data from which 'urlfield' and 'vars' are obtained.
 	 */
-	function getActionUrl(&$action, &$fields) {
+	function getActionUrl($action, $fields) {
 		$url = value($action['url'], $fields);
 
 		if ($url === false) return '';
@@ -1973,8 +2059,17 @@ EOT;
 
 		$sep = '?';
 		foreach ($urlvars as $var => $varfield) {
-			$url .= $sep . value_url($var, $fields) . '=' . value_url($varfield, $fields);
-			$sep = '&';
+			if (is_array($varfield)) {
+				// 'orderby' => [ 'id' => 'asc' ]
+				$param = http_build_query([$var => $varfield]);
+			} else {
+				$param = value_url($var, $fields) . '=' . value_url($varfield, $fields);
+			}
+			if (!empty($param)) {
+				$url .= $sep;
+				$url .= $param;
+				$sep = '&';
+			}
 		}
 
 		return $url;
@@ -2080,7 +2175,7 @@ EOT;
 						echo "<input type=\"hidden\" name=\"$k\" value=\"$v\" />";
 			}
 
-			echo "<table>\n";
+			echo "<table class=\"data\">\n";
 			echo "<tr>\n";
 
 			// Display column headings
@@ -2336,22 +2431,51 @@ EOT;
 		return new ArrayRecordSet($tabs);
 	}
 
+	private static function buildIconCache() {
+		$cache = [];
+
+		// Themes
+		foreach (glob("images/themes/*/*.{svg,png}", GLOB_BRACE) as $file) {
+			$parts = explode('/', $file);
+			// images/themes/<theme>/<icon>.<ext>
+			$theme = $parts[2];
+			$icon  = pathinfo($file, PATHINFO_FILENAME);
+
+			$cache['themes'][$theme][$icon] = $file;
+		}
+
+		// Plugins
+		foreach (glob("plugins/*/images/*.{svg,png}", GLOB_BRACE) as $file) {
+			$parts = explode('/', $file);
+			// plugins/<plugin>/images/<icon>.<ext>
+			$plugin = $parts[1];
+			$icon   = pathinfo($file, PATHINFO_FILENAME);
+
+			$cache['plugins'][$plugin][$icon] = $file;
+		}
+
+		return $cache;
+	}
+
+	/**
+	 * @param string|string[] $icon
+	 * @return string
+	 */
 	function icon($icon) {
+		global $conf;
+		static $cache = null;
+		if (!isset($cache)) {
+			$cache = self::buildIconCache();
+		}
 		if (is_string($icon)) {
-			global $conf;
-			$path = "images/themes/{$conf['theme']}/{$icon}";
-			if (file_exists($path . '.png')) return $path . '.png';
-			if (file_exists($path . '.gif')) return $path . '.gif';
-			$path = "images/themes/default/{$icon}";
-			if (file_exists($path . '.png')) return $path . '.png';
-			if (file_exists($path . '.gif')) return $path . '.gif';
+			// Icon from themes
+			return $cache['themes'][$conf['theme']][$icon]
+				?? $cache['themes']['default'][$icon]
+				?? '';
 		} else {
 			// Icon from plugins
-			$path = "plugins/{$icon[0]}/images/{$icon[1]}";
-			if (file_exists($path . '.png')) return $path . '.png';
-			if (file_exists($path . '.gif')) return $path . '.gif';
+			return $cache['plugins'][$icon[0]][$icon[1]] ?? '';
 		}
-		return '';
 	}
 
 	/**
@@ -2591,12 +2715,16 @@ EOT;
 
 	/**
 	 * Set the current schema
-	 * @param $schema The schema name
+	 * @param string $schema The schema name
 	 * @return 0 on success
 	 * @return $data->seSchema() on error
 	 */
 	function setCurrentSchema($schema) {
+		/** @var Postgres $data */
 		global $data;
+		if ($data->_schema == $schema) {
+			return 0;
+		}
 
 		$status = $data->setSchema($schema);
 		if ($status != 0)
@@ -2608,9 +2736,8 @@ EOT;
 	}
 
 	/**
-	 * Save the given SQL script in the history
-	 * of the database and server.
-	 * @param $script the SQL script to save.
+	 * Save the given SQL script in the history of the database and server.
+	 * @param string $script the SQL script to save.
 	 */
 	function saveScriptHistory($script) {
 		list($usec, $sec) = explode(' ', microtime());

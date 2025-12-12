@@ -628,7 +628,7 @@
 
 			$actions = array(
 				'edit' => array(
-					'icon' => 'images/themes/default/Edit.png',
+					'icon' => $misc->icon('Edit'),
 					'content' => $lang['stredit'],
 					'attr'=> array (
 						'href' => array (
@@ -643,7 +643,7 @@
 					)
 				),
 				'delete' => array(
-					'icon' => 'images/themes/default/Delete.png',
+					'icon' => $misc->icon('Delete'),
 					'content' => $lang['strdelete'],
 					'attr'=> array (
 						'href' => array (

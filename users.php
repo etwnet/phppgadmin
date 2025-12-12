@@ -328,7 +328,7 @@
 		
 		$actions = array(
 			'alter' => array(
-				'icon' => 'images/themes/default/Edit.png',
+				'icon' => $misc->icon('Edit'),
 				'content' => $lang['stralter'],
 				'attr'=> array (
 					'href' => array (
@@ -341,7 +341,7 @@
 				)
 			),
 			'drop' => array(
-				'icon' => 'images/themes/default/Delete.png',
+				'icon' => $misc->icon('Delete'),
 				'content' => $lang['strdrop'],
 				'attr'=> array (
 					'href' => array (

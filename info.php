@@ -70,7 +70,7 @@
 
 				$actions = array (
 					'properties' => array (
-						'icon' => 'images/themes/default/Constrains.png',
+						'icon' => $misc->icon('Constrains'),
 						'content' => $lang['strproperties'],
 						'attr'=> array (
 							'href' => array (
@@ -107,7 +107,7 @@
 
 				$actions = array (
 					'properties' => array (
-						'icon' => 'images/themes/default/Constrains.png',
+						'icon' => $misc->icon('Constrains'),
 						'content' => $lang['strproperties'],
 						'attr'=> array (
 							'href' => array (
@@ -144,7 +144,7 @@
 				
 				$actions = array (
 					'properties' => array (
-						'icon' => 'images/themes/default/Constrains.png',
+						'icon' => $misc->icon('Constrains'),
 						'content' => $lang['strproperties'],
 						'attr'=> array (
 							'href' => array (

@@ -87,7 +87,7 @@ function doDefault($msg = '') {
 
 	$actions = array(
 		'logout' => array(
-			'icon' => 'images/themes/default/Exit.png',
+			'icon' => $misc->icon('Exit'),
 			'content' => $lang['strlogout'],
 			'attr' => array(
 				'href' => array(

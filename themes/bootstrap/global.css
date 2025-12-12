@@ -4,7 +4,8 @@
 
 
 :root {
-	--bs-font-sans-serif: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+	--bs-font-sans-serif: sans-serif;
+	--bs-body-font-family: sans-serif;
 	--bs-body-font-weight: 400;
 }
 
@@ -29,6 +30,15 @@ body {
 #content {
 	padding-left: 2px;
 	padding-right: 7px;
+}
+
+#loading-indicator {
+	height: 50px;
+}
+
+hr {
+	margin: 7px 0;
+	border-top: 2px solid;
 }
 
 h2 {
@@ -92,7 +102,7 @@ input[type="reset"]:active {
 	transform: scale(0.97);
 }
 
-input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]),
+input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]),
 textarea,
 select {
 	--input-border-radius: var(--bs-border-radius-sm);
@@ -105,17 +115,17 @@ select {
 	border: var(--input-border-width) solid var(--input-border-color);
 	border-radius: var(--input-border-radius);
 	width: 100%;
-	min-height: 25px;
+	min-height: 27px;
 	padding: 3px 5px;
 }
 
-input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):hover,
+input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):hover,
 textarea:hover,
 select:hover {
 	box-shadow: 0px 1px 3px rgba(0,0,0,0.2);
 }
 
-input[type="checkbox"] {
+input[type="checkbox"], input[type="radio"] {
 	width: 15px;
 	height: 15px;
 }
@@ -159,7 +169,7 @@ table.navbar td.active {
 	background-color: #f5f5f5
 }
 
-table#data {
+table#data, table.data {
 	min-width: 100%;
 }
 
@@ -174,13 +184,6 @@ th.data {
 	padding: 0 3px 3px;
 	transform-origin: top;
 	*/
-}
-
-span.narrow {
-	display: inline-block;
-	transform: scaleY(1.2);
-	line-height: 2;
-	transform-origin: top;
 }
 
 th.data a:active, th.data a:link, th.data a:visited, th.data a:hover {
@@ -216,19 +219,32 @@ ul.toplink, ul.navlink {
 }
 
 ul.navlink {
-	margin: 20px 0
+	margin: 20px 0 15px 0;
+	display: flex;
+	justify-content: center;
 }
 
 ul.toplink li, ul.navlink li {
 	display: inline;
-	border-left: 1px solid #000000;
+	border-left: 2px solid #ccc;
 	margin: 0;
+}
+
+ul.toplink li {
 	padding: 0 2px 0 5px;
 }
 
+ul.navlink li {
+	padding: 0 6px 0 8px;
+}
+
 ul.toplink li:first-child, ul.navlink li:first-child {
-	border: none;
+	border-left: none;
 	padding-left: 0;
+}
+
+ul.toplink li:last-child, ul.navlink li:last-child {
+	padding-right: 0;
 }
 
 tr[class^="data"] {
@@ -258,7 +274,8 @@ tr[class^="data"] a {
 	font-weight: bold;
 }
 
-tr[class^="data"] td[class^="opbutton"] a {
+tr[class^="data"] td[class^="opbutton"] a,
+tr[class^="data"] td.action-buttons a {
 	/*
 	-webkit-background-clip: border-box;
 	-webkit-background-origin: padding-box;
@@ -378,6 +395,9 @@ table.tabs {
 .tab {
 	text-align: center;
 	background: linear-gradient(0deg, #ededed 0%, #fff 100%);
+}
+
+.tab:not(:last-child) {
 	border-right: 1px solid #dcdcdc;
 }
 
@@ -497,13 +517,17 @@ div.logo a {
 	min-width: 26px;
 }
 
-#pagejump {
-	width: 90px;
-	/*margin-right: 2px;*/
-}
-
 .pagenav-form {
 	margin-right: 1em;
+}
+
+.pagenav-form select {
+	width: auto;
+}
+
+.pagenav-form input.page {
+	width: 90px;
+	/*margin-right: 2px;*/
 }
 
 .pagenav.current {
@@ -517,9 +541,10 @@ i.null {
 
 .query-result-line {
 	border-radius: 7px;
-	background: linear-gradient(0deg, #FFF 0%, #f3f3f3 100%);
-	font-size: 1.05em;
-	color: var(--bs-primary);
+	/*background: linear-gradient(0deg, #FFF 0%, #f3f3f3 100%);*/
+	/*font-size: 1.05em;*/
+	/*color: #9a7530;*/
+	background: #efffa2;
 }
 
 .scroll-container {
@@ -546,4 +571,50 @@ i.null {
 
 .ace_editor .ace_constant.ace_numeric {
 	color: #c11a87 !important;
+}
+
+.ace_editor .ace_selection {
+	background: rgba(0, 123, 255, 0.3) !important;
+	color: #fff !important;
+}
+
+a img.icon {
+	padding-right: 2px;
+	padding-bottom: 2px;
+}
+
+.flatpickr-months .flatpickr-month {
+	height: 36px;
+}
+
+.flatpickr-current-month .numInputWrapper {
+	width: 7ch;
+}
+
+.flatpickr-current-month {
+	font-size: inherit;
+}
+
+.flatpickr-time {
+	line-height: 33px;
+}
+
+.flatpickr-calendar.hasTime .flatpickr-time {
+	height: 33px;
+	margin: 3px;
+	border-top: none;
+}
+
+.flatpickr-time .numInputWrapper {
+	height: 33px;
+}
+
+.date-picker-button {
+	font-size: 18px;
+}
+
+.empty-result {
+	margin-top: 2em;
+	margin-bottom: 2em;
+	font-size: 110%;
 }

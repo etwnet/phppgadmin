@@ -470,7 +470,7 @@
 		if ($data->hasUserSignals() || $data->isSuperUser()) {
 			$actions = array(
 				'cancel' => array(
-					'icon' => 'images/themes/default/Cancel.png',
+					'icon' => $misc->icon('Cancel'),
 					'content' => $lang['strcancel'],
 					'attr'=> array (
 						'href' => array (
@@ -484,7 +484,7 @@
 					)
 				),
 				'kill' => array(
-					'icon' => 'images/themes/default/Delete.png',
+					'icon' => $misc->icon('Delete'),
 					'content' => $lang['strkill'],
 					'attr'=> array (
 						'href' => array (

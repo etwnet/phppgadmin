@@ -9,6 +9,7 @@
 include_once('./libraries/decorator.inc.php');
 include_once('./libraries/helper.inc.php');
 include_once('./lang/translations.php');
+require_once __DIR__ . '/../vendor/autoload.php';
 
 // Set error reporting level to max
 error_reporting(E_ALL);

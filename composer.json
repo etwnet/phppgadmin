@@ -1,14 +1,19 @@
 {
-    "name": "phppgadmin/phppgadmin",
-    "description": "phpPgAdmin is a web-based administration tool for PostgreSQL. It is perfect for PostgreSQL DBAs, newbies, and hosting services.",
-    "type": "Application",
-    "license": "GPL-2.0+",
-    "require": {
-        "php": ">=7.2",
+	"name": "phppgadmin/phppgadmin",
+	"description": "phpPgAdmin is a web-based administration tool for PostgreSQL. It is perfect for PostgreSQL DBAs, newbies, and hosting services.",
+	"type": "project",
+	"license": "GPL-2.0+",
+	"repositories": [
+		{
+			"type": "vcs",
+			"url": "https://github.com/greenlion/PHP-SQL-Parser"
+		}
+	],
+	"require": {
+		"php": ">=7.2",
 		"ext-pgsql": "*",
-        "ext-mbstring": "*"
-    },
-    "minimum-stability": "stable",
-    "autoload": {
-    }
+		"ext-mbstring": "*",
+		"greenlion/php-sql-parser": "dev-master"
+	},
+	"minimum-stability": "stable"
 }

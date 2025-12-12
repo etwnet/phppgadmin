@@ -333,14 +333,14 @@ function doProperties($msg = '') {
 			include_once('./libraries/highlight.php');
 			echo "<tr><th class=\"data\" colspan=\"4\">{$lang['strdefinition']}</th></tr>\n";
 			// Check to see if we have syntax highlighting for this language
-			if (isset($data->langmap[$funcdata->fields['prolanguage']])) {
+			if (false && isset($data->langmap[$funcdata->fields['prolanguage']])) {
 				$temp = syntax_highlight(htmlspecialchars_nc($funcdata->fields['prosrc']), $data->langmap[$funcdata->fields['prolanguage']]);
 				$tag = 'prenoescape';
 			} else {
 				$temp = $funcdata->fields['prosrc'];
 				$tag = 'pre';
 			}
-			echo "<tr><td class=\"data1\" colspan=\"4\">", $misc->printVal($temp, $tag, array('lineno' => true, 'class' => 'data1')), "</td></tr>\n";
+			echo "<tr><td class=\"data1\" colspan=\"4\">", $misc->printVal($temp, $tag, array('class' => 'data1')), "</td></tr>\n";
 		}
 
 		// Display function cost options
@@ -883,7 +883,7 @@ function doDefault($msg = '') {
 			'url' => 'functions.php',
 		),
 		'alter' => array(
-			'icon' => 'images/themes/default/Edit.png',
+			'icon' => $misc->icon('Edit'),
 			'content' => $lang['stralter'],
 			'attr' => array(
 				'href' => array(
@@ -897,7 +897,7 @@ function doDefault($msg = '') {
 			)
 		),
 		'drop' => array(
-			'icon' => 'images/themes/default/Delete.png',
+			'icon' => $misc->icon('Delete'),
 			'multiaction' => 'confirm_drop',
 			'content' => $lang['strdrop'],
 			'attr' => array(
@@ -912,7 +912,7 @@ function doDefault($msg = '') {
 			)
 		),
 		'privileges' => array(
-			'icon' => 'images/themes/default/Privileges.png',
+			'icon' => $misc->icon('Privileges'),
 			'content' => $lang['strprivileges'],
 			'attr' => array(
 				'href' => array(

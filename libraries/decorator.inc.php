@@ -47,7 +47,7 @@ function replace($str, $params) {
 
 // Resolving functions:
 
-function value(&$var, &$fields, $esc = null) {
+function value(&$var, $fields, $esc = null) {
 	if (is_a($var, 'Decorator')) {
 		$val = $var->value($fields);
 	} else {
@@ -71,11 +71,11 @@ function value(&$var, &$fields, $esc = null) {
 	return $val;
 }
 
-function value_xml(&$var, &$fields) {
+function value_xml(&$var, $fields) {
 	return value($var, $fields, 'xml');
 }
 
-function value_xml_attr($attr, &$var, &$fields) {
+function value_xml_attr($attr, &$var, $fields) {
 	$val = value($var, $fields, 'xml');
 	if (!empty($val))
 		return " {$attr}=\"{$val}\"";
@@ -83,7 +83,7 @@ function value_xml_attr($attr, &$var, &$fields) {
 		return '';
 }
 
-function value_url(&$var, &$fields) {
+function value_url(&$var, $fields) {
 	return value($var, $fields, 'url');
 }
 

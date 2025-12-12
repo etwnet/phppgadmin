@@ -30,12 +30,17 @@ $md5_server = md5($_REQUEST['server']);
 
 <form id="login_form" action="redirect.php" method="post" name="login_form">
 	<?php
-	if (!empty($_POST)) $vars =& $_POST;
-	else $vars =& $_GET;
-	// Pass request vars through form (is this a security risk???)
+	if (!empty($_POST)) $vars = $_POST;
+	else $vars = $_GET;
 	foreach ($vars as $key => $val) {
 		if (substr($key, 0, 5) == 'login') continue;
-		echo "<input type=\"hidden\" name=\"", htmlspecialchars_nc($key), "\" value=\"", htmlspecialchars_nc($val), "\" />\n";
+		if (is_array($val)) {
+			foreach ($val as $sub_key => $sub_val) {
+				echo "<input type=\"hidden\" name=\"", htmlspecialchars($key), '[', htmlspecialchars($sub_key), "]\" value=\"", htmlspecialchars_nc($sub_val), "\" />\n";
+			}
+		} else {
+			echo "<input type=\"hidden\" name=\"", htmlspecialchars($key), "\" value=\"", htmlspecialchars_nc($val), "\" />\n";
+		}
 	}
 	?>
 	<input type="hidden" name="loginServer" value="<?php echo htmlspecialchars_nc($_REQUEST['server']); ?>"/>

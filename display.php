@@ -11,7 +11,13 @@
  * $Id: display.php,v 1.68 2008/04/14 12:44:27 ioguix Exp $
  */
 
+/** @var Misc $misc */
+/** @var Postgres $data */
+/** @var array $lang */
+
 // Prevent timeouts on large exports (non-safe mode only)
+use PHPSQLParser\PHPSQLParser;
+
 if (!ini_get('safe_mode')) set_time_limit(0);
 
 // Include application functions
@@ -29,13 +35,20 @@ function doEditRow($confirm, $msg = '') {
 	global $data, $misc, $conf;
 	global $lang;
 
-	if (is_array($_REQUEST['key']))
-		$key = $_REQUEST['key'];
-	else
-		$key = unserialize(urldecode($_REQUEST['key']));
+	beginHtml();
+
+	$insert = !isset($_REQUEST['key']);
+	if (!$insert) {
+		if (is_array($_REQUEST['key']))
+			$keyFields = $_REQUEST['key'];
+		else
+			$keyFields = unserialize(urldecode($_REQUEST['key']));
+		$rs = $data->browseRow($_REQUEST['table'], $keyFields);
+	} else {
+		$rs = null;
+	}
 
 	$attrs = $data->getTableAttributes($_REQUEST['table']);
-	$rs = $data->browseRow($_REQUEST['table'], $key);
 
 	if (isset($_REQUEST['edit-inline'])) {
 		// edit field inline
@@ -48,8 +61,11 @@ function doEditRow($confirm, $msg = '') {
 
 	if ($confirm) {
 
+		//var_dump($keyFields);
+		$initial = empty($_POST);
+
 		$misc->printTrail($_REQUEST['subject']);
-		$misc->printTitle($lang['streditrow']);
+		$misc->printTitle($insert ? $lang['strinsertrow'] : $lang['streditrow']);
 		$misc->printMsg($msg);
 
 		if (($conf['autocomplete'] != 'disable')) {
@@ -58,42 +74,116 @@ function doEditRow($confirm, $msg = '') {
 				echo $fksprops['code'];
 		} else $fksprops = false;
 
+		$function_def = <<<EOT
+Date/Time
+CURRENT_DATE, CURRENT_TIME, NOW (), DATE_TRUNC (value), AGE (value), TO_CHAR (value), TO_DATE (value), INTERVAL
+Strings/Text
+LENGTH (value), CHAR_LENGTH (value), LOWER (value), UPPER (value), TRIM (value), LTRIM (value), RTRIM (value), MD5 (value), ENCODE (value,'base64'), ENCODE (value,'escape'), ENCODE (value,'hex'), DECODE (value,'base64'), DECODE (value,'escape'), DECODE (value,'hex')
+Math
+ABS (value), CEIL (value), FLOOR (value), ROUND (value), EXP (value), LOG (value), LOG10 (value), POWER (value), SQRT (value), PI (value), SIN (value), COS (value), TAN (value)
+UUID
+gen_random_uuid (), uuid_generate_v4 ()
+Network
+inet, cidr, host (value), hostmask (value), network (value), masklen (value)
+System/Info
+current_user, session_user, version (), database ()
+EOT;
+		$functions_by_category = [];
+		$all_functions = [];
+		$category = null;
+		foreach (explode("\n", $function_def) as $line) {
+			if (!isset($category)) {
+				$category = $line;
+				continue;
+			}
+			$functions_subset = explode(', ', $line);
+			$functions_by_category[$category] = $functions_subset;
+			$all_functions = array_merge_recursive($all_functions, $functions_subset);
+			$category = null;
+		}
+		// make function searchable by key
+		$all_functions = array_combine($all_functions, $all_functions);
+
 		echo "<form action=\"display.php\" method=\"post\" id=\"ac_form\">\n";
+		//echo "<hidden name=\"\" value=\"\">\n";
 		$error = true;
-		if ($rs->recordCount() == 1 && $attrs->recordCount() > 0) {
+		if ($attrs->recordCount() > 0 && ($insert || $rs->recordCount() == 1)) {
 			echo "<table>\n";
 
 			// Output table header
-			echo "<tr><th class=\"data\">{$lang['strcolumn']}</th><th class=\"data\">{$lang['strtype']}</th>";
-			echo "<th class=\"data\">{$lang['strformat']}</th>\n";
-			echo "<th class=\"data\">{$lang['strnull']}</th><th class=\"data\">{$lang['strvalue']}</th></tr>";
+			echo "<tr>\n";
+			//echo "<th class=\"data\"></th>\n";
+			echo "<th class=\"data\">{$lang['strcolumn']}</th>\n";
+			echo "<th class=\"data\">{$lang['strtype']}</th>";
+			echo "<th class=\"data\">{$lang['strfunction']}</th>\n";
+			echo "<th class=\"data\">{$lang['strnull']}</th>\n";
+			echo "<th class=\"data\">{$lang['strvalue']}</th>\n";
+			echo "<th class=\"data\">{$lang['strexpr']}</th>\n";
+			echo "</tr>";
 
 			$i = 0;
 			while (!$attrs->EOF) {
 
 				$attrs->fields['attnotnull'] = $data->phpBool($attrs->fields['attnotnull']);
-				$id = (($i % 2) == 0 ? '1' : '2');
+				$id = (($i & 1) == 0 ? '1' : '2');
 
 				// Initialise variables
-				if (!isset($_REQUEST['format'][$attrs->fields['attname']]))
-					$_REQUEST['format'][$attrs->fields['attname']] = 'VALUE';
+				//if (!isset($_REQUEST['format'][$attrs->fields['attname']]))
+				//	$_REQUEST['format'][$attrs->fields['attname']] = 'VALUE';
+
+				if ($initial) {
+					if ($insert) {
+						$value = $attrs->fields['adsrc'];
+						if (!empty($value)) {
+							$search = str_replace("()", " ()", strtoupper($value));
+							$function = $all_functions[$search] ?? null;
+							if (!empty($function)) {
+								// use function
+								$_REQUEST['format'][$attrs->fields['attname']] = $function;
+								$value = '';
+							} else {
+								// use expression
+								$_REQUEST['expr'][$attrs->fields['attname']] = 1;
+							}
+							//$_REQUEST['expr'][$attrs->fields['attname']] = 1;
+						}
+					} else {
+						$value = $rs->fields[$attrs->fields['attname']];
+					}
+				} else {
+					$value = $_REQUEST["values"][$attrs->fields['attname']];
+				}
 
 				echo "<tr class=\"data{$id}\">\n";
-				echo "<td style=\"white-space:nowrap;\">", $misc->printVal($attrs->fields['attname']), "</td>";
-				echo "<td style=\"white-space:nowrap;\">\n";
+				//echo "<td class=\"info\">#", $i+1, "</td>";
+				echo "<th>", $misc->printVal($attrs->fields['attname']), "</th>";
+				echo "<td>\n";
 				echo $misc->printVal($data->formatType($attrs->fields['type'], $attrs->fields['atttypmod']));
-				echo "<input type=\"hidden\" name=\"types[", htmlspecialchars_nc($attrs->fields['attname']), "]\" value=\"",
-				htmlspecialchars_nc($attrs->fields['type']), "\" /></td>";
-				echo "<td style=\"white-space:nowrap;\">\n";
-				echo "<select name=\"format[", htmlspecialchars_nc($attrs->fields['attname']), "]\">\n";
+				//echo "<input type=\"hidden\" name=\"types[", htmlspecialchars($attrs->fields['attname']), "]\" value=\"", htmlspecialchars($attrs->fields['type']), "\" /></td>";
+				echo "<td>\n";
+				$sel_fnc_id = "sel_fnc_" . htmlspecialchars($attrs->fields['attname']);
+				echo "<select id=\"$sel_fnc_id\" name=\"format[", htmlspecialchars($attrs->fields['attname']), "]\">\n";
+				echo "<option></option>\n";
+				$format = $_REQUEST['format'][$attrs->fields['attname']] ?? '';
+				foreach ($functions_by_category as $category => $functions) {
+					echo "<optgroup label=\"", htmlspecialchars($category) ,"\">\n";
+					foreach ($functions as $function) {
+						$selected = $format == $function ? " selected" : "";
+						$function_html = htmlspecialchars($function);
+						echo "<option value=\"$function_html\"{$selected}>$function_html</option>\n";
+					}
+					echo "</optgroup>\n";
+				}
+				/*
 				echo "<option value=\"VALUE\"", ($_REQUEST['format'][$attrs->fields['attname']] == 'VALUE') ? ' selected="selected"' : '', ">{$lang['strvalue']}</option>\n";
 				echo "<option value=\"EXPRESSION\"", ($_REQUEST['format'][$attrs->fields['attname']] == 'EXPRESSION') ? ' selected="selected"' : '', ">{$lang['strexpression']}</option>\n";
+				*/
 				echo "</select>\n</td>\n";
-				echo "<td style=\"white-space:nowrap;\">";
+				echo "<td class=\"text-center\">";
 				// Output null box if the column allows nulls (doesn't look at CHECKs or ASSERTIONS)
 				if (!$attrs->fields['attnotnull']) {
 					// Set initial null values
-					if ($_REQUEST['action'] == 'confeditrow' && $rs->fields[$attrs->fields['attname']] === null) {
+					if ($initial && ($insert || $rs->fields[$attrs->fields['attname']] === null)) {
 						$_REQUEST['nulls'][$attrs->fields['attname']] = 'on';
 					}
 					$null_cb_id = "cb_null_" . htmlspecialchars($attrs->fields['attname']);
@@ -105,9 +195,13 @@ function doEditRow($confirm, $msg = '') {
 				}
 				echo "</td>\n";
 
-				echo "<td id=\"row_att_{$attrs->fields['attnum']}\" style=\"white-space:nowrap;\">";
+				echo "<td id=\"row_att_{$attrs->fields['attnum']}\">";
 
-				$extras = array();
+				$extras = array(
+					'data-field' => $attrs->fields['attname'],
+				);
+
+				//$extras['onChange'] = 'document.getElementById("' . $sel_fnc_id . '").value = "";';
 
 				// If the column allows nulls, then we put a JavaScript action on
 				// the data field to unset the NULL checkbox as soon as anything
@@ -123,11 +217,16 @@ function doEditRow($confirm, $msg = '') {
 
 				$data->printField(
 					"values[{$attrs->fields['attname']}]",
-					$rs->fields[$attrs->fields['attname']],
+					$value,
 					$attrs->fields['type'],
 					$extras
 				);
 
+				echo "</td>";
+				echo "<td class=\"text-center\">\n";
+				$expr_cb_id = "cb_expr_" . htmlspecialchars($attrs->fields['attname']);
+				echo "<label><span><input type=\"checkbox\" id=\"$expr_cb_id\" name=\"expr[{$attrs->fields['attname']}]\"",
+				!empty($_REQUEST['expr'][$attrs->fields['attname']]) ? ' checked="checked"' : '', " /></span></label>\n";
 				echo "</td>";
 				echo "</tr>\n";
 				$i++;
@@ -144,46 +243,97 @@ function doEditRow($confirm, $msg = '') {
 
 		echo "<input type=\"hidden\" name=\"action\" value=\"editrow\" />\n";
 		echo $misc->form;
+		if ($insert) {
+			if (!isset($_SESSION['counter'])) $_SESSION['counter'] = 0;
+			echo "<input type=\"hidden\" name=\"protection_counter\" value=\"".$_SESSION['counter']."\" />\n";
+		} else {
+			foreach ($keyFields as $field => $val) {
+				echo "<input type=\"hidden\" name=\"key[", htmlspecialchars($field), "]\" value=\"", htmlspecialchars($val), "\" />\n";
+			}
+			//echo "<input type=\"hidden\" name=\"key\" value=\"", htmlspecialchars_nc(urlencode(serialize($keyFields))), "\" />\n";
+		}
 		if (isset($_REQUEST['table']))
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
 		if (isset($_REQUEST['subject']))
-			echo "<input type=\"hidden\" name=\"subject\" value=\"", htmlspecialchars_nc($_REQUEST['subject']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"subject\" value=\"", htmlspecialchars($_REQUEST['subject']), "\" />\n";
 		if (isset($_REQUEST['query']))
-			echo "<input type=\"hidden\" name=\"query\" value=\"", htmlspecialchars_nc($_REQUEST['query']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"query\" value=\"", htmlspecialchars($_REQUEST['query']), "\" />\n";
 		if (isset($_REQUEST['count']))
-			echo "<input type=\"hidden\" name=\"count\" value=\"", htmlspecialchars_nc($_REQUEST['count']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"count\" value=\"", htmlspecialchars($_REQUEST['count']), "\" />\n";
 		if (isset($_REQUEST['return']))
-			echo "<input type=\"hidden\" name=\"return\" value=\"", htmlspecialchars_nc($_REQUEST['return']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"page\" value=\"", htmlspecialchars_nc($_REQUEST['page']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"sortkey\" value=\"", htmlspecialchars_nc($_REQUEST['sortkey']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"sortdir\" value=\"", htmlspecialchars_nc($_REQUEST['sortdir']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"strings\" value=\"", htmlspecialchars_nc($_REQUEST['strings']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"key\" value=\"", htmlspecialchars_nc(urlencode(serialize($key))), "\" />\n";
+			echo "<input type=\"hidden\" name=\"return\" value=\"", htmlspecialchars($_REQUEST['return']), "\" />\n";
+		if (isset($_REQUEST['page']))
+			echo "<input type=\"hidden\" name=\"page\" value=\"", htmlspecialchars($_REQUEST['page']), "\" />\n";
+		if (isset($_REQUEST['orderby'])) {
+			foreach ($_REQUEST['orderby'] as $field => $val) {
+				echo "<input type=\"hidden\" name=\"orderby[", htmlspecialchars($field), "]\" value=\"", htmlspecialchars($val), "\" />\n";
+			}
+		}
+		if (isset($_REQUEST['strings']))
+			echo "<input type=\"hidden\" name=\"strings\" value=\"", htmlspecialchars($_REQUEST['strings']), "\" />\n";
+
 		echo "<p>";
-		if (!$error) echo "<input type=\"submit\" name=\"save\" accesskey=\"r\" value=\"{$lang['strsave']}\" />\n";
+		if ($insert) {
+			echo "<input type=\"submit\" name=\"insert\" value=\"{$lang['strinsert']}\" />\n";
+			echo "<input type=\"submit\" name=\"insert_and_repeat\" accesskey=\"r\" value=\"{$lang['strinsertandrepeat']}\" />\n";
+		} else {
+			if (!$error) echo "<input type=\"submit\" name=\"save\" accesskey=\"r\" value=\"{$lang['strsave']}\" />\n";
+		}
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" />\n";
 
 		if ($fksprops !== false) {
+			echo "&nbsp;&nbsp;&nbsp;";
 			if ($conf['autocomplete'] != 'default off')
-				echo "<input type=\"checkbox\" id=\"no_ac\" value=\"1\" checked=\"checked\" /><label for=\"no_ac\">{$lang['strac']}</label>\n";
+				echo "<input type=\"checkbox\" id=\"no_ac\" value=\"1\" checked=\"checked\" /> <label for=\"no_ac\"> {$lang['strac']}</label>\n";
 			else
-				echo "<input type=\"checkbox\" id=\"no_ac\" value=\"0\" /><label for=\"no_ac\">{$lang['strac']}</label>\n";
+				echo "<input type=\"checkbox\" id=\"no_ac\" value=\"0\" /> <label for=\"no_ac\"> {$lang['strac']}</label>\n";
 		}
 
 		echo "</p>\n";
 		echo "</form>\n";
 	} else {
+
 		if (!isset($_POST['values'])) $_POST['values'] = array();
 		if (!isset($_POST['nulls'])) $_POST['nulls'] = array();
+		if (!isset($_POST['expr'])) $_POST['expr'] = array();
 
-		$status = $data->editRow($_POST['table'], $_POST['values'], $_POST['nulls'],
-			$_POST['format'], $_POST['types'], $key);
-		if ($status == 0)
-			doBrowse($lang['strrowupdated']);
-		elseif ($status == -2)
-			doEditRow(true, $lang['strrownotunique']);
-		else
-			doEditRow(true, $lang['strrowupdatedbad']);
+		if ($insert) {
+			if ($_SESSION['counter']++ == $_POST['protection_counter']) {
+				$fields = array();
+				while (!$attrs->EOF) {
+					$fields[$attrs->fields['attnum']] = $attrs->fields['attname'];
+				}
+				$status = $data->insertRow(
+					$_POST['table'], $fields, $_POST['values'], $_POST['nulls'],
+					$_POST['format'], $_POST['expr'], $_POST['types']
+				);
+				if ($status == 0) {
+					if (isset($_POST['insert_and_repeat'])) {
+						$_POST = [];
+						unset($_REQUEST['values']);
+						unset($_REQUEST['expr']);
+						unset($_REQUEST['nulls']);
+						unset($_REQUEST['format']);
+						doInsertRow(true, $lang['strrowinserted']);
+					} else
+						doBrowse($lang['strrowinserted']);
+				}
+				else
+					doEditRow(true, $lang['strrowinsertedbad']);
+			} else
+				doEditRow(true, $lang['strrowduplicate']);
+		} else {
+			$status = $data->editRow(
+				$_POST['table'], $_POST['values'], $_POST['nulls'],
+				$_POST['format'], $_POST['expr'], $_POST['types'], $keyFields
+			);
+			if ($status == 0)
+				doBrowse($lang['strrowupdated']);
+			elseif ($status == -2)
+				doEditRow(true, $lang['strrownotunique']);
+			else
+				doEditRow(true, $lang['strrowupdatedbad']);
+		}
 	}
 
 }
@@ -194,6 +344,8 @@ function doEditRow($confirm, $msg = '') {
 function doDelRow($confirm) {
 	global $data, $misc;
 	global $lang;
+
+	beginHtml();
 
 	if ($confirm) {
 		$misc->printTrail($_REQUEST['subject']);
@@ -238,8 +390,11 @@ function doDelRow($confirm) {
 		if (isset($_REQUEST['return']))
 			echo "<input type=\"hidden\" name=\"return\" value=\"", htmlspecialchars_nc($_REQUEST['return']), "\" />\n";
 		echo "<input type=\"hidden\" name=\"page\" value=\"", htmlspecialchars_nc($_REQUEST['page']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"sortkey\" value=\"", htmlspecialchars_nc($_REQUEST['sortkey']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"sortdir\" value=\"", htmlspecialchars_nc($_REQUEST['sortdir']), "\" />\n";
+		if (isset($_REQUEST['orderby'])) {
+			foreach ($_REQUEST['orderby'] as $key => $val) {
+				echo "<input type=\"hidden\" name=\"orderby[", htmlspecialchars($key), "]\" value=\"", htmlspecialchars($val), "\" />\n";
+			}
+		}
 		echo "<input type=\"hidden\" name=\"strings\" value=\"", htmlspecialchars_nc($_REQUEST['strings']), "\" />\n";
 		echo "<input type=\"hidden\" name=\"key\" value=\"", htmlspecialchars_nc(urlencode(serialize($_REQUEST['key']))), "\" />\n";
 		echo "</form>\n";
@@ -300,7 +455,7 @@ function &getFKInfo() {
 /* Print table header cells
  * @param $args - associative array for sort link parameters
  * */
-function printTableHeaderCells(&$rs, $args, $withOid) {
+function printTableHeaderCells($rs, $args, $withOid) {
 	global $misc, $data, $conf;
 	$j = 0;
 
@@ -313,26 +468,24 @@ function printTableHeaderCells(&$rs, $args, $withOid) {
 		$finfo = $rs->fetchField($j);
 
 		if ($args === false) {
-			echo "<th class=\"data\">", $misc->printVal($finfo->name), "</th>\n";
+			echo "<th class=\"data\"><span>", htmlspecialchars($finfo->name), "</span></th>\n";
 		} else {
 			$args['page'] = $_REQUEST['page'];
-			$args['sortkey'] = $j + 1;
-			// Sort direction opposite to current direction, unless it's currently ''
-			$args['sortdir'] = (
-				$_REQUEST['sortdir'] == 'asc'
-				and $_REQUEST['sortkey'] == ($j + 1)
-			) ? 'desc' : 'asc';
 
 			$sortLink = http_build_query($args);
 
-			echo "<th class=\"data\"><a href=\"display.php?{$sortLink}\">"
-			, $misc->printVal($finfo->name);
-			if ($_REQUEST['sortkey'] == ($j + 1)) {
-				if ($_REQUEST['sortdir'] == 'asc')
+			$keys = array_keys($_REQUEST['orderby']);
+
+			// Todo show field position in orderby
+			echo "<th class=\"data\"><span><a class=\"orderby\" data-col=\"", htmlspecialchars($finfo->name), "\" data-type=\"", htmlspecialchars($finfo->type), "\" href=\"display.php?{$sortLink}\"><span>", htmlspecialchars($finfo->name), "</span>";
+			if (isset($_REQUEST['orderby'][$finfo->name])) {
+				if ($_REQUEST['orderby'][$finfo->name] === 'desc')
+					echo '<img src="' . $misc->icon('LowerArgument') . '" alt="desc">';
+				else
 					echo '<img src="' . $misc->icon('RaiseArgument') . '" alt="asc">';
-				else   echo '<img src="' . $misc->icon('LowerArgument') . '" alt="desc">';
+				echo "<span class='small'>", array_search($finfo->name, $keys) + 1, "</span>";
 			}
-			echo "</a></th>\n";
+			echo "</a></span></th>\n";
 		}
 		$j++;
 	}
@@ -394,6 +547,7 @@ function printTableRowCells($rs, $fkey_information, $withOid, $editable = false)
 
 /* Print the FK row, used in ajax requests */
 function doBrowseFK() {
+	/** @var Postgres $data */
 	global $data, $misc, $lang;
 
 	$ops = array();
@@ -408,9 +562,9 @@ function doBrowseFK() {
 	$max_pages = 1;
 	// Retrieve page from query.  $max_pages is returned by reference.
 	$rs = $data->browseQuery('SELECT', $_REQUEST['table'], $_REQUEST['query'],
-		null, null, 1, 1, $max_pages);
+		null, 1, 1, $max_pages);
 
-	echo "<a href=\"\" style=\"display:table-cell;\" class=\"fk_delete\"><img alt=\"[delete]\" src=\"" . $misc->icon('Delete') . "\" /></a>\n";
+	echo "<a href=\"\" style=\"display:table-cell;\" class=\"fk_close\"><img alt=\"[close]\" src=\"" . $misc->icon('Close') . "\" /></a>\n";
 	echo "<div style=\"display:table-cell;\">";
 
 	if (is_object($rs) && $rs->recordCount() > 0) {
@@ -441,24 +595,9 @@ function doBrowse($msg = '') {
 	/** @var Postgres $data */
 	global $data, $conf, $misc, $lang, $plugin_manager;
 
-	$save_history = false;
-	// If current page is not set, default to first page
-	if (!isset($_REQUEST['page']))
-		$_REQUEST['page'] = 1;
-	if (!isset($_REQUEST['nohistory']))
-		$save_history = true;
+	$save_history = !isset($_REQUEST['nohistory']);
 
-	if (isset($_REQUEST['subject'])) {
-		$subject = $_REQUEST['subject'];
-		if (isset($_REQUEST[$subject])) $table_name = $_REQUEST[$subject];
-	} else {
-		$subject = '';
-	}
-
-	$misc->printTrail($subject ?? 'database');
-	$misc->printTabs($subject, 'browse');
-
-	/* This code is used when browsing FK in pure-xHTML (without js) */
+	// This code is used when browsing FK in pure-xHTML (without js)
 	if (isset($_REQUEST['fkey'])) {
 		$ops = array();
 		foreach ($_REQUEST['fkey'] as $x => $y) {
@@ -467,6 +606,10 @@ function doBrowse($msg = '') {
 		$query = $data->getSelectSQL($_REQUEST['table'], array(), $_REQUEST['fkey'], $ops);
 		$_REQUEST['query'] = $query;
 	}
+
+	// read table/view name from url parameters
+	$subject = $_REQUEST['subject'] ?? '';
+	$table_name = $_REQUEST[$subject] ?? null;
 
 	if (isset($table_name)) {
 		if (isset($_REQUEST['query'])) {
@@ -478,21 +621,76 @@ function doBrowse($msg = '') {
 		}
 	} else {
 		$_REQUEST['query'] = $_SESSION['sqlquery'];
-		$misc->printTitle($lang['strqueryresults']);
+		//$misc->printTitle($lang['strqueryresults']);
 		// we come from sql.php, $_SESSION['sqlquery'] has been set there
 		$type = 'QUERY';
 	}
 
+	// get or build sql query
+	if (!empty($_REQUEST['query'])) {
+		$query = $_REQUEST['query'];
+		$parse_table = true;
+	} else {
+		$parse_table = false;
+		$query = "SELECT * FROM " . pg_escape_id($_REQUEST['schema']);
+		if ($_REQUEST['subject'] == 'view') {
+			$query = "{$query}." . pg_escape_id($_REQUEST['view']) . ";";
+		} else {
+			$query = "{$query}." . pg_escape_id($_REQUEST['table']) . ";";
+		}
+	}
+
+	// parse sql query
+	$parser = new PHPSQLParser();
+	$parsed = $parser->parse($query);
+
+	//$data->conn->debug = true;
+	//var_dump($parsed);
+
+	// update table/view name in url parameters
+	if ($parse_table) {
+		if (!empty($parsed['SELECT']) && ($parsed['FROM'][0]['expr_type'] ?? '') == 'table') {
+			$parts = $parsed['FROM'][0]['no_quotes']['parts'] ?? [];
+			$changed = false;
+			if (count($parts) === 2) {
+				[$schema, $table] = $parts;
+				$changed = $_REQUEST['schema'] != $schema || $table_name != $table;
+			} else {
+				[$table] = $parts;
+				$changed = $table_name != $table;
+				$schema = $_REQUEST['schema'] ?? $data->_schema;
+			}
+			if ($changed) {
+				$misc->setCurrentSchema($schema);
+				$table_name = $table;
+				unset($_REQUEST[$subject]);
+				$subject = $data->getTableType($schema, $table) ?? '';
+				if (!empty($subject)) {
+					$_REQUEST['subject'] = $subject;
+					$_REQUEST[$subject] = $table;
+				}
+			}
+		}
+	}
+
+	beginHtml();
+
+	$misc->printTrail($subject ?? 'database');
+	$misc->printTabs($subject, 'browse');
+
 	$misc->printMsg($msg);
 
-	// If 'sortkey' is not set, default to ''
-	if (!isset($_REQUEST['sortkey'])) $_REQUEST['sortkey'] = '';
+	// If current page is not set, default to first page
+	if (!isset($_REQUEST['page'])) $_REQUEST['page'] = 1;
 
-	// If 'sortdir' is not set, default to ''
-	if (!isset($_REQUEST['sortdir'])) $_REQUEST['sortdir'] = '';
+	// If 'orderby' is not set, default to []
+	if (!isset($_REQUEST['orderby'])) $_REQUEST['orderby'] = [];
 
 	// If 'strings' is not set, default to collapsed
 	if (!isset($_REQUEST['strings'])) $_REQUEST['strings'] = 'collapsed';
+
+	// Default max_rows to $conf['max_rows'] if not set
+	if (!isset($_REQUEST['max_rows'])) $_REQUEST['max_rows'] = $conf['max_rows'];
 
 	// Fetch unique row identifier, if this is a table browse request.
 	if (isset($table_name))
@@ -510,13 +708,85 @@ function doBrowse($msg = '') {
 		}
 	}
 
+	$orderBySet = false;
+	if (!empty($_POST['query'])) {
+		// sql query has been posted, update orderby fields
+		if (!empty($parsed['ORDER'])) {
+			foreach ($parsed['ORDER'] as $orderExpr) {
+				$field = trim($orderExpr['base_expr'], " \t\n\r\0\x0B;");
+				if (preg_match('/^"(?:[^"]|"")*"$/', $field)) {
+					$field = str_replace('""', '"', substr($field, 1, -1));
+				} elseif (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $field)) {
+					// skip unknown expressions
+					continue;
+				}
+				$dir = strtolower($orderExpr['direction'] ?? '');
+				if ($dir !== 'desc') {
+					$dir = 'asc';
+				}
+				$_REQUEST['orderby'][$field] = $dir;
+			}
+			$orderBySet = true;
+		}
+	} elseif (!empty($_REQUEST['orderby'])) {
+		// update orderby in sql query
+		if (!empty($parsed['SELECT'])) {
+
+			if (!empty($_REQUEST['orderby'])) {
+				$newOrderBy = ' ORDER BY ';
+				$sep = "";
+				foreach ($_REQUEST['orderby'] as $field => $dir) {
+					$dir = strcasecmp($dir, 'desc') === 0 ? 'DESC' : 'ASC';
+					$newOrderBy .= $sep . pg_escape_id($field) . ' ' . $dir;
+					$sep = ", ";
+				}
+			} else {
+				$newOrderBy = "";
+			}
+
+			if (!empty($parsed['ORDER'])) {
+				$pattern = '/ORDER\s+BY[\s\S]*?(?=\sLIMIT|\sOFFSET|\sFETCH|\sFOR|\sUNION|\sINTERSECT|\sEXCEPT|\)|--|\/\*|;|\s*$)/i';
+				preg_match_all($pattern, $query, $matches);
+
+				if (!empty($matches[0])) {
+					$lastOrderBy = end($matches[0]);
+					$query = str_replace($lastOrderBy, $newOrderBy, $query);
+					$orderBySet = true;
+				}
+
+			} elseif (!empty($newOrderBy)) {
+				$query = rtrim($query, " \t\n\r\0\x0B;");
+
+				$pattern = '/\s*(?:'
+					. '(?:LIMIT|OFFSET|FETCH|FOR|UNION|INTERSECT|EXCEPT)\b[^;]*'
+					. '|'
+					. '\)'
+					. '|'
+					. '--[^\r\n]*'
+					. '|'
+					. '\/\*.*?\*\/'
+					. ')\s*$/is';
+
+				if (preg_match($pattern, $query, $matches, PREG_OFFSET_CAPTURE)) {
+					$endPos = $matches[0][1];
+					$query = substr($query, 0, $endPos) . $newOrderBy . substr($query, $endPos);
+				} else {
+					$query .= $newOrderBy;
+				}
+
+				$query .= ';';
+				$orderBySet = true;
+
+			}
+		}
+	}
+
 	// Retrieve page from query.  $max_pages is returned by reference.
-	//$data->conn->debug = true;
 	$rs = $data->browseQuery($type,
 		$table_name ?? null,
-		$_SESSION['sqlquery'] ?? null,
-		$_REQUEST['sortkey'], $_REQUEST['sortdir'], $_REQUEST['page'],
-		$conf['max_rows'], $max_pages);
+		$query,
+		$orderBySet ? [] : $_REQUEST['orderby'], $_REQUEST['page'],
+		$_REQUEST['max_rows'], $max_pages);
 	/*
 	var_dump($data->lastQueryTime);
 	var_dump($data->lastQueryOffset);
@@ -524,7 +794,8 @@ function doBrowse($msg = '') {
 	var_dump($data->totalRowsFound);
 	*/
 	$status_line = format_string($lang['strbrowsestatistics'], [
-		'first' => $data->lastQueryOffset + 1,
+		'count' => is_object($rs) ? $rs->rowCount() : 0,
+		'first' => is_object($rs) ? $data->lastQueryOffset + 1 : 0,
 		'last' => min($data->totalRowsFound, $data->lastQueryOffset + $data->lastQueryLimit),
 		'total' => $data->totalRowsFound,
 		'duration' => round($data->lastQueryTime, 5),
@@ -547,31 +818,23 @@ function doBrowse($msg = '') {
 	if (isset($_REQUEST['return'])) $_gets['return'] = $_REQUEST['return'];
 	if (isset($_REQUEST['search_path'])) $_gets['search_path'] = $_REQUEST['search_path'];
 	if (isset($_REQUEST['table'])) $_gets['table'] = $_REQUEST['table'];
-	if (isset($_REQUEST['sortkey'])) $_gets['sortkey'] = $_REQUEST['sortkey'];
-	if (isset($_REQUEST['sortdir'])) $_gets['sortdir'] = $_REQUEST['sortdir'];
+	if (isset($_REQUEST['orderby'])) $_gets['orderby'] = $_REQUEST['orderby'];
 	if (isset($_REQUEST['nohistory'])) $_gets['nohistory'] = $_REQUEST['nohistory'];
 	$_gets['strings'] = $_REQUEST['strings'];
+	$_gets['max_rows'] = $_REQUEST['max_rows'];
 
-	if ($save_history && is_object($rs) && ($type == 'QUERY')) //{
-		$misc->saveScriptHistory($_REQUEST['query']);
-
-	if (isset($_REQUEST['query'])) {
-		$query = $_REQUEST['query'];
-	} else {
-		$query = "SELECT * FROM " . pg_escape_id($_REQUEST['schema']);
-		if ($_REQUEST['subject'] == 'view') {
-			$query = "{$query}." . pg_escape_id($_REQUEST['view']) . ";";
-		} else {
-			$query = "{$query}." . pg_escape_id($_REQUEST['table']) . ";";
-		}
+	if ($save_history && is_object($rs)) {
+		$misc->saveScriptHistory($query);
 	}
-	//$query = isset($_REQUEST['query'])? $_REQUEST['query'] : "select * from {$_REQUEST['schema']}.{$_REQUEST['table']};";
+
+	$_sub_params = $_gets;
+	unset($_sub_params['query']);
 	?>
-	<form method="POST" action="<?= $_SERVER['REQUEST_URI'] ?>">
+	<form method="get" action="display.php?<?= http_build_query($_sub_params) ?>">
 		<div>
 			<textarea name="query" class="sql-editor frame resizable" width="90%" rows="5" cols="100" resizable="true"><?= htmlspecialchars_nc($query) ?></textarea>
 		</div>
-		<div><input type="submit"/></div>
+		<div><input type="submit" value="<?= $lang['strquerysubmit'] ?>"/></div>
 	</form>
 	<?php
 
@@ -579,7 +842,7 @@ function doBrowse($msg = '') {
 
 	if (is_object($rs) && $rs->recordCount() > 0) {
 		// Show page navigation
-		$misc->printPages($_REQUEST['page'], $max_pages, $_gets);
+		$misc->printPageNavigation($_REQUEST['page'], $max_pages, $_gets);
 
 		// Check that the key is actually in the result set.  This can occur for select
 		// operations where the key fields aren't part of the select.  XXX:  We should
@@ -595,7 +858,7 @@ function doBrowse($msg = '') {
 
 		$buttons = array(
 			'edit' => array(
-				'icon' => 'images/themes/default/Edit.png',
+				'icon' => $misc->icon('Edit'),
 				'content' => $lang['stredit'],
 				'attr' => array(
 					'href' => array(
@@ -609,7 +872,7 @@ function doBrowse($msg = '') {
 				)
 			),
 			'delete' => array(
-				'icon' => 'images/themes/default/Delete.png',
+				'icon' => $misc->icon('Delete'),
 				'content' => $lang['strdelete'],
 				'attr' => array(
 					'href' => array(
@@ -645,14 +908,34 @@ function doBrowse($msg = '') {
 			$table_data .= " data-edit=\"" . htmlspecialchars(http_build_query($edit_url_vars)) . "\"";
 		}
 
-		echo "<div class=\"scroll-container\">\n";
+		//echo "<div class=\"scroll-container\">\n";
 		echo "<table id=\"data\"{$table_data}>\n";
-		echo "<tr>\n";
+		echo "<tr data-orderby-desc=\"", htmlspecialchars($lang['strorderbyhelp']), "\">\n";
 
 		// Display edit and delete actions if we have a key
-		$colspan = count($buttons);
+		$colspan = min(1, count($buttons));
+		//var_dump($key_fields);
 		if ($colspan > 0 and count($key_fields) > 0) {
-			echo "<th colspan=\"{$colspan}\" class=\"data\">{$lang['stractions']}</th>\n";
+			$collapsed = $_REQUEST['strings'] === 'collapsed';
+			echo "<th colspan=\"{$colspan}\" class=\"data\">";
+			//echo $lang['stractions'];
+			$link = array(
+				'attr' => array(
+					'href' => array(
+						'url' => 'display.php',
+						'urlvars' => array_merge(
+							$_gets,
+							array(
+								'strings' => $collapsed ? 'expanded' : 'collapsed',
+								'page' => $_REQUEST['page']
+							))
+					)
+				),
+				'icon' => $misc->icon($collapsed ? 'TextExpand' : 'TextShrink'),
+				'content' => $collapsed ? $lang['strexpand'] : $lang['strcollapse'],
+			);
+			$misc->printLink($link);
+			echo "</th>\n";
 		}
 
 		/* we show OIDs only if we are in TABLE or SELECT type browsing */
@@ -665,7 +948,7 @@ function doBrowse($msg = '') {
 		while (!$rs->EOF) {
 			$id = (($i % 2) == 0 ? '1' : '2');
 			// Display edit and delete links if we have a key
-			$editable = $colspan > 0 and !empty($key_fields);
+			$editable = $colspan > 0 && !empty($key_fields);
 			if ($editable) {
 				$keys_array = array();
 				$keys_complete = true;
@@ -708,14 +991,18 @@ function doBrowse($msg = '') {
 				echo "<tr class=\"data{$id} data-row\"{$tr_data}>\n";
 
 				if ($keys_complete) {
+					echo "<td class=\"action-buttons\">";
 					foreach ($actions['actionbuttons'] as $action) {
-						echo "<td class=\"opbutton{$id} op-button\">";
+						echo "<span class=\"opbutton{$id} op-button\">";
 						$misc->printLink($action);
-						echo "</td>\n";
+						echo "</span>\n";
 					}
+					echo "</td>\n";
 				} else {
 					echo "<td colspan=\"{$colspan}\">&nbsp;</td>\n";
 				}
+			} else {
+				echo "<tr class=\"data{$id} data-row\">\n";
 			}
 
 			printTableRowCells($rs, $fkey_information, isset($table_name), $editable);
@@ -724,12 +1011,15 @@ function doBrowse($msg = '') {
 			$rs->moveNext();
 			$i++;
 		}
-		echo "</table>\n</div>\n";
+		echo "</table>\n";
+		//echo "</div>\n";
 
-		echo "<p>", $rs->recordCount(), " {$lang['strrows']}</p>\n";
+		//echo "<p>", $rs->recordCount(), " {$lang['strrows']}</p>\n";
 		// Show page navigation
-		$misc->printPages($_REQUEST['page'], $max_pages, $_gets);
-	} else echo "<p>{$lang['strnodata']}</p>\n";
+		$misc->printPageNavigation($_REQUEST['page'], $max_pages, $_gets);
+	} else {
+		echo "<div class=\"empty-result\">{$lang['strnodata']}</div>\n";
+	}
 
 	// Navigation links
 	$navlinks = array();
@@ -753,6 +1043,7 @@ function doBrowse($msg = '') {
 					'urlvars' => $urlvars['params']
 				)
 			),
+			'icon' => $misc->icon('Return'),
 			'content' => $lang['strback']
 		);
 	}
@@ -769,6 +1060,7 @@ function doBrowse($msg = '') {
 					))
 				)
 			),
+			'icon' => $misc->icon('Edit'),
 			'content' => $lang['streditsql']
 		);
 
@@ -786,6 +1078,7 @@ function doBrowse($msg = '') {
 						))
 				)
 			),
+			'icon' => $misc->icon('TextShrink'),
 			'content' => $lang['strcollapse']
 		);
 	else
@@ -801,6 +1094,7 @@ function doBrowse($msg = '') {
 						))
 				)
 			),
+			'icon' => $misc->icon('TextExpand'),
 			'content' => $lang['strexpand']
 		);
 
@@ -821,6 +1115,7 @@ function doBrowse($msg = '') {
 						))
 					)
 				),
+				'icon' => $misc->icon('View'),
 				'content' => $lang['strcreateview']
 			);
 		}
@@ -836,6 +1131,7 @@ function doBrowse($msg = '') {
 					'urlvars' => array_merge($fields, $urlvars)
 				)
 			),
+			'icon' => $misc->icon('Download'),
 			'content' => $lang['strdownload']
 		);
 	}
@@ -845,13 +1141,13 @@ function doBrowse($msg = '') {
 		$navlinks['insert'] = array(
 			'attr' => array(
 				'href' => array(
-					'url' => 'tables.php',
-					'urlvars' => array_merge($fields, array(
+					'url' => 'display.php',
+					'urlvars' => array_merge($_gets, array(
 						'action' => 'confinsertrow',
-						'table' => $table_name
 					))
 				)
 			),
+			'icon' => $misc->icon('Add'),
 			'content' => $lang['strinsert']
 		);
 
@@ -868,6 +1164,7 @@ function doBrowse($msg = '') {
 					))
 			)
 		),
+		'icon' => $misc->icon('Refresh'),
 		'content' => $lang['strrefresh']
 	);
 
@@ -880,7 +1177,7 @@ if ($action == 'dobrowsefk') {
 	doBrowseFK();
 }
 
-$scripts = "<script src=\"js/display.js\" type=\"text/javascript\"></script>";
+$scripts = "<script src=\"js/display.js\" defer type=\"text/javascript\"></script>";
 
 $scripts .= "<script type=\"text/javascript\">\n";
 $scripts .= "var Display = {\n";
@@ -888,28 +1185,31 @@ $scripts .= "errmsg: '" . str_replace("'", "\'", $lang['strconnectionfail']) . "
 $scripts .= "};\n";
 $scripts .= "</script>\n";
 
-// Set the title based on the subject of the request
-if (isset($_REQUEST['subject']) && isset($_REQUEST[$_REQUEST['subject']])) {
-	if ($_REQUEST['subject'] == 'table') {
-		$misc->printHeader(
-			$lang['strtables'] . ': ' . $_REQUEST[$_REQUEST['subject']],
-			$scripts
-		);
-	} else if ($_REQUEST['subject'] == 'view') {
-		$misc->printHeader(
-			$lang['strviews'] . ': ' . $_REQUEST[$_REQUEST['subject']],
-			$scripts
-		);
-	} else if ($_REQUEST['subject'] == 'column') {
-		$misc->printHeader(
-			$lang['strcolumn'] . ': ' . $_REQUEST[$_REQUEST['subject']],
-			$scripts
-		);
+// Put HTML header in a function to later adjust title if a custom query was send
+function beginHtml() {
+	global $misc, $lang, $scripts;
+	// Set the title based on the subject of the request
+	$subject_type = $_REQUEST['subject'] ?? '';
+	$subject_name = $_REQUEST[$subject_type] ?? '';
+	if (!empty($subject_name)) {
+		switch ($subject_type) {
+		case 'table':
+			$title = $lang['strtables'] . ': ' . $subject_name;
+			break;
+		case 'view':
+			$title = $lang['strviews'] . ': ' . $subject_name;
+			break;
+		case 'column':
+			$title = $lang['strcolumn'] . ': ' . $subject_name;
+			break;
+		}
+	} else {
+		$title = $lang['strqueryresults'];
 	}
-} else
-	$misc->printHeader($lang['strqueryresults']);
 
-$misc->printBody();
+	$misc->printHeader($title ?? '', $scripts);
+	$misc->printBody();
+}
 
 switch ($action) {
 case 'editrow':
@@ -917,6 +1217,7 @@ case 'editrow':
 	else doBrowse();
 	break;
 case 'confeditrow':
+case 'confinsertrow':
 	doEditRow(true);
 	break;
 case 'delrow':
@@ -932,4 +1233,3 @@ default:
 }
 
 $misc->printFooter();
-

@@ -561,7 +561,7 @@ function doDefault($msg = '') {
 
 	$actions = array(
 		'browse' => array(
-			'icon' => 'images/themes/default/Table.png',
+			'icon' => $misc->icon('Table'),
 			'content' => $lang['strbrowse'],
 			'attr' => array(
 				'href' => array(
@@ -576,7 +576,7 @@ function doDefault($msg = '') {
 			)
 		),
 		'alter' => array(
-			'icon' => 'images/themes/default/Edit.png',
+			'icon' => $misc->icon('Edit'),
 			'content' => $lang['stralter'],
 			'attr' => array(
 				'href' => array(
@@ -591,7 +591,7 @@ function doDefault($msg = '') {
 			)
 		),
 		'privileges' => array(
-			'icon' => 'images/themes/default/Privileges.png',
+			'icon' => $misc->icon('Privileges'),
 			'content' => $lang['strprivileges'],
 			'attr' => array(
 				'href' => array(
@@ -605,7 +605,7 @@ function doDefault($msg = '') {
 			)
 		),
 		'drop' => array(
-			'icon' => 'images/themes/default/Delete.png',
+			'icon' => $misc->icon('Delete'),
 			'content' => $lang['strdrop'],
 			'attr' => array(
 				'href' => array(
@@ -658,13 +658,14 @@ function doDefault($msg = '') {
 		'insert' => array(
 			'attr' => array(
 				'href' => array(
-					'url' => 'tables.php',
+					'url' => 'display.php',
 					'urlvars' => array(
 						'action' => 'confinsertrow',
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema'],
-						'table' => $_REQUEST['table']
+						'table' => $_REQUEST['table'],
+						'subject' => 'table',
 					)
 				)
 			),

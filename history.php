@@ -52,7 +52,7 @@
 
 			$actions = array(
 				'run' => array(
-					'icon' => 'images/themes/default/Execute.png',
+					'icon' => $misc->icon('Execute'),
 					'content' => $lang['strexecute'],
 					'attr'=> array (
 						'href' => array (
@@ -68,7 +68,7 @@
 					)
 				),
 				'remove' => array(
-					'icon' => 'images/themes/default/Delete.png',
+					'icon' => $misc->icon('Delete'),
 					'content' => $lang['strdelete'],
 					'attr'=> array (
 						'href' => array (

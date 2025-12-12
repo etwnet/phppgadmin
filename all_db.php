@@ -1,4 +1,7 @@
 <?php
+/** @var Misc $misc */
+/** @var array $lang */
+
 
 /**
  * Manage databases within a server
@@ -399,7 +402,7 @@ function doDefault($msg = '') {
 			'default' => null,
 		),
 		'drop' => array(
-			'icon' => 'images/themes/default/Delete.png',
+			'icon' => $misc->icon('Delete'),
 			'content' => $lang['strdrop'],
 			'attr' => array(
 				'href' => array(
@@ -414,7 +417,7 @@ function doDefault($msg = '') {
 			'multiaction' => 'confirm_drop',
 		),
 		'privileges' => array(
-			'icon' => 'images/themes/default/Privileges.png',
+			'icon' => $misc->icon('Privileges'),
 			'content' => $lang['strprivileges'],
 			'attr' => array(
 				'href' => array(
@@ -429,7 +432,7 @@ function doDefault($msg = '') {
 	);
 	if ($data->hasAlterDatabase()) {
 		$actions['alter'] = array(
-			'icon' => 'images/themes/default/Edit.png',
+			'icon' => $misc->icon('Edit'),
 			'content' => $lang['stralter'],
 			'attr' => array(
 				'href' => array(
@@ -469,6 +472,9 @@ function doDefault($msg = '') {
 }
 
 function doTree() {
+	/** @var Postgres $data */
+	/** @var Misc $misc */
+	/** @var array $lang */
 	global $misc, $data, $lang;
 
 	$databases = $data->getDatabases();

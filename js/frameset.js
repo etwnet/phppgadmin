@@ -3,6 +3,7 @@
 	const isRtl = document.documentElement.getAttribute('dir') === "rtl";
 	const tree = document.getElementById('tree');
 	const content = document.getElementById('content');
+	const contentContainer = document.getElementById('content-container');
 
 	// Frameset simulation
 	const resizer = document.getElementById('resizer');
@@ -19,6 +20,7 @@
 		if (isResizing) {
 			const newWidth = (isRtl ? window.innerWidth - e.clientX : e.clientX) - resizer.offsetWidth;
 			tree.style.width = newWidth + 'px';
+			positionLoadingIndicator();
 		}
 	});
 
@@ -28,6 +30,22 @@
 			document.body.style.cursor = 'default';
 		}
 	});
+
+	// Loading indicator
+
+	const loadingIndicator = document.getElementById('loading-indicator');
+
+	function positionLoadingIndicator() {
+		const rect = tree.getBoundingClientRect();
+		loadingIndicator.style.position = "fixed";
+		loadingIndicator.style.width = rect.width + "px";
+		//loadingIndicator.style.left = rect.left + "px";
+	}
+
+	positionLoadingIndicator();
+
+	window.addEventListener("scroll", positionLoadingIndicator);
+	window.addEventListener("resize", positionLoadingIndicator);
 
 	// Link and Form interception
 
@@ -47,12 +65,18 @@
 	}
 
 	async function loadContent(url, options = {}, addToHistory = true) {
-		url = url.replace(/[&?]$/, '') + (url.indexOf('?') >= 0 ? '&' : '?') + 'target=content';
+
+		url = url.replace(/[&?]$/, '');
+		url += (url.includes('?') ? '&' : '?') + 'target=content';
 		console.log("Fetching:", url, options);
 
 		let finalUrl = null;
+		let indicatorTimeout = window.setTimeout(() => {
+			loadingIndicator.classList.add("show");
+		}, 200);
 
 		try {
+			document.body.style.cursor = 'wait';
 			const res = await fetch(url, options);
 
 			if (!res.ok) {
@@ -69,13 +93,14 @@
 			finalUrl = urlObj.toString();
 
 			if (addToHistory) {
+				const form = content.querySelector("form");
 				const data = {};
-				if (/post/i.test(options.method ?? '')) {
+				if (/post/i.test(options.method ?? '') || form) {
 					data.html = html;
 				}
 				history.pushState(data, document.title, finalUrl);
 				// Scroll back to the top
-				content.scrollTo(0, 0);
+				contentContainer.scrollTo(0, 0);
 			}
 
 			const event = new CustomEvent("frameLoaded", {
@@ -87,6 +112,10 @@
 		} catch (err) {
 			console.error("Error:", err);
 			window.alert(err);
+		} finally {
+			document.body.style.cursor = 'default';
+			loadingIndicator.classList.remove("show");
+			window.clearTimeout(indicatorTimeout);
 		}
 	}
 
@@ -105,13 +134,18 @@
 			return;
 		}
 
+		if (target.target == "_blank") {
+			// Ignore external links
+			return;
+		}
+
 		e.preventDefault();
 		e.stopPropagation();
 
 		if (target.href === window.location.href + '#') {
 			// Emulate scroll top
 			if (target.classList.contains("bottom_link")) {
-				content.scrollTo({
+				contentContainer.scrollTo({
 					top: 0,
 					left: 0,
 					behavior: "smooth"
@@ -183,12 +217,19 @@
 	});
 
 	window.addEventListener('popstate', e => {
-		if (e.state.html) {
-			setContent(e.state.html);
-			return;
-		}
 		const url = window.location.href;
-		return loadContent(url, {}, false);
+
+		if (e.state?.html) {
+			setContent(e.state.html);
+			const event = new CustomEvent("frameLoaded", {
+				detail: { url: url },
+				target: content,
+			});
+			document.dispatchEvent(event);
+		} else {
+			loadContent(url, {}, false);
+		}
+
 	});
 
 

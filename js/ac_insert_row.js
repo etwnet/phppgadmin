@@ -67,7 +67,7 @@ function openlist(e) {
 		database: database,
 		'keys[]': constr.pattnums,
 		'keynames[]': constr.pattnames,
-		'fkeynames[]': constr.fattnames,
+		'f_keynames[]': constr.fattnames,
 		f_table: constr.f_table,
 		f_schema: constr.f_schema,
 		offset: jQuery.ppa.o
@@ -173,8 +173,11 @@ $(document).on('mouseover', 'tr.acline', function() {
 
 $(document).on('click', 'tr.acline', function() {
 	var a = jQuery(this).find('td > a.fkval');
+	console.log(a);
 	for (i=0; i < a.length; i++) {
-               jQuery('input[name="values['+ a[i].name +']"]').val(jQuery(a[i]).text());
+		const selector = 'input[name="values['+ a[i].name +']"]';
+		console.log(selector);
+      jQuery(selector).val(jQuery(a[i]).text());
 	}
 	hideAc();
 });

@@ -306,7 +306,7 @@
 
 		$actions = array(
 			'alter' => array(
-				'icon' => 'images/themes/default/Edit.png',
+				'icon' => $misc->icon('Edit'),
 				'content' => $lang['stralter'],
 					'attr'=> array (
 						'href' => array (
@@ -320,7 +320,7 @@
 					)
 			),
 			'drop' => array(
-				'icon' => 'images/themes/default/Delete.png',
+				'icon' => $misc->icon('Delete'),
 				'content' => $lang['strdrop'],
 					'attr'=> array (
 						'href' => array (
@@ -336,7 +336,7 @@
 		);
 		if($data->hasDisableTriggers()) {
 			$actions['enable'] = array(
-				'icon' => 'images/themes/default/Show.png',
+				'icon' => $misc->icon('Show'),
 				'content' => $lang['strenable'],
 				'attr'=> array (
 					'href' => array (
@@ -350,7 +350,7 @@
 				)
 			);
 			$actions['disable'] = array(
-				'icon' => 'images/themes/default/Hide.png',
+				'icon' => $misc->icon('Hide'),
 				'content' => $lang['strdisable'],
 				'attr'=> array (
 					'href' => array (

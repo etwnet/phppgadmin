@@ -273,7 +273,7 @@
 			'definition' => array(
 				'title' => $lang['strdefinition'],
 				'field' => field('inddef'),
-				'type'  => 'pre',
+				'type'  => 'sql',
 			),
 			'constraints' => array(
 				'title' => $lang['strconstraints'],
@@ -297,7 +297,7 @@
 
 		$actions = array(
 			'cluster' => array(
-				'icon' => 'images/themes/default/Cluster.png',
+				'icon' => $misc->icon('Cluster'),
 				'content' => $lang['strclusterindex'],
 				'attr'=> array (
 					'href' => array (
@@ -311,7 +311,7 @@
 				)
 			),
 			'reindex' => array(
-				'icon' => 'images/themes/default/Index.png',
+				'icon' => $misc->icon('Index'),
 				'content' => $lang['strreindex'],
 				'attr'=> array (
 					'href' => array (
@@ -325,7 +325,7 @@
 				)
 			),
 			'drop' => array(
-				'icon' => 'images/themes/default/Delete.png',
+				'icon' => $misc->icon('Delete'),
 				'content' => $lang['strdrop'],
 				'attr'=> array (
 					'href' => array (

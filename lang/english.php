@@ -66,7 +66,7 @@
 	$lang['strreset'] = 'Reset';
 	$lang['strrestart'] = 'Restart';
 	$lang['strinsert'] = 'Insert';
-	$lang['strselect'] = 'Select';
+	$lang['strselect'] = 'Search';
 	$lang['strdelete'] = 'Delete';
 	$lang['strupdate'] = 'Update';
 	$lang['strreferences'] = 'References';
@@ -111,6 +111,7 @@
 	$lang['strdata'] = 'Data';
 	$lang['strconfirm'] = 'Confirm';
 	$lang['strexpression'] = 'Expression';
+	$lang['strexpr'] = 'Expr';
 	$lang['strellipsis'] = '...';
 	$lang['strseparator'] = ': ';
 	$lang['strexpand'] = 'Expand';
@@ -150,7 +151,8 @@
 	$lang['strgotoppage'] = 'back to top';
 	$lang['strtheme'] = 'Theme';
 	$lang['strcluster'] = 'Cluster';
-	
+	$lang['strnewwindow'] = 'Open New Window';
+
 	// Admin
 	$lang['stradminondatabase'] = 'The following administrative tasks apply on the whole %s database.';
 	$lang['stradminontable'] = 'The following administrative tasks apply on the table %s.';
@@ -272,7 +274,11 @@
 	$lang['strspecifytabletoreindex'] = 'You must specify at least one table to reindex.';
 	$lang['strspecifytabletocluster'] = 'You must specify at least one table to cluster.';
 	$lang['strnofieldsforinsert'] = 'You cannot insert a row into a table with no column.';
-	$lang['strbrowsestatistics'] = 'Showing records {first:d} - {last:d} of {total:d} total (query took {duration} seconds)';
+	$lang['strbrowsestatistics'] = 'Showing {count:d} records: {first:d} - {last:d} of {total:d} total (query took {duration} seconds)';
+	$lang['strorderbyhelp'] = "Click: Sort ASC/DESC\nShift+Click: Add field\nCtrl+Click: Remove field";
+	$lang['strselectmaxrows'] = "Rows:";
+	$lang['strjumppage'] = "Page:";
+	$lang['strquerysubmit'] = "Send Query";
 
 	// Columns
 	$lang['strcolprop'] = 'Column properties';

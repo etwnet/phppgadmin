@@ -181,7 +181,7 @@ class Postgres extends ADODB_base {
 	 * @param string $str The string to clean, by reference
 	 * @return string The cleaned string
 	 */
-	function clean($str) {
+	function clean(&$str) {
 		if ($str === null) return null;
 		$str = str_replace("\r\n", "\n", $str);
 		$str = pg_escape_string($this->conn->_connectionID, $str);
@@ -193,7 +193,7 @@ class Postgres extends ADODB_base {
 	 * @param string $str The string to clean, by reference
 	 * @return string The cleaned string
 	 */
-	function fieldClean($str) {
+	function fieldClean(&$str) {
 		if ($str === null) return null;
 		$str = str_replace('"', '""', $str);
 		return $str;
@@ -204,7 +204,7 @@ class Postgres extends ADODB_base {
 	 * @param array $arr The array to clean, by reference
 	 * @return array The cleaned array
 	 */
-	function fieldArrayClean($arr) {
+	function fieldArrayClean(&$arr) {
 		foreach ($arr as $k => $v) {
 			if ($v === null) continue;
 			$arr[$k] = str_replace('"', '""', $v);
@@ -217,7 +217,7 @@ class Postgres extends ADODB_base {
 	 * @param array $arr The array to clean, by reference
 	 * @return array The cleaned array
 	 */
-	function arrayClean($arr) {
+	function arrayClean(&$arr) {
 		foreach ($arr as $k => $v) {
 			if ($v === null) continue;
 			$arr[$k] = pg_escape_string($this->conn->_connectionID, $v);
@@ -227,8 +227,8 @@ class Postgres extends ADODB_base {
 
 	/**
 	 * Escapes bytea data for display on the screen
-	 * @param $data The bytea data
-	 * @return Data formatted for on-screen display
+	 * @param string $data The bytea data
+	 * @return string Data formatted for on-screen display
 	 */
 	function escapeBytea($data) {
 		return htmlentities($data, ENT_QUOTES, 'UTF-8');
@@ -236,10 +236,10 @@ class Postgres extends ADODB_base {
 
 	/**
 	 * Outputs the HTML code for a particular field
-	 * @param $name The name to give the field
-	 * @param $value The value of the field.  Note this could be 'numeric(7,2)' sort of thing...
-	 * @param $type The database type of the field
-	 * @param $extras An array of attributes name as key and attributes' values as value
+	 * @param string $name The name to give the field
+	 * @param string $value The value of the field.  Note this could be 'numeric(7,2)' sort of thing...
+	 * @param string $type The database type of the field
+	 * @param array $extras An array of attributes name as key and attributes' values as value
 	 */
 	function printField($name, $value, $type, $extras = array()) {
 		global $lang;
@@ -247,26 +247,43 @@ class Postgres extends ADODB_base {
 		if (!isset($value)) {
 			$value = '';
 		}
+
+		$base_type = strstr($type, ' ', true) ?: substr($type, 0, 9);
+
 		// Determine actions string
+		if (!empty($extras['class'])) {
+			$extras['class'] = $extras['class'] . ' ' . htmlspecialchars($base_type);
+		} else {
+			$extras['class'] = htmlspecialchars($base_type);
+		}
 		$extra_str = '';
 		foreach ($extras as $k => $v) {
 			$extra_str .= " {$k}=\"" . htmlspecialchars($v ?? '') . "\"";
 		}
+		$extra_str .= " data-type=\"" . htmlspecialchars($type) . "\"";
 
-		switch (substr($type, 0, 9)) {
+		//var_dump($type);
+
+		switch ($base_type) {
 		case 'bool':
 		case 'boolean':
-			if ($value !== null && $value == '') $value = null;
+			if ($value == '') $value = null;
 			elseif ($value == 'true') $value = 't';
 			elseif ($value == 'false') $value = 'f';
 
 			// If value is null, 't' or 'f'...
 			if ($value === null || $value == 't' || $value == 'f') {
+				/*
 				echo "<select name=\"", htmlspecialchars($name), "\"{$extra_str}>\n";
 				echo "<option value=\"\"", ($value === null) ? ' selected="selected"' : '', "></option>\n";
 				echo "<option value=\"t\"", ($value == 't') ? ' selected="selected"' : '', ">{$lang['strtrue']}</option>\n";
 				echo "<option value=\"f\"", ($value == 'f') ? ' selected="selected"' : '', ">{$lang['strfalse']}</option>\n";
 				echo "</select>\n";
+				*/
+				$input_name = htmlspecialchars($name);
+				echo "<label><input type=\"radio\" name=\"$input_name\" value=\"\"", ($value == null) ? " checked" : "", "> {$lang['strnull']}</label>&nbsp;&nbsp;&nbsp;";
+				echo "<label><input type=\"radio\" name=\"$input_name\" value=\"t\"", ($value == 't') ? " checked" : "", "> {$lang['strtrue']}</label>&nbsp;&nbsp;&nbsp;";
+				echo "<label><input type=\"radio\" name=\"$input_name\" value=\"f\"", ($value == 'f') ? " checked" : "", "> {$lang['strfalse']}</label>";
 			} else {
 				echo "<input name=\"", htmlspecialchars($name), "\" value=\"", htmlspecialchars($value ?? ''), "\" size=\"35\"{$extra_str} />\n";
 			}
@@ -306,12 +323,13 @@ class Postgres extends ADODB_base {
 
 	/**
 	 * Formats a value or expression for sql purposes
-	 * @param $type The type of the field
-	 * @param $format VALUE or EXPRESSION
-	 * @param $value The actual value entered in the field.  Can be NULL
-	 * @return The suitably quoted and escaped value.
+	 * @param string $type The type of the field
+	 * @param string $function A sql function
+	 * @param bool $expr Treat value as expression
+	 * @param ?string $value The actual value entered in the field.  Can be NULL
+	 * @return string The suitably quoted and escaped value.
 	 */
-	function formatValue($type, $format, $value) {
+	function formatValue($type, $function, $expr, $value) {
 		switch ($type) {
 		case 'bool':
 		case 'boolean':
@@ -323,11 +341,22 @@ class Postgres extends ADODB_base {
 				return 'NULL';
 			else
 				return $value;
-			break;
 		default:
+			if ($function) {
+				// ENCODE (value,'base64') => ENCODE ('test','base64')
+				if (!$expr) $value = "'" . $this->clean($value) . "'";
+				return preg_replace('/\bvalue\b/', $value, $function);
+			}
+			if ($expr) {
+				return $value;
+			}
 			// Checking variable fields is difficult as there might be a size
 			// attribute...
-			if (strpos($type, 'time') === 0) {
+			$is_date_or_time = strlen($type) >= 4 && (
+					substr_compare($type, 'time', 0, 4) === 0 ||
+					substr_compare($type, 'date', 0, 4) === 0
+				);
+			if ($is_date_or_time) {
 				// Assume it's one of the time types...
 				if ($value == '') return "''";
 				elseif (strcasecmp($value, 'CURRENT_TIMESTAMP') == 0
@@ -336,19 +365,10 @@ class Postgres extends ADODB_base {
 					|| strcasecmp($value, 'LOCALTIME') == 0
 					|| strcasecmp($value, 'LOCALTIMESTAMP') == 0) {
 					return $value;
-				} elseif ($format == 'EXPRESSION')
-					return $value;
-				else {
-					$this->clean($value);
-					return "'{$value}'";
 				}
-			} else {
-				if ($format == 'VALUE') {
-					$this->clean($value);
-					return "'{$value}'";
-				}
-				return $value;
 			}
+			$this->clean($value);
+			return "'{$value}'";
 		}
 	}
 
@@ -864,7 +884,7 @@ class Postgres extends ADODB_base {
 
 	/**
 	 * Sets the current working schema.  Will also set Class variable.
-	 * @param $schema The the name of the schema to work in
+	 * @param string $schema The the name of the schema to work in
 	 * @return 0 success
 	 */
 	function setSchema($schema) {
@@ -1057,6 +1077,30 @@ class Postgres extends ADODB_base {
 			      AND c.relname = '{$table}'";
 
 		return $this->selectSet($sql);
+	}
+
+	/**
+	 * Get type of table/view
+	 * @param string $schema
+	 * @param string $table
+	 * @return ?string
+	 */
+	function getTableType($schema, $table) {
+		$this->clean($schema);
+		$this->clean($table);
+		$sql = "SELECT c.relkind
+			FROM pg_catalog.pg_class c
+			JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+			WHERE n.nspname = '$schema'
+			  AND c.relname = '$table'";
+		$type = $this->selectField($sql, "relkind");
+		if ($type == 'r' || $type == 'f') {
+			return 'table';
+		}
+		if ($type == 'v' || $type == 'm') {
+			return 'view';
+		}
+		return null;
 	}
 
 	/**
@@ -2454,46 +2498,47 @@ class Postgres extends ADODB_base {
 
 	/**
 	 * Adds a new row to a table
-	 * @param $table The table in which to insert
-	 * @param $fields Array of given field in values
-	 * @param $values Array of new values for the row
-	 * @param $nulls An array mapping column => something if it is to be null
-	 * @param $format An array of the data type (VALUE or EXPRESSION)
-	 * @param $types An array of field types
-	 * @return 0 success
-	 * @return -1 invalid parameters
+	 * @param string $table The table in which to insert
+	 * @param array $fields Array of given field in values
+	 * @param array $values Array of new values for the row
+	 * @param array $nulls An array mapping column => something if it is to be null
+	 * @param array $functions An array of sql functions
+	 * @param array $expr An array expression indicators
+	 * @param array $types An array of field types
+	 * @return int 0 success
+	 * @return int -1 invalid parameters
 	 */
-	function insertRow($table, $fields, $values, $nulls, $format, $types) {
+	function insertRow($table, $fields, $values, $nulls, $functions, $expr, $types) {
 
 		if (!is_array($fields) || !is_array($values) || !is_array($nulls)
-			|| !is_array($format) || !is_array($types)
-			|| (count($fields) != count($values))
-		) {
-			return -1;
-		} else {
-			// Build clause
-			if (count($values) > 0) {
-				// Escape all field names
-				$fields = array_map(array('Postgres', 'fieldClean'), $fields);
-				$f_schema = $this->_schema;
-				$this->fieldClean($table);
-				$this->fieldClean($f_schema);
+			|| !is_array($functions) || !is_array($expr) || !is_array($types)
+			|| count($fields) != count($values) || count($types) != count($values)
+		) return -1;
 
-				$sql = '';
-				foreach ($values as $i => $value) {
+		// Build clause
+		if (count($values) > 0) {
+			// Escape all field names
+			$fields = array_map(array('Postgres', 'fieldClean'), $fields);
+			$f_schema = $this->_schema;
+			$this->fieldClean($table);
+			$this->fieldClean($f_schema);
 
-					// Handle NULL values
-					if (isset($nulls[$i]))
-						$sql .= ',NULL';
-					else
-						$sql .= ',' . $this->formatValue($types[$i], $format[$i], $value);
+			$sql = "INSERT INTO \"{$f_schema}\".\"{$table}\" (\"" . implode('","', $fields) . "\") VALUES (";
+			$sep = '';
+			foreach ($values as $key => $value) {
+				$sql .= $sep;
+				// Handle NULL values
+				if (isset($nulls[$key])) {
+					$sql .= 'NULL';
+				} else {
+					$sql .= ',';
+					$sql .= $this->formatValue($types[$key], $functions[$key] ?? null, isset($expr[$key]), $value);
 				}
-
-				$sql = "INSERT INTO \"{$f_schema}\".\"{$table}\" (\"" . implode('","', $fields) . "\")
-					VALUES (" . substr($sql, 1) . ")";
-
-				return $this->execute($sql);
+				$sep = ',';
 			}
+			$sql .= ")";
+
+			return $this->execute($sql);
 		}
 
 		return -1;
@@ -2502,34 +2547,41 @@ class Postgres extends ADODB_base {
 	/**
 	 * Updates a row in a table
 	 * @param string $table The table in which to update
-	 * @param array $vars An array mapping new values for the row
+	 * @param array $values An array mapping new values for the row
 	 * @param array $nulls An array mapping column => something if it is to be null
-	 * @param array $format An array of the data type (VALUE or EXPRESSION)
+	 * @param array $functions An array of sql functions
+	 * @param array $expr An array expression indicators
 	 * @param array $types An array of field types
 	 * @param array $keyarr An array mapping column => value to update
 	 * @return int 0 success
 	 * @return -1 invalid parameters
 	 */
-	function editRow($table, $vars, $nulls, $format, $types, $keyarr) {
-		if (!is_array($vars) || !is_array($nulls) || !is_array($format) || !is_array($types))
-			return -1;
+	function editRow($table, $values, $nulls, $functions, $expr, $types, $keyarr) {
+
+		if (!is_array($values) || !is_array($nulls)
+			|| !is_array($functions) || !is_array($expr) || !is_array($types)
+			|| count($types) != count($values)
+		) return -1;
 
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($table);
 
 		// Build clause
-		if (sizeof($vars) > 0) {
+		if (count($values) > 0) {
 
-			foreach ($vars as $key => $value) {
+			$sql = "UPDATE \"{$f_schema}\".\"{$table}\" SET ";
+			$sep = "";
+			foreach ($values as $key => $value) {
+				$sql .= $sep;
 				$this->fieldClean($key);
+				$sql .= "\"{$key}\"=";
 
 				// Handle NULL values
-				if (isset($nulls[$key])) $tmp = 'NULL';
-				else $tmp = $this->formatValue($types[$key], $format[$key], $value);
+				if (isset($nulls[$key])) $sql .= 'NULL';
+				else $sql .= $this->formatValue($types[$key], $functions[$key] ?? null, isset($expr[$key]), $value);
 
-				if (isset($sql)) $sql .= ", \"{$key}\"={$tmp}";
-				else $sql = "UPDATE \"{$f_schema}\".\"{$table}\" SET \"{$key}\"={$tmp}";
+				$sep = ", ";
 			}
 			$first = true;
 			foreach ($keyarr as $k => $v) {
@@ -7705,15 +7757,14 @@ class Postgres extends ADODB_base {
 		// ORDER BY
 		if (is_array($orderby) && sizeof($orderby) > 0) {
 			$sql .= " ORDER BY ";
-			$first = true;
+			$sep = "";
 			foreach ($orderby as $k => $v) {
-				if ($first) $first = false;
-				else $sql .= ', ';
+				$sql .= $sep;
+				$sep = ", ";
 				if (preg_match('/^[0-9]+$/', $k)) {
 					$sql .= $k;
 				} else {
-					$this->fieldClean($k);
-					$sql .= '"' . $k . '"';
+					$sql .= '"' . $this->fieldClean($k) . '"';
 				}
 				if (strtoupper($v) == 'DESC') $sql .= " DESC";
 			}
@@ -7728,15 +7779,14 @@ class Postgres extends ADODB_base {
 
 	/**
 	 * Returns a recordset of all columns in a query.  Supports paging.
-	 * @param $type string Either 'QUERY' if it is an SQL query, or 'TABLE' if it is a table identifier,
+	 * @param string $type Either 'QUERY' if it is an SQL query, or 'TABLE' if it is a table identifier,
 	 *              or 'SELECT" if it's a select query
-	 * @param $table ?string The base table of the query.  NULL for no table.
-	 * @param $query ?string The query that is being executed.  NULL for no query.
-	 * @param $sortkey ?string The column number to sort by, or '' or null for no sorting
-	 * @param $sortdir ?string The direction in which to sort the specified column ('asc' or 'desc')
-	 * @param $page int The page of the relation to retrieve
-	 * @param $page_size int The number of rows per page
-	 * @param &$max_pages int (return-by-ref) The max number of pages in the relation
+	 * @param ?string $table The base table of the query.  NULL for no table.
+	 * @param ?string $query The query that is being executed.  NULL for no query.
+	 * @param ?array $orderby The columns to order by, for example 'id'=>'asc
+	 * @param int $page The page of the relation to retrieve
+	 * @param int $page_size The number of rows per page
+	 * @param int &$max_pages (return-by-ref) The max number of pages in the relation
 	 * @return ADORecordSet|int A recordset on success
 	 * @return -1 transaction error
 	 * @return -2 counting error
@@ -7744,31 +7794,28 @@ class Postgres extends ADODB_base {
 	 * @return -4 unknown type
 	 * @return -5 failed setting transaction read only
 	 */
-	function browseQuery($type, $table, $query, $sortkey, $sortdir, $page, $page_size, &$max_pages) {
+	function browseQuery(
+		$type, $table, $query, $orderby, $page, $page_size, &$max_pages
+	) {
 		// Check that we're not going to divide by zero
 		if (!is_numeric($page_size) || $page_size != (int)$page_size || $page_size <= 0) return -3;
 
 		// If $type is TABLE, then generate the query
-		switch ($type) {
-		case 'TABLE':
-			if (preg_match('/^[0-9]+$/', $sortkey) && $sortkey > 0) $orderby = array($sortkey => $sortdir);
-			else $orderby = array();
+		if (empty($query) && $type == "TABLE") {
 			$query = $this->getSelectSQL($table, array(), array(), array(), $orderby);
-			break;
-		case 'QUERY':
-		case 'SELECT':
-			// Trim query
-			$query = trim($query);
-			// Trim off trailing semi-colon if there is one
-			if (substr($query, strlen($query) - 1, 1) == ';')
-				$query = substr($query, 0, strlen($query) - 1);
-			break;
-		default:
+		}
+		if (empty($query)) {
 			return -4;
 		}
 
+		// Trim query
+		$query = trim($query);
+
+		// Trim off trailing semi-colon if there is one
+		$query = rtrim($query, ';');
+
 		// Generate count query
-		$count = "SELECT COUNT(*) AS total FROM ($query) AS sub";
+		$count = "SELECT COUNT(*) AS total FROM ({$query}) AS sub";
 
 		// Open a transaction
 		$status = $this->beginTransaction();
@@ -7807,21 +7854,20 @@ class Postgres extends ADODB_base {
 		// table, duplicate fields shouldn't appear.
 		if ($type == 'QUERY') $this->conn->setFetchMode(ADODB_FETCH_NUM);
 
-		// Figure out ORDER BY.  Sort key is always the column number (based from one)
-		// of the column to order by.  Only need to do this for non-TABLE queries
-		if ($type != 'TABLE' && preg_match('/^[0-9]+$/', $sortkey) && $sortkey > 0) {
-			$orderby = " ORDER BY {$sortkey}";
-			// Add sort order
-			if ($sortdir == 'desc')
-				$orderby .= ' DESC';
-			else
-				$orderby .= ' ASC';
-		} else $orderby = '';
+		// Add ORDER BY fields
+		if (!empty($orderby)) {
+			$order_by = " ORDER BY ";
+			$sep = "";
+			foreach ($orderby as $field => $dir) {
+				$order_by .= $sep . pg_escape_id($field) . ' ' . $dir;
+				$sep = ", ";
+			}
+		} else $order_by = "";
 
 		$this->lastQueryLimit = $page_size;
 		$this->lastQueryOffset = ($page - 1) * $page_size;
 		// Actually retrieve the rows, with offset and limit
-		$rs = $this->selectSet("SELECT * FROM ({$query}) AS sub {$orderby} LIMIT {$page_size} OFFSET {$this->lastQueryOffset}");
+		$rs = $this->selectSet("SELECT * FROM ({$query}) AS sub {$order_by} LIMIT {$page_size} OFFSET {$this->lastQueryOffset}");
 		$status = $this->endTransaction();
 		if ($status != 0) {
 			$this->rollbackTransaction();

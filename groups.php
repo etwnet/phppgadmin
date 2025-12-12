@@ -86,7 +86,7 @@
 
 			$actions = array (
 				'drop' => array (
-					'icon' => 'images/themes/default/Delete.png',
+					'icon' => $misc->icon('Delete'),
 					'content' => $lang['strdrop'],
 						'attr'=> array (
 							'href' => array (

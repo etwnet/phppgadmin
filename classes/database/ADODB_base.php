@@ -41,7 +41,7 @@ class ADODB_base {
 	 * @param $str The string to clean, by reference
 	 * @return The cleaned string
 	 */
-	function clean($str) {
+	function clean(&$str) {
 		$str = addslashes($str);
 		return $str;
 	}
@@ -51,7 +51,7 @@ class ADODB_base {
 	 * @param $str The string to clean, by reference
 	 * @return The cleaned string
 	 */
-	function fieldClean($str) {
+	function fieldClean(&$str) {
 		$str = str_replace('"', '""', $str);
 		return $str;
 	}
@@ -61,20 +61,20 @@ class ADODB_base {
 	 * @param $arr The array to clean, by reference
 	 * @return The cleaned array
 	 */
-	function arrayClean($arr) {
+	function arrayClean(&$arr) {
 		return $arr = array_map('addslashes', $arr);
 	}
 	
 	/**
 	 * Executes a query on the underlying connection
-	 * @param $sql The SQL query to execute
-	 * @return A recordset
+	 * @param string $sql The SQL query to execute
+	 * @return int error number
 	 */
 	function execute($sql) {
 		// Execute the statement
-		$rs = $this->conn->Execute($sql);
+		$this->conn->Execute($sql);
 
-		// If failure, return error value
+		// Return error code
 		return $this->conn->ErrorNo();
 	}
 
@@ -90,7 +90,7 @@ class ADODB_base {
 
 	/**
 	 * Retrieves a ResultSet from a query
-	 * @param $sql string The SQL statement to be executed
+	 * @param string $sql The SQL statement to be executed
 	 * @return ADORecordSet|int A recordset
 	 */
 	function selectSet($sql) {
@@ -117,8 +117,8 @@ class ADODB_base {
 	 *
 	 * @@ assumes that the query will return only one row - returns field value in the first row
 	 *
-	 * @param $sql string The SQL statement to be executed
-	 * @param $field string The field name to be returned
+	 * @param string $sql The SQL statement to be executed
+	 * @param string $field The field name to be returned
 	 * @return mixed A single field value
 	 * @return -1 No rows were found
 	 */

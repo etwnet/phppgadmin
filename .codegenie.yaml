@@ -1,0 +1,105 @@
+adaptive_learning: true
+autonomous_workflows: true
+cache_dir: C:\Users\christian\.cache\codegenie
+config_dir: C:\Users\christian\.config\codegenie
+debug: false
+execution:
+  allowed_commands:
+  - git
+  - npm
+  - pip
+  - python
+  - node
+  - go
+  - cargo
+  - rustc
+  - gcc
+  - g++
+  - make
+  - cmake
+  - docker
+  - kubectl
+  - php
+  auto_backup: true
+  blocked_commands:
+  - rm
+  - del
+  - format
+  - fdisk
+  - mkfs
+  - dd
+  - shutdown
+  - reboot
+  max_file_size: 10MB
+  sandbox_mode: true
+  timeout: 300
+learning:
+  adapt_style: true
+  learning_rate: 0.1
+  max_memory_size: 100MB
+  remember_patterns: true
+  save_corrections: true
+log_level: INFO
+models:
+  code_generation: openai_gpt-oss-20b-MXFP4:latest
+  default: openai_gpt-oss-20b-MXFP4:latest
+  fallback:
+  - codellama:7b
+  - llama3.1:8b
+  reasoning: openai_gpt-oss-20b-MXFP4:latest
+  temperature: 0.1
+  timeout: 300
+multi_agent_coordination: true
+security:
+  allowed_file_extensions:
+  - .py
+  - .js
+  - .ts
+  - .jsx
+  - .tsx
+  - .go
+  - .rs
+  - .java
+  - .cpp
+  - .c
+  - .h
+  - .hpp
+  - .yaml
+  - .yml
+  - .json
+  - .toml
+  - .ini
+  - .cfg
+  - .conf
+  - .md
+  - .txt
+  - .sql
+  - .html
+  - .css
+  - .scss
+  - .sass
+  - .less
+  - .php
+  - .phtml
+  blocked_file_extensions:
+  - .exe
+  - .dll
+  - .so
+  - .dylib
+  - .bin
+  - .app
+  - .deb
+  - .rpm
+  - .msi
+  detect_secrets: true
+  mask_output: true
+  require_confirmation: true
+ui:
+  auto_approve_safe: true
+  confirm_destructive: true
+  max_output_lines: 100
+  refresh_rate: 0.1
+  show_progress: true
+  show_reasoning: true
+  theme: dark
+verbose: true

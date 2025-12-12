@@ -434,7 +434,7 @@
 		
 		$actions = array(
 			'alter' => array(
-				'icon' => 'images/themes/default/Edit.png',
+				'icon' => $misc->icon('Edit'),
 				'content' => $lang['stralter'],
 				'attr'=> array (
 					'href' => array (
