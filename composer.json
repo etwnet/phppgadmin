@@ -15,5 +15,10 @@
 		"ext-mbstring": "*",
 		"greenlion/php-sql-parser": "dev-master"
 	},
+	"autoload": {
+		"psr-4": {
+			"PhpPgAdmin\\": "libraries/PhpPgAdmin/"
+		}
+	},
 	"minimum-stability": "stable"
 }

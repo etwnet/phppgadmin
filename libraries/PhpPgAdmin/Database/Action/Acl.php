@@ -1,0 +1,311 @@
+<?php
+
+namespace PhpPgAdmin\Database\Action;
+
+use PhpPgAdmin\Database\Action;
+
+class Acl extends Action
+{
+    // Base constructor inherited from Action
+
+    /** @var array map of ACL chars to privilege names */
+    private $privmap = [
+        'r' => 'SELECT',
+        'w' => 'UPDATE',
+        'a' => 'INSERT',
+        'd' => 'DELETE',
+        'D' => 'TRUNCATE',
+        'R' => 'RULE',
+        'x' => 'REFERENCES',
+        't' => 'TRIGGER',
+        'X' => 'EXECUTE',
+        'U' => 'USAGE',
+        'C' => 'CREATE',
+        'T' => 'TEMPORARY',
+        'c' => 'CONNECT',
+        'm' => 'GRAND OPTION',
+    ];
+
+    //
+
+    /**
+     * Internal function used for parsing ACLs (aclitem[] -> structured array).
+     * Mirrors legacy Postgres::_parseACL.
+     *
+     * @param string $acl
+     * @return array|int privileges array or -3 on unknown privilege
+     */
+    public function parseAcl($acl)
+    {
+        $acl = substr($acl, 1, strlen($acl) - 2);
+
+        $aces = [];
+        $i = $j = 0;
+        $in_quotes = false;
+        while ($i < strlen($acl)) {
+            $char = substr($acl, $i, 1);
+            if ($char === '"' && ($i == 0 || substr($acl, $i - 1, 1) != '\\')) {
+                $in_quotes = !$in_quotes;
+            } elseif ($char === ',' && !$in_quotes) {
+                $aces[] = substr($acl, $j, $i - $j);
+                $j = $i + 1;
+            }
+            $i++;
+        }
+        $aces[] = substr($acl, $j);
+
+        $temp = [];
+
+        foreach ($aces as $v) {
+            if (strpos($v, '"') === 0) {
+                $v = substr($v, 1, strlen($v) - 2);
+                $v = str_replace('\\"', '"', $v);
+                $v = str_replace('\\\\', '\\', $v);
+            }
+
+            if (strpos($v, '=') === 0) {
+                $atype = 'public';
+            } elseif ($this->connection->hasRoles()) {
+                $atype = 'role';
+            } elseif (strpos($v, 'group ') === 0) {
+                $atype = 'group';
+                $v = substr($v, 6);
+            } else {
+                $atype = 'user';
+            }
+
+            $i = 0;
+            $in_quotes = false;
+            $entity = null;
+            $chars = null;
+            while ($i < strlen($v)) {
+                $char = substr($v, $i, 1);
+                $next_char = substr($v, $i + 1, 1);
+                if ($char === '"' && ($i == 0 || $next_char != '"')) {
+                    $in_quotes = !$in_quotes;
+                } elseif ($char === '"' && $next_char === '"') {
+                    $i++;
+                } elseif ($char === '=' && !$in_quotes) {
+                    $entity = substr($v, 0, $i);
+                    $chars = substr($v, $i + 1);
+                    break;
+                }
+                $i++;
+            }
+
+            if (strpos($entity, '"') === 0) {
+                $entity = substr($entity, 1, strlen($entity) - 2);
+                $entity = str_replace('""', '"', $entity);
+            }
+
+            $row = [$atype, $entity, [], '', []];
+
+            for ($i = 0; $i < strlen($chars); $i++) {
+                $char = substr($chars, $i, 1);
+                if ($char === '*') {
+                    $row[4][] = $this->privmap[substr($chars, $i - 1, 1)] ?? null;
+                } elseif ($char === '/') {
+                    $grantor = substr($chars, $i + 1);
+                    if (strpos($grantor, '"') === 0) {
+                        $grantor = substr($grantor, 1, strlen($grantor) - 2);
+                        $grantor = str_replace('""', '"', $grantor);
+                    }
+                    $row[3] = $grantor;
+                    break;
+                } else {
+                    if (!isset($this->privmap[$char])) {
+                        return -3;
+                    }
+                    $row[2][] = $this->privmap[$char];
+                }
+            }
+
+            $temp[] = $row;
+        }
+
+        return $temp;
+    }
+
+    /**
+     * Grabs an array of users and their privileges for an object, given its type.
+     * Returns -1 invalid type, -2 object not found, -3 unknown privilege.
+     */
+    public function getPrivileges($object, $type, $table = null)
+    {
+        $c_schema = $this->connection->_schema ?? null;
+        $this->connection->clean($c_schema);
+        $this->connection->clean($object);
+
+        switch ($type) {
+            case 'column':
+                $this->connection->clean($table);
+                $sql = "
+                    SELECT E'{' || pg_catalog.array_to_string(attacl, E',') || E'}' as acl
+                    FROM pg_catalog.pg_attribute a
+                        LEFT JOIN pg_catalog.pg_class c ON (a.attrelid = c.oid)
+                        LEFT JOIN pg_catalog.pg_namespace n ON (c.relnamespace=n.oid)
+                    WHERE n.nspname='{$c_schema}'
+                        AND c.relname='{$table}'
+                        AND a.attname='{$object}'";
+                break;
+            case 'table':
+            case 'view':
+            case 'sequence':
+                $sql = "
+                    SELECT relacl AS acl FROM pg_catalog.pg_class
+                    WHERE relname='{$object}'
+                        AND relnamespace=(SELECT oid FROM pg_catalog.pg_namespace
+                            WHERE nspname='{$c_schema}')";
+                break;
+            case 'database':
+                $sql = "SELECT datacl AS acl FROM pg_catalog.pg_database WHERE datname='{$object}'";
+                break;
+            case 'function':
+                $sql = "SELECT proacl AS acl FROM pg_catalog.pg_proc WHERE oid='{$object}'";
+                break;
+            case 'language':
+                $sql = "SELECT lanacl AS acl FROM pg_catalog.pg_language WHERE lanname='{$object}'";
+                break;
+            case 'schema':
+                $sql = "SELECT nspacl AS acl FROM pg_catalog.pg_namespace WHERE nspname='{$object}'";
+                break;
+            case 'tablespace':
+                $sql = "SELECT spcacl AS acl FROM pg_catalog.pg_tablespace WHERE spcname='{$object}'";
+                break;
+            default:
+                return -1;
+        }
+
+        $acl = $this->connection->selectField($sql, 'acl');
+        if ($acl == -1) {
+            return -2;
+        } elseif ($acl === '' || $acl === null) {
+            return [];
+        }
+
+        return $this->parseAcl($acl);
+    }
+
+    /**
+     * Grants or revokes privileges.
+     * Returns -1 invalid type, -2 invalid entity, -3 invalid privileges,
+     * -4 not granting to anything, -5 invalid mode.
+     */
+    public function setPrivileges($mode, $type, $object, $public, $usernames, $groupnames, $privileges, $grantoption, $cascade, $table)
+    {
+        $f_schema = $this->connection->_schema ?? '';
+        $this->connection->fieldClean($f_schema);
+        $this->connection->fieldArrayClean($usernames);
+        $this->connection->fieldArrayClean($groupnames);
+
+        if (!is_array($privileges) || sizeof($privileges) == 0) {
+            return -3;
+        }
+        if (!is_array($usernames) || !is_array($groupnames) || (!$public && sizeof($usernames) == 0 && sizeof($groupnames) == 0)) {
+            return -4;
+        }
+        if ($mode != 'GRANT' && $mode != 'REVOKE') {
+            return -5;
+        }
+
+        $sql = $mode;
+
+        if ($this->connection->hasGrantOption() && $mode == 'REVOKE' && $grantoption) {
+            $sql .= ' GRANT OPTION FOR';
+        }
+
+        if (in_array('ALL PRIVILEGES', $privileges)) {
+            $sql .= ' ALL PRIVILEGES';
+        } else {
+            if ($type == 'column') {
+                $this->connection->fieldClean($object);
+                $sql .= ' ' . join(" (\"{$object}\"), ", $privileges);
+            } else {
+                $sql .= ' ' . join(', ', $privileges);
+            }
+        }
+
+        switch ($type) {
+            case 'column':
+                $sql .= " (\"{$object}\")";
+                $object = $table;
+                // fallthrough
+            case 'table':
+            case 'view':
+            case 'sequence':
+                $this->connection->fieldClean($object);
+                $sql .= " ON \"{$f_schema}\".\"{$object}\"";
+                break;
+            case 'database':
+                $this->connection->fieldClean($object);
+                $sql .= " ON DATABASE \"{$object}\"";
+                break;
+            case 'function':
+                $fn = $this->fetchFunctionSignature($object);
+                if (!$fn) {
+                    return -2;
+                }
+                $this->connection->fieldClean($fn['proname']);
+                $sql .= " ON FUNCTION \"{$f_schema}\".\"{$fn['proname']}\"({$fn['proarguments']})";
+                break;
+            case 'language':
+                $this->connection->fieldClean($object);
+                $sql .= " ON LANGUAGE \"{$object}\"";
+                break;
+            case 'schema':
+                $this->connection->fieldClean($object);
+                $sql .= " ON SCHEMA \"{$object}\"";
+                break;
+            case 'tablespace':
+                $this->connection->fieldClean($object);
+                $sql .= " ON TABLESPACE \"{$object}\"";
+                break;
+            default:
+                return -1;
+        }
+
+        $first = true;
+        $sql .= ($mode == 'GRANT') ? ' TO ' : ' FROM ';
+        if ($public) {
+            $sql .= 'PUBLIC';
+            $first = false;
+        }
+        foreach ($usernames as $v) {
+            if ($first) {
+                $sql .= "\"{$v}\"";
+                $first = false;
+            } else {
+                $sql .= ", \"{$v}\"";
+            }
+        }
+        foreach ($groupnames as $v) {
+            if ($first) {
+                $sql .= "GROUP \"{$v}\"";
+                $first = false;
+            } else {
+                $sql .= ", GROUP \"{$v}\"";
+            }
+        }
+
+        if ($this->connection->hasGrantOption() && $mode == 'GRANT' && $grantoption) {
+            $sql .= ' WITH GRANT OPTION';
+        }
+        if ($this->connection->hasGrantOption() && $mode == 'REVOKE' && $cascade) {
+            $sql .= ' CASCADE';
+        }
+
+        return $this->connection->execute($sql);
+    }
+
+    private function fetchFunctionSignature($oid)
+    {
+        $this->connection->clean($oid);
+        $sql = "SELECT proname, pg_catalog.pg_get_function_arguments(oid) AS proarguments FROM pg_catalog.pg_proc WHERE oid='{$oid}'";
+        $rs = $this->connection->selectSet($sql);
+        if (is_object($rs) && $rs->RecordCount() > 0) {
+            return $rs->fields;
+        }
+
+        return null;
+    }
+}

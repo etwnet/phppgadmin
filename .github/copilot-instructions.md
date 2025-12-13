@@ -1,70 +1,51 @@
 # copilot-instructions for phppgadmin
 
-These instructions are for AI coding assistants working on the phpPgAdmin repository.
-Be concise and follow the project's conventions — this file highlights the most useful, discoverable patterns.
+Concise guidance for AI coding assistants working on phpPgAdmin. Keep changes small and match existing patterns.
 
-**Project Overview**:
+**Big picture**
 
-- **Type:** PHP web application for PostgreSQL administration.
-- **Entry points:** `index.php`, `servers.php`, `intro.php`, `login.php`.
-- **Config:** `conf/config.inc.php` controls servers, themes, plugins and debug flags.
-- **Runtime:** Runs on PHP (>=7.2) with `ext-pgsql` and `ext-mbstring`. Use `composer install` to fetch `greenlion/php-sql-parser`.
+- Procedural PHP app with light OOP helpers; each subject page (tables, views, roles, etc.) dispatches on `$_REQUEST['action']` and renders via `Misc` helpers.
+- Bootstrap: `libraries/lib.inc.php` loads config, language, sessions, theme selection, and (unless `$_no_db_connection` is set) connects via `$misc->getDatabaseAccessor()`.
+- Globals drive everything: `$conf` (config), `$lang` (i18n), `$misc` (UI/session/db helper), `$data` (db accessor), `$plugin_manager` (hooks).
 
-**Important directories & files**:
+**Config & auth**
 
-- `conf/` : main configuration (`conf/config.inc.php`). Server definitions and plugin list live here.
-- `classes/` : small OOP components (e.g. `PluginManager.php`).
-- `libraries/` : helper libs and bootstrap (`libraries/lib.inc.php`). Many global helpers live here.
-- `plugins/` : plugin folders; each plugin should expose `plugin.php` and a class named after the folder.
-- `lang/` : translation files (one PHP file per language). Use language keys from these files.
-- `js/`, `images/`, `themes/` : UI assets.
-- `tests/` : contains tests if present; no centralized test runner is declared in `composer.json`.
+- Edit `conf/config.inc.php` only above the "Don't modify anything below this line" marker; defines servers, themes, plugins, debug flags, long session lifetime, and login security.
+- Set `$_no_db_connection = true` on pre-auth pages (`index.php`, `servers.php`, `intro.php`, `login.php`) to skip DB connect + auth redirect.
+- Login state lives in session via `$misc->setServerInfo()`; extra login security rejects blank passwords and system usernames when enabled.
 
-**Key patterns and conventions**:
+**Database layer**
 
-- Global configuration: many files rely on `$conf`, `$lang`, and `$misc` as globals. Prefer using existing globals rather than creating new global variables.
-- Procedural + light OOP mix: Most features are implemented procedurally; only some subsystems (e.g. plugins) use classes.
-- Plugin system: `classes/PluginManager.php` expects plugins under `./plugins/<Name>/plugin.php`. The plugin class must implement `get_name()`, `get_hooks()` and `get_actions()` and expose methods matching hook/action names. Hooks supported include: `head`, `toplinks`, `tabs`, `trail`, `navlinks`, `actionbuttons`, `tree`, `logout`.
+- Connection wrapper `classes/database/Connection.php` uses ADODB (`ADONewConnection('postgres8')`) and auto-selects versioned drivers (Postgres13/12/11/10…); unknown newer versions fall back to `Postgres`.
+- Driver classes (`classes/database/Postgres*.php`) extend `ADODB_base`; use `$data` methods instead of raw pg\_\* calls. Escape with `clean()`, `fieldClean()`, `arrayClean()`.
+- Switch schemas with `$data->setSchema()` when `schema` is provided; `$misc->getSubjectParams()` builds consistent param sets.
 
-  - Example: `./plugins/Example/plugin.php` should declare `class Example { function get_name(){return 'Example';} function get_hooks(){ return array('head' => array('myHead')); } function myHead(&$args){ ... } }
+**Plugins**
 
-- Configuration editing: `conf/config.inc.php` is intended to be edited by administrators. Respect the file's "Don't modify anything below this line" section when possible.
+- Activate via `$conf['plugins']`; each plugin lives in `plugins/<Name>/plugin.php` with class `<Name>` implementing `get_name()`, `get_hooks()`, `get_actions()`.
+- Supported hooks: `head`, `toplinks`, `tabs`, `trail`, `navlinks`, `actionbuttons`, `tree`, `logout`. Core invocations live in `classes/PluginManager.php` and `classes/Misc.php` (tabs/navlinks/trail/actionbuttons/tree).
+- Hook methods mutate args by reference; actions must be declared in `get_actions()` or they are rejected.
 
-**Development / run / debug**:
+**UI rendering**
 
-- Install PHP deps: run `composer install` in the repository root.
-- PHP version: require PHP >=7.2 per `composer.json`. Ensure `ext-pgsql` (PostgreSQL extension) and `ext-mbstring` are enabled.
-- Quick local server (development): from repo root run:
-  - `php -S localhost:8080 -t .` (note: some pages may rely on particular web server behavior; use a full webserver config for production-like testing).
-- Database: configure your PostgreSQL server(s) in `conf/config.inc.php` (`$conf['servers'][N]`). Set `pg_dump`/`pg_dumpall` paths there for export functionality.
-- Debugging: `conf/config.inc.php` sets `display_errors` and several `ini_set` values — toggle them there. Session lifetimes are set near the top of that file.
+- Use `Misc` helpers: `printHeader/Body/Footer`, `printTabs()`, `printTrail()`, `printTable()`, `printMsg()`, `printTitle()`. Typical page: define small `doX()` functions, then switch on `$action`.
+- Theme resolution priority: request `theme` → session → cookie → server/db/user theme in `$conf` → default. Assets under `themes/<theme>/global.css`.
+- Language: always loads `lang/english.php`, then selected lang from `$conf['default_lang']` or browser (`auto`).
 
-**Composer & external deps**:
+**Development / run / debug**
 
-- `greenlion/php-sql-parser` is required (repository declared in `composer.json`). Use `composer install` to fetch it.
-- No other build step is required; static assets are in repo.
+- Requirements: PHP >= 7.2, `ext-pgsql`, `ext-mbstring`.
+- Install deps: `composer install` (vendor autoload pulled in by `libraries/lib.inc.php`).
+- Dev server: `php -S localhost:8080 -t .` from repo root; production should use a real web server.
+- Debug toggles live in `conf/config.inc.php` (display_errors, xdebug limits, session lifetime).
 
-**Testing & CI**:
+**Testing**
 
-- There is a `tests/` folder but no `phpunit`/CI configuration in `composer.json`. If adding tests, follow existing procedural style and prefer small isolated tests for key helper functions in `libraries/`.
+- `tests/` exists but no runner in `composer.json`; add small procedural tests for helpers in `libraries/` if needed.
 
-**Patterns to follow when editing code**:
+**Safety notes**
 
-- Preserve existing procedural style and use global variables where patterns already use them (`$conf`, `$lang`, `$misc`).
-- Keep changes minimal and focused for a single responsibility.
-- When adding new features that need persistence across requests, prefer storing configuration in `conf/` or adding a plugin under `plugins/`.
-- When adding UI changes, update assets under `js/`, `images/`, or `themes/` as appropriate; JS code is plain JS (no framework).
+- Respect `$conf['extra_login_security']`; avoid weakening without matching `pg_hba.conf`.
+- Prefer existing escaping (`Postgres::clean/fieldClean/arrayClean` or helpers in `libraries/helper.inc.php`) over ad-hoc quoting.
 
-**Files to inspect for examples**:
-
-- `conf/config.inc.php` — server and plugin configuration, debug flags.
-- `classes/PluginManager.php` — plugin lifecycle, hook/action model.
-- `libraries/lib.inc.php` — bootstrapping and common helpers used across pages.
-- `index.php`, `servers.php`, `intro.php` — common entry flow and how pages include libraries.
-
-**Safety & security notes** (discoverable):
-
-- `extra_login_security` in config defaults to `true`. Avoid changing this lightly without understanding `pg_hba.conf` implications.
-- User input is often passed to SQL generator/exec paths — prefer reusing existing escaping / helpers in `libraries/` and `helper.inc.php`.
-
-If anything in these notes is unclear or you'd like more examples (e.g. a sample plugin skeleton or an example of how hooks are called in a page), tell me which part to expand and I'll iterate.
+Need more examples (e.g., hook invocation spots or a minimal plugin skeleton)? Ask and we’ll add them.
