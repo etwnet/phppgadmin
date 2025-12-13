@@ -5,14 +5,14 @@
  * @package PhpPgAdmin\Database\Actions
  */
 
-namespace PhpPgAdmin\Database\Action;
+namespace PhpPgAdmin\Database\Actions;
 
-use PhpPgAdmin\Database\Action;
+use PhpPgAdmin\Database\AbstractActions;
 
 /**
  * Role action class - handles role, user, and group management
  */
-class Role extends Action {
+class RoleActions extends AbstractActions {
 
 	/**
 	 * Returns all roles, excluding the given role if specified

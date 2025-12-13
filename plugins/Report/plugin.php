@@ -1,5 +1,6 @@
 <?php
 
+use PhpPgAdmin\Database\Actions\DatabaseActions;
 use PhpPgAdmin\Plugin;
 
 require_once('./plugins/Report/classes/Reports.php');
@@ -362,7 +363,7 @@ class Report extends Plugin
 		}
 
 		// Get a list of available databases
-		$databases = $this->data()->getDatabases();
+		$databases = (new DatabaseActions())->getDatabases();
 
 		$_REQUEST['report'] = $report->fields['report_name'];
 
@@ -370,7 +371,7 @@ class Report extends Plugin
 		echo $this->misc()->form;
 		echo "<table style=\"width: 100%\">\n";
 		echo "<tr><th class=\"data left required\">{$this->lang['strname']}</th>\n";
-		echo "<td class=\"data1\"><input name=\"report_name\" size=\"32\" maxlength=\"{$this->data()->_maxNameLen}\" value=\"",
+		echo "<td class=\"data1\"><input name=\"report_name\" size=\"32\" maxlength=\"{$this->postgres()->_maxNameLen}\" value=\"",
 		htmlspecialchars($_POST['report_name']), "\" /></td></tr>\n";
 		echo "<tr><th class=\"data left required\">{$this->lang['strdatabase']}</th>\n";
 		echo "<td class=\"data1\"><select name=\"db_name\">\n";
@@ -548,7 +549,7 @@ class Report extends Plugin
 					? $_REQUEST[$_REQUEST['subject']]
 					: '';
 
-				$_REQUEST['report_sql'] = $this->data()->getSelectSQL($subject, array(), array(), array(), $orderby);
+				$_REQUEST['report_sql'] = $this->postgres()->getSelectSQL($subject, array(), array(), array(), $orderby);
 			}
 		}
 
@@ -558,13 +559,13 @@ class Report extends Plugin
 			$this->misc()->setForm();
 		}
 
-		$databases = $this->data()->getDatabases();
+		$databases = (new DatabaseActions())->getDatabases();
 
 		echo "<form action=\"plugin.php?plugin={$this->name}\" method=\"post\">\n";
 		echo $this->misc()->form;
 		echo "<table style=\"width: 100%\">\n";
 		echo "<tr><th class=\"data left required\">{$this->lang['strname']}</th>\n";
-		echo "<td class=\"data1\"><input name=\"report_name\" size=\"32\" maxlength=\"{$this->data()->_maxNameLen}\" value=\"",
+		echo "<td class=\"data1\"><input name=\"report_name\" size=\"32\" maxlength=\"{$this->postgres()->_maxNameLen}\" value=\"",
 		htmlspecialchars($_REQUEST['report_name']), "\" /></td></tr>\n";
 		echo "<tr><th class=\"data left required\">{$this->lang['strdatabase']}</th>\n";
 		echo "<td class=\"data1\"><select name=\"db_name\">\n";

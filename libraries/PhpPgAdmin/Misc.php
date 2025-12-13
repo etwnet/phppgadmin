@@ -7,8 +7,8 @@ use Connection;
 use PhpPgAdmin\Core\AbstractContext;
 use PhpPgAdmin\Core\Container;
 use PhpPgAdmin\Core\UrlBuilder;
-use PhpPgAdmin\Database\Action\Constraint;
-use PhpPgAdmin\Database\Action\Schema;
+use PhpPgAdmin\Database\Actions\ConstraintActions;
+use PhpPgAdmin\Database\Actions\SchemaActions;
 use PhpPgAdmin\Database\ArrayRecordSet;
 use PhpPgAdmin\Database\Connector;
 use PhpPgAdmin\Gui\ConnectionSelector;
@@ -997,7 +997,7 @@ class Misc extends AbstractContext
 			return 0;
 		}
 
-		$status = (new Schema($pg))->setSchema($schema);
+		$status = (new SchemaActions($pg))->setSchema($schema);
 		if ($status != 0)
 			return $status;
 
@@ -1063,7 +1063,7 @@ class Misc extends AbstractContext
 			'code' => ''
 		);
 
-		$constrs = (new Constraint($pg))->getConstraintsWithFields($table);
+		$constrs = (new ConstraintActions($pg))->getConstraintsWithFields($table);
 
 		if (!$constrs->EOF) {
 			$conrelid = $constrs->fields['conrelid'];

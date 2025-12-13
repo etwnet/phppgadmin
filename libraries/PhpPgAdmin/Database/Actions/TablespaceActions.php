@@ -5,15 +5,15 @@
  * @package PhpPgAdmin\Database\Actions
  */
 
-namespace PhpPgAdmin\Database\Action;
+namespace PhpPgAdmin\Database\Actions;
 
-use PhpPgAdmin\Database\Action;
+use PhpPgAdmin\Database\AbstractActions;
 
 /**
  * Tablespace action class - handles tablespace management
  */
-class Tablespace extends Action {
-	// Base constructor inherited from Action
+class TablespaceActions extends AbstractActions {
+	// Base constructor inherited from Actions
 
 	/**
 	 * Retrieves information for all tablespaces

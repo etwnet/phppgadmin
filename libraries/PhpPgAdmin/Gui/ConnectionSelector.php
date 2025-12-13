@@ -3,7 +3,7 @@
 namespace PhpPgAdmin\Gui;
 
 use PhpPgAdmin\Core\AbstractContext;
-use PhpPgAdmin\Database\Action\Database;
+use PhpPgAdmin\Database\Actions\DatabaseActions;
 use PhpPgAdmin\Misc;
 
 class ConnectionSelector extends AbstractContext
@@ -31,7 +31,7 @@ class ConnectionSelector extends AbstractContext
         }
         echo "</select>\n</td><td style=\"text-align: right\">\n";
 
-        $databases = (new Database($pg))->getDatabases();
+        $databases = (new DatabaseActions($pg))->getDatabases();
 
         if ($databases->recordCount() > 0) {
             echo "<label>";

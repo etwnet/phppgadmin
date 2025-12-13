@@ -2,7 +2,7 @@
 
 namespace PhpPgAdmin\Database;
 
-class Postgres extends Connection
+class Postgres extends AbstractConnection
 {
 	// PostgreSQL-specific constants and metadata
 	public $major_version = 0.0;
@@ -478,6 +478,100 @@ class Postgres extends Connection
 		}
 
 		return $this->help_page;
+	}
+
+	/**
+	 * Generates the SQL for the 'select' function
+	 * @param $table string The table from which to select
+	 * @param $show array An array of columns to show.  Empty array means all columns.
+	 * @param $values array An array mapping columns to values
+	 * @param $ops array An array of the operators to use
+	 * @param $orderby array (optional) An array of column numbers or names (one based)
+	 *        mapped to sort direction (asc or desc or '' or null) to order by
+	 * @return string The SQL query
+	 */
+	function getSelectSQL($table, $show, $values, $ops, $orderby = array()) {
+		$this->fieldArrayClean($show);
+
+		// If an empty array is passed in, then show all columns
+		if (sizeof($show) == 0) {
+			if ($this->hasObjectID($table))
+				$sql = "SELECT \"{$this->id}\", * FROM ";
+			else
+				$sql = "SELECT * FROM ";
+		} else {
+			// Add oid column automatically to results for editing purposes
+			if (!in_array($this->id, $show) && $this->hasObjectID($table))
+				$sql = "SELECT \"{$this->id}\", \"";
+			else
+				$sql = "SELECT \"";
+
+			$sql .= join('","', $show) . "\" FROM ";
+		}
+
+		$this->fieldClean($table);
+
+		if (isset($_REQUEST['schema'])) {
+			$f_schema = $_REQUEST['schema'];
+			$this->fieldClean($f_schema);
+			$sql .= "\"{$f_schema}\".";
+		}
+		$sql .= "\"{$table}\"";
+
+		// If we have values specified, add them to the WHERE clause
+		$first = true;
+		if (is_array($values) && sizeof($values) > 0) {
+			foreach ($values as $k => $v) {
+				if ($v != '' || $this->selectOps[$ops[$k]] == 'p') {
+					$this->fieldClean($k);
+					if ($first) {
+						$sql .= " WHERE ";
+						$first = false;
+					} else {
+						$sql .= " AND ";
+					}
+					// Different query format depending on operator type
+					switch ($this->selectOps[$ops[$k]]) {
+					case 'i':
+						// Only clean the field for the inline case
+						// this is because (x), subqueries need to
+						// to allow 'a','b' as input.
+						$this->clean($v);
+						$sql .= "\"{$k}\" {$ops[$k]} '{$v}'";
+						break;
+					case 'p':
+						$sql .= "\"{$k}\" {$ops[$k]}";
+						break;
+					case 'x':
+						$sql .= "\"{$k}\" {$ops[$k]} ({$v})";
+						break;
+					case 't':
+						$sql .= "\"{$k}\" {$ops[$k]}('{$v}')";
+						break;
+					default:
+						// Shouldn't happen
+					}
+				}
+			}
+		}
+
+		// ORDER BY
+		if (is_array($orderby) && sizeof($orderby) > 0) {
+			$sql .= " ORDER BY ";
+			$sep = "";
+			foreach ($orderby as $k => $v) {
+				$sql .= $sep;
+				$sep = ", ";
+				if (preg_match('/^[0-9]+$/', $k)) {
+					$sql .= $k;
+				} else {
+					$sql .= '"' . $this->fieldClean($k) . '"';
+				}
+				if (strtoupper($v) == 'DESC') $sql .= " DESC";
+			}
+		}
+
+		return $sql;
 	}
 
 	// Capabilities

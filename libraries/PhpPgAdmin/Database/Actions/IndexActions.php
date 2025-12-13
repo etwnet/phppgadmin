@@ -1,12 +1,12 @@
 <?php
 
-namespace PhpPgAdmin\Database\Action;
+namespace PhpPgAdmin\Database\Actions;
 
-use PhpPgAdmin\Database\Action;
+use PhpPgAdmin\Database\AbstractActions;
 
-class Index extends Action
+class IndexActions extends AbstractActions
 {
-    // Base constructor inherited from Action
+    // Base constructor inherited from Actions
 
     /**
      * Grabs a list of indexes for a table.

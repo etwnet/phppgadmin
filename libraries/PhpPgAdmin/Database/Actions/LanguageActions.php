@@ -1,12 +1,12 @@
 <?php
 
-namespace PhpPgAdmin\Database\Action;
+namespace PhpPgAdmin\Database\Actions;
 
-use PhpPgAdmin\Database\Action;
+use PhpPgAdmin\Database\AbstractActions;
 
-class Language extends Action
+class LanguageActions extends AbstractActions
 {
-    // Base constructor inherited from Action
+    // Base constructor inherited from Actions
 
     /**
      * Gets all languages.

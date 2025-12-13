@@ -1,12 +1,12 @@
 <?php
 
-namespace PhpPgAdmin\Database\Action;
+namespace PhpPgAdmin\Database\Actions;
 
-use PhpPgAdmin\Database\Action;
+use PhpPgAdmin\Database\AbstractActions;
 
-class Acl extends Action
+class AclActions extends AbstractActions
 {
-    // Base constructor inherited from Action
+    // Base constructor inherited from Actions
 
     /** @var array map of ACL chars to privilege names */
     private $privmap = [

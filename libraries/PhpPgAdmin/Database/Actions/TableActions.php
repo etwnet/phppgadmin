@@ -1,27 +1,27 @@
 <?php
 
-namespace PhpPgAdmin\Database\Action;
+namespace PhpPgAdmin\Database\Actions;
 
-use PhpPgAdmin\Database\Action;
-use PhpPgAdmin\Database\Action\Acl;
-use PhpPgAdmin\Database\Action\Constraint;
-use PhpPgAdmin\Database\Action\Index;
-use PhpPgAdmin\Database\Action\Rule;
+use PhpPgAdmin\Database\AbstractActions;
+use PhpPgAdmin\Database\Actions\AclActions;
+use PhpPgAdmin\Database\Actions\ConstraintActions;
+use PhpPgAdmin\Database\Actions\IndexActions;
+use PhpPgAdmin\Database\Actions\RuleActions;
 
-class Table extends Action
+class TableActions extends AbstractActions
 {
-    // Base constructor inherited from Action
+    // Base constructor inherited from Actions
 
-    /** @var Acl */
+    /** @var AclActions */
     private $acl;
 
-    /** @var Constraint */
+    /** @var ConstraintActions */
     private $constraint;
 
-    /** @var Index */
+    /** @var IndexActions */
     private $index;
 
-    /** @var Rule */
+    /** @var RuleActions */
     private $rule;
 
     /**
@@ -29,7 +29,7 @@ class Table extends Action
      */
     private $allowedStorage = ['p', 'e', 'm', 'x'];
 
-    public function __construct(\PhpPgAdmin\Database\Connection $connection)
+    public function __construct(\PhpPgAdmin\Database\AbstractConnection $connection)
     {
         parent::__construct($connection);
     }
@@ -37,7 +37,7 @@ class Table extends Action
     private function getAclAction()
     {
         if ($this->acl === null) {
-            $this->acl = new Acl($this->connection);
+            $this->acl = new AclActions($this->connection);
         }
         return $this->acl;
     }
@@ -45,7 +45,7 @@ class Table extends Action
     private function getConstraintAction()
     {
         if ($this->constraint === null) {
-            $this->constraint = new Constraint($this->connection);
+            $this->constraint = new ConstraintActions($this->connection);
         }
         return $this->constraint;
     }
@@ -53,7 +53,7 @@ class Table extends Action
     private function getIndexAction()
     {
         if ($this->index === null) {
-            $this->index = new Index($this->connection);
+            $this->index = new IndexActions($this->connection);
         }
         return $this->index;
     }
@@ -61,7 +61,7 @@ class Table extends Action
     private function getRuleAction()
     {
         if ($this->rule === null) {
-            $this->rule = new Rule($this->connection);
+            $this->rule = new RuleActions($this->connection);
         }
         return $this->rule;
     }

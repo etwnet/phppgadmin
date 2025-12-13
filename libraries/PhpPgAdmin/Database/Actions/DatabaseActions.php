@@ -1,10 +1,10 @@
 <?php
 
-namespace PhpPgAdmin\Database\Action;
+namespace PhpPgAdmin\Database\Actions;
 
-use PhpPgAdmin\Database\Action;
+use PhpPgAdmin\Database\AbstractActions;
 
-class Database extends Action
+class DatabaseActions extends AbstractActions
 {
 
     /**

@@ -1,12 +1,12 @@
 <?php
 
-namespace PhpPgAdmin\Database\Action;
+namespace PhpPgAdmin\Database\Actions;
 
-use PhpPgAdmin\Database\Action;
+use PhpPgAdmin\Database\AbstractActions;
 
-class Sequence extends Action
+class SequenceActions extends AbstractActions
 {
-    // Base constructor inherited from Action
+    // Base constructor inherited from Actions
 
     /**
      * Determines whether the current user can directly access sequence information.

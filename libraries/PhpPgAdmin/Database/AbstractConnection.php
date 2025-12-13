@@ -9,7 +9,7 @@ use ADOConnection;
 use ADORecordSet;
 use PhpPgAdmin\Core\AbstractContext;
 
-abstract class Connection extends AbstractContext {
+abstract class AbstractConnection extends AbstractContext {
 
 	/**
 	 * @var ADOConnection

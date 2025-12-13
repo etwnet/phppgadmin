@@ -1,15 +1,15 @@
 <?php
 
-namespace PhpPgAdmin\Database\Action;
+namespace PhpPgAdmin\Database\Actions;
 
-use PhpPgAdmin\Database\Action;
-use PhpPgAdmin\Database\Action\SqlFunction;
+use PhpPgAdmin\Database\AbstractActions;
+use PhpPgAdmin\Database\Actions\SqlFunctionActions;
 
-class Trigger extends Action
+class TriggerActions extends AbstractActions
 {
-    // Base constructor inherited from Action
+    // Base constructor inherited from Actions
 
-    /** @var SqlFunction */
+    /** @var SqlFunctionActions */
     private $functionAction;
 
     //
@@ -17,7 +17,7 @@ class Trigger extends Action
     private function getFunctionAction()
     {
         if ($this->functionAction === null) {
-            $this->functionAction = new SqlFunction($this->connection);
+            $this->functionAction = new SqlFunctionActions($this->connection);
         }
 
         return $this->functionAction;
