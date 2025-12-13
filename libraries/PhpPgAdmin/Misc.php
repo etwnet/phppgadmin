@@ -226,7 +226,7 @@ class Misc extends AbstractContext
 
 		// Create a database wrapper class for easy manipulation of the
 		// connection.
-		$className = "\\PhpPgAdmin\\Database\\Connection\\$driverName";
+		$className = "\\PhpPgAdmin\\Database\\$driverName";
 		$postgres = new $className($connector->conn, $majorVersion);
 		$postgres->platform = $connector->platform;
 		Container::setPostgres($postgres);

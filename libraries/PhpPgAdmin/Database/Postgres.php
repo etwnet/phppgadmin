@@ -1,8 +1,6 @@
 <?php
 
-namespace PhpPgAdmin\Database\Connection;
-
-use PhpPgAdmin\Database\Connection;
+namespace PhpPgAdmin\Database;
 
 class Postgres extends Connection
 {
@@ -216,7 +214,7 @@ class Postgres extends Connection
                 AND pa.attname ILIKE {$term} AND pa.attnum > 0 AND NOT pa.attisdropped AND pc.relkind IN ('r', 'v') {$where}
             UNION ALL
             SELECT 'FUNCTION', pp.oid, pn.nspname, NULL, pp.proname || '(' || pg_catalog.oidvectortypes(pp.proargtypes) || ')' FROM pg_catalog.pg_proc pp, pg_catalog.pg_namespace pn
-                WHERE pp.pronamespace=pn.oid AND NOT pp.prokind = 'a' AND pp.proname ILIKE {$term} {$where}
+                WHERE pp.pronamespace=pn.oid AND NOT (CASE WHEN (SELECT count(*) FROM pg_catalog.pg_proc WHERE prokind IS NOT NULL) > 0 THEN pp.prokind = 'a' ELSE pp.proisagg END) AND pp.proname ILIKE {$term} {$where}
             UNION ALL
             SELECT 'INDEX', NULL, pn.nspname, pc.relname, pc2.relname FROM pg_catalog.pg_class pc, pg_catalog.pg_namespace pn,
                 pg_catalog.pg_index pi, pg_catalog.pg_class pc2 WHERE pc.relnamespace=pn.oid AND pc.oid=pi.indrelid
@@ -339,27 +337,81 @@ class Postgres extends Connection
 	 */
 	function getProcesses($database = null)
 	{
-		if ($database === null)
-			$sql = "SELECT datname, usename, pid, 
+		// Different query for PostgreSQL versions < 9.5
+		if ((float)$this->major_version < 9.5) {
+			// PostgreSQL 9.1-9.4 format with procpid and current_query
+			if ($database === null)
+				$sql = "SELECT datname, usename, procpid AS pid, waiting, current_query AS query, query_start
+					FROM pg_catalog.pg_stat_activity
+					ORDER BY datname, usename, procpid";
+			else {
+				$this->clean($database);
+				$sql = "SELECT datname, usename, procpid AS pid, waiting, current_query AS query, query_start
+					FROM pg_catalog.pg_stat_activity
+					WHERE datname='{$database}'
+					ORDER BY usename, procpid";
+			}
+		} else {
+			// PostgreSQL 9.5+ format with wait_event and state
+			if ($database === null)
+				$sql = "SELECT datname, usename, pid, 
                     case when wait_event is null then 'false' else wait_event_type || '::' || wait_event end as waiting, 
                     query_start, application_name, client_addr, 
                   case when state='idle in transaction' then '<IDLE> in transaction' when state = 'idle' then '<IDLE>' else query end as query 
 				FROM pg_catalog.pg_stat_activity
 				ORDER BY datname, usename, pid";
-		else {
-			$this->clean($database);
-			$sql = "SELECT datname, usename, pid, 
+			else {
+				$this->clean($database);
+				$sql = "SELECT datname, usename, pid, 
                     case when wait_event is null then 'false' else wait_event_type || '::' || wait_event end as waiting, 
                     query_start, application_name, client_addr, 
                   case when state='idle in transaction' then '<IDLE> in transaction' when state = 'idle' then '<IDLE>' else query end as query 
 				FROM pg_catalog.pg_stat_activity
 				WHERE datname='{$database}'
 				ORDER BY usename, pid";
+			}
 		}
 
 		return $this->selectSet($sql);
 	}
 
+	/**
+	 * Retrieves all tablespace information.
+	 * @param bool $all Include all tablespaces (necessary when moving objects back to the default space)
+	 * @return \ADORecordSet A recordset
+	 */
+	function getTablespaces($all = false)
+	{
+		$conf = $this->conf();
+
+		$sql = "SELECT spcname, pg_catalog.pg_get_userbyid(spcowner) AS spcowner, spclocation,
+                    (SELECT description FROM pg_catalog.pg_shdescription pd WHERE pg_tablespace.oid=pd.objoid AND pd.classoid='pg_tablespace'::regclass) AS spccomment
+				FROM pg_catalog.pg_tablespace";
+
+		if (!$conf['show_system'] && !$all) {
+			$sql .= ' WHERE spcname NOT LIKE $$pg\_%$$';
+		}
+
+		$sql .= " ORDER BY spcname";
+
+		return $this->selectSet($sql);
+	}
+
+	/**
+	 * Retrieves a specific tablespace's information.
+	 * @param string $spcname Tablespace name
+	 * @return \ADORecordSet A recordset
+	 */
+	function getTablespace($spcname)
+	{
+		$this->clean($spcname);
+
+		$sql = "SELECT spcname, pg_catalog.pg_get_userbyid(spcowner) AS spcowner, spclocation,
+                    (SELECT description FROM pg_catalog.pg_shdescription pd WHERE pg_tablespace.oid=pd.objoid AND pd.classoid='pg_tablespace'::regclass) AS spccomment
+				FROM pg_catalog.pg_tablespace WHERE spcname='{$spcname}'";
+
+		return $this->selectSet($sql);
+	}
 
 	/**
 	 * Determines whether or not a user/role is a super user
@@ -577,7 +629,8 @@ class Postgres extends Connection
 
 	function hasUserSignals()
 	{
-		return true;
+		// PostgreSQL versions 9.0-9.4 do not have user signals capability
+		return $this->major_version >= 9.5;
 	}
 
 	function hasVirtualTransactionId()
@@ -622,6 +675,7 @@ class Postgres extends Connection
 
 	function hasServerOids()
 	{
-		return false;
+		// Server OIDs are available only until PostgreSQL 11
+		return $this->major_version <= 11;
 	}
 }

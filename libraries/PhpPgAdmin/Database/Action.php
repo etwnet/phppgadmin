@@ -3,7 +3,7 @@
 namespace PhpPgAdmin\Database;
 
 use PhpPgAdmin\Core\AbstractContext;
-use PhpPgAdmin\Database\Connection\Postgres;
+use PhpPgAdmin\Database\Postgres;
 
 abstract class Action extends AbstractContext
 {

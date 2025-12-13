@@ -90,23 +90,9 @@ class Connector
 
 		$description = "PostgreSQL {$version}";
 
-		// Detect version and choose appropriate database driver
-		// Use the nearest parent class with actual logic
-		if ($majorVersion >= 12) {
-			return 'Postgres';
-		} elseif ($majorVersion >= 11) {
-			return 'Postgres11';
-		} elseif ($majorVersion >= 10) {
-			return 'Postgres10';
-		} elseif ($majorVersion >= 9.6) {
-			return 'Postgres96';
-		} elseif ($majorVersion >= 9.5) {
-			return 'Postgres95';
-		} elseif ($majorVersion >= 9.0) {
-			return 'Postgres91';
-		} else {
-			return null;
-		}
+		// All versions now use the single unified Postgres class
+		// Version-specific logic is handled internally with version checks
+		return 'Postgres';
 	}
 
 	/**

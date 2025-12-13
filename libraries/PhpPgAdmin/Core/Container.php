@@ -5,7 +5,7 @@ namespace PhpPgAdmin\Core;
 use PhpPgAdmin\Misc;
 use PhpPgAdmin\PluginManager;
 use Postgres as PostgresLegacy;
-use PhpPgAdmin\Database\Connection\Postgres as PostgresNew;
+use PhpPgAdmin\Database\Postgres as PostgresNew;
 
 /**
  * Simple singleton container to hold shared application objects during
