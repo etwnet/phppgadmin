@@ -1,8 +1,11 @@
 <?php
-require_once('./classes/Plugin.php');
+
+use PhpPgAdmin\Plugin;
+
 require_once('./plugins/Report/classes/Reports.php');
 
-class Report extends Plugin {
+class Report extends Plugin
+{
 
 	/**
 	 * Attributes
@@ -17,7 +20,8 @@ class Report extends Plugin {
 	 * Call parent constructor, passing the language that will be used.
 	 * @param $language Current phpPgAdmin language. If it was not found in the plugin, English will be used.
 	 */
-	function __construct($language) {
+	function __construct($language)
+	{
 
 		/* loads $this->lang and $this->conf */
 		parent::__construct($language);
@@ -37,19 +41,19 @@ class Report extends Plugin {
 		}
 	}
 
-	function get_reportsdb() {
+	function get_reportsdb()
+	{
 		if ($this->_reportsdb === null) {
 			$status = 0;
 			$this->_reportsdb = new Reports($this->conf, $status);
 
 			if ($status !== 0) {
-				global $misc;
-				$misc->printHeader($this->lang['strreports']);
-				$misc->printBody();
-				$misc->printTrail('server');
-				$misc->printTabs('server','reports');
-				$misc->printMsg($this->lang['strnoreportsdb']);
-				$misc->printFooter();
+				$this->misc()->printHeader($this->lang['strreports']);
+				$this->misc()->printBody();
+				$this->misc()->printTrail('server');
+				$this->misc()->printTabs('server', 'reports');
+				$this->misc()->printMsg($this->lang['strnoreportsdb']);
+				$this->misc()->printFooter();
 				exit;
 			}
 		}
@@ -71,7 +75,8 @@ class Report extends Plugin {
 	 *
 	 * @return $hooks
 	 */
-	function get_hooks() {
+	function get_hooks()
+	{
 		$hooks = array(
 			'tabs' => array('add_plugin_tabs'),
 			'trail' => array('add_plugin_trail'),
@@ -89,9 +94,10 @@ class Report extends Plugin {
 	 *	'show_error',
 	 * );
 	 *
-	 * @return $actions
+	 * @return array $actions
 	 */
-	function get_actions() {
+	function get_actions()
+	{
 		$actions = array(
 			'save_edit',
 			'edit',
@@ -110,13 +116,12 @@ class Report extends Plugin {
 	 * Add plugin in the tabs
 	 * @param $plugin_functions_parameters
 	 */
-	function add_plugin_tabs(&$plugin_functions_parameters) {
-		global $misc;
-
+	function add_plugin_tabs(&$plugin_functions_parameters)
+	{
 		$tabs = &$plugin_functions_parameters['tabs'];
 
 		if ($plugin_functions_parameters['section'] == 'server') {
-			$tabs['report_plugin'] = array (
+			$tabs['report_plugin'] = array(
 				'title' => $this->lang['strplugindescription'],
 				'url' => 'plugin.php',
 				'urlvars' => array(
@@ -130,7 +135,7 @@ class Report extends Plugin {
 		}
 
 		if ($plugin_functions_parameters['section'] == 'report') {
-			$tabs['report_plugin'] = array (
+			$tabs['report_plugin'] = array(
 				'title' => $this->lang['strplugindescription'],
 				'url' => 'plugin.php',
 				'urlvars' => array(
@@ -148,8 +153,8 @@ class Report extends Plugin {
 	 * Add plugin in the trail
 	 * @param $plugin_functions_parameters
 	 */
-	function add_plugin_trail(&$plugin_functions_parameters) {
-		global $misc;
+	function add_plugin_trail(&$plugin_functions_parameters)
+	{
 		$trail = &$plugin_functions_parameters['trail'];
 		$done = false;
 		$subject = '';
@@ -163,30 +168,31 @@ class Report extends Plugin {
 		}
 
 		if (isset($_REQUEST['plugin']) and $_REQUEST['plugin'] == 'Report') {
-			$url = array (
+			$url = array(
 				'url' => 'plugin.php',
-				'urlvars' => array (
+				'urlvars' => array(
 					'plugin' => $this->name,
 					'action' => 'default_action'
 				)
 			);
-			$trail['report_plugin'] = array (
+			$trail['report_plugin'] = array(
 				'title' => $this->lang['strreport'],
 				'text' => $this->lang['strreport'],
-				'url'   => $misc->getActionUrl($url, $_REQUEST, null, false),
+				'url'   => $this->misc()->getActionUrl($url, $_REQUEST, null, false),
 				'icon' => $this->icon('Reports')
 			);
 		}
 
-		if (isset($_REQUEST['plugin'])
+		if (
+			isset($_REQUEST['plugin'])
 			and $_REQUEST['plugin'] == 'Report'
 			and $action != 'default_action'
 			and in_array($action, $this->get_actions())
 		) {
 
-			$url = array (
+			$url = array(
 				'url' => 'plugin.php',
-				'urlvars' => array (
+				'urlvars' => array(
 					'plugin' => $this->name,
 					'action' => 'properties',
 					'report_id' => field('report_id'),
@@ -196,16 +202,15 @@ class Report extends Plugin {
 			if (isset($_REQUEST['report']))
 				$url['urlvars']['report'] = field('report');
 
-			$trail['report_plugin_name'] = array (
+			$trail['report_plugin_name'] = array(
 				'title' => $this->lang['strreport'],
 				'text' => $this->lang['strreport'],
-				'url'   => $misc->getActionUrl($url, $_REQUEST, null, false),
+				'url'   => $this->misc()->getActionUrl($url, $_REQUEST, null, false),
 				'icon' => $this->icon('Report')
 			);
 
 			if (isset($_REQUEST['report']))
 				$trail['report_plugin_name']['text'] = $_REQUEST['report'];
-
 		}
 	}
 
@@ -213,26 +218,24 @@ class Report extends Plugin {
 	 * Add plugin in the navlinks
 	 * @param $plugin_functions_parameters
 	 */
-	function plugin_navlinks(&$params) {
-		global $misc, $lang;
-
+	function plugin_navlinks(&$params)
+	{
 		if (
 			($params['place'] == 'sql-form'
 				or $params['place'] == 'display-browse')
-			and ( isset($params['env']['rs'])
-				 and is_object($params['env']['rs'])
-				 and $params['env']['rs']->recordCount() > 0))
-		{
-			if ( ! (isset($_REQUEST['plugin'])
-					and $_REQUEST['plugin'] == $this->name)
-			) {
+			and (isset($params['env']['rs'])
+				and is_object($params['env']['rs'])
+				and $params['env']['rs']->recordCount() > 0)
+		) {
+			if (! (isset($_REQUEST['plugin'])
+				and $_REQUEST['plugin'] == $this->name)) {
 				/* ResultSet doesn't come from a plugin:
 				 * show a create report link. */
-				$params['navlinks']['report_link'] = array (
-					'attr'=> array (
-						'href' => array (
+				$params['navlinks']['report_link'] = array(
+					'attr' => array(
+						'href' => array(
 							'url' => 'plugin.php',
-							'urlvars' => array (
+							'urlvars' => array(
 								'plugin' => $this->name,
 								'action' => 'create',
 								'server' => $_REQUEST['server'],
@@ -244,17 +247,17 @@ class Report extends Plugin {
 				);
 
 				if (isset($_REQUEST['paginate']))
-				$params['navlinks']['report_link']['attr']['href']['urlvars']['paginate']
-					= $_REQUEST['paginate'];
+					$params['navlinks']['report_link']['attr']['href']['urlvars']['paginate']
+						= $_REQUEST['paginate'];
 
 				if (!empty($_SESSION['sqlquery'])) {
 					$params['navlinks']['report_link']['attr']['href']['urlvars']['fromsql']
 						= 1;
-				}
-				else {
-					if (isset($_REQUEST['subject'])
-						and isset($_REQUEST[$_REQUEST['subject']]))
-					{
+				} else {
+					if (
+						isset($_REQUEST['subject'])
+						and isset($_REQUEST[$_REQUEST['subject']])
+					) {
 						$params['navlinks']['report_link']['attr']['href']['urlvars']['subject']
 							= $_REQUEST['subject'];
 						$params['navlinks']['report_link']['attr']['href']['urlvars'][$_REQUEST['subject']]
@@ -265,20 +268,18 @@ class Report extends Plugin {
 
 						$params['navlinks']['report_link']['attr']['href']['urlvars']['sortdir']
 							= $_REQUEST['sortdir'] ?? '';
-					}
-					else {
+					} else {
 						unset($params['navlinks']['report_link']);
 					}
 				}
-			}
-			else {
+			} else {
 				/* ResultSet comes from a plugin:
 				 * show a edit report link. */
-				$params['navlinks']['report_link'] = array (
-					'attr'=> array (
-						'href' => array (
+				$params['navlinks']['report_link'] = array(
+					'attr' => array(
+						'href' => array(
 							'url' => 'plugin.php',
-							'urlvars' => array (
+							'urlvars' => array(
 								'plugin' => $this->name,
 								'action' => 'edit',
 								'server' => $_REQUEST['server'],
@@ -291,27 +292,19 @@ class Report extends Plugin {
 				);
 
 				/* edit collapse link to add report related vars */
-				$params['navlinks']['collapse']['attr']['href']['urlvars']
-					['plugin'] = $this->name;
-				$params['navlinks']['collapse']['attr']['href']['urlvars']
-					['report_id'] = $_REQUEST['report_id'];
-				$params['navlinks']['collapse']['attr']['href']['urlvars']
-					['report'] = $_REQUEST['report'];
+				$params['navlinks']['collapse']['attr']['href']['urlvars']['plugin'] = $this->name;
+				$params['navlinks']['collapse']['attr']['href']['urlvars']['report_id'] = $_REQUEST['report_id'];
+				$params['navlinks']['collapse']['attr']['href']['urlvars']['report'] = $_REQUEST['report'];
 
 				/* edit refresh link to add report related vars */
-				$params['navlinks']['refresh']['attr']['href']['urlvars']
-					['plugin'] = $this->name;
-				$params['navlinks']['refresh']['attr']['href']['urlvars']
-					['report_id'] = $_REQUEST['report_id'];
-				$params['navlinks']['refresh']['attr']['href']['urlvars']
-					['report'] = $_REQUEST['report'];
+				$params['navlinks']['refresh']['attr']['href']['urlvars']['plugin'] = $this->name;
+				$params['navlinks']['refresh']['attr']['href']['urlvars']['report_id'] = $_REQUEST['report_id'];
+				$params['navlinks']['refresh']['attr']['href']['urlvars']['report'] = $_REQUEST['report'];
 
 				if (isset($_REQUEST['action'])) {
-					$params['navlinks']['collapse']['attr']['href']['urlvars']
-						['action'] = $_REQUEST['action'];
+					$params['navlinks']['collapse']['attr']['href']['urlvars']['action'] = $_REQUEST['action'];
 
-					$params['navlinks']['refresh']['attr']['href']['urlvars']
-						['action'] = $_REQUEST['action'];
+					$params['navlinks']['refresh']['attr']['href']['urlvars']['action'] = $_REQUEST['action'];
 				}
 			}
 
@@ -321,9 +314,10 @@ class Report extends Plugin {
 		}
 	}
 
-	function get_subject_params() {
+	function get_subject_params()
+	{
 		$vars = array();
-		
+
 		if (! isset($_REQUEST['action']))
 			return $vars;
 
@@ -338,27 +332,26 @@ class Report extends Plugin {
 				);
 				if (isset($_REQUEST['back']))
 					$vars['action'] = $_REQUEST['back'];
-			break;
+				break;
 		}
 
 		return $vars;
 	}
 
-	function edit($msg = '') {
-		global $data, $misc, $lang;
-
+	function edit($msg = '')
+	{
 		$reportsdb = $this->get_reportsdb();
 
-		$misc->printHeader($this->lang['strreports']);
-		$misc->printBody();
-		$misc->printTrail('server');
-		$misc->printTabs('server', 'report_plugin');
-		$misc->printMsg($msg);
+		$this->misc()->printHeader($this->lang['strreports']);
+		$this->misc()->printBody();
+		$this->misc()->printTrail('server');
+		$this->misc()->printTabs('server', 'report_plugin');
+		$this->misc()->printMsg($msg);
 
 		// If it's a first, load then get the data from the database
 		$report = $reportsdb->getReport($_REQUEST['report_id']);
-		
-		if ($_REQUEST['action'] == 'edit') {			
+
+		if ($_REQUEST['action'] == 'edit') {
 			$_POST['report_name'] = $report->fields['report_name'];
 			$_POST['db_name'] = $report->fields['db_name'];
 			$_POST['descr'] = $report->fields['descr'];
@@ -369,46 +362,46 @@ class Report extends Plugin {
 		}
 
 		// Get a list of available databases
-		$databases = $data->getDatabases();
+		$databases = $this->data()->getDatabases();
 
 		$_REQUEST['report'] = $report->fields['report_name'];
 
 		echo "<form action=\"plugin.php?plugin={$this->name}\" method=\"post\">\n";
-		echo $misc->form;
+		echo $this->misc()->form;
 		echo "<table style=\"width: 100%\">\n";
-		echo "<tr><th class=\"data left required\">{$lang['strname']}</th>\n";
-		echo "<td class=\"data1\"><input name=\"report_name\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-			htmlspecialchars($_POST['report_name']), "\" /></td></tr>\n";
-		echo "<tr><th class=\"data left required\">{$lang['strdatabase']}</th>\n";
+		echo "<tr><th class=\"data left required\">{$this->lang['strname']}</th>\n";
+		echo "<td class=\"data1\"><input name=\"report_name\" size=\"32\" maxlength=\"{$this->data()->_maxNameLen}\" value=\"",
+		htmlspecialchars($_POST['report_name']), "\" /></td></tr>\n";
+		echo "<tr><th class=\"data left required\">{$this->lang['strdatabase']}</th>\n";
 		echo "<td class=\"data1\"><select name=\"db_name\">\n";
 		while (!$databases->EOF) {
 			$dbname = $databases->fields['datname'];
-			echo "<option value=\"", htmlspecialchars($dbname), "\"",
-			($dbname == $_POST['db_name']) ? ' selected="selected"' : '', ">",
-				htmlspecialchars($dbname), "</option>\n";
+			echo "<option value=\"", htmlspecialchars($dbname), "\"", ($dbname == $_POST['db_name']) ? ' selected="selected"' : '', ">",
+			htmlspecialchars($dbname), "</option>\n";
 			$databases->moveNext();
 		}
 		echo "</select></td></tr>\n";
-		echo "<tr><th class=\"data left\">{$lang['strcomment']}</th>\n";
+		echo "<tr><th class=\"data left\">{$this->lang['strcomment']}</th>\n";
 		echo "<td class=\"data1\"><textarea style=\"width:100%;\" rows=\"5\" cols=\"50\" name=\"descr\">",
-			htmlspecialchars($_POST['descr']), "</textarea></td></tr>\n";
-		echo "<tr><th class=\"data left required\">{$lang['strsql']}</th>\n";
+		htmlspecialchars($_POST['descr']), "</textarea></td></tr>\n";
+		echo "<tr><th class=\"data left required\">{$this->lang['strsql']}</th>\n";
 		echo "<td class=\"data1\"><textarea style=\"width:100%;\" rows=\"15\" cols=\"50\" name=\"report_sql\">",
-			htmlspecialchars($_POST['report_sql']), "</textarea></td></tr>\n";
+		htmlspecialchars($_POST['report_sql']), "</textarea></td></tr>\n";
 		echo "</table>\n";
-		echo "<label for=\"paginate\"><input type=\"checkbox\" id=\"paginate\" name=\"paginate\"", (isset($_POST['paginate']) ? ' checked="checked"' : ''), " />&nbsp;{$lang['strpaginate']}</label>\n";
+		echo "<label for=\"paginate\"><input type=\"checkbox\" id=\"paginate\" name=\"paginate\"", (isset($_POST['paginate']) ? ' checked="checked"' : ''), " />&nbsp;{$this->lang['strpaginate']}</label>\n";
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"save_edit\" />\n";
-		echo "<input type=\"submit\" value=\"{$lang['strsave']}\" />\n";
-		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
+		echo "<input type=\"submit\" value=\"{$this->lang['strsave']}\" />\n";
+		echo "<input type=\"submit\" name=\"cancel\" value=\"{$this->lang['strcancel']}\" /></p>\n";
 		echo "<input type=\"hidden\" name=\"report_id\" value=\"{$report->fields['report_id']}\" />\n";
 		echo "</form>\n";
-		$misc->printFooter();
+		$this->misc()->printFooter();
 	}
 
 	/**
 	 * Saves changes to a report
 	 */
-	function save_edit() {
+	function save_edit()
+	{
 		$reportsdb = $this->get_reportsdb();
 
 		if (isset($_REQUEST['cancel'])) {
@@ -427,8 +420,14 @@ class Report extends Plugin {
 		} elseif ($_POST['report_sql'] == '') {
 			$this->edit($this->lang['strreportneedsdef']);
 		} else {
-			$status = $reportsdb->alterReport($_POST['report_id'], $_POST['report_name'], $_POST['db_name'],
-				$_POST['descr'], $_POST['report_sql'], isset($_POST['paginate']));
+			$status = $reportsdb->alterReport(
+				$_POST['report_id'],
+				$_POST['report_name'],
+				$_POST['db_name'],
+				$_POST['descr'],
+				$_POST['report_sql'],
+				isset($_POST['paginate'])
+			);
 			if ($status == 0)
 				$this->default_action($this->lang['strreportcreated']);
 			else
@@ -439,17 +438,15 @@ class Report extends Plugin {
 	/**
 	 * Display read-only properties of a report
 	 */
-	function properties($msg = '') {
-		global $data, $reportsdb, $misc;
-		global $lang;
-
+	function properties($msg = '')
+	{
 		$reportsdb = $this->get_reportsdb();
-		
-		$misc->printHeader($this->lang['strreports']);
-		$misc->printBody();
-		$misc->printTrail('server');
-		$misc->printTabs('server', 'report_plugin');
-		$misc->printMsg($msg);
+
+		$this->misc()->printHeader($this->lang['strreports']);
+		$this->misc()->printBody();
+		$this->misc()->printTrail('server');
+		$this->misc()->printTabs('server', 'report_plugin');
+		$this->misc()->printMsg($msg);
 
 		$report = $reportsdb->getReport($_REQUEST['report_id']);
 
@@ -457,52 +454,54 @@ class Report extends Plugin {
 
 		if ($report->recordCount() == 1) {
 			echo "<table>\n";
-			echo "<tr><th class=\"data left\">{$lang['strname']}</th>\n";
-			echo "<td class=\"data1\">", $misc->printVal($report->fields['report_name']), "</td></tr>\n";
-			echo "<tr><th class=\"data left\">{$lang['strdatabase']}</th>\n";
-			echo "<td class=\"data1\">", $misc->printVal($report->fields['db_name']), "</td></tr>\n";
-			echo "<tr><th class=\"data left\">{$lang['strcomment']}</th>\n";
-			echo "<td class=\"data1\">", $misc->printVal($report->fields['descr']), "</td></tr>\n";
-			echo "<tr><th class=\"data left\">{$lang['strpaginate']}</th>\n";
-			echo "<td class=\"data1\">", $misc->printVal($report->fields['paginate'], 'yesno', array('align' => 'left')), "</td></tr>\n";
-			echo "<tr><th class=\"data left\">{$lang['strsql']}</th>\n";
-			echo "<td class=\"data1\">", $misc->printVal($report->fields['report_sql']), "</td></tr>\n";
+			echo "<tr><th class=\"data left\">{$this->lang['strname']}</th>\n";
+			echo "<td class=\"data1\">", $this->misc()->printVal($report->fields['report_name']), "</td></tr>\n";
+			echo "<tr><th class=\"data left\">{$this->lang['strdatabase']}</th>\n";
+			echo "<td class=\"data1\">", $this->misc()->printVal($report->fields['db_name']), "</td></tr>\n";
+			echo "<tr><th class=\"data left\">{$this->lang['strcomment']}</th>\n";
+			echo "<td class=\"data1\">", $this->misc()->printVal($report->fields['descr']), "</td></tr>\n";
+			echo "<tr><th class=\"data left\">{$this->lang['strpaginate']}</th>\n";
+			echo "<td class=\"data1\">", $this->misc()->printVal($report->fields['paginate'], 'yesno', array('align' => 'left')), "</td></tr>\n";
+			echo "<tr><th class=\"data left\">{$this->lang['strsql']}</th>\n";
+			echo "<td class=\"data1\">", $this->misc()->printVal($report->fields['report_sql']), "</td></tr>\n";
 			echo "</table>\n";
-		}
-		else echo "<p>{$lang['strinvalidparam']}</p>\n";
+		} else echo "<p>{$this->lang['strinvalidparam']}</p>\n";
 
-		$urlvars = array (
+		$urlvars = array(
 			'plugin' => $this->name,
 			'server' => $_REQUEST['server']
 		);
 		if (isset($_REQUEST['schema'])) $urlvars['schema'] = $_REQUEST['schema'];
 		if (isset($_REQUEST['schema'])) $urlvars['database'] = $_REQUEST['schema'];
-		
-		$navlinks = array (
-			'showall' => array (
-				'attr'=> array (
-					'href' => array (
+
+		$navlinks = array(
+			'showall' => array(
+				'attr' => array(
+					'href' => array(
 						'url' => 'plugin.php',
 						'urlvars' => array_merge($urlvars, array('action' => 'default_action'))
 					)
 				),
 				'content' => $this->lang['strshowallreports']
 			),
-			'edit' => array (
-				'attr'=> array (
-					'href' => array (
+			'edit' => array(
+				'attr' => array(
+					'href' => array(
 						'url' => 'plugin.php',
-						'urlvars' => array_merge($urlvars, array(
-							'action' => 'edit',
-							'report_id' => $report->fields['report_id'])
+						'urlvars' => array_merge(
+							$urlvars,
+							array(
+								'action' => 'edit',
+								'report_id' => $report->fields['report_id']
+							)
 						)
 					)
 				),
-				'content' => $lang['stredit']
+				'content' => $this->lang['stredit']
 			),
-			'execute' => array (
-				'attr'=> array (
-					'href' => array (
+			'execute' => array(
+				'attr' => array(
+					'href' => array(
 						'url' => 'plugin.php',
 						'urlvars' => array_merge($urlvars, array(
 							'action' => 'execute',
@@ -516,89 +515,86 @@ class Report extends Plugin {
 						))
 					)
 				),
-				'content' => $lang['strexecute']
+				'content' => $this->lang['strexecute']
 			)
 		);
-		$misc->printNavLinks($navlinks, 'reports-properties');
+		$this->misc()->printNavLinks($navlinks, 'reports-properties');
 	}
 
 	/**
 	 * Displays a screen where they can enter a new report
 	 */
-	function create($msg = '') {
-		global $data, $reportsdb, $misc;
-		global $lang;
+	function create($msg = '')
+	{
+		$this->misc()->printHeader($this->lang['strreports']);
+		$this->misc()->printBody();
+		$this->misc()->printTrail('server');
+		$this->misc()->printTabs('server', 'report_plugin');
+		$this->misc()->printMsg($msg);
 
-		$misc->printHeader($this->lang['strreports']);
-		$misc->printBody();
-		$misc->printTrail('server');
-		$misc->printTabs('server', 'report_plugin');
-		$misc->printMsg($msg);
-		
 		if (!isset($_REQUEST['report_name'])) $_REQUEST['report_name'] = '';
 		if (!isset($_REQUEST['db_name'])) $_REQUEST['db_name'] = '';
 		if (!isset($_REQUEST['descr'])) $_REQUEST['descr'] = '';
 		if (!isset($_REQUEST['report_sql'])) {
 			// Set the query from session if linked from a user query result
-			if (isset($_REQUEST['fromsql']) and $_REQUEST['fromsql'] == 1 ) {
+			if (isset($_REQUEST['fromsql']) and $_REQUEST['fromsql'] == 1) {
 				$_REQUEST['report_sql'] = $_SESSION['sqlquery'];
-			}
-			else {
+			} else {
 				$_REQUEST['sortkey'] = $_REQUEST['sortkey'] ?? '';
 				if (preg_match('/^[0-9]+$/', $_REQUEST['sortkey']) && $_REQUEST['sortkey'] > 0) $orderby = array($_REQUEST['sortkey'] => $_REQUEST['sortdir']);
-					else $orderby = array();
+				else $orderby = array();
 
 				$subject = isset($_REQUEST['subject']) && isset($_REQUEST[$_REQUEST['subject']])
 					? $_REQUEST[$_REQUEST['subject']]
 					: '';
 
-				$_REQUEST['report_sql'] = $data->getSelectSQL($subject, array(), array(), array(), $orderby);
+				$_REQUEST['report_sql'] = $this->data()->getSelectSQL($subject, array(), array(), array(), $orderby);
 			}
 		}
 
 		if (isset($_REQUEST['database'])) {
 			$_REQUEST['db_name'] = $_REQUEST['database'];
 			unset($_REQUEST['database']);
-			$misc->setForm();
+			$this->misc()->setForm();
 		}
-		
-		$databases = $data->getDatabases();
+
+		$databases = $this->data()->getDatabases();
 
 		echo "<form action=\"plugin.php?plugin={$this->name}\" method=\"post\">\n";
-		echo $misc->form;
+		echo $this->misc()->form;
 		echo "<table style=\"width: 100%\">\n";
-		echo "<tr><th class=\"data left required\">{$lang['strname']}</th>\n";
-		echo "<td class=\"data1\"><input name=\"report_name\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-			htmlspecialchars($_REQUEST['report_name']), "\" /></td></tr>\n";
-		echo "<tr><th class=\"data left required\">{$lang['strdatabase']}</th>\n";
+		echo "<tr><th class=\"data left required\">{$this->lang['strname']}</th>\n";
+		echo "<td class=\"data1\"><input name=\"report_name\" size=\"32\" maxlength=\"{$this->data()->_maxNameLen}\" value=\"",
+		htmlspecialchars($_REQUEST['report_name']), "\" /></td></tr>\n";
+		echo "<tr><th class=\"data left required\">{$this->lang['strdatabase']}</th>\n";
 		echo "<td class=\"data1\"><select name=\"db_name\">\n";
 		while (!$databases->EOF) {
 			$dbname = $databases->fields['datname'];
-			echo "<option value=\"", htmlspecialchars($dbname), "\"",
-			($dbname == $_REQUEST['db_name']) ? ' selected="selected"' : '', ">",
-				htmlspecialchars($dbname), "</option>\n";
+			echo "<option value=\"", htmlspecialchars($dbname), "\"", ($dbname == $_REQUEST['db_name']) ? ' selected="selected"' : '', ">",
+			htmlspecialchars($dbname), "</option>\n";
 			$databases->moveNext();
 		}
 		echo "</select></td></tr>\n";
-		echo "<tr><th class=\"data left\">{$lang['strcomment']}</th>\n";
+		echo "<tr><th class=\"data left\">{$this->lang['strcomment']}</th>\n";
 		echo "<td class=\"data1\"><textarea style=\"width:100%;\" rows=\"5\" cols=\"50\" name=\"descr\">",
-			htmlspecialchars($_REQUEST['descr']), "</textarea></td></tr>\n";
-		echo "<tr><th class=\"data left required\">{$lang['strsql']}</th>\n";
+		htmlspecialchars($_REQUEST['descr']), "</textarea></td></tr>\n";
+		echo "<tr><th class=\"data left required\">{$this->lang['strsql']}</th>\n";
 		echo "<td class=\"data1\"><textarea style=\"width:100%;\" rows=\"15\" cols=\"50\" name=\"report_sql\">",
-			htmlspecialchars($_REQUEST['report_sql']), "</textarea></td></tr>\n";
+		htmlspecialchars($_REQUEST['report_sql']), "</textarea></td></tr>\n";
 		echo "</table>\n";
-		echo "<label for=\"paginate\"><input type=\"checkbox\" id=\"paginate\" name=\"paginate\"", (isset($_REQUEST['paginate']) ? ' checked="checked"' : ''), " />&nbsp;{$lang['strpaginate']}</label>\n";
+		echo "<label for=\"paginate\"><input type=\"checkbox\" id=\"paginate\" name=\"paginate\"", (isset($_REQUEST['paginate']) ? ' checked="checked"' : ''), " />&nbsp;{$this->lang['strpaginate']}</label>\n";
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"save_create\" />\n";
-		echo "<input type=\"submit\" value=\"{$lang['strsave']}\" />\n";
-		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
+		echo "<input type=\"submit\" value=\"{$this->lang['strsave']}\" />\n";
+		echo "<input type=\"submit\" name=\"cancel\" value=\"{$this->lang['strcancel']}\" /></p>\n";
 		echo "</form>\n";
-		$misc->printFooter();
+		$this->misc()->printFooter();
 	}
 
 	/**
 	 * Actually creates the new report in the database
 	 */
-	function save_create() {
+	function save_create()
+	{
 		if (isset($_REQUEST['cancel'])) {
 			$this->default_action();
 			exit;
@@ -615,8 +611,13 @@ class Report extends Plugin {
 		if ($_POST['report_name'] == '') $this->create($this->lang['strreportneedsname']);
 		elseif ($_POST['report_sql'] == '') $this->create($this->lang['strreportneedsdef']);
 		else {
-			$status = $reportsdb->createReport($_POST['report_name'], $_POST['db_name'],
-					$_POST['descr'], $_POST['report_sql'], isset($_POST['paginate']));
+			$status = $reportsdb->createReport(
+				$_POST['report_name'],
+				$_POST['db_name'],
+				$_POST['descr'],
+				$_POST['report_sql'],
+				isset($_POST['paginate'])
+			);
 			if ($status == 0)
 				$this->default_action($this->lang['strreportcreated']);
 			else
@@ -627,18 +628,16 @@ class Report extends Plugin {
 	/**
 	 * Show confirmation of drop and perform actual drop
 	 */
-	function drop() {
-		global $reportsdb, $misc;
-		global $lang;
-
+	function drop()
+	{
 		$confirm = false;
 		if (isset($_REQUEST['confirm'])) $confirm = true;
 
 		$reportsdb = $this->get_reportsdb();
 
-		$misc->printHeader($this->lang['strreports']);
-		$misc->printBody();
-		
+		$this->misc()->printHeader($this->lang['strreports']);
+		$this->misc()->printBody();
+
 		if (isset($_REQUEST['cancel'])) {
 			$this->default_action();
 			exit;
@@ -649,17 +648,17 @@ class Report extends Plugin {
 			$report = $reportsdb->getReport($_REQUEST['report_id']);
 
 			$_REQUEST['report'] = $report->fields['report_name'];
-			$misc->printTrail('report');
-			$misc->printTitle($lang['strdrop']);
+			$this->misc()->printTrail('report');
+			$this->misc()->printTitle($this->lang['strdrop']);
 
-			echo "<p>", sprintf($this->lang['strconfdropreport'], $misc->printVal($report->fields['report_name'])), "</p>\n";
+			echo "<p>", sprintf($this->lang['strconfdropreport'], $this->misc()->printVal($report->fields['report_name'])), "</p>\n";
 
 			echo "<form action=\"plugin.php?plugin={$this->name}\" method=\"post\">\n";
-			echo $misc->form;
+			echo $this->misc()->form;
 			echo "<input type=\"hidden\" name=\"action\" value=\"drop\" />\n";
 			echo "<input type=\"hidden\" name=\"report_id\" value=\"", htmlspecialchars($_REQUEST['report_id']), "\" />\n";
-			echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";
-			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" />\n";
+			echo "<input type=\"submit\" name=\"drop\" value=\"{$this->lang['strdrop']}\" />\n";
+			echo "<input type=\"submit\" name=\"cancel\" value=\"{$this->lang['strcancel']}\" />\n";
 			echo "</form>\n";
 		} else {
 			$status = $reportsdb->dropReport($_POST['report_id']);
@@ -669,16 +668,15 @@ class Report extends Plugin {
 				$this->default_action($this->lang['strreportdroppedbad']);
 		}
 
-		$misc->printFooter();
+		$this->misc()->printFooter();
 	}
 
-	function execute() {
-		global $misc, $data;
-
+	function execute()
+	{
 		$reportsdb = $this->get_reportsdb();
 
 		$report = $reportsdb->getReport($_REQUEST['report_id']);
-		
+
 		$_POST['query'] = $report->fields['report_sql'];
 
 		include('./sql.php');
@@ -687,61 +685,60 @@ class Report extends Plugin {
 	/**
 	 * Show default list of reports in the database
 	 */
-	function default_action($msg = '') {
-		global $data, $misc, $lang;
-
+	function default_action($msg = '')
+	{
 		$reportsdb = $this->get_reportsdb();
 
-		$misc->printHeader($this->lang['strreports']);
-		$misc->printBody();
-		$misc->printTrail('server');
-		$misc->printTabs('server', 'report_plugin');
-		$misc->printMsg($msg);
-		
+		$this->misc()->printHeader($this->lang['strreports']);
+		$this->misc()->printBody();
+		$this->misc()->printTrail('server');
+		$this->misc()->printTabs('server', 'report_plugin');
+		$this->misc()->printMsg($msg);
+
 		$reports = $reportsdb->getReports();
 
 		$columns = array(
 			'report' => array(
 				'title' => $this->lang['strreport'],
 				'field' => field('report_name'),
-				'url'   => "plugin.php?plugin={$this->name}&amp;action=properties&amp;{$misc->href}&amp;",
+				'url'   => "plugin.php?plugin={$this->name}&amp;action=properties&amp;{$this->misc()->href}&amp;",
 				'vars'  => array(
 					'report_id' => 'report_id',
 					'report' => 'report_name'
 				),
 			),
 			'database' => array(
-				'title' => $lang['strdatabase'],
+				'title' => $this->lang['strdatabase'],
 				'field' => field('db_name'),
 			),
 			'created' => array(
-				'title' => $lang['strcreated'],
+				'title' => $this->lang['strcreated'],
 				'field' => field('date_created'),
 			),
 			'paginate' => array(
-				'title' => $lang['strpaginate'],
+				'title' => $this->lang['strpaginate'],
 				'field' => field('paginate'),
 				'type' => 'yesno',
 			),
 			'actions' => array(
-				'title' => $lang['stractions'],
+				'title' => $this->lang['stractions'],
 			),
 			'comment' => array(
-				'title' => $lang['strcomment'],
+				'title' => $this->lang['strcomment'],
 				'field' => field('descr'),
 			),
 		);
-		
-		//$return_url = urlencode("plugin.php?plugin={$this->name}&amp;{$misc->href}");
-		$urlvars = $misc->getRequestVars();
-		
+
+		//$return_url = urlencode("plugin.php?plugin={$this->name}&amp;{$this->misc()->href}");
+		$urlvars = $this->misc()->getRequestVars();
+
 		$actions = array(
-			'run' => array (
-				'content' => $lang['strexecute'],
-				'attr'=> array (
-					'href' => array (
+			'run' => array(
+				'content' => $this->lang['strexecute'],
+				'attr' => array(
+					'href' => array(
 						'url' => 'plugin.php',
-						'urlvars' => array_merge($urlvars, array (
+						'urlvars' => array_merge($urlvars, array(
 							'plugin' => $this->name,
 							'action' => 'execute',
 							'report' => field('report_name'),
@@ -755,12 +752,12 @@ class Report extends Plugin {
 					)
 				)
 			),
-			'edit' => array (
-				'content' => $lang['stredit'],
-				'attr'=> array (
-					'href' => array (
+			'edit' => array(
+				'content' => $this->lang['stredit'],
+				'attr' => array(
+					'href' => array(
 						'url' => 'plugin.php',
-						'urlvars' => array_merge($urlvars, array (
+						'urlvars' => array_merge($urlvars, array(
 							'plugin' => $this->name,
 							'action' => 'edit',
 							'report_id' => field('report_id'),
@@ -769,11 +766,11 @@ class Report extends Plugin {
 				)
 			),
 			'drop' => array(
-				'content' => $lang['strdrop'],
-				'attr'=> array (
-					'href' => array (
+				'content' => $this->lang['strdrop'],
+				'attr' => array(
+					'href' => array(
 						'url' => 'plugin.php',
-						'urlvars' => array_merge($urlvars, array (
+						'urlvars' => array_merge($urlvars, array(
 							'plugin' => $this->name,
 							'action' => 'drop',
 							'confirm' => 'true',
@@ -783,25 +780,25 @@ class Report extends Plugin {
 				)
 			),
 		);
-		
-		$misc->printTable($reports, $columns, $actions, 'reports-reports', $this->lang['strnoreports']);
 
-		$navlinks = array (
-			array (
-				'attr'=> array (
-					'href' => array (
+		$this->misc()->printTable($reports, $columns, $actions, 'reports-reports', $this->lang['strnoreports']);
+
+		$navlinks = array(
+			array(
+				'attr' => array(
+					'href' => array(
 						'url' => 'plugin.php',
-						'urlvars' => array (
-							'plugin' => $this->name, 
+						'urlvars' => array(
+							'plugin' => $this->name,
 							'server' => field('server'),
-							'action' => 'create')
+							'action' => 'create'
+						)
 					)
 				),
 				'content' => $this->lang['strcreatereport']
 			)
 		);
-		$misc->printNavLinks($navlinks, 'reports-reports');
-		$misc->printFooter();
+		$this->misc()->printNavLinks($navlinks, 'reports-reports');
+		$this->misc()->printFooter();
 	}
 }
-

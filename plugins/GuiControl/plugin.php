@@ -1,5 +1,6 @@
 <?php
-require_once('classes/Plugin.php');
+
+use PhpPgAdmin\Plugin;
 
 class GuiControl extends Plugin {
 
