@@ -11,6 +11,10 @@ include_once('./libraries/helper.inc.php');
 include_once('./lang/translations.php');
 require_once __DIR__ . '/../vendor/autoload.php';
 
+use PhpPgAdmin\Core\Container;
+use PhpPgAdmin\Misc as NamespacedMisc;
+use PhpPgAdmin\PluginManager as NamespacedPluginManager;
+
 // Set error reporting level to max
 error_reporting(E_ALL);
 
@@ -21,12 +25,13 @@ $appName = 'phpPgAdmin';
 $appVersion = '8.0.rc1';
 
 // PostgreSQL and PHP minimum version
-$postgresqlMinVer = '7.4';
-$phpMinVer = '7.2';
+$postgresqlMinVer = '8.0';
 
+/*
 // Check the version of PHP
 if (version_compare(phpversion(), $phpMinVer, '<'))
 	exit(sprintf('Version of PHP not supported. Please upgrade to version %s or later.', $phpMinVer));
+*/
 
 // Check to see if the configuration file exists, if not, explain
 if (file_exists('conf/config.inc.php')) {
@@ -51,8 +56,7 @@ $lang = array();
 require_once('./lang/english.php');
 
 // Create Misc class references
-require_once('./classes/Misc.php');
-$misc = new Misc();
+$misc = new NamespacedMisc();
 
 // Start session (if not auto-started)
 if (!ini_get('session.auto_start')) {
@@ -264,6 +268,7 @@ if (!isset($_no_db_connection)) {
 
 	// Connect to database and set the global $data variable
 	$data = $misc->getDatabaseAccessor($_curr_db);
+	Container::setData($data);
 
 	// If schema is defined and database supports schemas, then set the
 	// schema explicitly.
@@ -275,5 +280,9 @@ if (!isset($_no_db_connection)) {
 		}
 	}
 }
+$plugin_manager = new NamespacedPluginManager($_language);
+Container::setPluginManager($plugin_manager);
 
-$plugin_manager = new PluginManager($_language);
+Container::setMisc($misc);
+Container::setConf($conf);
+Container::setLang($lang);

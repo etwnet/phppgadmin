@@ -12,8 +12,20 @@ class Misc {
 	// Tracking string to include in forms
 	var $form;
 
+	// GUI renderer delegates
+	private $tabsRenderer;
+	private $trailRenderer;
+	private $topbarRenderer;
+	private $navLinksRenderer;
+	private $tableRenderer;
+
 	/* Constructor */
 	function __construct() {
+		$this->tabsRenderer = null;
+		$this->trailRenderer = null;
+		$this->topbarRenderer = null;
+		$this->navLinksRenderer = null;
+		$this->tableRenderer = null;
 	}
 
 	/**
@@ -835,48 +847,7 @@ EOT;
 	 * @param $activetab The name of the tab to be highlighted.
 	 */
 	function printTabs($tabs, $activetab) {
-		global $misc, $conf, $data, $lang;
-
-		if (is_string($tabs)) {
-			$_SESSION['webdbLastTab'][$tabs] = $activetab;
-			$tabs = $this->getNavTabs($tabs);
-		}
-
-		echo "<table class=\"tabs\"><tr>\n";
-		#echo "<div class=\"tabs\">\n";
-
-		if (count($tabs) > 0)
-			$width = (int)(100 / count($tabs)) . '%';
-		else
-			$width = 1;
-
-		foreach ($tabs as $tab_id => $tab) {
-			$active = ($tab_id == $activetab) ? ' active' : '';
-
-			if (!isset($tab['hide']) || $tab['hide'] !== true) {
-
-				$tablink = '<a href="' . htmlentities($this->getActionUrl($tab, $_REQUEST)) . '">';
-
-				if (isset($tab['icon']) && $icon = $this->icon($tab['icon']))
-					$tablink .= "<span class=\"icon\"><img src=\"{$icon}\" alt=\"{$tab['title']}\" /></span>";
-
-				$tablink .= "<span class=\"label\">{$tab['title']}</span></a>";
-
-				echo "<td style=\"width: {$width}\" class=\"tab{$active}\">";
-				#echo "<span class=\"tab{$active}\" style=\"white-space:nowrap;\">";
-
-				if (isset($tab['help']))
-					$this->printHelp($tablink, $tab['help']);
-				else
-					echo $tablink;
-
-				echo "</td>\n";
-				#echo "</span>\n";
-			}
-		}
-
-		echo "</tr></table>\n";
-		#echo "</div>\n";
+		return $this->getTabsRenderer()->printTabs($tabs, $activetab);
 	}
 
 	/**
@@ -884,954 +855,38 @@ EOT;
 	 * @param $section The name of the tab bar.
 	 */
 	function getNavTabs($section) {
-		global $data, $lang, $conf, $plugin_manager;
-
-		$hide_advanced = ($conf['show_advanced'] === false);
-		$tabs = array();
-
-		switch ($section) {
-		case 'root':
-			$tabs = array(
-				'intro' => array(
-					'title' => $lang['strintroduction'],
-					'url' => "intro.php",
-					'icon' => 'Introduction',
-				),
-				'servers' => array(
-					'title' => $lang['strservers'],
-					'url' => "servers.php",
-					'icon' => 'Servers',
-				),
-			);
-			break;
-
-		case 'server':
-			$hide_users = !$data->isSuperUser();
-			$tabs = array(
-				'databases' => array(
-					'title' => $lang['strdatabases'],
-					'url' => 'all_db.php',
-					'urlvars' => array('subject' => 'server'),
-					'help' => 'pg.database',
-					'icon' => 'Databases',
-				)
-			);
-			if ($data->hasRoles()) {
-				$tabs = array_merge($tabs, array(
-					'roles' => array(
-						'title' => $lang['strroles'],
-						'url' => 'roles.php',
-						'urlvars' => array('subject' => 'server'),
-						'hide' => $hide_users,
-						'help' => 'pg.role',
-						'icon' => 'Roles',
-					)
-				));
-			} else {
-				$tabs = array_merge($tabs, array(
-					'users' => array(
-						'title' => $lang['strusers'],
-						'url' => 'users.php',
-						'urlvars' => array('subject' => 'server'),
-						'hide' => $hide_users,
-						'help' => 'pg.user',
-						'icon' => 'Users',
-					),
-					'groups' => array(
-						'title' => $lang['strgroups'],
-						'url' => 'groups.php',
-						'urlvars' => array('subject' => 'server'),
-						'hide' => $hide_users,
-						'help' => 'pg.group',
-						'icon' => 'UserGroups',
-					)
-				));
-			}
-
-			$tabs = array_merge($tabs, array(
-				'account' => array(
-					'title' => $lang['straccount'],
-					'url' => $data->hasRoles() ? 'roles.php' : 'users.php',
-					'urlvars' => array('subject' => 'server', 'action' => 'account'),
-					'hide' => !$hide_users,
-					'help' => 'pg.role',
-					'icon' => 'User',
-				),
-				'tablespaces' => array(
-					'title' => $lang['strtablespaces'],
-					'url' => 'tablespaces.php',
-					'urlvars' => array('subject' => 'server'),
-					'hide' => (!$data->hasTablespaces()),
-					'help' => 'pg.tablespace',
-					'icon' => 'Tablespaces',
-				),
-				'export' => array(
-					'title' => $lang['strexport'],
-					'url' => 'all_db.php',
-					'urlvars' => array('subject' => 'server', 'action' => 'export'),
-					'hide' => (!$this->isDumpEnabled()),
-					'icon' => 'Export',
-				),
-			));
-			break;
-		case 'database':
-			$tabs = array(
-				'schemas' => array(
-					'title' => $lang['strschemas'],
-					'url' => 'schemas.php',
-					'urlvars' => array('subject' => 'database'),
-					'help' => 'pg.schema',
-					'icon' => 'Schemas',
-				),
-				'sql' => array(
-					'title' => $lang['strsql'],
-					'url' => 'database.php',
-					'urlvars' => array('subject' => 'database', 'action' => 'sql', 'new' => 1),
-					'help' => 'pg.sql',
-					'tree' => false,
-					'icon' => 'SqlEditor'
-				),
-				'find' => array(
-					'title' => $lang['strfind'],
-					'url' => 'database.php',
-					'urlvars' => array('subject' => 'database', 'action' => 'find'),
-					'tree' => false,
-					'icon' => 'Search'
-				),
-				'variables' => array(
-					'title' => $lang['strvariables'],
-					'url' => 'database.php',
-					'urlvars' => array('subject' => 'database', 'action' => 'variables'),
-					'help' => 'pg.variable',
-					'tree' => false,
-					'icon' => 'Variables',
-				),
-				'processes' => array(
-					'title' => $lang['strprocesses'],
-					'url' => 'database.php',
-					'urlvars' => array('subject' => 'database', 'action' => 'processes'),
-					'help' => 'pg.process',
-					'tree' => false,
-					'icon' => 'Processes',
-				),
-				'locks' => array(
-					'title' => $lang['strlocks'],
-					'url' => 'database.php',
-					'urlvars' => array('subject' => 'database', 'action' => 'locks'),
-					'help' => 'pg.locks',
-					'tree' => false,
-					'icon' => 'Key',
-				),
-				'admin' => array(
-					'title' => $lang['stradmin'],
-					'url' => 'database.php',
-					'urlvars' => array('subject' => 'database', 'action' => 'admin'),
-					'tree' => false,
-					'icon' => 'Admin',
-				),
-				'privileges' => array(
-					'title' => $lang['strprivileges'],
-					'url' => 'privileges.php',
-					'urlvars' => array('subject' => 'database'),
-					'hide' => (!isset($data->privlist['database'])),
-					'help' => 'pg.privilege',
-					'tree' => false,
-					'icon' => 'Privileges',
-				),
-				'languages' => array(
-					'title' => $lang['strlanguages'],
-					'url' => 'languages.php',
-					'urlvars' => array('subject' => 'database'),
-					'hide' => $hide_advanced,
-					'help' => 'pg.language',
-					'icon' => 'Languages',
-				),
-				'casts' => array(
-					'title' => $lang['strcasts'],
-					'url' => 'casts.php',
-					'urlvars' => array('subject' => 'database'),
-					'hide' => ($hide_advanced),
-					'help' => 'pg.cast',
-					'icon' => 'Casts',
-				),
-				'export' => array(
-					'title' => $lang['strexport'],
-					'url' => 'database.php',
-					'urlvars' => array('subject' => 'database', 'action' => 'export'),
-					'hide' => (!$this->isDumpEnabled()),
-					'tree' => false,
-					'icon' => 'Export',
-				),
-			);
-			break;
-
-		case 'schema':
-			$tabs = array(
-				'tables' => array(
-					'title' => $lang['strtables'],
-					'url' => 'tables.php',
-					'urlvars' => array('subject' => 'schema'),
-					'help' => 'pg.table',
-					'icon' => 'Tables',
-				),
-				'views' => array(
-					'title' => $lang['strviews'],
-					'url' => 'views.php',
-					'urlvars' => array('subject' => 'schema'),
-					'help' => 'pg.view',
-					'icon' => 'Views',
-				),
-				'sequences' => array(
-					'title' => $lang['strsequences'],
-					'url' => 'sequences.php',
-					'urlvars' => array('subject' => 'schema'),
-					'help' => 'pg.sequence',
-					'icon' => 'Sequences',
-				),
-				'functions' => array(
-					'title' => $lang['strfunctions'],
-					'url' => 'functions.php',
-					'urlvars' => array('subject' => 'schema'),
-					'help' => 'pg.function',
-					'icon' => 'Functions',
-				),
-				'fulltext' => array(
-					'title' => $lang['strfulltext'],
-					'url' => 'fulltext.php',
-					'urlvars' => array('subject' => 'schema'),
-					'help' => 'pg.fts',
-					'tree' => true,
-					'icon' => 'Fts',
-				),
-				'domains' => array(
-					'title' => $lang['strdomains'],
-					'url' => 'domains.php',
-					'urlvars' => array('subject' => 'schema'),
-					'help' => 'pg.domain',
-					'icon' => 'Domains',
-				),
-				'aggregates' => array(
-					'title' => $lang['straggregates'],
-					'url' => 'aggregates.php',
-					'urlvars' => array('subject' => 'schema'),
-					'hide' => $hide_advanced,
-					'help' => 'pg.aggregate',
-					'icon' => 'Aggregates',
-				),
-				'types' => array(
-					'title' => $lang['strtypes'],
-					'url' => 'types.php',
-					'urlvars' => array('subject' => 'schema'),
-					'hide' => $hide_advanced,
-					'help' => 'pg.type',
-					'icon' => 'Types',
-				),
-				'operators' => array(
-					'title' => $lang['stroperators'],
-					'url' => 'operators.php',
-					'urlvars' => array('subject' => 'schema'),
-					'hide' => $hide_advanced,
-					'help' => 'pg.operator',
-					'icon' => 'Operators',
-				),
-				'opclasses' => array(
-					'title' => $lang['stropclasses'],
-					'url' => 'opclasses.php',
-					'urlvars' => array('subject' => 'schema'),
-					'hide' => $hide_advanced,
-					'help' => 'pg.opclass',
-					'icon' => 'OperatorClasses',
-				),
-				'conversions' => array(
-					'title' => $lang['strconversions'],
-					'url' => 'conversions.php',
-					'urlvars' => array('subject' => 'schema'),
-					'hide' => $hide_advanced,
-					'help' => 'pg.conversion',
-					'icon' => 'Conversions',
-				),
-				'privileges' => array(
-					'title' => $lang['strprivileges'],
-					'url' => 'privileges.php',
-					'urlvars' => array('subject' => 'schema'),
-					'help' => 'pg.privilege',
-					'tree' => false,
-					'icon' => 'Privileges',
-				),
-				'export' => array(
-					'title' => $lang['strexport'],
-					'url' => 'schemas.php',
-					'urlvars' => array('subject' => 'schema', 'action' => 'export'),
-					'hide' => (!$this->isDumpEnabled()),
-					'tree' => false,
-					'icon' => 'Export',
-				),
-			);
-			if (!$data->hasFTS()) unset($tabs['fulltext']);
-			break;
-
-		case 'table':
-			$tabs = array(
-				'columns' => array(
-					'title' => $lang['strcolumns'],
-					'url' => 'tblproperties.php',
-					'urlvars' => array('subject' => 'table', 'table' => field('table')),
-					'icon' => 'Columns',
-					'branch' => true,
-				),
-				'browse' => array(
-					'title' => $lang['strbrowse'],
-					'icon' => 'Table',
-					'url' => 'display.php',
-					'urlvars' => array('subject' => 'table', 'table' => field('table')),
-					'return' => 'table',
-				),
-				'select' => array(
-					'title' => $lang['strselect'],
-					'icon' => 'Search',
-					'url' => 'tables.php',
-					'urlvars' => array('subject' => 'table', 'table' => field('table'), 'action' => 'confselectrows',),
-					'help' => 'pg.sql.select',
-				),
-				'insert' => array(
-					'title' => $lang['strinsert'],
-					'url' => 'display.php',
-					'urlvars' => array(
-						'action' => 'confinsertrow',
-						'subject' => 'table',
-						'table' => field('table'),
-					),
-					'help' => 'pg.sql.insert',
-					'icon' => 'Operator'
-				),
-				'indexes' => array(
-					'title' => $lang['strindexes'],
-					'url' => 'indexes.php',
-					'urlvars' => array('subject' => 'table', 'table' => field('table')),
-					'help' => 'pg.index',
-					'icon' => 'Indexes',
-					'branch' => true,
-				),
-				'constraints' => array(
-					'title' => $lang['strconstraints'],
-					'url' => 'constraints.php',
-					'urlvars' => array('subject' => 'table', 'table' => field('table')),
-					'help' => 'pg.constraint',
-					'icon' => 'Constraints',
-					'branch' => true,
-				),
-				'triggers' => array(
-					'title' => $lang['strtriggers'],
-					'url' => 'triggers.php',
-					'urlvars' => array('subject' => 'table', 'table' => field('table')),
-					'help' => 'pg.trigger',
-					'icon' => 'Triggers',
-					'branch' => true,
-				),
-				'rules' => array(
-					'title' => $lang['strrules'],
-					'url' => 'rules.php',
-					'urlvars' => array('subject' => 'table', 'table' => field('table')),
-					'help' => 'pg.rule',
-					'icon' => 'Rules',
-					'branch' => true,
-				),
-				'admin' => array(
-					'title' => $lang['stradmin'],
-					'url' => 'tables.php',
-					'urlvars' => array('subject' => 'table', 'table' => field('table'), 'action' => 'admin'),
-					'icon' => 'Admin',
-				),
-				'info' => array(
-					'title' => $lang['strinfo'],
-					'url' => 'info.php',
-					'urlvars' => array('subject' => 'table', 'table' => field('table')),
-					'icon' => 'Statistics',
-				),
-				'privileges' => array(
-					'title' => $lang['strprivileges'],
-					'url' => 'privileges.php',
-					'urlvars' => array('subject' => 'table', 'table' => field('table')),
-					'help' => 'pg.privilege',
-					'icon' => 'Privileges',
-				),
-				'import' => array(
-					'title' => $lang['strimport'],
-					'url' => 'tblproperties.php',
-					'urlvars' => array('subject' => 'table', 'table' => field('table'), 'action' => 'import'),
-					'icon' => 'Import',
-					'hide' => false,
-				),
-				'export' => array(
-					'title' => $lang['strexport'],
-					'url' => 'tblproperties.php',
-					'urlvars' => array('subject' => 'table', 'table' => field('table'), 'action' => 'export'),
-					'icon' => 'Export',
-					'hide' => false,
-				),
-			);
-			break;
-
-		case 'view':
-			$tabs = array(
-				'columns' => array(
-					'title' => $lang['strcolumns'],
-					'url' => 'viewproperties.php',
-					'urlvars' => array('subject' => 'view', 'view' => field('view')),
-					'icon' => 'Columns',
-					'branch' => true,
-				),
-				'browse' => array(
-					'title' => $lang['strbrowse'],
-					'icon' => 'Columns',
-					'url' => 'display.php',
-					'urlvars' => array(
-						'action' => 'confselectrows',
-						'return' => 'schema',
-						'subject' => 'view',
-						'view' => field('view')
-					),
-				),
-				'select' => array(
-					'title' => $lang['strselect'],
-					'icon' => 'Search',
-					'url' => 'views.php',
-					'urlvars' => array('action' => 'confselectrows', 'view' => field('view'),),
-					'help' => 'pg.sql.select',
-				),
-				'definition' => array(
-					'title' => $lang['strdefinition'],
-					'url' => 'viewproperties.php',
-					'urlvars' => array('subject' => 'view', 'view' => field('view'), 'action' => 'definition'),
-					'icon' => 'Definition'
-				),
-				'rules' => array(
-					'title' => $lang['strrules'],
-					'url' => 'rules.php',
-					'urlvars' => array('subject' => 'view', 'view' => field('view')),
-					'help' => 'pg.rule',
-					'icon' => 'Rules',
-					'branch' => true,
-				),
-				'privileges' => array(
-					'title' => $lang['strprivileges'],
-					'url' => 'privileges.php',
-					'urlvars' => array('subject' => 'view', 'view' => field('view')),
-					'help' => 'pg.privilege',
-					'icon' => 'Privileges',
-				),
-				'export' => array(
-					'title' => $lang['strexport'],
-					'url' => 'viewproperties.php',
-					'urlvars' => array('subject' => 'view', 'view' => field('view'), 'action' => 'export'),
-					'icon' => 'Export',
-					'hide' => false,
-				),
-			);
-			break;
-
-		case 'function':
-			$tabs = array(
-				'definition' => array(
-					'title' => $lang['strdefinition'],
-					'url' => 'functions.php',
-					'urlvars' => array(
-						'subject' => 'function',
-						'function' => field('function'),
-						'function_oid' => field('function_oid'),
-						'action' => 'properties',
-					),
-					'icon' => 'Definition',
-				),
-				'privileges' => array(
-					'title' => $lang['strprivileges'],
-					'url' => 'privileges.php',
-					'urlvars' => array(
-						'subject' => 'function',
-						'function' => field('function'),
-						'function_oid' => field('function_oid'),
-					),
-					'icon' => 'Privileges',
-				),
-			);
-			break;
-
-		case 'aggregate':
-			$tabs = array(
-				'definition' => array(
-					'title' => $lang['strdefinition'],
-					'url' => 'aggregates.php',
-					'urlvars' => array(
-						'subject' => 'aggregate',
-						'aggrname' => field('aggrname'),
-						'aggrtype' => field('aggrtype'),
-						'action' => 'properties',
-					),
-					'icon' => 'Definition',
-				),
-			);
-			break;
-
-		case 'role':
-			$tabs = array(
-				'definition' => array(
-					'title' => $lang['strdefinition'],
-					'url' => 'roles.php',
-					'urlvars' => array(
-						'subject' => 'role',
-						'rolename' => field('rolename'),
-						'action' => 'properties',
-					),
-					'icon' => 'Definition',
-				),
-			);
-			break;
-
-		case 'popup':
-			$tabs = array(
-				'sql' => array(
-					'title' => $lang['strsql'],
-					'url' => 'sqledit.php',
-					'urlvars' => array('subject' => 'schema', 'action' => 'sql'),
-					'help' => 'pg.sql',
-					'icon' => 'SqlEditor',
-				),
-				'find' => array(
-					'title' => $lang['strfind'],
-					'url' => 'sqledit.php',
-					'urlvars' => array('subject' => 'schema', 'action' => 'find'),
-					'icon' => 'Search',
-				),
-			);
-			break;
-
-		case 'column':
-			$tabs = array(
-				'properties' => array(
-					'title' => $lang['strcolprop'],
-					'url' => 'colproperties.php',
-					'urlvars' => array(
-						'subject' => 'column',
-						'table' => field('table'),
-						'column' => field('column')
-					),
-					'icon' => 'Column'
-				),
-				'privileges' => array(
-					'title' => $lang['strprivileges'],
-					'url' => 'privileges.php',
-					'urlvars' => array(
-						'subject' => 'column',
-						'table' => field('table'),
-						'column' => field('column')
-					),
-					'help' => 'pg.privilege',
-					'icon' => 'Privileges',
-				)
-			);
-			break;
-
-		case 'fulltext':
-			$tabs = array(
-				'ftsconfigs' => array(
-					'title' => $lang['strftstabconfigs'],
-					'url' => 'fulltext.php',
-					'urlvars' => array('subject' => 'schema'),
-					'hide' => !$data->hasFTS(),
-					'help' => 'pg.ftscfg',
-					'tree' => true,
-					'icon' => 'FtsCfg',
-				),
-				'ftsdicts' => array(
-					'title' => $lang['strftstabdicts'],
-					'url' => 'fulltext.php',
-					'urlvars' => array('subject' => 'schema', 'action' => 'viewdicts'),
-					'hide' => !$data->hasFTS(),
-					'help' => 'pg.ftsdict',
-					'tree' => true,
-					'icon' => 'FtsDict',
-				),
-				'ftsparsers' => array(
-					'title' => $lang['strftstabparsers'],
-					'url' => 'fulltext.php',
-					'urlvars' => array('subject' => 'schema', 'action' => 'viewparsers'),
-					'hide' => !$data->hasFTS(),
-					'help' => 'pg.ftsparser',
-					'tree' => true,
-					'icon' => 'FtsParser',
-				),
-			);
-			break;
-		}
-
-		// Tabs hook's place
-		$plugin_functions_parameters = array(
-			'tabs' => &$tabs,
-			'section' => $section
-		);
-		$plugin_manager->do_hook('tabs', $plugin_functions_parameters);
-
-		return $tabs;
+		return $this->getTabsRenderer()->getNavTabs($section);
 	}
 
 	/**
 	 * Get the URL for the last active tab of a particular tab bar.
 	 */
 	function getLastTabURL($section) {
-		global $data;
-
-		$tabs = $this->getNavTabs($section);
-
-		if (isset($_SESSION['webdbLastTab'][$section]) && isset($tabs[$_SESSION['webdbLastTab'][$section]]))
-			$tab = $tabs[$_SESSION['webdbLastTab'][$section]];
-		else
-			$tab = reset($tabs);
-
-		return isset($tab['url']) ? $tab : null;
+		return $this->getTabsRenderer()->getLastTabURL($section);
 	}
 
 	function printTopbar() {
-		global $lang, $conf, $plugin_manager, $appName, $appVersion, $appLangFiles;
-
-		$server_info = $this->getServerInfo();
-		$reqvars = $this->getRequestVars('table');
-
-		echo "<div class=\"topbar\"><table style=\"width: 100%\"><tr><td>";
-
-		if ($server_info && isset($server_info['platform']) && isset($server_info['username'])) {
-			/* top left information when connected */
-			echo sprintf($lang['strtopbar'],
-				'<span class="platform">' . htmlspecialchars($server_info['platform']) . '</span>',
-				'<span class="host">' . htmlspecialchars((empty($server_info['host'])) ? 'localhost' : $server_info['host']) . '</span>',
-				'<span class="port">' . htmlspecialchars($server_info['port']) . '</span>',
-				'<span class="username">' . htmlspecialchars($server_info['username']) . '</span>');
-
-			echo "</td>";
-
-			/* top right information when connected */
-
-			$toplinks = array(
-				'sql' => array(
-					'attr' => array(
-						'href' => array(
-							'url' => 'sqledit.php',
-							'urlvars' => array_merge($reqvars, array(
-								'action' => 'sql'
-							))
-						),
-						'target' => "sqledit",
-						'id' => 'toplink_sql',
-					),
-					'content' => $lang['strsql']
-				),
-				'history' => array(
-					'attr' => array(
-						'href' => array(
-							'url' => 'history.php',
-							'urlvars' => array_merge($reqvars, array(
-								'action' => 'pophistory'
-							))
-						),
-						'id' => 'toplink_history',
-					),
-					'content' => $lang['strhistory']
-				),
-				'find' => array(
-					'attr' => array(
-						'href' => array(
-							'url' => 'sqledit.php',
-							'urlvars' => array_merge($reqvars, array(
-								'action' => 'find'
-							))
-						),
-						'target' => "sqledit",
-						'id' => 'toplink_find',
-					),
-					'content' => $lang['strfind']
-				),
-				'logout' => array(
-					'attr' => array(
-						'href' => array(
-							'url' => 'servers.php',
-							'urlvars' => array(
-								'action' => 'logout',
-								'logoutServer' => "{$server_info['host']}:{$server_info['port']}:{$server_info['sslmode']}"
-							)
-						),
-						'id' => 'toplink_logout',
-					),
-					'content' => $lang['strlogout']
-				)
-			);
-
-			// Toplink hook's place
-			$plugin_functions_parameters = array(
-				'toplinks' => &$toplinks
-			);
-
-			$plugin_manager->do_hook('toplinks', $plugin_functions_parameters);
-
-			echo "<td style=\"text-align: right\">";
-			$this->printLinksList($toplinks, 'toplink');
-			echo "</td>";
-
-			$sql_window_id = htmlentities('sqledit:' . $_REQUEST['server']);
-			$history_window_id = htmlentities('history:' . $_REQUEST['server']);
-
-			echo "<script type=\"text/javascript\">
-					$('#toplink_sql').on('click', function() {
-						window.open($(this).attr('href'),'{$sql_window_id}','toolbar=no,width=700,height=500,resizable=yes,scrollbars=yes').focus();
-						return false;
-					});
-
-					$('#toplink_history').on('click', function() {
-						window.open($(this).attr('href'),'{$history_window_id}','toolbar=no,width=700,height=500,resizable=yes,scrollbars=yes').focus();
-						return false;
-					});
-
-					$('#toplink_find').on('click', function() {
-						window.open($(this).attr('href'),'{$sql_window_id}','toolbar=no,width=700,height=500,resizable=yes,scrollbars=yes').focus();
-						return false;
-					});
-					";
-
-			if (isset($_SESSION['sharedUsername'])) {
-				printf("
-					$('#toplink_logout').on('click', function() {
-						return confirm('%s');
-					});", str_replace("'", "\'", $lang['strconfdropcred']));
-			}
-
-			echo "
-			</script>";
-		} else {
-			echo "<span class=\"appname\">{$appName}</span> <span class=\"version\">{$appVersion}</span>";
-		}
-		/*
-				echo "<td style=\"text-align: right; width: 1%\">";
-
-				echo "<form method=\"get\"><select name=\"language\" onchange=\"this.form.submit()\">\n";
-				$language = isset($_SESSION['webdbLanguage']) ? $_SESSION['webdbLanguage'] : 'english';
-				foreach ($appLangFiles as $k => $v) {
-					echo "<option value=\"{$k}\"",
-						($k == $language) ? ' selected="selected"' : '',
-						">{$v}</option>\n";
-				}
-				echo "</select>\n";
-				echo "<noscript><input type=\"submit\" value=\"Set Language\"></noscript>\n";
-				foreach ($_GET as $key => $val) {
-					if ($key == 'language') continue;
-					echo "<input type=\"hidden\" name=\"$key\" value=\"", htmlspecialchars($val), "\" />\n";
-				}
-				echo "</form>\n";
-
-				echo "</td>";
-		*/
-		echo "</tr></table></div>\n";
+		return $this->getTopbarRenderer()->printTopbar();
 	}
 
 	/**
 	 * Display a bread crumb trail.
 	 */
 	function printTrail($trail = array()) {
-		global $lang;
-
 		$this->printTopbar();
-
-		if (is_string($trail)) {
-			$trail = $this->getTrail($trail);
-		}
-
-		echo "<div class=\"trail\"><table><tr>";
-
-		foreach ($trail as $crumb) {
-			echo "<td class=\"crumb\">";
-			$crumblink = "<a";
-
-			if (isset($crumb['url']))
-				$crumblink .= " href=\"{$crumb['url']}\"";
-
-			if (isset($crumb['title']))
-				$crumblink .= " title=\"{$crumb['title']}\"";
-
-			$crumblink .= ">";
-
-			if (isset($crumb['title']))
-				$iconalt = $crumb['title'];
-			else
-				$iconalt = 'Database Root';
-
-			if (isset($crumb['icon']) && $icon = $this->icon($crumb['icon']))
-				$crumblink .= "<span class=\"icon\"><img src=\"{$icon}\" alt=\"{$iconalt}\" /></span>";
-
-			$crumblink .= "<span class=\"label\">" . htmlspecialchars($crumb['text']) . "</span></a>";
-
-			if (isset($crumb['help']))
-				$this->printHelp($crumblink, $crumb['help']);
-			else
-				echo $crumblink;
-
-			echo "{$lang['strseparator']}";
-			echo "</td>";
-		}
-
-		echo "</tr></table></div>\n";
+		return $this->getTrailRenderer()->printTrail($trail);
 	}
 
 	/**
 	 * Create a bread crumb trail of the object hierarchy.
 	 * @param $object The type of object at the end of the trail.
 	 */
+	/**
+	 * Create a bread crumb trail of the object hierarchy.
+	 * @param $subject The type of object at the end of the trail.
+	 */
 	function getTrail($subject = null) {
-		global $lang, $conf, $data, $appName, $plugin_manager;
-
-		$trail = array();
-		$vars = '';
-		$done = false;
-
-		$trail['root'] = array(
-			'text' => $appName,
-			'url' => 'redirect.php?subject=root',
-			'icon' => 'Introduction'
-		);
-
-		if ($subject == 'root') $done = true;
-
-		if (!$done) {
-			$server_info = $this->getServerInfo();
-			$trail['server'] = array(
-				'title' => $lang['strserver'],
-				'text' => $server_info['desc'],
-				'url' => $this->getHREFSubject('server'),
-				'help' => 'pg.server',
-				'icon' => 'Server'
-			);
-		}
-		if ($subject == 'server') $done = true;
-
-		if (isset($_REQUEST['database']) && !$done) {
-			$trail['database'] = array(
-				'title' => $lang['strdatabase'],
-				'text' => $_REQUEST['database'],
-				'url' => $this->getHREFSubject('database'),
-				'help' => 'pg.database',
-				'icon' => 'Database'
-			);
-		} elseif (isset($_REQUEST['rolename']) && !$done) {
-			$trail['role'] = array(
-				'title' => $lang['strrole'],
-				'text' => $_REQUEST['rolename'],
-				'url' => $this->getHREFSubject('role'),
-				'help' => 'pg.role',
-				'icon' => 'Roles'
-			);
-		}
-		if ($subject == 'database' || $subject == 'role') $done = true;
-
-		if (isset($_REQUEST['schema']) && !$done) {
-			$trail['schema'] = array(
-				'title' => $lang['strschema'],
-				'text' => $_REQUEST['schema'],
-				'url' => $this->getHREFSubject('schema'),
-				'help' => 'pg.schema',
-				'icon' => 'Schema'
-			);
-		}
-		if ($subject == 'schema') $done = true;
-
-		if (isset($_REQUEST['table']) && !$done) {
-			$trail['table'] = array(
-				'title' => $lang['strtable'],
-				'text' => $_REQUEST['table'],
-				'url' => $this->getHREFSubject('table'),
-				'help' => 'pg.table',
-				'icon' => 'Table'
-			);
-		} elseif (isset($_REQUEST['view']) && !$done) {
-			$trail['view'] = array(
-				'title' => $lang['strview'],
-				'text' => $_REQUEST['view'],
-				'url' => $this->getHREFSubject('view'),
-				'help' => 'pg.view',
-				'icon' => 'View'
-			);
-		} elseif (isset($_REQUEST['ftscfg']) && !$done) {
-			$trail['ftscfg'] = array(
-				'title' => $lang['strftsconfig'],
-				'text' => $_REQUEST['ftscfg'],
-				'url' => $this->getHREFSubject('ftscfg'),
-				'help' => 'pg.ftscfg.example',
-				'icon' => 'Fts'
-			);
-		}
-		if ($subject == 'table' || $subject == 'view' || $subject == 'ftscfg') $done = true;
-
-		if (!$done && !is_null($subject)) {
-			switch ($subject) {
-			case 'function':
-				$trail[$subject] = array(
-					'title' => $lang['str' . $subject],
-					'text' => $_REQUEST[$subject],
-					'url' => $this->getHREFSubject('function'),
-					'help' => 'pg.function',
-					'icon' => 'Function'
-				);
-				break;
-			case 'aggregate':
-				$trail[$subject] = array(
-					'title' => $lang['straggregate'],
-					'text' => $_REQUEST['aggrname'],
-					'url' => $this->getHREFSubject('aggregate'),
-					'help' => 'pg.aggregate',
-					'icon' => 'Aggregate'
-				);
-				break;
-			case 'column':
-				$trail['column'] = array(
-					'title' => $lang['strcolumn'],
-					'text' => $_REQUEST['column'],
-					'icon' => 'Column',
-					'url' => $this->getHREFSubject('column')
-				);
-				break;
-			default:
-				if (isset($_REQUEST[$subject])) {
-					switch ($subject) {
-					case 'domain':
-						$icon = 'Domain';
-						break;
-					case 'sequence':
-						$icon = 'Sequence';
-						break;
-					case 'type':
-						$icon = 'Type';
-						break;
-					case 'operator':
-						$icon = 'Operator';
-						break;
-					default:
-						$icon = null;
-						break;
-					}
-					$trail[$subject] = array(
-						'title' => $lang['str' . $subject],
-						'text' => $_REQUEST[$subject],
-						'help' => 'pg.' . $subject,
-						'icon' => $icon,
-					);
-				}
-			}
-		}
-
-		// Trail hook's place
-		$plugin_functions_parameters = array(
-			'trail' => &$trail,
-			'section' => $subject
-		);
-
-		$plugin_manager->do_hook('trail', $plugin_functions_parameters);
-
-		return $trail;
+		return $this->getTrailRenderer()->getTrail($subject);
 	}
 
 	/**
@@ -1846,19 +901,7 @@ EOT;
 	 * and 'browse' is the place inside that code (doBrowse).
 	 */
 	function printNavLinks($navlinks, $place, $env = array()) {
-		global $plugin_manager;
-
-		// Navlinks hook's place
-		$plugin_functions_parameters = array(
-			'navlinks' => &$navlinks,
-			'place' => $place,
-			'env' => $env
-		);
-		$plugin_manager->do_hook('navlinks', $plugin_functions_parameters);
-
-		if (count($navlinks) > 0) {
-			$this->printLinksList($navlinks, 'navlink');
-		}
+		return $this->getNavLinksRenderer()->printNavLinks($navlinks, $place, $env);
 	}
 
 
@@ -1971,8 +1014,48 @@ EOT;
 	 */
 	function setFocus($object) {
 		echo "<script type=\"text/javascript\">\n";
-		echo "   document.{$object}.focus();\n";
+		echo "document.{$object}.focus();\n";
 		echo "</script>\n";
+	}
+
+	private function getTabsRenderer() {
+		if ($this->tabsRenderer === null) {
+			$this->tabsRenderer = new \PhpPgAdmin\Gui\TabsRenderer();
+		}
+
+		return $this->tabsRenderer;
+	}
+
+	private function getTrailRenderer() {
+		if ($this->trailRenderer === null) {
+			$this->trailRenderer = new \PhpPgAdmin\Gui\TrailRenderer($this);
+		}
+
+		return $this->trailRenderer;
+	}
+
+	private function getTopbarRenderer() {
+		if ($this->topbarRenderer === null) {
+			$this->topbarRenderer = new \PhpPgAdmin\Gui\TopbarRenderer($this);
+		}
+
+		return $this->topbarRenderer;
+	}
+
+	private function getNavLinksRenderer() {
+		if ($this->navLinksRenderer === null) {
+			$this->navLinksRenderer = new \PhpPgAdmin\Gui\NavLinksRenderer($this);
+		}
+
+		return $this->navLinksRenderer;
+	}
+
+	private function getTableRenderer() {
+		if ($this->tableRenderer === null) {
+			$this->tableRenderer = new \PhpPgAdmin\Gui\TableRenderer($this);
+		}
+
+		return $this->tableRenderer;
 	}
 
 	/**
@@ -1983,9 +1066,7 @@ EOT;
 	 */
 	function setWindowName($name, $addServer = true) {
 		echo "<script type=\"text/javascript\">\n";
-		echo "//<![CDATA[\n";
-		echo "   window.name = '{$name}", ($addServer ? ':' . htmlspecialchars($_REQUEST['server']) : ''), "';\n";
-		echo "//]]>\n";
+		echo "window.name = '{$name}", ($addServer ? ':' . htmlspecialchars($_REQUEST['server']) : ''), "';\n";
 		echo "</script>\n";
 	}
 
@@ -2142,193 +1223,7 @@ EOT;
 	 *                they are relative and won't work out of context.
 	 */
 	function printTable($tabledata, &$columns, &$actions, $place, $nodata = null, $pre_fn = null) {
-		global $data, $conf, $misc, $lang, $plugin_manager;
-
-		// Action buttons hook's place
-		$plugin_functions_parameters = array(
-			'actionbuttons' => &$actions,
-			'place' => $place
-		);
-		$plugin_manager->do_hook('actionbuttons', $plugin_functions_parameters);
-
-		if ($has_ma = isset($actions['multiactions']))
-			$ma = $actions['multiactions'];
-		unset($actions['multiactions']);
-
-		if ($tabledata->recordCount() > 0) {
-
-			// Remove the 'comment' column if they have been disabled
-			if (!$conf['show_comments']) {
-				unset($columns['comment']);
-			}
-
-			if (isset($columns['comment'])) {
-				// Uncomment this for clipped comments.
-				// TODO: This should be a user option.
-				//$columns['comment']['params']['clip'] = true;
-			}
-
-			if ($has_ma) {
-				echo "<form id=\"multi_form\" action=\"{$ma['url']}\" method=\"post\" enctype=\"multipart/form-data\">\n";
-				if (isset($ma['vars']))
-					foreach ($ma['vars'] as $k => $v)
-						echo "<input type=\"hidden\" name=\"$k\" value=\"$v\" />";
-			}
-
-			echo "<table class=\"data\">\n";
-			echo "<tr>\n";
-
-			// Display column headings
-			if ($has_ma) echo "<th></th>";
-			foreach ($columns as $column_id => $column) {
-
-				$class = $column['class'] ?? '';
-
-				switch ($column_id) {
-				case 'actions':
-					if (sizeof($actions) > 0) echo "<th class=\"data\" colspan=\"", count($actions), "\">{$column['title']}</th>\n";
-					break;
-				default:
-					echo "<th class=\"data {$class}\">";
-					if (isset($column['help']))
-						$this->printHelp($column['title'], $column['help']);
-					else
-						echo $column['title'];
-					echo "</th>\n";
-					break;
-				}
-			}
-			echo "</tr>\n";
-
-			// Display table rows
-			$i = 0;
-			while (!$tabledata->EOF) {
-				$id = ($i % 2) + 1;
-
-				unset($alt_actions);
-				if (!is_null($pre_fn)) $alt_actions = $pre_fn($tabledata, $actions);
-				if (!isset($alt_actions)) $alt_actions = $actions;
-
-				echo "<tr class=\"data{$id}\">\n";
-				if ($has_ma) {
-					foreach ($ma['keycols'] as $k => $v)
-						$a[$k] = $tabledata->fields[$v];
-					echo "<td>";
-					echo "<input type=\"checkbox\" name=\"ma[]\" value=\"" . htmlentities(serialize($a), ENT_COMPAT, 'UTF-8') . "\" />";
-					echo "</td>\n";
-				}
-
-				foreach ($columns as $column_id => $column) {
-
-					$class = $column['class'] ?? '';
-					$classAttr = empty($class) ? '' : " class='$class'";
-
-					// Apply default values for missing parameters
-					if (isset($column['url']) && !isset($column['vars'])) $column['vars'] = array();
-
-					switch ($column_id) {
-					case 'actions':
-						foreach ($alt_actions as $action) {
-							if (isset($action['disable']) && $action['disable'] === true) {
-								echo "<td></td>\n";
-							} else {
-								echo "<td class=\"opbutton{$id} {$class}\">";
-								$action['fields'] = $tabledata->fields;
-								$this->printLink($action);
-								echo "</td>\n";
-							}
-						}
-						break;
-					case 'comment':
-						echo "<td class='comment_cell'>";
-						$val = value($column['field'], $tabledata->fields);
-						if (!is_null($val)) {
-							echo htmlentities($val);
-						}
-						echo "</td>";
-						break;
-					default:
-						echo "<td$classAttr>";
-						$val = value($column['field'], $tabledata->fields);
-						if (!is_null($val)) {
-							if (isset($column['url'])) {
-								echo "<a href=\"{$column['url']}";
-								$this->printUrlVars($column['vars'], $tabledata->fields);
-								echo "\">";
-							}
-							$type = $column['type'] ?? null;
-							$params = $column['params'] ?? array();
-							echo $this->printVal($val, $type, $params);
-							if (isset($column['url'])) echo "</a>";
-						}
-
-						echo "</td>\n";
-						break;
-					}
-				}
-				echo "</tr>\n";
-
-				$tabledata->moveNext();
-				$i++;
-			}
-			echo "</table>\n";
-
-			// Multi action table footer w/ options & [un]check'em all
-			if ($has_ma) {
-				// if default is not set or doesn't exist, set it to null
-				if (!isset($ma['default']) || !isset($actions[$ma['default']])) {
-					$ma['default'] = null;
-				}
-				?>
-				<br/>
-				<table>
-					<tr>
-						<th class="data" style="text-align: left" colspan="4">
-							<?= $lang['stractionsonmultiplelines'] ?>
-						</th>
-					</tr>
-					<tr class="row1">
-						<td>
-							<input type="checkbox" onchange="toggleAllMf(this.checked);"/>
-							<a href="#"
-							   onclick="this.previousElementSibling.click(); return false;">
-								<?= $lang['strselectall'] ?>
-							</a>
-						</td>
-						<td>&nbsp;--->&nbsp;</td>
-						<td>
-							<select name="action">
-								<?php if ($ma['default'] == null): ?>
-									<option value="">--</option>
-								<?php endif; ?>
-
-								<?php foreach ($actions as $k => $a): ?>
-									<?php if (isset($a['multiaction'])): ?>
-										<option value="<?= $a['multiaction'] ?>"
-											<?= ($ma['default'] == $k ? ' selected="selected"' : '') ?>>
-											<?= $a['content'] ?>
-										</option>
-									<?php endif; ?>
-								<?php endforeach; ?>
-							</select>
-						</td>
-						<td>
-							<input type="submit" value="<?= $lang['strexecute'] ?>"/>
-							<?= $this->form ?>
-						</td>
-					</tr>
-				</table>
-				</form>
-				<?php
-			}
-
-			return true;
-		} else {
-			if (!is_null($nodata)) {
-				echo "<p>{$nodata}</p>\n";
-			}
-			return false;
-		}
+		return $this->getTableRenderer()->printTable($tabledata, $columns, $actions, $place, $nodata, $pre_fn);
 	}
 
 	/** Produce XML data for the browser tree

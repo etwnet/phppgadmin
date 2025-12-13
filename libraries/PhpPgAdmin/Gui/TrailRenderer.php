@@ -1,0 +1,229 @@
+<?php
+
+namespace PhpPgAdmin\Gui;
+
+use PhpPgAdmin\Core\AbstractContext;
+
+/**
+ * Trail rendering: breadcrumb navigation hierarchy
+ * Extracts getTrail() and printTrail() from legacy Misc class
+ */
+class TrailRenderer extends AbstractContext
+{
+    private $misc;
+
+    public function __construct($misc)
+    {
+        $this->misc = $misc;
+    }
+
+    /**
+     * Display a bread crumb trail.
+     */
+    public function printTrail($trail = array()): void
+    {
+        $lang = $this->lang();
+
+        if (is_string($trail)) {
+            $trail = $this->getTrail($trail);
+        }
+
+        echo "<div class=\"trail\"><table><tr>";
+
+        foreach ($trail as $crumb) {
+            echo "<td class=\"crumb\">";
+            $crumblink = "<a";
+
+            if (isset($crumb['url']))
+                $crumblink .= " href=\"{$crumb['url']}\"";
+
+            if (isset($crumb['title']))
+                $crumblink .= " title=\"{$crumb['title']}\"";
+
+            $crumblink .= ">";
+
+            if (isset($crumb['title']))
+                $iconalt = $crumb['title'];
+            else
+                $iconalt = 'Database Root';
+
+            if (isset($crumb['icon']) && $icon = $this->misc->icon($crumb['icon']))
+                $crumblink .= "<span class=\"icon\"><img src=\"{$icon}\" alt=\"{$iconalt}\" /></span>";
+
+            $crumblink .= "<span class=\"label\">" . htmlspecialchars($crumb['text']) . "</span></a>";
+
+            if (isset($crumb['help']))
+                $this->misc->printHelp($crumblink, $crumb['help']);
+            else
+                echo $crumblink;
+
+            echo "{$lang['strseparator']}";
+            echo "</td>";
+        }
+
+        echo "</tr></table></div>\n";
+    }
+
+    /**
+     * Create a bread crumb trail of the object hierarchy.
+     * @param $subject The type of object at the end of the trail.
+     */
+    public function getTrail($subject = null): array
+    {
+        $lang = $this->lang();
+        $conf = $this->conf();
+        $data = $this->data();
+        $pluginManager = $this->pluginManager();
+
+        $appName = $GLOBALS['appName'] ?? 'phpPgAdmin';
+
+        $trail = array();
+        $vars = '';
+        $done = false;
+
+        $trail['root'] = array(
+            'text' => $appName,
+            'url' => 'redirect.php?subject=root',
+            'icon' => 'Introduction'
+        );
+
+        if ($subject == 'root') $done = true;
+
+        if (!$done) {
+            $server_info = $this->misc->getServerInfo();
+            $trail['server'] = array(
+                'title' => $lang['strserver'],
+                'text' => $server_info['desc'],
+                'url' => $this->misc->getHREFSubject('server'),
+                'help' => 'pg.server',
+                'icon' => 'Server'
+            );
+        }
+        if ($subject == 'server') $done = true;
+
+        if (isset($_REQUEST['database']) && !$done) {
+            $trail['database'] = array(
+                'title' => $lang['strdatabase'],
+                'text' => $_REQUEST['database'],
+                'url' => $this->misc->getHREFSubject('database'),
+                'help' => 'pg.database',
+                'icon' => 'Database'
+            );
+        } elseif (isset($_REQUEST['rolename']) && !$done) {
+            $trail['role'] = array(
+                'title' => $lang['strrole'],
+                'text' => $_REQUEST['rolename'],
+                'url' => $this->misc->getHREFSubject('role'),
+                'help' => 'pg.role',
+                'icon' => 'Roles'
+            );
+        }
+        if ($subject == 'database' || $subject == 'role') $done = true;
+
+        if (isset($_REQUEST['schema']) && !$done) {
+            $trail['schema'] = array(
+                'title' => $lang['strschema'],
+                'text' => $_REQUEST['schema'],
+                'url' => $this->misc->getHREFSubject('schema'),
+                'help' => 'pg.schema',
+                'icon' => 'Schema'
+            );
+        }
+        if ($subject == 'schema') $done = true;
+
+        if (isset($_REQUEST['table']) && !$done) {
+            $trail['table'] = array(
+                'title' => $lang['strtable'],
+                'text' => $_REQUEST['table'],
+                'url' => $this->misc->getHREFSubject('table'),
+                'help' => 'pg.table',
+                'icon' => 'Table'
+            );
+        } elseif (isset($_REQUEST['view']) && !$done) {
+            $trail['view'] = array(
+                'title' => $lang['strview'],
+                'text' => $_REQUEST['view'],
+                'url' => $this->misc->getHREFSubject('view'),
+                'help' => 'pg.view',
+                'icon' => 'View'
+            );
+        } elseif (isset($_REQUEST['ftscfg']) && !$done) {
+            $trail['ftscfg'] = array(
+                'title' => $lang['strftsconfig'],
+                'text' => $_REQUEST['ftscfg'],
+                'url' => $this->misc->getHREFSubject('ftscfg'),
+                'help' => 'pg.ftscfg.example',
+                'icon' => 'Fts'
+            );
+        }
+        if ($subject == 'table' || $subject == 'view' || $subject == 'ftscfg') $done = true;
+
+        if (!$done && !is_null($subject)) {
+            switch ($subject) {
+            case 'function':
+                $trail[$subject] = array(
+                    'title' => $lang['str' . $subject],
+                    'text' => $_REQUEST[$subject],
+                    'url' => $this->misc->getHREFSubject('function'),
+                    'help' => 'pg.function',
+                    'icon' => 'Function'
+                );
+                break;
+            case 'aggregate':
+                $trail[$subject] = array(
+                    'title' => $lang['straggregate'],
+                    'text' => $_REQUEST['aggrname'],
+                    'url' => $this->misc->getHREFSubject('aggregate'),
+                    'help' => 'pg.aggregate',
+                    'icon' => 'Aggregate'
+                );
+                break;
+            case 'column':
+                $trail['column'] = array(
+                    'title' => $lang['strcolumn'],
+                    'text' => $_REQUEST['column'],
+                    'icon' => 'Column',
+                    'url' => $this->misc->getHREFSubject('column')
+                );
+                break;
+            default:
+                if (isset($_REQUEST[$subject])) {
+                    switch ($subject) {
+                    case 'domain':
+                        $icon = 'Domain';
+                        break;
+                    case 'sequence':
+                        $icon = 'Sequence';
+                        break;
+                    case 'type':
+                        $icon = 'Type';
+                        break;
+                    case 'operator':
+                        $icon = 'Operator';
+                        break;
+                    default:
+                        $icon = null;
+                        break;
+                    }
+                    $trail[$subject] = array(
+                        'title' => $lang['str' . $subject],
+                        'text' => $_REQUEST[$subject],
+                        'help' => 'pg.' . $subject,
+                        'icon' => $icon,
+                    );
+                }
+            }
+        }
+
+        // Trail hook's place
+        if ($pluginManager) {
+            $plugin_functions_parameters = array(
+                'trail' => &$trail,
+                'section' => $subject
+            );
+            $pluginManager->do_hook('trail', $plugin_functions_parameters);
+        }
+
+        return $trail;
+    }
+}
