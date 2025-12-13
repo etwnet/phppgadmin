@@ -54,7 +54,7 @@ class TabsRenderer extends AbstractContext
 	 */
     public function getNavTabs($section)
     {
-        $data = $this->data();
+        $pg = $this->postgres();
         $lang = $this->lang();
         $conf = $this->conf();
         $pluginManager = $this->pluginManager();
@@ -79,7 +79,7 @@ class TabsRenderer extends AbstractContext
             break;
 
         case 'server':
-            $hideUsers = !$data->isSuperUser();
+            $hideUsers = !$pg->isSuperUser();
             $tabs = array(
                 'databases' => array(
                     'title' => $lang['strdatabases'],
@@ -89,7 +89,7 @@ class TabsRenderer extends AbstractContext
                     'icon' => 'Databases',
                 )
             );
-            if ($data->hasRoles()) {
+            if ($pg->hasRoles()) {
                 $tabs = array_merge($tabs, array(
                     'roles' => array(
                         'title' => $lang['strroles'],
@@ -124,7 +124,7 @@ class TabsRenderer extends AbstractContext
             $tabs = array_merge($tabs, array(
                 'account' => array(
                     'title' => $lang['straccount'],
-                    'url' => $data->hasRoles() ? 'roles.php' : 'users.php',
+                    'url' => $pg->hasRoles() ? 'roles.php' : 'users.php',
                     'urlvars' => array('subject' => 'server', 'action' => 'account'),
                     'hide' => !$hideUsers,
                     'help' => 'pg.role',
@@ -134,7 +134,7 @@ class TabsRenderer extends AbstractContext
                     'title' => $lang['strtablespaces'],
                     'url' => 'tablespaces.php',
                     'urlvars' => array('subject' => 'server'),
-                    'hide' => (!$data->hasTablespaces()),
+                    'hide' => (!$pg->hasTablespaces()),
                     'help' => 'pg.tablespace',
                     'icon' => 'Tablespaces',
                 ),
@@ -340,7 +340,7 @@ class TabsRenderer extends AbstractContext
                     'icon' => 'Export',
                 ),
             );
-            if (!$data->hasFTS()) {
+            if (!$pg->hasFTS()) {
                 unset($tabs['fulltext']);
             }
             break;
@@ -612,7 +612,7 @@ class TabsRenderer extends AbstractContext
                     'title' => $lang['strftstabconfigs'],
                     'url' => 'fulltext.php',
                     'urlvars' => array('subject' => 'schema'),
-                    'hide' => !$data->hasFTS(),
+                    'hide' => !$pg->hasFTS(),
                     'help' => 'pg.ftscfg',
                     'tree' => true,
                     'icon' => 'FtsCfg',
@@ -621,7 +621,7 @@ class TabsRenderer extends AbstractContext
                     'title' => $lang['strftstabdicts'],
                     'url' => 'fulltext.php',
                     'urlvars' => array('subject' => 'schema', 'action' => 'viewdicts'),
-                    'hide' => !$data->hasFTS(),
+                    'hide' => !$pg->hasFTS(),
                     'help' => 'pg.ftsdict',
                     'tree' => true,
                     'icon' => 'FtsDict',
@@ -630,7 +630,7 @@ class TabsRenderer extends AbstractContext
                     'title' => $lang['strftstabparsers'],
                     'url' => 'fulltext.php',
                     'urlvars' => array('subject' => 'schema', 'action' => 'viewparsers'),
-                    'hide' => !$data->hasFTS(),
+                    'hide' => !$pg->hasFTS(),
                     'help' => 'pg.ftsparser',
                     'tree' => true,
                     'icon' => 'FtsParser',

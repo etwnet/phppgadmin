@@ -504,27 +504,6 @@ class Role extends Action {
 	}
 
 	/**
-	 * Determines whether or not a user/role is a super user
-	 * @param string $username The username/rolename
-	 * @return True if is a super user, false otherwise
-	 */
-	public function isSuperUser($username = '') {
-		$this->connection->clean($username);
-
-		if (empty($username)) {
-			// Try to get from connection parameter
-			$val = pg_parameter_status($this->connection->_connectionID, 'is_superuser');
-			if ($val !== false) return $val == 'on';
-		}
-
-		$sql = "SELECT rolsuper FROM pg_catalog.pg_roles WHERE rolname='{$username}'";
-
-		$rolsuper = $this->connection->selectField($sql, 'rolsuper');
-		if ($rolsuper == -1) return false;
-		else return $rolsuper == 't';
-	}
-
-	/**
 	 * Changes a role's password
 	 * @param string $rolename The role name
 	 * @param string $password The new password

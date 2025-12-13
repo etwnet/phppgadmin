@@ -4,7 +4,8 @@ namespace PhpPgAdmin\Core;
 
 use PhpPgAdmin\Misc;
 use PhpPgAdmin\PluginManager;
-use Postgres;
+use Postgres as PostgresLegacy;
+use PhpPgAdmin\Database\Connection\Postgres as PostgresNew;
 
 /**
  * Simple singleton container to hold shared application objects during
@@ -98,17 +99,27 @@ class Container
         return self::get('misc');
     }
 
-    public static function setData(Postgres $data): void
+    public static function setData(PostgresLegacy $data): void
     {
         self::set('data', $data);
     }
 
-    public static function getData(): Postgres
+    public static function getData(): ?PostgresLegacy
     {
         return self::get('data');
     }
 
-    public static function setPluginManager(PluginManager $pluginManager): void
+	public static function setPostgres(PostgresNew $pg): void
+	{
+		self::set('pg', $pg);
+	}
+
+	public static function getPostgres(): ?PostgresNew
+	{
+		return self::get('pg');
+	}
+
+	public static function setPluginManager(PluginManager $pluginManager): void
     {
         self::set('plugin_manager', $pluginManager);
     }

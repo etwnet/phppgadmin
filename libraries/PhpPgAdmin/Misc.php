@@ -5,8 +5,12 @@ namespace PhpPgAdmin;
 use ADORecordSet;
 use Connection;
 use PhpPgAdmin\Core\AbstractContext;
+use PhpPgAdmin\Core\Container;
 use PhpPgAdmin\Core\UrlBuilder;
+use PhpPgAdmin\Database\Action\Constraint;
+use PhpPgAdmin\Database\Action\Schema;
 use PhpPgAdmin\Database\ArrayRecordSet;
+use PhpPgAdmin\Database\Connector;
 use PhpPgAdmin\Gui\ConnectionSelector;
 use PhpPgAdmin\Gui\LayoutRenderer;
 use PhpPgAdmin\Gui\NavLinksRenderer;
@@ -164,7 +168,7 @@ class Misc extends AbstractContext
 	 * Creates a database accessor
 	 */
 	function getDatabaseAccessor($database, $server_id = null) {
-		global $_connection, $postgresqlMinVer;
+		global $postgresqlMinVer;
 		$lang = $this->lang();
 		$conf = $this->conf();
 
@@ -187,7 +191,7 @@ class Misc extends AbstractContext
 		}
 
 		// Create the connection object and make the connection
-		$_connection = new Connection(
+		$connector = new Connector(
 			$server_info['host'],
 			$server_info['port'],
 			$server_info['sslmode'],
@@ -198,25 +202,30 @@ class Misc extends AbstractContext
 
 		// Get the name of the database driver we need to use.
 		// The description of the server is returned in $platform.
-		$_type = $_connection->getDriver($platform);
-		if ($_type === null) {
+		$driverName = $connector->getDriver($platform, $version);
+		if ($driverName === null) {
 			printf($lang['strpostgresqlversionnotsupported'], $postgresqlMinVer);
 			exit;
 		}
 		$this->setServerInfo('platform', $platform, $server_id);
-		$this->setServerInfo('pgVersion', $_connection->conn->pgVersion ?? '', $server_id);
+		$this->setServerInfo('pgVersion', $version, $server_id);
 
 		// Create a database wrapper class for easy manipulation of the
 		// connection.
-		include_once('./classes/database/' . $_type . '.php');
-		$data = new $_type($_connection->conn);
-		$data->platform = $_connection->platform;
+		$className = "\\PhpPgAdmin\\Database\\Connection\\$driverName";
+		$postgres = new $className($connector->conn, $version);
+		$postgres->platform = $connector->platform;
+		Container::setPostgres($postgres);
 
-		/* we work on UTF-8 only encoding */
-		$data->execute("SET client_encoding TO 'UTF-8'");
+		include_once('./classes/database/' . $driverName . '.php');
+		$data = new $driverName($connector->conn);
+		$data->platform = $connector->platform;
 
-		if ($data->hasByteaHexDefault()) {
-			$data->execute("SET bytea_output TO escape");
+		// we work on UTF-8 only encoding
+		$postgres->execute("SET client_encoding TO 'UTF-8'");
+
+		if ($postgres->hasByteaHexDefault()) {
+			$postgres->execute("SET bytea_output TO escape");
 		}
 
 		return $data;
@@ -679,11 +688,10 @@ class Misc extends AbstractContext
 
 	/**
 	 * Function to escape command line parameters
-	 * @param $str The string to escape
-	 * @return The escaped string
+	 * @param string $str The string to escape
+	 * @return string The escaped string
 	 */
 	function escapeShellArg($str) {
-		$data = $this->data();
 		$lang = $this->lang();
 
 		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
@@ -706,10 +714,10 @@ class Misc extends AbstractContext
 	 * @return The escaped string
 	 */
 	function escapeShellCmd($str) {
-		$data = $this->data();
+		$pg = $this->postgres();
 
 		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-			$data->fieldClean($str);
+			$pg->fieldClean($str);
 			return '"' . $str . '"';
 		} else
 			return escapeshellcmd($str);
@@ -889,10 +897,10 @@ class Misc extends AbstractContext
 
 	/**
 	 * Set server information.
-	 * @param $key parameter name to set, or null to replace all
+	 * @param ?string $key parameter name to set, or null to replace all
 	 *             params with the assoc-array in $value.
-	 * @param $value the new value, or null to unset the parameter
-	 * @param $server_id the server identifier, or null for current
+	 * @param ?mixed $value the new value, or null to unset the parameter
+	 * @param ?string $server_id the server identifier, or null for current
 	 *                   server.
 	 */
 	function setServerInfo($key, $value, $server_id = null) {
@@ -915,17 +923,16 @@ class Misc extends AbstractContext
 	/**
 	 * Set the current schema
 	 * @param string $schema The schema name
-	 * @return 0 on success
-	 * @return $data->seSchema() on error
+	 * @return int 0 on success
+	 * @return int $data->seSchema() on error
 	 */
 	function setCurrentSchema($schema) {
-		/** @var Postgres $data */
-		$data = $this->data();
-		if ($data->_schema == $schema) {
+		$pg = $this->postgres();
+		if ($pg->_schema == $schema) {
 			return 0;
 		}
 
-		$status = $data->setSchema($schema);
+		$status = (new Schema($pg))->setSchema($schema);
 		if ($status != 0)
 			return $status;
 
@@ -960,8 +967,8 @@ class Misc extends AbstractContext
 	/**
 	 * returns an array representing FKs definition for a table, sorted by fields
 	 * or by constraint.
-	 * @param $table The table to retrieve FK constraints from
-	 * @returns the array of FK definition:
+	 * @param string $table The table to retrieve FK constraints from
+	 * @returns array the array of FK definition:
 	 *   array(
 	 *     'byconstr' => array(
 	 *       constrain id => array(
@@ -980,7 +987,7 @@ class Misc extends AbstractContext
 	 *   )
 	 **/
 	function getAutocompleteFKProperties($table) {
-		$data = $this->data();
+		$pg = $this->postgres();
 
 		$fksprops = array(
 			'byconstr' => array(),
@@ -988,7 +995,7 @@ class Misc extends AbstractContext
 			'code' => ''
 		);
 
-		$constrs = $data->getConstraintsWithFields($table);
+		$constrs = (new Constraint($pg))->getConstraintsWithFields($table);
 
 		if (!$constrs->EOF) {
 			$conrelid = $constrs->fields['conrelid'];

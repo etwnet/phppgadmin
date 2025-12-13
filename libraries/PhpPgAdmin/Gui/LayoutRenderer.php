@@ -328,7 +328,6 @@ EOT;
 	 */
 	function printHelp($str, $help) {
 		$lang = $this->lang();
-		$data = $this->data();
 
 		echo $str;
 		if ($help) {
@@ -459,7 +458,6 @@ EOT;
 	function printVal($str, $type = null, $params = array()) {
 		$lang = $this->lang();
 		$conf = $this->conf();
-		$data = $this->data();
 
 		// Shortcircuit for a NULL value
 		if (is_null($str))
@@ -518,7 +516,7 @@ EOT;
 		case 'bytea':
 			$tag = 'div';
 			$class = 'pre';
-			$out = $data->escapeBytea($str);
+			$out = $this->postgres()->escapeBytea($str);
 			break;
 		case 'errormsg':
 			$tag = 'pre';

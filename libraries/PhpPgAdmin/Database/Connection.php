@@ -7,8 +7,9 @@ namespace PhpPgAdmin\Database;
 
 use ADOConnection;
 use ADORecordSet;
+use PhpPgAdmin\Core\AbstractContext;
 
-abstract class Connection {
+abstract class Connection extends AbstractContext {
 
 	/**
 	 * @var ADOConnection

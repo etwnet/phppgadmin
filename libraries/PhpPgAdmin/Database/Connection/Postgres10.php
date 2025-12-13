@@ -12,19 +12,10 @@ class Postgres10 extends Postgres11 {
 	var $major_version = 10;
 
 	/**
-	 * Constructor
-	 * @param $conn The database connection
-	 */
-	function __construct($conn) {
-		parent::__construct($conn);
-	}
-
-
-	/**
 	 * Searches all system catalogs to find objects that match a certain name.
 	 * @param $term The search term
 	 * @param $filter The object type to restrict to ('' means no restriction)
-	 * @return A recordset
+	 * @return \ADORecordSet A recordset
 	 */
 	function findObject($term, $filter) {
 		global $conf;

@@ -6,7 +6,8 @@ namespace PhpPgAdmin\Core;
 
 use PhpPgAdmin\Misc;
 use PhpPgAdmin\PluginManager;
-use Postgres;
+use Postgres as PostgresLegacy;
+use PhpPgAdmin\Database\Connection\Postgres as PostgresNew;
 
 abstract class AbstractContext {
 
@@ -28,13 +29,18 @@ abstract class AbstractContext {
 		return (array) $conf;
 	}
 
-	protected function data(): Postgres
+	protected function data(): ?PostgresLegacy
 	{
 		$data = Container::getData();
 		if (!$data && isset($GLOBALS['data'])) {
 			$data = $GLOBALS['data'];
 		}
 		return $data;
+	}
+
+	protected function postgres(): ?PostgresNew
+	{
+		return Container::getPostgres();
 	}
 
 	protected function misc(): Misc

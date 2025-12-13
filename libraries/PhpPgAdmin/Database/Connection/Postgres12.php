@@ -12,14 +12,6 @@ class Postgres12 extends Postgres13 {
 
 	var $major_version = 12;
 
-	/**
-	 * Constructor
-	 * @param $conn The database connection
-	 */
-	function __construct($conn) {
-		parent::__construct($conn);
-	}
-
 	// Help functions
 
 	function getHelpPages() {

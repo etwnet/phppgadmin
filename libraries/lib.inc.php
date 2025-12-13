@@ -12,8 +12,8 @@ include_once('./lang/translations.php');
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use PhpPgAdmin\Core\Container;
-use PhpPgAdmin\Misc as NamespacedMisc;
-use PhpPgAdmin\PluginManager as NamespacedPluginManager;
+use PhpPgAdmin\Misc;
+use PhpPgAdmin\PluginManager;
 
 // Set error reporting level to max
 error_reporting(E_ALL);
@@ -25,7 +25,7 @@ $appName = 'phpPgAdmin';
 $appVersion = '8.0.rc1';
 
 // PostgreSQL and PHP minimum version
-$postgresqlMinVer = '8.0';
+$postgresqlMinVer = '9.0';
 
 /*
 // Check the version of PHP
@@ -56,7 +56,7 @@ $lang = array();
 require_once('./lang/english.php');
 
 // Create Misc class references
-$misc = new NamespacedMisc();
+$misc = new Misc();
 
 // Start session (if not auto-started)
 if (!ini_get('session.auto_start')) {
@@ -277,7 +277,7 @@ if (!isset($_no_db_connection)) {
 		}
 	}
 }
-$plugin_manager = new NamespacedPluginManager($_language);
+$plugin_manager = new PluginManager($_language);
 Container::setPluginManager($plugin_manager);
 
 Container::setMisc($misc);

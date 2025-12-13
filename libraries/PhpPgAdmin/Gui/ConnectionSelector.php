@@ -3,6 +3,7 @@
 namespace PhpPgAdmin\Gui;
 
 use PhpPgAdmin\Core\AbstractContext;
+use PhpPgAdmin\Database\Action\Database;
 use PhpPgAdmin\Misc;
 
 class ConnectionSelector extends AbstractContext
@@ -10,7 +11,7 @@ class ConnectionSelector extends AbstractContext
 
     public function printConnection($onchange)
     {
-        $data = $this->data();
+        $pg = $this->postgres();
         $lang = $this->lang();
 
         echo "<table style=\"width: 100%\"><tr><td>\n";
@@ -30,7 +31,7 @@ class ConnectionSelector extends AbstractContext
         }
         echo "</select>\n</td><td style=\"text-align: right\">\n";
 
-        $databases = $data->getDatabases();
+        $databases = (new Database($pg))->getDatabases();
 
         if ($databases->recordCount() > 0) {
             echo "<label>";

@@ -65,8 +65,6 @@ class TrailRenderer extends AbstractContext
     public function getTrail($subject = null): array
     {
         $lang = $this->lang();
-        $conf = $this->conf();
-        $data = $this->data();
         $pluginManager = $this->pluginManager();
 
         $appName = $GLOBALS['appName'] ?? 'phpPgAdmin';
