@@ -11,9 +11,6 @@ namespace PhpPgAdmin\Database\Connection;
 class Postgres95 extends Postgres96
 {
 
-	var $major_version = 9.5;
-
-
 	/**
 	 * Returns all available process information.
 	 * @param $database (optional) Find only connections to specified database

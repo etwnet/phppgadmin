@@ -102,10 +102,8 @@ class Connector
 			return 'Postgres96';
 		} elseif ($majorVersion >= 9.5) {
 			return 'Postgres95';
-		} elseif ($majorVersion >= 9.1) {
-			return 'Postgres91';
 		} elseif ($majorVersion >= 9.0) {
-			return 'Postgres90';
+			return 'Postgres91';
 		} else {
 			return null;
 		}

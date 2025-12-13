@@ -587,7 +587,7 @@ class Postgres extends Connection
 
 	function hasAlterDatabase()
 	{
-		return $this->hasAlterDatabaseRename();
+		return true;
 	}
 
 	function hasDatabaseCollation()

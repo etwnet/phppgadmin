@@ -11,8 +11,6 @@ namespace PhpPgAdmin\Database\Connection;
 class Postgres11 extends Postgres
 {
 
-	var $major_version = 11;
-
 	/**
 	 * Returns the current default_with_oids setting
 	 * @return default_with_oids setting

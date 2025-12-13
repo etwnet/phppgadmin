@@ -10,8 +10,6 @@ namespace PhpPgAdmin\Database\Connection;
 class Postgres10 extends Postgres11
 {
 
-	var $major_version = 10;
-
 	/**
 	 * Searches all system catalogs to find objects that match a certain name.
 	 * @param $term The search term

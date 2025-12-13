@@ -11,8 +11,6 @@ namespace PhpPgAdmin\Database\Connection;
 class Postgres96 extends Postgres10
 {
 
-	var $major_version = 9.6;
-
 	// Sequence functions
 
 	/**
