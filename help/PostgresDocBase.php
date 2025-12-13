@@ -1,13 +1,5 @@
 <?php
 
-
-/**
- * Help links for PostgreSQL 7.4 documentation
- */
-
-
-$this->help_base = sprintf($GLOBALS['conf']['help_base'], '7.4');
-
 # TODO: Check and fix links
 
 $this->help_page = array(
@@ -101,7 +93,7 @@ $this->help_page = array(
 	'pg.schema.create'		=> array( 'sql-createschema.html','ddl-schemas.html#DDL-SCHEMAS-CREATE'),
 	'pg.schema.drop'		=> 'sql-dropschema.html',
 	'pg.schema.search_path'		=> 'ddl-schemas.html#DDL-SCHEMAS-PATH',
-	
+
 	'pg.sequence'			=> 'functions-sequence.html',
 	'pg.sequence.alter'		=> 'sql-altersequence.html',
 	'pg.sequence.create'		=> 'sql-createsequence.html',
@@ -143,18 +135,16 @@ $this->help_page = array(
 	'pg.view.alter'			=> array('sql-createview.html','sql-altertable.html'),
 	'pg.view.create'		=> 'sql-createview.html',
 	'pg.view.drop'			=> 'sql-dropview.html',
-	
+
 	'pg.aggregate'			=> array('xaggr.html', 'tutorial-agg.html', 'functions-aggregate.html', 'sql-expressions.html#SYNTAX-AGGREGATES'),
 	'pg.aggregate.create'	=> 'sql-createaggregate.html',
 	'pg.aggregate.drop'		=> 'sql-dropaggregate.html',
 	'pg.aggregate.alter'	=> 'sql-alteraggregate.html',
-	
+
 	'pg.server' => 'admin.html',
 
 	'pg.user'	=> 'user-manag.html',
 
 	'pg.locks' 	=> 'view-pg-locks.html'
 );
-
-
 

@@ -29,7 +29,6 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 */
 
 function keyword_replace($keywords, $text, $ncs = false)
@@ -586,6 +585,7 @@ function proc_void($span, $lang, $ch)
  * Syntax highlight function
  * Does the bulk of the syntax highlighting by lexing the input
  * string, then calling the helper function to highlight keywords.
+ * @deprecated
  */
 function syntax_highlight($text, $language)
 {

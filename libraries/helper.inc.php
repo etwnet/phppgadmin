@@ -1,13 +1,16 @@
 <?php
 
-function pg_escape_id ($id = ''): string {
-	/** @var Postgres $data */
-	global $data;
-	return pg_escape_identifier($data->conn->_connectionID, $id);
+function pg_escape_id($id = ''): string
+{
+	$pg = \PhpPgAdmin\Core\Container::getPostgres();
+	return pg_escape_identifier($pg->conn->_connectionID, $id);
 }
 
 function htmlspecialchars_nc(
-	$string, $flags = ENT_QUOTES | ENT_SUBSTITUTE, $encoding = 'UTF-8', $double_encode = true
+	$string,
+	$flags = ENT_QUOTES | ENT_SUBSTITUTE,
+	$encoding = 'UTF-8',
+	$double_encode = true
 ) {
 	if ($string === null) {
 		return '';
@@ -27,7 +30,8 @@ function htmlspecialchars_nc(
  * @param array|object $data
  * @return string
  */
-function format_string($template, $data) {
+function format_string($template, $data)
+{
 	$isObject = is_object($data);
 	$pattern = '/(?<left>[^{]*)\{(?<name>\w+)(:(?<pad>\'.|0| )?(?<justify>-)?(?<minlen>\d+)?(\.(?<prec>\d+))?(?<type>[a-zA-Z]))?(?<optional>\?.*)?\}(?<right>.*)/';
 	while (preg_match($pattern, $template, $match)) {
@@ -53,42 +57,42 @@ function format_string($template, $data) {
 		}
 		$precision = $match['prec'] ? intval($match['prec']) : null;
 		switch ($match['type']) {
-		case 'b':
-			$subst = base_convert($param, 10, 2);
-			break;
-		case 'c':
-			$subst = chr($param);
-			break;
-		case 'd':
-			$subst = (string)(int)$param;
-			break;
-		case 'f':
-		case 'F':
-			if ($precision !== null) {
-				$subst = number_format((float)$param, $precision);
-			} else {
-				$subst = (string)(float)$param;
-			}
-			break;
-		case 'o':
-			$subst = base_convert($param, 10, 8);
-			break;
-		case 'p':
-			$subst = (string)(round((float)$param, $precision) * 100);
-			break;
-		case 's':
-		default:
-			$subst = (string)$param;
-			break;
-		case 'u':
-			$subst = (string)abs((int)$param);
-			break;
-		case 'x':
-			$subst = strtolower(base_convert($param, 10, 16));
-			break;
-		case 'X':
-			$subst = base_convert($param, 10, 16);
-			break;
+			case 'b':
+				$subst = base_convert($param, 10, 2);
+				break;
+			case 'c':
+				$subst = chr($param);
+				break;
+			case 'd':
+				$subst = (string)(int)$param;
+				break;
+			case 'f':
+			case 'F':
+				if ($precision !== null) {
+					$subst = number_format((float)$param, $precision);
+				} else {
+					$subst = (string)(float)$param;
+				}
+				break;
+			case 'o':
+				$subst = base_convert($param, 10, 8);
+				break;
+			case 'p':
+				$subst = (string)(round((float)$param, $precision) * 100);
+				break;
+			case 's':
+			default:
+				$subst = (string)$param;
+				break;
+			case 'u':
+				$subst = (string)abs((int)$param);
+				break;
+			case 'x':
+				$subst = strtolower(base_convert($param, 10, 16));
+				break;
+			case 'X':
+				$subst = base_convert($param, 10, 16);
+				break;
 		}
 		$minLength = (int)$match['minlen'];
 		if ($match['justify'] != '-') {
@@ -106,4 +110,3 @@ function format_string($template, $data) {
 	}
 	return $template;
 }
-

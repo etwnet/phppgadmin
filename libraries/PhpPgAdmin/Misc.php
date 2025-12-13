@@ -44,7 +44,8 @@ class Misc extends AbstractContext
 	 * @param $all (optional) True to check pg_dumpall, false to just check pg_dump
 	 * @return bool True, dumps are set up, false otherwise
 	 */
-	function isDumpEnabled($all = false) {
+	function isDumpEnabled($all = false)
+	{
 		$info = $this->getServerInfo();
 		return !empty($info[$all ? 'pg_dumpall_path' : 'pg_dump_path']);
 	}
@@ -52,35 +53,40 @@ class Misc extends AbstractContext
 	/**
 	 * Sets the href tracking variable
 	 */
-	function setHREF() {
+	function setHREF()
+	{
 		$this->href = $this->getUrlBuilder()->getHREF();
 	}
 
 	/**
 	 * Get a href query string, excluding objects below the given object type (inclusive)
 	 */
-	function getHREF($exclude_from = null) {
+	function getHREF($exclude_from = null)
+	{
 		return $this->getUrlBuilder()->getHREF($exclude_from);
 	}
 
 	/**
 	 * Get the subject parameters as an associative array
 	 */
-	function getSubjectParams($subject) {
+	function getSubjectParams($subject)
+	{
 		return $this->getUrlBuilder()->getSubjectParams($subject);
 	}
 
 	/**
 	 * Get the subject string for HREFs
 	 */
-	function getHREFSubject($subject) {
+	function getHREFSubject($subject)
+	{
 		return $this->getUrlBuilder()->getHREFSubject($subject);
 	}
 
 	/**
 	 * Sets the form tracking variable
 	 */
-	function setForm() {
+	function setForm()
+	{
 		$this->form = $this->getUrlBuilder()->buildHiddenFormInputs();
 	}
 
@@ -91,7 +97,8 @@ class Misc extends AbstractContext
 	 * @param array $fields The data from which to get the variable values
 	 * @return string The URL
 	 */
-	function getActionUrl($action, $fields) {
+	function getActionUrl($action, $fields)
+	{
 		return $this->getUrlBuilder()->getActionUrl($action, $fields);
 	}
 
@@ -100,7 +107,8 @@ class Misc extends AbstractContext
 	 * @param string $subject The subject to get the variables for
 	 * @return array The request variables
 	 */
-	function getRequestVars($subject = '') {
+	function getRequestVars($subject = '')
+	{
 		return $this->getUrlBuilder()->getRequestVars($subject);
 	}
 
@@ -109,7 +117,8 @@ class Misc extends AbstractContext
 	 * @param array $vars The variables to print
 	 * @param array $fields The data from which to get the variable values
 	 */
-	function printUrlVars($vars, $fields) {
+	function printUrlVars($vars, $fields)
+	{
 		return $this->getUrlBuilder()->printUrlVars($vars, $fields);
 	}
 
@@ -120,7 +129,8 @@ class Misc extends AbstractContext
 	 * @param array $params Additional parameters for formatting
 	 * @return string The formatted value
 	 */
-	function printVal($str, $type = null, $params = array()) {
+	function printVal($str, $type = null, $params = array())
+	{
 		return $this->getLayoutRenderer()->printVal($str, $type, $params);
 	}
 
@@ -129,7 +139,8 @@ class Misc extends AbstractContext
 	 * enforce magic_quotes_gpc being off.
 	 * @param &var The variable to strip
 	 */
-	function stripVar(&$var) {
+	function stripVar(&$var)
+	{
 		if (is_array($var)) {
 			foreach ($var as $k => $v) {
 				$this->stripVar($var[$k]);
@@ -152,7 +163,8 @@ class Misc extends AbstractContext
 	 * @param string $title Title, already escaped
 	 * @param $help (optional) The identifier for the help link
 	 */
-	function printTitle($title, $help = null) {
+	function printTitle($title, $help = null)
+	{
 		$this->getLayoutRenderer()->printTitle($title, $help);
 	}
 
@@ -160,14 +172,16 @@ class Misc extends AbstractContext
 	 * Print out a message
 	 * @param $msg The message to print
 	 */
-	function printMsg($msg) {
+	function printMsg($msg)
+	{
 		if ($msg != '') echo "<p class=\"message\">{$msg}</p>\n";
 	}
 
 	/**
 	 * Creates a database accessor
 	 */
-	function getDatabaseAccessor($database, $server_id = null) {
+	function getDatabaseAccessor($database, $server_id = null)
+	{
 		global $postgresqlMinVer;
 		$lang = $this->lang();
 		$conf = $this->conf();
@@ -202,7 +216,7 @@ class Misc extends AbstractContext
 
 		// Get the name of the database driver we need to use.
 		// The description of the server is returned in $platform.
-		$driverName = $connector->getDriver($platform, $version);
+		$driverName = $connector->getDriver($platform, $version, $majorVersion);
 		if ($driverName === null) {
 			printf($lang['strpostgresqlversionnotsupported'], $postgresqlMinVer);
 			exit;
@@ -213,7 +227,7 @@ class Misc extends AbstractContext
 		// Create a database wrapper class for easy manipulation of the
 		// connection.
 		$className = "\\PhpPgAdmin\\Database\\Connection\\$driverName";
-		$postgres = new $className($connector->conn, $version);
+		$postgres = new $className($connector->conn, $majorVersion);
 		$postgres->platform = $connector->platform;
 		Container::setPostgres($postgres);
 
@@ -240,7 +254,8 @@ class Misc extends AbstractContext
 	 * @param string $title The title of the page
 	 * @param string $scripts script tags
 	 */
-	function printHeader($title = '', $scripts = '') {
+	function printHeader($title = '', $scripts = '')
+	{
 		return $this->getLayoutRenderer()->printHeader($title, $scripts);
 	}
 
@@ -249,18 +264,21 @@ class Misc extends AbstractContext
 	/**
 	 * Prints the page body.
 	 */
-	function printBody() {
+	function printBody()
+	{
 		return $this->getLayoutRenderer()->printBody();
 	}
 
 	/**
 	 * Prints the page footer
 	 */
-	function printFooter() {
+	function printFooter()
+	{
 		return $this->getLayoutRenderer()->printFooter();
 	}
 
-	function printBrowser() {
+	function printBrowser()
+	{
 		return $this->getLayoutRenderer()->printBrowser();
 	}
 
@@ -268,14 +286,16 @@ class Misc extends AbstractContext
 	 * Outputs JavaScript code that will reload the browser
 	 * @param $tree bool True if dropping a database, false otherwise
 	 */
-	function printReload($tree) {
+	function printReload($tree)
+	{
 		return $this->getLayoutRenderer()->printReload($tree);
 	}
 
 	/**
 	 * @param string $location
 	 */
-	function redirect(string $location) {
+	function redirect(string $location)
+	{
 		header("Location: $location");
 		exit;
 	}
@@ -284,7 +304,8 @@ class Misc extends AbstractContext
 	 * Display a single link
 	 * @param $link An associative array defining the link. See printLinksList for details.
 	 */
-	function printLink($link) {
+	function printLink($link)
+	{
 		$this->getLayoutRenderer()->printLink($link);
 	}
 
@@ -303,7 +324,8 @@ class Misc extends AbstractContext
 	 *         );
 	 * @param string $class CSS class to apply to the list container
 	 */
-	function printLinksList($links, $class = '') {
+	function printLinksList($links, $class = '')
+	{
 		$this->getLayoutRenderer()->printLinksList($links, $class);
 	}
 
@@ -312,35 +334,40 @@ class Misc extends AbstractContext
 	 * @param $tabs An array defining the tabs. See TabsRenderer::printTabs for details.
 	 * @param string $activetab The id of the active tab
 	 */
-	function printTabs($tabs, $activetab) {
+	function printTabs($tabs, $activetab)
+	{
 		return $this->getTabsRenderer()->printTabs($tabs, $activetab);
 	}
 
 	/**
 	 * Get the tabs for a particular section
 	 */
-	function getNavTabs($section) {
+	function getNavTabs($section)
+	{
 		return $this->getTabsRenderer()->getNavTabs($section);
 	}
 
 	/**
 	 * Get the URL for the last active tab of a particular tab bar.
 	 */
-	function getLastTabURL($section) {
+	function getLastTabURL($section)
+	{
 		return $this->getTabsRenderer()->getLastTabURL($section);
 	}
 
 	/**
 	 * Display the top bar with server connection info and quick links
 	 */
-	function printTopbar() {
+	function printTopbar()
+	{
 		return $this->getTopbarRenderer()->printTopbar();
 	}
 
 	/**
 	 * Display a bread crumb trail.
 	 */
-	function printTrail($trail = array()) {
+	function printTrail($trail = array())
+	{
 		$this->printTopbar();
 		return $this->getTrailRenderer()->printTrail($trail);
 	}
@@ -349,7 +376,8 @@ class Misc extends AbstractContext
 	 * Create a bread crumb trail of the object hierarchy.
 	 * @param string $subject The type of object at the end of the trail.
 	 */
-	function getTrail($subject = null) {
+	function getTrail($subject = null)
+	{
 		return $this->getTrailRenderer()->getTrail($subject);
 	}
 
@@ -364,7 +392,8 @@ class Misc extends AbstractContext
 	 * @param array $env - Associative array of defined variables in the scope
 	 * of the caller. Allows to give some environment details to plugins.
 	 */
-	function printNavLinks($navlinks, $place, $env = array()) {
+	function printNavLinks($navlinks, $place, $env = array())
+	{
 		return $this->getNavLinksRenderer()->printNavLinks($navlinks, $place, $env);
 	}
 
@@ -375,7 +404,8 @@ class Misc extends AbstractContext
 	 * @param int $pages Total number of pages
 	 * @param array $gets Associative array of URL variables to include in links
 	 */
-	function printPageNavigation($page, $pages, $gets) {
+	function printPageNavigation($page, $pages, $gets)
+	{
 		$this->getLayoutRenderer()->printPageNavigation($page, $pages, $gets);
 	}
 
@@ -384,7 +414,8 @@ class Misc extends AbstractContext
 	 * @param string $str - the string that the context help is related to (already escaped)
 	 * @param string $help - help section identifier
 	 */
-	function printHelp($str, $help) {
+	function printHelp($str, $help)
+	{
 		$this->getLayoutRenderer()->printHelp($str, $help);
 	}
 
@@ -392,13 +423,15 @@ class Misc extends AbstractContext
 	 * Outputs JavaScript to set default focus
 	 * @param string $object eg. forms[0].username
 	 */
-	function setFocus($object) {
+	function setFocus($object)
+	{
 		echo "<script type=\"text/javascript\">\n";
 		echo "document.{$object}.focus();\n";
 		echo "</script>\n";
 	}
 
-	private function getTabsRenderer() {
+	private function getTabsRenderer()
+	{
 		if ($this->tabsRenderer === null) {
 			$this->tabsRenderer = new TabsRenderer();
 		}
@@ -406,7 +439,8 @@ class Misc extends AbstractContext
 		return $this->tabsRenderer;
 	}
 
-	private function getTrailRenderer() {
+	private function getTrailRenderer()
+	{
 		if ($this->trailRenderer === null) {
 			$this->trailRenderer = new TrailRenderer();
 		}
@@ -414,7 +448,8 @@ class Misc extends AbstractContext
 		return $this->trailRenderer;
 	}
 
-	private function getTopbarRenderer() {
+	private function getTopbarRenderer()
+	{
 		if ($this->topbarRenderer === null) {
 			$this->topbarRenderer = new TopbarRenderer();
 		}
@@ -422,7 +457,8 @@ class Misc extends AbstractContext
 		return $this->topbarRenderer;
 	}
 
-	private function getNavLinksRenderer() {
+	private function getNavLinksRenderer()
+	{
 		if ($this->navLinksRenderer === null) {
 			$this->navLinksRenderer = new NavLinksRenderer();
 		}
@@ -430,7 +466,8 @@ class Misc extends AbstractContext
 		return $this->navLinksRenderer;
 	}
 
-	private function getTableRenderer() {
+	private function getTableRenderer()
+	{
 		if ($this->tableRenderer === null) {
 			$this->tableRenderer = new TableRenderer();
 		}
@@ -438,7 +475,8 @@ class Misc extends AbstractContext
 		return $this->tableRenderer;
 	}
 
-	private function getConnectionSelector() {
+	private function getConnectionSelector()
+	{
 		if ($this->connectionSelector === null) {
 			$this->connectionSelector = new ConnectionSelector();
 		}
@@ -446,7 +484,8 @@ class Misc extends AbstractContext
 		return $this->connectionSelector;
 	}
 
-	private function getLayoutRenderer() {
+	private function getLayoutRenderer()
+	{
 		if ($this->layoutRenderer === null) {
 			$this->layoutRenderer = new LayoutRenderer($this);
 		}
@@ -454,7 +493,8 @@ class Misc extends AbstractContext
 		return $this->layoutRenderer;
 	}
 
-	private function getUrlBuilder() {
+	private function getUrlBuilder()
+	{
 		if ($this->urlBuilder === null) {
 			$this->urlBuilder = new UrlBuilder();
 		}
@@ -468,7 +508,8 @@ class Misc extends AbstractContext
 	 * @param bool $addServer if true (default) then the server id is
 	 *        attached to the name.
 	 */
-	function setWindowName($name, $addServer = true) {
+	function setWindowName($name, $addServer = true)
+	{
 		echo "<script type=\"text/javascript\">\n";
 		echo "window.name = '{$name}", ($addServer ? ':' . htmlspecialchars($_REQUEST['server']) : ''), "';\n";
 		echo "</script>\n";
@@ -480,7 +521,8 @@ class Misc extends AbstractContext
 	 * @param string $strIniSize The PHP.INI variable
 	 * @return int size in bytes, false on failure
 	 */
-	function inisizeToBytes($strIniSize) {
+	function inisizeToBytes($strIniSize)
+	{
 		// This function will take the string value of an ini 'size' parameter,
 		// and return a double (64-bit float) representing the number of bytes
 		// that the parameter represents. Or false if $strIniSize is unparsable.
@@ -492,17 +534,17 @@ class Misc extends AbstractContext
 		if (!preg_match('/^(\d+)([bkm]*)$/i', $strIniSize, $a_IniParts))
 			return false;
 
-		$nSize = (double)$a_IniParts[1];
+		$nSize = (float)$a_IniParts[1];
 		$strUnit = strtolower($a_IniParts[2]);
 
 		switch ($strUnit) {
-		case 'm':
-			return ($nSize * (double)1048576);
-		case 'k':
-			return ($nSize * (double)1024);
-		case 'b':
-		default:
-			return $nSize;
+			case 'm':
+				return ($nSize * (float)1048576);
+			case 'k':
+				return ($nSize * (float)1024);
+			case 'b':
+			default:
+				return $nSize;
 		}
 	}
 
@@ -531,7 +573,8 @@ class Misc extends AbstractContext
 	 * @param callable $pre_fn Function to call before rendering each row.
 	 *        The function will be passed the row data as an associative array.
 	 */
-	function printTable($tabledata, &$columns, &$actions, $place, $nodata = null, $pre_fn = null) {
+	function printTable($tabledata, &$columns, &$actions, $place, $nodata = null, $pre_fn = null)
+	{
 		return $this->getTableRenderer()->printTable($tabledata, $columns, $actions, $place, $nodata, $pre_fn);
 	}
 
@@ -549,7 +592,8 @@ class Misc extends AbstractContext
 	 *        'nodata' - message to display when node has no children
 	 * @param mixed $section The section where the branch is linked in the tree
 	 */
-	function printTree($_treedata, &$attrs, $section) {
+	function printTree($_treedata, &$attrs, $section)
+	{
 		$plugin_manager = $this->pluginManager();
 
 		$treedata = array();
@@ -585,7 +629,8 @@ class Misc extends AbstractContext
 	 *        'expand' - the action to return XML for the subtree
 	 *        'nodata' - message to display when node has no children
 	 */
-	function printTreeXML($treedata, $attrs) {
+	function printTreeXML($treedata, $attrs)
+	{
 		$conf = $this->conf();
 		$lang = $this->lang();
 
@@ -629,7 +674,8 @@ class Misc extends AbstractContext
 	 * @param array $tabs
 	 * @return ArrayRecordSet
 	 */
-	function adjustTabsForTree(&$tabs) {
+	function adjustTabsForTree(&$tabs)
+	{
 
 		foreach ($tabs as $i => $tab) {
 			if ((isset($tab['hide']) && $tab['hide'] === true) || (isset($tab['tree']) && $tab['tree'] === false)) {
@@ -639,7 +685,8 @@ class Misc extends AbstractContext
 		return new ArrayRecordSet($tabs);
 	}
 
-	private static function buildIconCache() {
+	private static function buildIconCache()
+	{
 		$cache = [];
 
 		// Themes
@@ -669,7 +716,8 @@ class Misc extends AbstractContext
 	 * @param string|string[] $icon
 	 * @return string
 	 */
-	function icon($icon) {
+	function icon($icon)
+	{
 		$conf = $this->conf();
 		static $cache = null;
 		if (!isset($cache)) {
@@ -691,7 +739,8 @@ class Misc extends AbstractContext
 	 * @param string $str The string to escape
 	 * @return string The escaped string
 	 */
-	function escapeShellArg($str) {
+	function escapeShellArg($str)
+	{
 		$lang = $this->lang();
 
 		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
@@ -713,7 +762,8 @@ class Misc extends AbstractContext
 	 * @param $str The string to escape
 	 * @return The escaped string
 	 */
-	function escapeShellCmd($str) {
+	function escapeShellCmd($str)
+	{
 		$pg = $this->postgres();
 
 		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
@@ -727,7 +777,8 @@ class Misc extends AbstractContext
 	 * Get list of servers' groups if existing in the conf
 	 * @return ArrayRecordSet a recordset of servers' groups
 	 */
-	function getServersGroups($recordset = false, $group_id = false) {
+	function getServersGroups($recordset = false, $group_id = false)
+	{
 		$conf = $this->conf();
 		$lang = $this->lang();
 		$grps = array();
@@ -739,7 +790,8 @@ class Misc extends AbstractContext
 					or (
 						($group_id !== false)
 						and isset($group['parents'])
-						and in_array($group_id, explode(',',
+						and in_array($group_id, explode(
+							',',
 							preg_replace('/\s/', '', $group['parents'])
 						))
 					) /* nested group */
@@ -748,12 +800,14 @@ class Misc extends AbstractContext
 						'id' => $i,
 						'desc' => $group['desc'],
 						'icon' => 'Servers',
-						'action' => url('servers.php',
+						'action' => url(
+							'servers.php',
 							array(
 								'group' => field('id')
 							)
 						),
-						'branch' => url('servers.php',
+						'branch' => url(
+							'servers.php',
 							array(
 								'action' => 'tree',
 								'group' => $i
@@ -767,12 +821,14 @@ class Misc extends AbstractContext
 					'id' => 'all',
 					'desc' => $lang['strallservers'],
 					'icon' => 'Servers',
-					'action' => url('servers.php',
+					'action' => url(
+						'servers.php',
 						array(
 							'group' => field('id')
 						)
 					),
-					'branch' => url('servers.php',
+					'branch' => url(
+						'servers.php',
 						array(
 							'action' => 'tree',
 							'group' => 'all'
@@ -795,7 +851,8 @@ class Misc extends AbstractContext
 	 *                   otherwise just return an array.
 	 * @param string $group a group name to filter the returned servers using $conf[srv_groups]
 	 */
-	function getServers($recordset = false, $group = false) {
+	function getServers($recordset = false, $group = false)
+	{
 		$conf = $this->conf();
 
 		$logins = isset($_SESSION['webdbLogin']) && is_array($_SESSION['webdbLogin']) ? $_SESSION['webdbLogin'] : array();
@@ -803,8 +860,11 @@ class Misc extends AbstractContext
 
 		if (($group !== false) and ($group !== 'all'))
 			if (isset($conf['srv_groups'][$group]['servers']))
-				$group = array_fill_keys(explode(',', preg_replace('/\s/', '',
-					$conf['srv_groups'][$group]['servers'])), 1);
+				$group = array_fill_keys(explode(',', preg_replace(
+					'/\s/',
+					'',
+					$conf['srv_groups'][$group]['servers']
+				)), 1);
 			else
 				$group = '';
 
@@ -820,7 +880,8 @@ class Misc extends AbstractContext
 				else $srvs[$server_id] = $info;
 
 				$srvs[$server_id]['id'] = $server_id;
-				$srvs[$server_id]['action'] = url('redirect.php',
+				$srvs[$server_id]['action'] = url(
+					'redirect.php',
 					array(
 						'subject' => 'server',
 						'server' => field('id')
@@ -828,7 +889,8 @@ class Misc extends AbstractContext
 				);
 				if (isset($srvs[$server_id]['username'])) {
 					$srvs[$server_id]['icon'] = 'Server';
-					$srvs[$server_id]['branch'] = url('all_db.php',
+					$srvs[$server_id]['branch'] = url(
+						'all_db.php',
 						array(
 							'action' => 'tree',
 							'subject' => 'server',
@@ -842,7 +904,7 @@ class Misc extends AbstractContext
 			}
 		}
 
-		uasort($srvs, function($a, $b) {
+		uasort($srvs, function ($a, $b) {
 			return strcmp($a['desc'], $b['desc']);
 		});
 
@@ -859,7 +921,8 @@ class Misc extends AbstractContext
 	 * @param string $server_id A server identifier (host:port)
 	 * @return array An associative array of server properties
 	 */
-	function getServerInfo($server_id = null) {
+	function getServerInfo($server_id = null)
+	{
 		global $_reload_browser;
 		$conf = $this->conf();
 		$lang = $this->lang();
@@ -903,7 +966,8 @@ class Misc extends AbstractContext
 	 * @param ?string $server_id the server identifier, or null for current
 	 *                   server.
 	 */
-	function setServerInfo($key, $value, $server_id = null) {
+	function setServerInfo($key, $value, $server_id = null)
+	{
 		if ($server_id === null && isset($_REQUEST['server']))
 			$server_id = $_REQUEST['server'];
 
@@ -926,7 +990,8 @@ class Misc extends AbstractContext
 	 * @return int 0 on success
 	 * @return int $data->seSchema() on error
 	 */
-	function setCurrentSchema($schema) {
+	function setCurrentSchema($schema)
+	{
 		$pg = $this->postgres();
 		if ($pg->_schema == $schema) {
 			return 0;
@@ -945,7 +1010,8 @@ class Misc extends AbstractContext
 	 * Save the given SQL script in the history of the database and server.
 	 * @param string $script the SQL script to save.
 	 */
-	function saveScriptHistory($script) {
+	function saveScriptHistory($script)
+	{
 		list($usec, $sec) = explode(' ', microtime());
 		$time = ((float)$usec + (float)$sec);
 		$_SESSION['history'][$_REQUEST['server']][$_REQUEST['database']]["$time"] = array(
@@ -960,7 +1026,8 @@ class Misc extends AbstractContext
 	 * databases form the popups windows.
 	 * @param $onchange Javascript action to take when selections change.
 	 */
-	function printConnection($onchange) {
+	function printConnection($onchange)
+	{
 		return $this->getConnectionSelector()->printConnection($onchange);
 	}
 
@@ -986,7 +1053,8 @@ class Misc extends AbstractContext
 	 *     'code' => HTML/js code to include in the page for auto-completion
 	 *   )
 	 **/
-	function getAutocompleteFKProperties($table) {
+	function getAutocompleteFKProperties($table)
+	{
 		$pg = $this->postgres();
 
 		$fksprops = array(

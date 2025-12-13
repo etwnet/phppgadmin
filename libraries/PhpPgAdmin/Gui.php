@@ -4,12 +4,14 @@
 namespace PhpPgAdmin;
 
 
+use PhpPgAdmin\Core\AbstractContext;
+
 /**
  * Class to handle basic HTML GUI functions
  *
  * $Id: Gui.php,v 1.2 2004/06/07 20:03:22 soranzo Exp $
  */
-class Gui {
+class Gui extends AbstractContext {
 
 	/**
 	 *Constructor

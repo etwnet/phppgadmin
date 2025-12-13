@@ -4,9 +4,10 @@ namespace PhpPgAdmin\Database\Connection;
 
 use PhpPgAdmin\Database\Connection;
 
-class Postgres extends Connection {
+class Postgres extends Connection
+{
 	// PostgreSQL-specific constants and metadata
-	public $major_version = 14;
+	public $major_version = 0.0;
 	public $platform = 'PostgreSQL';
 
 	// Max object name length
@@ -45,17 +46,55 @@ class Postgres extends Connection {
 	];
 
 	public $predefined_size_types = [
-		'abstime', 'aclitem', 'bigserial', 'boolean', 'bytea', 'cid', 'cidr', 'circle', 'date',
-		'float4', 'float8', 'gtsvector', 'inet', 'int2', 'int4', 'int8', 'macaddr', 'money',
-		'oid', 'path', 'polygon', 'refcursor', 'regclass', 'regoper', 'regoperator', 'regproc',
-		'regprocedure', 'regtype', 'reltime', 'serial', 'smgr', 'text', 'tid', 'tinterval',
-		'tsquery', 'tsvector', 'varbit', 'void', 'xid'
+		'abstime',
+		'aclitem',
+		'bigserial',
+		'boolean',
+		'bytea',
+		'cid',
+		'cidr',
+		'circle',
+		'date',
+		'float4',
+		'float8',
+		'gtsvector',
+		'inet',
+		'int2',
+		'int4',
+		'int8',
+		'macaddr',
+		'money',
+		'oid',
+		'path',
+		'polygon',
+		'refcursor',
+		'regclass',
+		'regoper',
+		'regoperator',
+		'regproc',
+		'regprocedure',
+		'regtype',
+		'reltime',
+		'serial',
+		'smgr',
+		'text',
+		'tid',
+		'tinterval',
+		'tsquery',
+		'tsvector',
+		'varbit',
+		'void',
+		'xid'
 	];
 
 	public $triggerEvents = [
-		'INSERT', 'UPDATE', 'DELETE',
-		'INSERT OR UPDATE', 'INSERT OR DELETE',
-		'DELETE OR UPDATE', 'INSERT OR DELETE OR UPDATE'
+		'INSERT',
+		'UPDATE',
+		'DELETE',
+		'INSERT OR UPDATE',
+		'INSERT OR DELETE',
+		'DELETE OR UPDATE',
+		'INSERT OR DELETE OR UPDATE'
 	];
 
 	public $triggerExecTimes = ['BEFORE', 'AFTER'];
@@ -74,9 +113,10 @@ class Postgres extends Connection {
 	 * Postgres constructor.
 	 * @param \ADOConnection $conn
 	 */
-	public function __construct($conn, $version) {
+	public function __construct($conn, $majorVersion)
+	{
 		parent::__construct($conn);
-		$this->major_version = (int)$version;
+		$this->major_version = $majorVersion;
 	}
 
 	/**
@@ -89,41 +129,42 @@ class Postgres extends Connection {
 	 * @param string|null $basetype
 	 * @return int 0 on success, -1 on error
 	 */
-	public function setComment($obj_type, $obj_name, $table, $comment, $basetype = null) {
+	public function setComment($obj_type, $obj_name, $table, $comment, $basetype = null)
+	{
 		$sql = "COMMENT ON {$obj_type} ";
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->clean($comment);
 
 		switch ($obj_type) {
-		case 'TABLE':
-			$sql .= "\"{$f_schema}\".\"{$table}\" IS ";
-			break;
-		case 'COLUMN':
-			$sql .= "\"{$f_schema}\".\"{$table}\".\"{$obj_name}\" IS ";
-			break;
-		case 'SEQUENCE':
-		case 'VIEW':
-		case 'TEXT SEARCH CONFIGURATION':
-		case 'TEXT SEARCH DICTIONARY':
-		case 'TEXT SEARCH TEMPLATE':
-		case 'TEXT SEARCH PARSER':
-		case 'TYPE':
-			$sql .= "\"{$f_schema}\".";
-		case 'DATABASE':
-		case 'ROLE':
-		case 'SCHEMA':
-		case 'TABLESPACE':
-			$sql .= "\"{$obj_name}\" IS ";
-			break;
-		case 'FUNCTION':
-			$sql .= "\"{$f_schema}\".{$obj_name} IS ";
-			break;
-		case 'AGGREGATE':
-			$sql .= "\"{$f_schema}\".\"{$obj_name}\" (\"{$basetype}\") IS ";
-			break;
-		default:
-			return -1;
+			case 'TABLE':
+				$sql .= "\"{$f_schema}\".\"{$table}\" IS ";
+				break;
+			case 'COLUMN':
+				$sql .= "\"{$f_schema}\".\"{$table}\".\"{$obj_name}\" IS ";
+				break;
+			case 'SEQUENCE':
+			case 'VIEW':
+			case 'TEXT SEARCH CONFIGURATION':
+			case 'TEXT SEARCH DICTIONARY':
+			case 'TEXT SEARCH TEMPLATE':
+			case 'TEXT SEARCH PARSER':
+			case 'TYPE':
+				$sql .= "\"{$f_schema}\".";
+			case 'DATABASE':
+			case 'ROLE':
+			case 'SCHEMA':
+			case 'TABLESPACE':
+				$sql .= "\"{$obj_name}\" IS ";
+				break;
+			case 'FUNCTION':
+				$sql .= "\"{$f_schema}\".{$obj_name} IS ";
+				break;
+			case 'AGGREGATE':
+				$sql .= "\"{$f_schema}\".\"{$obj_name}\" (\"{$basetype}\") IS ";
+				break;
+			default:
+				return -1;
 		}
 
 		if ($comment != '') {
@@ -138,8 +179,9 @@ class Postgres extends Connection {
 	/**
 	 * Searches all system catalogs to find objects that match a name.
 	 */
-	public function findObject($term, $filter) {
-		global $conf;
+	public function findObject($term, $filter)
+	{
+		$conf = $this->conf();
 
 		$this->clean($term);
 		$this->clean($filter);
@@ -267,7 +309,8 @@ class Postgres extends Connection {
 	/**
 	 * Returns prepared transactions information.
 	 */
-	public function getPreparedXacts($database = null) {
+	public function getPreparedXacts($database = null)
+	{
 		if ($database === null) {
 			$sql = "SELECT * FROM pg_prepared_xacts";
 		} else {
@@ -283,7 +326,8 @@ class Postgres extends Connection {
 	/**
 	 * Returns all available variable information.
 	 */
-	public function getVariables() {
+	public function getVariables()
+	{
 		$sql = "SHOW ALL";
 		return $this->selectSet($sql);
 	}
@@ -293,7 +337,8 @@ class Postgres extends Connection {
 	 * @param string $database (optional) Find only connections to specified database
 	 * @return \ADORecordSet A recordset
 	 */
-	function getProcesses($database = null) {
+	function getProcesses($database = null)
+	{
 		if ($database === null)
 			$sql = "SELECT datname, usename, pid, 
                     case when wait_event is null then 'false' else wait_event_type || '::' || wait_event end as waiting, 
@@ -321,7 +366,8 @@ class Postgres extends Connection {
 	 * @param string $username The username/rolename
 	 * @return bool True if is a super user, false otherwise
 	 */
-	public function isSuperUser($username = '') {
+	public function isSuperUser($username = '')
+	{
 		$this->clean($username);
 
 		if (empty($username)) {
@@ -337,201 +383,245 @@ class Postgres extends Connection {
 		else return $rolsuper == 't';
 	}
 
-	// Capabilities
+	// Help pages
+
+	// Default help URL
+	var $help_base;
+	// Help sub pages
+	var $help_page;
 
 	/**
-	 * Checks to see whether or not a table has a unique id column
-	 * @param string $table The table name
-	 * @return bool True if it has a unique id, false otherwise
-	 * @return null error
-	 **/
-	function hasObjectID($table) {
-		// OID support is gone since PG12
-		// But that function is required by table exports
-		return false;
+	 * Fetch a URL (or array of URLs) for a given help page.
+	 */
+	function getHelp($help) {
+		$this->getHelpPages();
+
+		if (isset($this->help_page[$help])) {
+			if (is_array($this->help_page[$help])) {
+				$urls = array();
+				foreach ($this->help_page[$help] as $link) {
+					$urls[] = $this->help_base . $link;
+				}
+				return $urls;
+			} else
+				return $this->help_base . $this->help_page[$help];
+		} else
+			return null;
 	}
 
-	function hasAggregateSortOp() {
+	/**
+	 * Returns the help pages for this PostgreSQL version.
+	 * @return array The help pages
+	 */
+	function getHelpPages()
+	{
+		if (!isset($this->help_page)) {
+			// Determine the version-specific help file to include
+			$version = $this->major_version;
+
+			include './help/PostgresDocBase.php';
+
+			$conf = $this->conf();
+			$this->help_base = sprintf($conf['help_base'], (string)$version);
+		}
+
+		return $this->help_page;
+	}
+
+	// Capabilities
+
+	function hasAlterSequenceSchema()
+	{
 		return true;
 	}
 
-	function hasAlterAggregate() {
+	function hasAlterSequenceStart()
+	{
 		return true;
 	}
 
-	function hasAlterColumnType() {
+	function hasAlterTableSchema()
+	{
 		return true;
 	}
 
-	function hasAlterDatabaseOwner() {
+	function hasAutovacuum()
+	{
 		return true;
 	}
 
-	function hasAlterDatabaseRename() {
+	function hasCreateTableLike()
+	{
 		return true;
 	}
 
-	function hasAlterSchema() {
+	function hasCreateTableLikeWithConstraints()
+	{
 		return true;
 	}
 
-	function hasAlterSchemaOwner() {
+	function hasCreateTableLikeWithIndexes()
+	{
 		return true;
 	}
 
-	function hasAlterSequenceSchema() {
+	function hasCreateFieldWithConstraints()
+	{
 		return true;
 	}
 
-	function hasAlterSequenceStart() {
+	function hasDisableTriggers()
+	{
 		return true;
 	}
 
-	function hasAlterTableSchema() {
+	function hasAlterDomains()
+	{
 		return true;
 	}
 
-	function hasAutovacuum() {
+	function hasDomainConstraints()
+	{
 		return true;
 	}
 
-	function hasCreateTableLike() {
+	function hasEnumTypes()
+	{
 		return true;
 	}
 
-	function hasCreateTableLikeWithConstraints() {
+	function hasFTS()
+	{
 		return true;
 	}
 
-	function hasCreateTableLikeWithIndexes() {
+	function hasFunctionAlterOwner()
+	{
 		return true;
 	}
 
-	function hasCreateFieldWithConstraints() {
+	function hasFunctionAlterSchema()
+	{
 		return true;
 	}
 
-	function hasDisableTriggers() {
+	function hasFunctionCosting()
+	{
 		return true;
 	}
 
-	function hasAlterDomains() {
+	function hasFunctionGUC()
+	{
 		return true;
 	}
 
-	function hasDomainConstraints() {
+	function hasGrantOption()
+	{
 		return true;
 	}
 
-	function hasEnumTypes() {
+	function hasNamedParams()
+	{
 		return true;
 	}
 
-	function hasFTS() {
+	function hasPrepare()
+	{
 		return true;
 	}
 
-	function hasFunctionAlterOwner() {
+	function hasPreparedXacts()
+	{
 		return true;
 	}
 
-	function hasFunctionAlterSchema() {
+	function hasReadOnlyQueries()
+	{
 		return true;
 	}
 
-	function hasFunctionCosting() {
+	function hasRecluster()
+	{
 		return true;
 	}
 
-	function hasFunctionGUC() {
+	function hasRoles()
+	{
 		return true;
 	}
 
-	function hasGrantOption() {
+	function hasServerAdminFuncs()
+	{
 		return true;
 	}
 
-	function hasNamedParams() {
+	function hasSharedComments()
+	{
 		return true;
 	}
 
-	function hasPrepare() {
+	function hasQueryCancel()
+	{
 		return true;
 	}
 
-	function hasPreparedXacts() {
+	function hasTablespaces()
+	{
 		return true;
 	}
 
-	function hasReadOnlyQueries() {
+	function hasUserRename()
+	{
 		return true;
 	}
 
-	function hasRecluster() {
+	function hasUserSignals()
+	{
 		return true;
 	}
 
-	function hasRoles() {
+	function hasVirtualTransactionId()
+	{
 		return true;
 	}
 
-	function hasServerAdminFuncs() {
-		return true;
-	}
-
-	function hasSharedComments() {
-		return true;
-	}
-
-	function hasQueryCancel() {
-		return true;
-	}
-
-	function hasTablespaces() {
-		return true;
-	}
-
-	function hasUserRename() {
-		return true;
-	}
-
-	function hasUserSignals() {
-		return true;
-	}
-
-	function hasVirtualTransactionId() {
-		return true;
-	}
-
-	function hasAlterDatabase() {
+	function hasAlterDatabase()
+	{
 		return $this->hasAlterDatabaseRename();
 	}
 
-	function hasDatabaseCollation() {
+	function hasDatabaseCollation()
+	{
 		return true;
 	}
 
-	function hasMagicTypes() {
+	function hasMagicTypes()
+	{
 		return true;
 	}
 
-	function hasQueryKill() {
+	function hasQueryKill()
+	{
 		return true;
 	}
 
-	function hasConcurrentIndexBuild() {
+	function hasConcurrentIndexBuild()
+	{
 		return true;
 	}
 
-	function hasForceReindex() {
+	function hasForceReindex()
+	{
 		return false;
 	}
 
-	function hasByteaHexDefault() {
+	function hasByteaHexDefault()
+	{
 		return true;
 	}
 
-	function hasServerOids() {
+	function hasServerOids()
+	{
 		return false;
 	}
 }

@@ -8,16 +8,10 @@
 namespace PhpPgAdmin\Database\Connection;
 
 
-class Postgres95 extends Postgres96 {
+class Postgres95 extends Postgres96
+{
 
 	var $major_version = 9.5;
-
-	// Help functions
-
-	function getHelpPages() {
-		include_once('./help/PostgresDoc95.php');
-		return $this->help_page;
-	}
 
 
 	/**
@@ -25,7 +19,8 @@ class Postgres95 extends Postgres96 {
 	 * @param $database (optional) Find only connections to specified database
 	 * @return A recordset
 	 */
-	function getProcesses($database = null) {
+	function getProcesses($database = null)
+	{
 		if ($database === null)
 			$sql = "SELECT datname, usename, pid, waiting, state_change as query_start,
                   case when state='idle in transaction' then '<IDLE> in transaction' when state = 'idle' then '<IDLE>' else query end as query 
@@ -42,7 +37,4 @@ class Postgres95 extends Postgres96 {
 
 		return $this->selectSet($sql);
 	}
-
-
 }
-

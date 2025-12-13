@@ -2,11 +2,13 @@
 
 namespace PhpPgAdmin;
 
+use PhpPgAdmin\Core\AbstractContext;
+
 /**
  * A class that implements the plugin's system
  */
 
-class PluginManager {
+class PluginManager extends AbstractContext {
 
 	/**
 	 * Attributes
@@ -30,7 +32,8 @@ class PluginManager {
 	 * @param $language - Language that have been used.
 	 */
 	function __construct($language) {
-		global $conf, $lang;
+		$conf = $this->conf();
+		$lang = $this->lang();
 
 		if (! isset($conf['plugins'])) return;
 
@@ -62,7 +65,7 @@ class PluginManager {
 	 * @param $plugin - Instance from plugin
 	 */
 	function add_plugin($plugin) {
-		global $lang;
+		$lang = $this->lang();
 
 		//The $plugin_name is the identification of the plugin.
 		//Example: PluginExample is the identification for PluginExample
@@ -116,7 +119,7 @@ class PluginManager {
 	 * @param $action - action that will be executed.
 	 */
 	function do_action($plugin_name, $action) {
-		global $lang;
+		$lang = $this->lang();
 
 		if (!isset($this->plugins_list[$plugin_name])) {
 			// Show an error and stop the application

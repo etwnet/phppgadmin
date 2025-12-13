@@ -2,10 +2,12 @@
 
 namespace PhpPgAdmin;
 
+use PhpPgAdmin\Core\AbstractContext;
+
 /**
  * Namespaced facade for the legacy Plugin base class.
  */
-abstract class Plugin {
+abstract class Plugin extends AbstractContext {
 
 	/**
 	 * Constructor

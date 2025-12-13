@@ -8,16 +8,10 @@
 namespace PhpPgAdmin\Database\Connection;
 
 
-class Postgres96 extends Postgres10 {
+class Postgres96 extends Postgres10
+{
 
 	var $major_version = 9.6;
-
-	// Help functions
-
-	function getHelpPages() {
-		include_once('./help/PostgresDoc96.php');
-		return $this->help_page;
-	}
 
 	// Sequence functions
 
@@ -26,7 +20,8 @@ class Postgres96 extends Postgres10 {
 	 * @param string $sequence Sequence name
 	 * @return \ADORecordSet A recordset
 	 */
-	function getSequence($sequence) {
+	function getSequence($sequence)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$c_sequence = $sequence;
@@ -42,9 +37,6 @@ class Postgres96 extends Postgres10 {
 				AND c.relname = '{$c_sequence}' AND c.relkind = 'S' AND n.nspname='{$c_schema}'
 				AND n.oid = c.relnamespace";
 
-		return $this->selectSet( $sql );
+		return $this->selectSet($sql);
 	}
-
-
 }
-

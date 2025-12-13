@@ -11,7 +11,7 @@ class Schema extends Action
      */
     public function getSchemas()
     {
-        global $conf;
+        $conf = $this->conf();
 
         if (!$conf['show_system']) {
             $where = "WHERE nspname NOT LIKE 'pg@_%' ESCAPE '@' AND nspname != 'information_schema'";

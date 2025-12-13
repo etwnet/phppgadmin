@@ -236,6 +236,13 @@ if ($missing_libraries) {
 	exit;
 }
 
+$plugin_manager = new PluginManager($_language);
+Container::setPluginManager($plugin_manager);
+Container::setMisc($misc);
+Container::setConf($conf);
+Container::setLang($lang);
+
+
 // Create data accessor object, if necessary
 if (!isset($_no_db_connection)) {
 	if (!isset($_REQUEST['server'])) {
@@ -277,9 +284,3 @@ if (!isset($_no_db_connection)) {
 		}
 	}
 }
-$plugin_manager = new PluginManager($_language);
-Container::setPluginManager($plugin_manager);
-
-Container::setMisc($misc);
-Container::setConf($conf);
-Container::setLang($lang);

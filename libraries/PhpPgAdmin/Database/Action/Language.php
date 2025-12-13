@@ -13,7 +13,7 @@ class Language extends Action
      */
     public function getLanguages($all = false)
     {
-        global $conf;
+        $conf = $this->conf();
 
         if ($conf['show_system'] || $all) {
             $where = '';

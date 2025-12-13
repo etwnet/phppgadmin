@@ -7,7 +7,8 @@
 
 namespace PhpPgAdmin\Database\Connection;
 
-class Postgres10 extends Postgres11 {
+class Postgres10 extends Postgres11
+{
 
 	var $major_version = 10;
 
@@ -17,8 +18,9 @@ class Postgres10 extends Postgres11 {
 	 * @param $filter The object type to restrict to ('' means no restriction)
 	 * @return \ADORecordSet A recordset
 	 */
-	function findObject($term, $filter) {
-		global $conf;
+	function findObject($term, $filter)
+	{
+		$conf = $this->conf();
 
 		/*about escaping:
 		 * SET standard_conforming_string is not available before 8.2
@@ -40,8 +42,7 @@ class Postgres10 extends Postgres11 {
 			// it's the quickest fix to exclude the info schema from 7.4
 			$where = " AND pn.nspname NOT LIKE \$_PATTERN_\$pg\_%\$_PATTERN_\$ AND pn.nspname != 'information_schema'";
 			$lan_where = "AND pl.lanispl";
-		}
-		else {
+		} else {
 			$where = '';
 			$lan_where = '';
 		}
@@ -167,9 +168,10 @@ class Postgres10 extends Postgres11 {
 	 * @param $all If true, will find all available functions, if false just those in search path
 	 * @param $type If not null, will find all functions with return value = type
 	 *
-  	 * @return All functions
+	 * @return All functions
 	 */
-	function getFunctions($all = false, $type = null) {
+	function getFunctions($all = false, $type = null)
+	{
 		if ($all) {
 			$where = 'pg_catalog.pg_function_is_visible(p.oid)';
 			$distinct = 'DISTINCT ON (p.proname)';
@@ -177,8 +179,7 @@ class Postgres10 extends Postgres11 {
 			if ($type) {
 				$where .= " AND p.prorettype = (select oid from pg_catalog.pg_type p where p.typname = 'trigger') ";
 			}
-		}
-		else {
+		} else {
 			$c_schema = $this->_schema;
 			$this->clean($c_schema);
 			$where = "n.nspname = '{$c_schema}'";
@@ -216,7 +217,8 @@ class Postgres10 extends Postgres11 {
 	 * @param $basetype The input data type of the aggregate
 	 * @return A recordset
 	 */
-	function getAggregate($name, $basetype) {
+	function getAggregate($name, $basetype)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->fieldclean($name);
@@ -244,7 +246,8 @@ class Postgres10 extends Postgres11 {
 	 * Gets all aggregates
 	 * @return A recordset
 	 */
-	function getAggregates() {
+	function getAggregates()
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$sql = "SELECT p.proname, CASE p.proargtypes[0] WHEN 'pg_catalog.\"any\"'::pg_catalog.regtype THEN NULL ELSE
@@ -256,13 +259,4 @@ class Postgres10 extends Postgres11 {
 
 		return $this->selectSet($sql);
 	}
-
-	// Help functions
-
-	function getHelpPages() {
-		include_once('./help/PostgresDoc10.php');
-		return $this->help_page;
-	}
-
 }
-

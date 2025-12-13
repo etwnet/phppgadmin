@@ -21,7 +21,7 @@ class Tablespace extends Action {
 	 * @return \ADORecordSet A recordset
 	 */
 	public function getTablespaces($all = false) {
-		global $conf;
+		$conf = $this->conf();
 
 		$sql = "SELECT spcname, pg_catalog.pg_get_userbyid(spcowner) AS spcowner, 
 				        pg_catalog.pg_tablespace_location(oid) as spclocation,

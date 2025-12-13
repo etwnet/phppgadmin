@@ -286,7 +286,7 @@ class Type extends Action
      */
     public function getCasts()
     {
-        global $conf;
+        $conf = $this->conf();
 
         if ($conf['show_system']) {
             $where = '';

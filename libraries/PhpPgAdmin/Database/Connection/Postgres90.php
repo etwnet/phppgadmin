@@ -9,18 +9,11 @@
 namespace PhpPgAdmin\Database\Connection;
 
 
-class Postgres90 extends Postgres91 {
+class Postgres90 extends Postgres91
+{
 
 	var $major_version = 9.0;
-
-	// Help functions
-
-	function getHelpPages() {
-		include_once('./help/PostgresDoc90.php');
-		return $this->help_page;
-	}
 
 	// Capabilities
 
 }
-

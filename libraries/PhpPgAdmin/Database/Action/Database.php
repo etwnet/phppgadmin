@@ -23,7 +23,8 @@ class Database extends Action
      */
     public function getDatabases($currentdatabase = null)
     {
-        global $conf, $misc;
+        $conf = $this->conf();
+        $misc = $this->misc();
 
         $server_info = $misc->getServerInfo();
 

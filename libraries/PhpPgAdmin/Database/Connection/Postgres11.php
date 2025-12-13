@@ -8,7 +8,8 @@
 namespace PhpPgAdmin\Database\Connection;
 
 
-class Postgres11 extends Postgres {
+class Postgres11 extends Postgres
+{
 
 	var $major_version = 11;
 
@@ -16,20 +17,22 @@ class Postgres11 extends Postgres {
 	 * Returns the current default_with_oids setting
 	 * @return default_with_oids setting
 	 */
-	function getDefaultWithOid() {
+	function getDefaultWithOid()
+	{
 
 		$sql = "SHOW default_with_oids";
 
 		return $this->selectField($sql, 'default_with_oids');
 	}
 
-    /**
+	/**
 	 * Checks to see whether or not a table has a unique id column
 	 * @param string $table The table name
 	 * @return bool True if it has a unique id, false otherwise
 	 * @return null error
 	 **/
-	function hasObjectID($table) {
+	function hasObjectID($table)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($table);
@@ -46,16 +49,9 @@ class Postgres11 extends Postgres {
 	}
 
 
-	// Help functions
-
-	function getHelpPages() {
-		include_once('./help/PostgresDoc11.php');
-		return $this->help_page;
-	}
-
-
 	// Capabilities
-	function hasServerOids() { return true; }
-
+	function hasServerOids()
+	{
+		return true;
+	}
 }
-
