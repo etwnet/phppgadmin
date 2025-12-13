@@ -278,7 +278,7 @@
 			echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"", htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strcreatetablelikeparent']}</th>\n";
 			echo "\t\t<td class=\"data\">";
-			echo GUI::printCombo($tables, 'like', true, $tblsel, false);
+			echo \PhpPgAdmin\Gui::printCombo($tables, 'like', true, $tblsel, false);
 			echo "</td>\n\t</tr>\n";
 			if ($data->hasTablespaces()) {
 				$tblsp_ = $data->getTablespaces();
@@ -289,7 +289,7 @@
 
 					echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strtablespace']}</th>\n";
 					echo "\t\t<td class=\"data\">";
-					echo GUI::printCombo($tblsp, 'tablespace', true, $_REQUEST['tablespace'], false);
+					echo \PhpPgAdmin\Gui::printCombo($tblsp, 'tablespace', true, $_REQUEST['tablespace'], false);
 					echo "</td>\n\t</tr>\n";
 				}
 			}

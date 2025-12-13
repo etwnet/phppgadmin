@@ -4,9 +4,8 @@
 namespace PhpPgAdmin\Core;
 
 
-use Misc;
-//use PhpPgAdmin\Core\Container;
-use PluginManager;
+use PhpPgAdmin\Misc;
+use PhpPgAdmin\PluginManager;
 use Postgres;
 
 abstract class AbstractContext {

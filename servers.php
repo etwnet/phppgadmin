@@ -124,8 +124,7 @@ function doTree() {
 		if ($group_id !== 'all')
 			$nodes = $misc->getServersGroups(false, $group_id);
 		$nodes = array_merge($nodes, $misc->getServers(false, $group_id));
-		include_once('./classes/ArrayRecordSet.php');
-		$nodes = new ArrayRecordSet($nodes);
+		$nodes = new \PhpPgAdmin\Database\ArrayRecordSet($nodes);
 	} /* no srv_group */
 	else {
 		$nodes = $misc->getServers(true, false);

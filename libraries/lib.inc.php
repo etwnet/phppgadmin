@@ -236,9 +236,6 @@ if ($missing_libraries) {
 	exit;
 }
 
-// Manage the plugins
-require_once('./classes/PluginManager.php');
-
 // Create data accessor object, if necessary
 if (!isset($_no_db_connection)) {
 	if (!isset($_REQUEST['server'])) {

@@ -2,7 +2,8 @@
 
 namespace PhpPgAdmin\Core;
 
-use Misc;
+use PhpPgAdmin\Misc;
+use PhpPgAdmin\PluginManager;
 use Postgres;
 
 /**
@@ -107,33 +108,14 @@ class Container
         return self::get('data');
     }
 
-    public static function setPluginManager($pluginManager): void
+    public static function setPluginManager(PluginManager $pluginManager): void
     {
         self::set('plugin_manager', $pluginManager);
     }
 
-    public static function getPluginManager()
+    public static function getPluginManager(): PluginManager
     {
         return self::get('plugin_manager');
     }
 
-    public static function setRequest(array $request): void
-    {
-        self::set('request', $request);
-    }
-
-    public static function getRequest(): array
-    {
-        return (array) self::get('request', []);
-    }
-
-    public static function setSession(array $session): void
-    {
-        self::set('session', $session);
-    }
-
-    public static function getSession(): array
-    {
-        return (array) self::get('session', []);
-    }
 }

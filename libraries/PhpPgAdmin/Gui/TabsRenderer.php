@@ -7,6 +7,10 @@ use PhpPgAdmin\Core\AbstractContext;
 class TabsRenderer extends AbstractContext
 {
 
+	/**
+	 * @param array $tabs
+	 * @param string $activeTab
+	 */
     public function printTabs($tabs, $activeTab): void
     {
         if (is_string($tabs)) {
@@ -44,6 +48,10 @@ class TabsRenderer extends AbstractContext
         echo "</tr></table>\n";
     }
 
+	/**
+	 * @param string $section
+	 * @return array|array[]|mixed
+	 */
     public function getNavTabs($section)
     {
         $data = $this->data();

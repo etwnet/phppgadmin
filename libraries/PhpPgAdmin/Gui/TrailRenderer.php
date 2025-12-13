@@ -66,7 +66,7 @@ class TrailRenderer extends AbstractContext
 
     /**
      * Create a bread crumb trail of the object hierarchy.
-     * @param $subject The type of object at the end of the trail.
+     * @param string $subject The type of object at the end of the trail.
      */
     public function getTrail($subject = null): array
     {

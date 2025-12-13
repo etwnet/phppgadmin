@@ -268,7 +268,7 @@
 			echo "<table>\n";
 			echo "<tr><th class=\"data\">{$lang['strcolumns']}</th></tr>";
 			echo "<tr>\n<td class=\"data1\">\n";
-			echo GUI::printCombo($arrFields, 'formFields[]', false, '', true);
+			echo \PhpPgAdmin\Gui::printCombo($arrFields, 'formFields[]', false, '', true);
 			echo "</td>\n</tr>";
 			echo "<tr><td><input type=\"radio\" name=\"dblFldMeth\" id=\"dblFldMeth1\" value=\"rename\" /><label for=\"dblFldMeth1\">{$lang['strrenamedupfields']}</label>";
 			echo "<br /><input type=\"radio\" name=\"dblFldMeth\" id=\"dblFldMeth2\" value=\"drop\" /><label for=\"dblFldMeth2\">{$lang['strdropdupfields']}</label>";
@@ -293,9 +293,9 @@
 					$curRightLink = '';
 				}
 				
-				echo GUI::printCombo($arrFields, "formLink[$i][leftlink]", true, $curLeftLink, false );
-				echo GUI::printCombo($data->joinOps, "formLink[$i][operator]", true, $formLink[$i]['operator']);
-				echo GUI::printCombo($arrFields, "formLink[$i][rightlink]", true, $curRightLink, false );
+				echo \PhpPgAdmin\Gui::printCombo($arrFields, "formLink[$i][leftlink]", true, $curLeftLink, false );
+				echo \PhpPgAdmin\Gui::printCombo($data->joinOps, "formLink[$i][operator]", true, $formLink[$i]['operator']);
+				echo \PhpPgAdmin\Gui::printCombo($arrFields, "formLink[$i][rightlink]", true, $curRightLink, false );
 				echo "</td>\n</tr>\n";
 				$rowClass = $rowClass == 'data1' ? 'data2' : 'data1';
 			}
@@ -314,8 +314,8 @@
 			$rowClass = 'data1';
 			for ($i = 0; $i < $linkCount; $i++) {
 				echo "<tr>\n<td class=\"$rowClass\">\n";
-				echo GUI::printCombo($arrFields, "formCondition[$i][field]");
-				echo GUI::printCombo($arrOperators, "formCondition[$i][operator]", false, false);
+				echo \PhpPgAdmin\Gui::printCombo($arrFields, "formCondition[$i][field]");
+				echo \PhpPgAdmin\Gui::printCombo($arrOperators, "formCondition[$i][operator]", false, false);
 				echo "<input type=\"text\" name=\"formCondition[$i][txt]\" />\n";
 				echo "</td>\n</tr>\n";
 				$rowClass = $rowClass == 'data1' ? 'data2' : 'data1';
@@ -360,7 +360,7 @@
 			$arrTables[$tables->fields['nspname'] . '.' . $tables->fields['relname']] = serialize($arrTmp);
 			$tables->moveNext();
 		}		
-		echo GUI::printCombo($arrTables, 'formTables[]', false, '', true);			
+		echo \PhpPgAdmin\Gui::printCombo($arrTables, 'formTables[]', false, '', true);			
 		
 		echo "</td>\n</tr>\n";		
 		echo "</table>\n";		
