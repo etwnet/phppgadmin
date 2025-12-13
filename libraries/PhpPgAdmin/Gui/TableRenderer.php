@@ -10,13 +10,6 @@ use PhpPgAdmin\Core\AbstractContext;
  */
 class TableRenderer extends AbstractContext
 {
-    private $misc;
-
-    public function __construct($misc)
-    {
-        $this->misc = $misc;
-    }
-
     /**
      * Display a data table with optional actions and multi-select support.
      * 
@@ -102,7 +95,7 @@ class TableRenderer extends AbstractContext
                 default:
                     echo "<th class=\"data {$class}\">";
                     if (isset($column['help']))
-                        $this->misc->printHelp($column['title'], $column['help']);
+                        $this->misc()->printHelp($column['title'], $column['help']);
                     else
                         echo $column['title'];
                     echo "</th>\n";
@@ -145,7 +138,7 @@ class TableRenderer extends AbstractContext
                             } else {
                                 echo "<td class=\"opbutton{$id} {$class}\">";
                                 $action['fields'] = $tabledata->fields;
-                                $this->misc->printLink($action);
+                                $this->misc()->printLink($action);
                                 echo "</td>\n";
                             }
                         }
@@ -164,12 +157,12 @@ class TableRenderer extends AbstractContext
                         if (!is_null($val)) {
                             if (isset($column['url'])) {
                                 echo "<a href=\"{$column['url']}";
-                                $this->misc->printUrlVars($column['vars'], $tabledata->fields);
+                                $this->misc()->printUrlVars($column['vars'], $tabledata->fields);
                                 echo "\">";
                             }
                             $type = $column['type'] ?? null;
                             $params = $column['params'] ?? array();
-                            echo $this->misc->printVal($val, $type, $params);
+                            echo $this->misc()->printVal($val, $type, $params);
                             if (isset($column['url'])) echo "</a>";
                         }
 
@@ -206,7 +199,7 @@ class TableRenderer extends AbstractContext
                                 <?= $lang['strselectall'] ?>
                             </a>
                         </td>
-                        <td>&nbsp;--->&nbsp;</td>
+                        <td>&nbsp;---&gt;&nbsp;</td>
                         <td>
                             <select name="action">
                                 <?php if ($ma['default'] == null): ?>
@@ -225,7 +218,7 @@ class TableRenderer extends AbstractContext
                         </td>
                         <td>
                             <input type="submit" value="<?= $lang['strexecute'] ?>"/>
-                            <?= $this->misc->form ?>
+                            <?= $this->misc()->form ?>
                         </td>
                     </tr>
                 </table>

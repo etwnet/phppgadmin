@@ -10,12 +10,6 @@ use PhpPgAdmin\Core\AbstractContext;
  */
 class TrailRenderer extends AbstractContext
 {
-    private $misc;
-
-    public function __construct($misc)
-    {
-        $this->misc = $misc;
-    }
 
     /**
      * Display a bread crumb trail.
@@ -47,13 +41,13 @@ class TrailRenderer extends AbstractContext
             else
                 $iconalt = 'Database Root';
 
-            if (isset($crumb['icon']) && $icon = $this->misc->icon($crumb['icon']))
+            if (isset($crumb['icon']) && $icon = $this->misc()->icon($crumb['icon']))
                 $crumblink .= "<span class=\"icon\"><img src=\"{$icon}\" alt=\"{$iconalt}\" /></span>";
 
             $crumblink .= "<span class=\"label\">" . htmlspecialchars($crumb['text']) . "</span></a>";
 
             if (isset($crumb['help']))
-                $this->misc->printHelp($crumblink, $crumb['help']);
+                $this->misc()->printHelp($crumblink, $crumb['help']);
             else
                 echo $crumblink;
 
@@ -90,11 +84,11 @@ class TrailRenderer extends AbstractContext
         if ($subject == 'root') $done = true;
 
         if (!$done) {
-            $server_info = $this->misc->getServerInfo();
+            $server_info = $this->misc()->getServerInfo();
             $trail['server'] = array(
                 'title' => $lang['strserver'],
                 'text' => $server_info['desc'],
-                'url' => $this->misc->getHREFSubject('server'),
+                'url' => $this->misc()->getHREFSubject('server'),
                 'help' => 'pg.server',
                 'icon' => 'Server'
             );
@@ -105,7 +99,7 @@ class TrailRenderer extends AbstractContext
             $trail['database'] = array(
                 'title' => $lang['strdatabase'],
                 'text' => $_REQUEST['database'],
-                'url' => $this->misc->getHREFSubject('database'),
+                'url' => $this->misc()->getHREFSubject('database'),
                 'help' => 'pg.database',
                 'icon' => 'Database'
             );
@@ -113,7 +107,7 @@ class TrailRenderer extends AbstractContext
             $trail['role'] = array(
                 'title' => $lang['strrole'],
                 'text' => $_REQUEST['rolename'],
-                'url' => $this->misc->getHREFSubject('role'),
+                'url' => $this->misc()->getHREFSubject('role'),
                 'help' => 'pg.role',
                 'icon' => 'Roles'
             );
@@ -124,7 +118,7 @@ class TrailRenderer extends AbstractContext
             $trail['schema'] = array(
                 'title' => $lang['strschema'],
                 'text' => $_REQUEST['schema'],
-                'url' => $this->misc->getHREFSubject('schema'),
+                'url' => $this->misc()->getHREFSubject('schema'),
                 'help' => 'pg.schema',
                 'icon' => 'Schema'
             );
@@ -135,7 +129,7 @@ class TrailRenderer extends AbstractContext
             $trail['table'] = array(
                 'title' => $lang['strtable'],
                 'text' => $_REQUEST['table'],
-                'url' => $this->misc->getHREFSubject('table'),
+                'url' => $this->misc()->getHREFSubject('table'),
                 'help' => 'pg.table',
                 'icon' => 'Table'
             );
@@ -143,7 +137,7 @@ class TrailRenderer extends AbstractContext
             $trail['view'] = array(
                 'title' => $lang['strview'],
                 'text' => $_REQUEST['view'],
-                'url' => $this->misc->getHREFSubject('view'),
+                'url' => $this->misc()->getHREFSubject('view'),
                 'help' => 'pg.view',
                 'icon' => 'View'
             );
@@ -151,7 +145,7 @@ class TrailRenderer extends AbstractContext
             $trail['ftscfg'] = array(
                 'title' => $lang['strftsconfig'],
                 'text' => $_REQUEST['ftscfg'],
-                'url' => $this->misc->getHREFSubject('ftscfg'),
+                'url' => $this->misc()->getHREFSubject('ftscfg'),
                 'help' => 'pg.ftscfg.example',
                 'icon' => 'Fts'
             );
@@ -164,7 +158,7 @@ class TrailRenderer extends AbstractContext
                 $trail[$subject] = array(
                     'title' => $lang['str' . $subject],
                     'text' => $_REQUEST[$subject],
-                    'url' => $this->misc->getHREFSubject('function'),
+                    'url' => $this->misc()->getHREFSubject('function'),
                     'help' => 'pg.function',
                     'icon' => 'Function'
                 );
@@ -173,7 +167,7 @@ class TrailRenderer extends AbstractContext
                 $trail[$subject] = array(
                     'title' => $lang['straggregate'],
                     'text' => $_REQUEST['aggrname'],
-                    'url' => $this->misc->getHREFSubject('aggregate'),
+                    'url' => $this->misc()->getHREFSubject('aggregate'),
                     'help' => 'pg.aggregate',
                     'icon' => 'Aggregate'
                 );
@@ -183,7 +177,7 @@ class TrailRenderer extends AbstractContext
                     'title' => $lang['strcolumn'],
                     'text' => $_REQUEST['column'],
                     'icon' => 'Column',
-                    'url' => $this->misc->getHREFSubject('column')
+                    'url' => $this->misc()->getHREFSubject('column')
                 );
                 break;
             default:

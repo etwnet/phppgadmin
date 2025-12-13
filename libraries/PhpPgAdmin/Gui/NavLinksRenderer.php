@@ -10,13 +10,6 @@ use PhpPgAdmin\Core\AbstractContext;
  */
 class NavLinksRenderer extends AbstractContext
 {
-    private $misc;
-
-    public function __construct($misc)
-    {
-        $this->misc = $misc;
-    }
-
     /**
      * Display the navlinks
      *
@@ -43,7 +36,7 @@ class NavLinksRenderer extends AbstractContext
         }
 
         if (count($navlinks) > 0) {
-            $this->misc->printLinksList($navlinks, 'navlink');
+            $this->misc()->printLinksList($navlinks, 'navlink');
         }
     }
 }

@@ -10,13 +10,6 @@ use PhpPgAdmin\Core\AbstractContext;
  */
 class TopbarRenderer extends AbstractContext
 {
-    private $misc;
-
-    public function __construct($misc)
-    {
-        $this->misc = $misc;
-    }
-
     /**
      * Display the top bar with server connection info and quick links
      */
@@ -29,8 +22,8 @@ class TopbarRenderer extends AbstractContext
         $appName = $GLOBALS['appName'] ?? 'phpPgAdmin';
         $appVersion = $GLOBALS['appVersion'] ?? '';
 
-        $server_info = $this->misc->getServerInfo();
-        $reqvars = $this->misc->getRequestVars('table');
+        $server_info = $this->misc()->getServerInfo();
+        $reqvars = $this->misc()->getRequestVars('table');
 
         echo "<div class=\"topbar\"><table style=\"width: 100%\"><tr><td>";
 
@@ -109,7 +102,7 @@ class TopbarRenderer extends AbstractContext
             }
 
             echo "<td style=\"text-align: right\">";
-            $this->misc->printLinksList($toplinks, 'toplink');
+            $this->misc()->printLinksList($toplinks, 'toplink');
             echo "</td>";
 
             $sql_window_id = htmlentities('sqledit:' . $_REQUEST['server']);

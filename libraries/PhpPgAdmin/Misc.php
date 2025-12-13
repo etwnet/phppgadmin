@@ -5,7 +5,10 @@ namespace PhpPgAdmin;
 use ADORecordSet;
 use Connection;
 use PhpPgAdmin\Core\AbstractContext;
+use PhpPgAdmin\Core\UrlBuilder;
 use PhpPgAdmin\Database\ArrayRecordSet;
+use PhpPgAdmin\Gui\ConnectionSelector;
+use PhpPgAdmin\Gui\LayoutRenderer;
 use PhpPgAdmin\Gui\NavLinksRenderer;
 use PhpPgAdmin\Gui\TableRenderer;
 use PhpPgAdmin\Gui\TabsRenderer;
@@ -28,6 +31,9 @@ class Misc extends AbstractContext
 	private $topbarRenderer = null;
 	private $navLinksRenderer = null;
 	private $tableRenderer = null;
+	private $connectionSelector = null;
+	private $urlBuilder = null;
+	private $layoutRenderer = null;
 
 	/**
 	 * Checks if dumps are properly set up
@@ -43,385 +49,75 @@ class Misc extends AbstractContext
 	 * Sets the href tracking variable
 	 */
 	function setHREF() {
-		$this->href = $this->getHREF();
+		$this->href = $this->getUrlBuilder()->getHREF();
 	}
 
 	/**
 	 * Get a href query string, excluding objects below the given object type (inclusive)
 	 */
 	function getHREF($exclude_from = null) {
-		$href = '';
-		if (isset($_REQUEST['server']) && $exclude_from != 'server') {
-			$href .= 'server=' . urlencode($_REQUEST['server']);
-			if (isset($_REQUEST['database']) && $exclude_from != 'database') {
-				$href .= '&database=' . urlencode($_REQUEST['database']);
-				if (isset($_REQUEST['schema']) && $exclude_from != 'schema') {
-					$href .= '&schema=' . urlencode($_REQUEST['schema']);
-				}
-			}
-		}
-		return htmlentities($href);
+		return $this->getUrlBuilder()->getHREF($exclude_from);
 	}
 
+	/**
+	 * Get the subject parameters as an associative array
+	 */
 	function getSubjectParams($subject) {
-		global $plugin_manager;
-
-		$vars = array();
-
-		switch ($subject) {
-		case 'root':
-			$vars = array(
-				'params' => array(
-					'subject' => 'root'
-				)
-			);
-			break;
-		case 'server':
-			$vars = array('params' => array(
-				'server' => $_REQUEST['server'],
-				'subject' => 'server'
-			));
-			break;
-		case 'role':
-			$vars = array('params' => array(
-				'server' => $_REQUEST['server'],
-				'subject' => 'role',
-				'action' => 'properties',
-				'rolename' => $_REQUEST['rolename']
-			));
-			break;
-		case 'database':
-			$vars = array('params' => array(
-				'server' => $_REQUEST['server'],
-				'subject' => 'database',
-				'database' => $_REQUEST['database'],
-			));
-			break;
-		case 'schema':
-			$vars = array('params' => array(
-				'server' => $_REQUEST['server'],
-				'subject' => 'schema',
-				'database' => $_REQUEST['database'],
-				'schema' => $_REQUEST['schema']
-			));
-			break;
-		case 'table':
-			$vars = array('params' => array(
-				'server' => $_REQUEST['server'],
-				'subject' => 'table',
-				'database' => $_REQUEST['database'],
-				'schema' => $_REQUEST['schema'],
-				'table' => $_REQUEST['table']
-			));
-			break;
-		case 'selectrows':
-			$vars = array(
-				'url' => 'tables.php',
-				'params' => array(
-					'server' => $_REQUEST['server'],
-					'subject' => 'table',
-					'database' => $_REQUEST['database'],
-					'schema' => $_REQUEST['schema'],
-					'table' => $_REQUEST['table'],
-					'action' => 'confselectrows'
-				));
-			break;
-		case 'view':
-			$vars = array('params' => array(
-				'server' => $_REQUEST['server'],
-				'subject' => 'view',
-				'database' => $_REQUEST['database'],
-				'schema' => $_REQUEST['schema'],
-				'view' => $_REQUEST['view']
-			));
-			break;
-		case 'fulltext':
-		case 'ftscfg':
-			$vars = array('params' => array(
-				'server' => $_REQUEST['server'],
-				'subject' => 'fulltext',
-				'database' => $_REQUEST['database'],
-				'schema' => $_REQUEST['schema'],
-				'action' => 'viewconfig',
-				'ftscfg' => $_REQUEST['ftscfg']
-			));
-			break;
-		case 'function':
-			$vars = array('params' => array(
-				'server' => $_REQUEST['server'],
-				'subject' => 'function',
-				'database' => $_REQUEST['database'],
-				'schema' => $_REQUEST['schema'],
-				'function' => $_REQUEST['function'],
-				'function_oid' => $_REQUEST['function_oid']
-			));
-			break;
-		case 'aggregate':
-			$vars = array('params' => array(
-				'server' => $_REQUEST['server'],
-				'subject' => 'aggregate',
-				'action' => 'properties',
-				'database' => $_REQUEST['database'],
-				'schema' => $_REQUEST['schema'],
-				'aggrname' => $_REQUEST['aggrname'],
-				'aggrtype' => $_REQUEST['aggrtype']
-			));
-			break;
-		case 'column':
-			if (isset($_REQUEST['table']))
-				$vars = array('params' => array(
-					'server' => $_REQUEST['server'],
-					'subject' => 'column',
-					'database' => $_REQUEST['database'],
-					'schema' => $_REQUEST['schema'],
-					'table' => $_REQUEST['table'],
-					'column' => $_REQUEST['column']
-				));
-			else
-				$vars = array('params' => array(
-					'server' => $_REQUEST['server'],
-					'subject' => 'column',
-					'database' => $_REQUEST['database'],
-					'schema' => $_REQUEST['schema'],
-					'view' => $_REQUEST['view'],
-					'column' => $_REQUEST['column']
-				));
-			break;
-		case 'plugin':
-			$vars = array(
-				'url' => 'plugin.php',
-				'params' => array(
-					'server' => $_REQUEST['server'],
-					'subject' => 'plugin',
-					'plugin' => $_REQUEST['plugin'],
-				));
-
-			if (!is_null($plugin_manager->getPlugin($_REQUEST['plugin'])))
-				$vars['params'] = array_merge($vars['params'], $plugin_manager->getPlugin($_REQUEST['plugin'])->get_subject_params());
-			break;
-		default:
-			return false;
-		}
-
-		if (!isset($vars['url']))
-			$vars['url'] = 'redirect.php';
-
-		return $vars;
+		return $this->getUrlBuilder()->getSubjectParams($subject);
 	}
 
+	/**
+	 * Get the subject string for HREFs
+	 */
 	function getHREFSubject($subject) {
-		$vars = $this->getSubjectParams($subject);
-		return "{$vars['url']}?" . http_build_query($vars['params'], '', '&amp;');
+		return $this->getUrlBuilder()->getHREFSubject($subject);
 	}
 
 	/**
 	 * Sets the form tracking variable
 	 */
 	function setForm() {
-		$this->form = '';
-		if (isset($_REQUEST['server'])) {
-			$this->form .= "<input type=\"hidden\" name=\"server\" value=\"" . htmlspecialchars($_REQUEST['server']) . "\" />\n";
-			if (isset($_REQUEST['database'])) {
-				$this->form .= "<input type=\"hidden\" name=\"database\" value=\"" . htmlspecialchars($_REQUEST['database']) . "\" />\n";
-				if (isset($_REQUEST['schema'])) {
-					$this->form .= "<input type=\"hidden\" name=\"schema\" value=\"" . htmlspecialchars($_REQUEST['schema']) . "\" />\n";
-				}
-			}
-		}
+		$this->form = $this->getUrlBuilder()->buildHiddenFormInputs();
 	}
 
 	/**
-	 * Render a value into HTML using formatting rules specified
-	 * by a type name and parameters.
-	 *
-	 * @param $str The string to change
-	 *
-	 * @param $type Field type (optional), this may be an internal PostgreSQL type, or:
-	 *         yesno    - same as bool, but renders as 'Yes' or 'No'.
-	 *         pre      - render in a <pre> block.
-	 *         nbsp     - replace all spaces with &nbsp;'s
-	 *         verbatim - render exactly as supplied, no escaping what-so-ever.
-	 *         callback - render using a callback function supplied in the 'function' param.
-	 *
-	 * @param $params Type parameters (optional), known parameters:
-	 *         null     - string to display if $str is null, or set to TRUE to use a default 'NULL' string,
-	 *                    otherwise nothing is rendered.
-	 *         clip     - if true, clip the value to a fixed length, and append an ellipsis...
-	 *         cliplen  - the maximum length when clip is enabled (defaults to $conf['max_chars'])
-	 *         ellipsis - the string to append to a clipped value (defaults to $lang['strellipsis'])
-	 *         tag      - an HTML element name to surround the value.
-	 *         class    - a class attribute to apply to any surrounding HTML element.
-	 *         align    - an align attribute ('left','right','center' etc.)
-	 *         true     - (type='bool') the representation of true.
-	 *         false    - (type='bool') the representation of false.
-	 *         function - (type='callback') a function name, accepts args ($str, $params) and returns a rendering.
-	 *         lineno   - prefix each line with a line number.
-	 *         map      - an associative array.
-	 *
-	 * @return The HTML rendered value
+	 * Get the URL for a particular action
+	 * @param array $action An associative array defining the action.
+	 *                      See getActionUrl in UrlBuilder for details.
+	 * @param array $fields The data from which to get the variable values
+	 * @return string The URL
+	 */
+	function getActionUrl($action, $fields) {
+		return $this->getUrlBuilder()->getActionUrl($action, $fields);
+	}
+
+	/**
+	 * Get the request variables as an associative array
+	 * @param string $subject The subject to get the variables for
+	 * @return array The request variables
+	 */
+	function getRequestVars($subject = '') {
+		return $this->getUrlBuilder()->getRequestVars($subject);
+	}
+
+	/**
+	 * Print URL variables as hidden form inputs
+	 * @param array $vars The variables to print
+	 * @param array $fields The data from which to get the variable values
+	 */
+	function printUrlVars($vars, $fields) {
+		return $this->getUrlBuilder()->printUrlVars($vars, $fields);
+	}
+
+	/**
+	 * Format a value for display in a table
+	 * @param string $str The string to format
+	 * @param string $type The type of the field
+	 * @param array $params Additional parameters for formatting
+	 * @return string The formatted value
 	 */
 	function printVal($str, $type = null, $params = array()) {
-		global $lang, $conf, $data;
-
-		// Shortcircuit for a NULL value
-		if (is_null($str))
-			return isset($params['null'])
-				? ($params['null'] === true ? '<i class="null">NULL</i>' : $params['null'])
-				: '';
-
-		if (isset($params['map']) && isset($params['map'][$str])) $str = $params['map'][$str];
-
-		// Clip the value if the 'clip' parameter is true.
-		if (isset($params['clip']) && $params['clip'] === true) {
-			$maxlen = isset($params['cliplen']) && is_integer($params['cliplen']) ? $params['cliplen'] : $conf['max_chars'];
-			$ellipsis = $params['ellipsis'] ?? $lang['strellipsis'];
-			if (mb_strlen($str, 'UTF-8') > $maxlen) {
-				$str = mb_substr($str, 0, $maxlen - 1, 'UTF-8') . $ellipsis;
-			}
-		}
-
-		$out = '';
-
-		switch ($type) {
-		case 'int2':
-		case 'int4':
-		case 'int8':
-		case 'float4':
-		case 'float8':
-		case 'money':
-		case 'numeric':
-		case 'oid':
-		case 'xid':
-		case 'cid':
-		case 'tid':
-			$align = 'right';
-			$out = nl2br(htmlspecialchars($str));
-			break;
-		case 'yesno':
-			if (!isset($params['true'])) $params['true'] = $lang['stryes'];
-			if (!isset($params['false'])) $params['false'] = $lang['strno'];
-			// No break - fall through to boolean case.
-		case 'bool':
-		case 'boolean':
-			if (is_bool($str)) $str = $str ? 't' : 'f';
-			switch ($str) {
-			case 't':
-				$out = ($params['true'] ?? $lang['strtrue']);
-				$align = 'center';
-				break;
-			case 'f':
-				$out = ($params['false'] ?? $lang['strfalse']);
-				$align = 'center';
-				break;
-			default:
-				$out = htmlspecialchars($str);
-			}
-			break;
-		case 'bytea':
-			$tag = 'div';
-			$class = 'pre';
-			$out = $data->escapeBytea($str);
-			break;
-		case 'errormsg':
-			$tag = 'pre';
-			$class = 'error';
-			$out = htmlspecialchars($str);
-			break;
-		case 'pre':
-			$tag = 'pre';
-			$out = htmlspecialchars($str);
-			break;
-		case 'prenoescape':
-			$tag = 'pre';
-			$out = $str;
-			break;
-		case 'sql':
-			$tag = 'pre';
-			$class = 'sql-viewer';
-			$out = htmlspecialchars($str);
-			break;
-		case 'nbsp':
-			$out = nl2br(str_replace(' ', '&nbsp;', htmlspecialchars($str)));
-			break;
-		case 'verbatim':
-			$out = $str;
-			break;
-		case 'callback':
-			$out = $params['function']($str, $params);
-			break;
-		case 'prettysize':
-			if ($str == -1)
-				$out = $lang['strnoaccess'];
-			else {
-				$limit = 10 * 1024;
-				$mult = 1;
-				if ($str < $limit * $mult)
-					$out = $str . ' ' . $lang['strbytes'];
-				else {
-					$mult *= 1024;
-					if ($str < $limit * $mult)
-						$out = floor(($str + $mult / 2) / $mult) . ' ' . $lang['strkb'];
-					else {
-						$mult *= 1024;
-						if ($str < $limit * $mult)
-							$out = floor(($str + $mult / 2) / $mult) . ' ' . $lang['strmb'];
-						else {
-							$mult *= 1024;
-							if ($str < $limit * $mult)
-								$out = floor(($str + $mult / 2) / $mult) . ' ' . $lang['strgb'];
-							else {
-								$mult *= 1024;
-								if ($str < $limit * $mult)
-									$out = floor(($str + $mult / 2) / $mult) . ' ' . $lang['strtb'];
-							}
-						}
-					}
-				}
-			}
-			break;
-		default:
-			/*
-			// If the string contains at least one instance of >1 space in a row, a tab
-			// character, a space at the start of a line, or a space at the start of
-			// the whole string then render within a pre-formatted element (<pre>).
-			if (preg_match('/(^ |  |\t|\n )/m', $str)) {
-				$tag = 'pre';
-				$class = 'data';
-				$out = htmlspecialchars($str);
-			} else {
-				$out = nl2br(htmlspecialchars($str));
-			}
-			*/
-			$out = nl2br(htmlspecialchars($str));
-		}
-
-		if (isset($params['class'])) $class = $params['class'];
-		if (isset($params['align'])) $align = $params['align'];
-
-		if (!isset($tag) && (isset($class) || isset($align))) $tag = 'div';
-
-		if (isset($tag)) {
-			$alignattr = isset($align) ? " style=\"text-align: {$align}\"" : '';
-			$classattr = isset($class) ? " class=\"{$class}\"" : '';
-			$out = "<{$tag}{$alignattr}{$classattr}>{$out}</{$tag}>";
-		}
-
-		// Add line numbers if 'lineno' param is true
-		if (isset($params['lineno']) && $params['lineno'] === true) {
-			$lines = explode("\n", $str);
-			$num = count($lines);
-			if ($num > 0) {
-				$temp = "<table>\n<tr><td class=\"{$class}\" style=\"vertical-align: top; padding-right: 10px;\"><pre class=\"{$class}\">";
-				for ($i = 1; $i <= $num; $i++) {
-					$temp .= $i . "\n";
-				}
-				$temp .= "</pre></td><td class=\"{$class}\" style=\"vertical-align: top;\">{$out}</td></tr></table>\n";
-				$out = $temp;
-			}
-			unset($lines);
-		}
-
-		return $out;
+		return $this->getLayoutRenderer()->printVal($str, $type, $params);
 	}
 
 	/**
@@ -453,11 +149,7 @@ class Misc extends AbstractContext
 	 * @param $help (optional) The identifier for the help link
 	 */
 	function printTitle($title, $help = null) {
-		global $data, $lang;
-
-		echo "<h2>";
-		$this->printHelp($title, $help);
-		echo "</h2>\n";
+		$this->getLayoutRenderer()->printTitle($title, $help);
 	}
 
 	/**
@@ -472,7 +164,9 @@ class Misc extends AbstractContext
 	 * Creates a database accessor
 	 */
 	function getDatabaseAccessor($database, $server_id = null) {
-		global $lang, $conf, $misc, $_connection, $postgresqlMinVer;
+		global $_connection, $postgresqlMinVer;
+		$lang = $this->lang();
+		$conf = $this->conf();
 
 		$server_info = $this->getServerInfo($server_id);
 
@@ -538,229 +232,27 @@ class Misc extends AbstractContext
 	 * @param string $scripts script tags
 	 */
 	function printHeader($title = '', $scripts = '') {
-		global $appName, $lang, $_no_html_frame, $conf, $plugin_manager;
-
-		// capture ajax/json requests
-		if (!empty($_REQUEST['ajax'])) {
-			$this->ajaxRequest = true;
-			if ($_REQUEST['ajax'] == 'json') {
-				header("Content-Type: application/json; charset=utf-8");
-			} else {
-				header("Content-Type: text/html; charset=utf-8");
-			}
-			return;
-		}
-
-		$title = htmlspecialchars($appName . (empty($title) ? '' : " - $title"));
-
-		// skip html frame for inner content links
-		if ($_REQUEST['target'] ?? '' == 'content') {
-			$this->frameContentRequest = true;
-			$_no_html_frame = true;
-			// update title through javascript
-			echo "<script>\n";
-			echo "document.title = \"$title\";\n";
-			echo "</script>\n";
-		}
-
-		// just output scripts and return
-		if (!empty($_no_html_frame)) {
-			echo $scripts;
-			return;
-		}
-
-		$langIso2 = substr($lang['applocale'], 0, 2);
-
-		header("Content-Type: text/html; charset=utf-8");
-		echo "<!DOCTYPE html>\n";
-		echo '<html lang="' . $lang['applocale'] . '" dir="' . htmlspecialchars($lang['applangdir']) . '">';
-		echo "\n";
-		?>
-
-		<head>
-			<meta charset="utf-8"/>
-			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-			<link rel="stylesheet" href="js/flatpickr/flatpickr.css" type="text/css">
-			<link rel="stylesheet" href="themes/<?= $conf['theme'] ?>/global.css" type="text/css" id="csstheme">
-			<link rel="icon" type="image/png" href="images/themes/<?= $conf['theme'] ?>/pgadmin.png"/>
-			<script src="js/jquery.js" type="text/javascript"></script>
-			<script src="js/xtree2.js" type="text/javascript"></script>
-			<script src="js/xloadtree2.js" type="text/javascript"></script>
-			<script src="js/popper.js" defer type="text/javascript"></script>
-			<script src="js/flatpickr/flatpickr.js" defer type="text/javascript"></script>
-			<?php if ($langIso2 != 'en') : ?>
-				<script src="js/flatpickr/l10n/<?= $langIso2 ?>.js" defer type="text/javascript"></script>
-			<?php endif ?>
-			<script src="libraries/ace/src-min-noconflict/ace.js" defer type="text/javascript"></script>
-			<script src="libraries/ace/src-min-noconflict/mode-pgsql.js" defer type="text/javascript"></script>
-			<script src="js/frameset.js" defer type="text/javascript"></script>
-			<script src="js/misc.js" defer type="text/javascript"></script>
-			<style>
-			 .webfx-tree-children {
-				 background-image: url("<?= $this->icon('I') ?> ");
-			 }
-			 .calendar-icon-bg {
-				 background-image: url("<?= $this->icon('Calendar') ?> ");
-			 }
-			</style>
-			<title><?= $title ?></title>
-			<?= $scripts ?>
-
-			<?php
-			$plugins_head = [];
-			$_params = ['heads' => &$plugins_head];
-			$plugin_manager->do_hook('head', $_params);
-			foreach ($plugins_head as $tag) {
-				echo $tag;
-			}
-			?>
-		</head>
-		<?php
+		return $this->getLayoutRenderer()->printHeader($title, $scripts);
 	}
 
-	private $hasFrameset = false;
+	public $hasFrameset = false;
 
 	/**
 	 * Prints the page body.
 	 */
 	function printBody() {
-		global $_no_html_frame, $lang;
-
-		if (!empty($_no_html_frame) || $this->ajaxRequest) {
-			return;
-		}
-		$this->hasFrameset = true;
-		echo <<<EOT
-		<body>
-		<div id="tooltip" role="tooltip">
-		  <div id="tooltip-content"></div>
-		  <div class="arrow" data-popper-arrow></div>
-		</div>
-		<div id="loading-indicator">
-			<svg class="spinner" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
-			   <circle class="path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30"></circle>
-			</svg>
-		</div>
-		<div id="frameset">
-			<div id="tree" dir="ltr">
-EOT;
-		$this->printBrowser();
-		echo <<<EOT
-			</div>
-			<div id="resizer"></div>
-			<div id="content-container">
-				<!-- anything inside #content will be overwritten... -->
-				<div id="content">
-EOT;
+		return $this->getLayoutRenderer()->printBody();
 	}
 
 	/**
 	 * Prints the page footer
 	 */
 	function printFooter() {
-		global $_reload_browser, $_reload_tree;
-		global $lang, $_no_bottom_link, $_no_html_frame;
-
-		if ($this->ajaxRequest) {
-			return;
-		}
-
-		if (isset($_reload_browser)) {
-			$this->printReload(false);
-		} elseif (isset($_reload_tree)) {
-			$this->printReload(true);
-		}
-
-		if ($this->hasFrameset || $this->frameContentRequest) {
-			echo "<hr>\n";
-			echo "<div class=\"clearfix bottom-footer\">\n";
-			echo "<a href=\"\" target=\"_blank\" class=\"new_window\" title=\"", htmlspecialchars($lang['strnewwindow']), "\"><img src=\"", $this->icon("NewWindow"), "\" ></a>";
-			echo "</div>\n";
-		}
-
-		if (!isset($_no_bottom_link)) {
-			echo "<a href=\"#\" class=\"bottom_link\">⇱</a>";
-		}
-
-		if (!empty($_no_html_frame)) {
-			return;
-		}
-		if ($this->hasFrameset) {
-			echo "</div>\n"; // close #content div
-			echo "</div>\n"; // close #content-container div
-			echo "</div>\n"; // close #frameset div
-		}
-		echo "</body>\n";
-		echo "</html>\n";
+		return $this->getLayoutRenderer()->printFooter();
 	}
 
 	function printBrowser() {
-		global $appName, $lang;
-		?>
-		<div class="logo">
-			<a href="index.php">
-				<?= htmlspecialchars($appName) ?>
-			</a>
-		</div>
-		<div class="refreshTree">
-			<a href="#" onclick="writeTree()"><img class="icon" src="<?= $this->icon('Refresh'); ?>" alt="<?= $lang['strrefresh']; ?>" title="<?= $lang['strrefresh']; ?>"/></a>
-		</div>
-		<div id="wfxt-container"></div>
-		<script>
-
-			webFXTreeConfig.rootIcon = "<?= $this->icon('Servers') ?>";
-			webFXTreeConfig.openRootIcon = "<?= $this->icon('Servers') ?>";
-			webFXTreeConfig.folderIcon = "";
-			webFXTreeConfig.openFolderIcon = "";
-			webFXTreeConfig.fileIcon = "";
-			webFXTreeConfig.iIcon = "<?= $this->icon('I') ?>";
-			webFXTreeConfig.lIcon = "<?= $this->icon('L') ?>";
-			webFXTreeConfig.lMinusIcon = "<?= $this->icon('Lminus') ?>";
-			webFXTreeConfig.lPlusIcon = "<?= $this->icon('Lplus') ?>";
-			webFXTreeConfig.tIcon = "<?= $this->icon('T') ?>";
-			webFXTreeConfig.tMinusIcon = "<?= $this->icon('Tminus') ?>";
-			webFXTreeConfig.tPlusIcon = "<?= $this->icon('Tplus') ?>";
-			webFXTreeConfig.blankIcon = "<?= $this->icon('blank') ?>";
-			webFXTreeConfig.loadingIcon = "<?= $this->icon('Loading') ?>";
-			webFXTreeConfig.loadingText = "<?= $lang['strloading'] ?>";
-			webFXTreeConfig.errorIcon = "<?= $this->icon('ObjectNotFound') ?>";
-			webFXTreeConfig.errorLoadingText = "<?= $lang['strerrorloading'] ?>";
-			webFXTreeConfig.reloadText = "<?= $lang['strclicktoreload'] ?>";
-
-			// Set default target frame:
-			//WebFXTreeAbstractNode.prototype.target = 'detail';
-
-			// Disable double click:
-			WebFXTreeAbstractNode.prototype._ondblclick = function () {
-			}
-
-			// Show tree XML on double click - for debugging purposes only
-			/*
-			// UNCOMMENT THIS FOR DEBUGGING (SHOWS THE SOURCE XML)
-			WebFXTreeAbstractNode.prototype._ondblclick = function(e){
-				var el = e.target || e.srcElement;
-
-				if (this.src != null)
-					window.open(this.src, this.target || "_self");
-				return false;
-			};
-			*/
-
-			function writeTree() {
-				webFXTreeHandler.idCounter = 0;
-				const tree = new WebFXLoadTree(
-					"<?= $lang['strservers']; ?>",
-					"servers.php?action=tree",
-					"servers.php"
-				);
-				tree.write("wfxt-container");
-				tree.setExpanded(true);
-			}
-
-			writeTree();
-
-		</script>
-		<?php
+		return $this->getLayoutRenderer()->printBrowser();
 	}
 
 	/**
@@ -768,13 +260,7 @@ EOT;
 	 * @param $tree bool True if dropping a database, false otherwise
 	 */
 	function printReload($tree) {
-		echo "<script>\n";
-		if ($tree) {
-			echo "\twriteTree();\n";
-		} else {
-			echo "\twindow.location.replace(\"index.php\");\n";
-		}
-		echo "</script>\n";
+		return $this->getLayoutRenderer()->printReload($tree);
 	}
 
 	/**
@@ -786,74 +272,43 @@ EOT;
 	}
 
 	/**
-	 * Display a link
-	 * @param array $link An associative array of link parameters to print
-	 *     link = array(
-	 *       'attr' => array( // list of A tag attribute
-	 *          'attrname' => attribute value
-	 *          ...
-	 *       ),
-	 *       'content' => The link text
-	 *       'fields' => (optional) the data from which content and attr's values are obtained
-	 *     );
-	 *   the special attribute 'href' might be a string or an array. If href is an array it
-	 *   will be generated by getActionUrl. See getActionUrl comment for array format.
+	 * Display a single link
+	 * @param $link An associative array defining the link. See printLinksList for details.
 	 */
 	function printLink($link) {
-
-		if (!isset($link['fields']))
-			$link['fields'] = $_REQUEST;
-
-		$tag = "<a ";
-		foreach ($link['attr'] as $attr => $value) {
-			if ($attr == 'href' and is_array($value)) {
-				$tag .= 'href="' . htmlentities($this->getActionUrl($value, $link['fields'])) . '" ';
-			} else {
-				$tag .= htmlentities($attr) . '="' . value($value, $link['fields'], 'html') . '" ';
-			}
-		}
-		$tag .= ">";
-		if (!empty($link['icon'])) {
-			$tag .= "<img class=\"icon\" src=\"{$link['icon']}\" alt=\"" . htmlspecialchars($link['content'] ?? '') . "\">";
-		}
-		if (!empty($link['content'])) {
-			$tag .= value($link['content'], $link['fields'], 'html');
-		}
-		$tag .= "</a>\n";
-		echo $tag;
-		//var_dump($link['content']);
-		//throw new Exception("");
+		$this->getLayoutRenderer()->printLink($link);
 	}
 
 	/**
 	 * Display a list of links
-	 * @param $links An associative array of links to print. See printLink function for
-	 *               the links array format.
-	 * @param $class An optional class or list of classes seprated by a space
-	 *   WARNING: This field is NOT escaped! No user should be able to inject something here, use with care.
+	 * @param $links An array of associative arrays defining the links:
+	 *         $links = array(
+	 *            link_id => array(
+	 *               'title' => Link title,
+	 *               'url'   => Link URL,
+	 *               'class' => CSS class for the link,
+	 *               'id'    => HTML id for the link,
+	 *               'icon'  => Icon name for the link,
+	 *               'help'  => Help page for the link,
+	 *            ), ...
+	 *         );
+	 * @param string $class CSS class to apply to the list container
 	 */
 	function printLinksList($links, $class = '') {
-		echo "<ul class=\"{$class}\">\n";
-		foreach ($links as $link) {
-			echo "\t<li>";
-			$this->printLink($link);
-			echo "</li>\n";
-		}
-		echo "</ul>\n";
+		$this->getLayoutRenderer()->printLinksList($links, $class);
 	}
 
 	/**
-	 * Display navigation tabs
-	 * @param $tabs The name of current section (Ex: intro, server, ...), or an array with tabs (Ex: sqledit.php doFind function)
-	 * @param $activetab The name of the tab to be highlighted.
+	 * Print the tab bar
+	 * @param $tabs An array defining the tabs. See TabsRenderer::printTabs for details.
+	 * @param string $activetab The id of the active tab
 	 */
 	function printTabs($tabs, $activetab) {
 		return $this->getTabsRenderer()->printTabs($tabs, $activetab);
 	}
 
 	/**
-	 * Retrieve the tab info for a specific tab bar.
-	 * @param $section The name of the tab bar.
+	 * Get the tabs for a particular section
 	 */
 	function getNavTabs($section) {
 		return $this->getTabsRenderer()->getNavTabs($section);
@@ -866,6 +321,9 @@ EOT;
 		return $this->getTabsRenderer()->getLastTabURL($section);
 	}
 
+	/**
+	 * Display the top bar with server connection info and quick links
+	 */
 	function printTopbar() {
 		return $this->getTopbarRenderer()->printTopbar();
 	}
@@ -893,9 +351,9 @@ EOT;
 	 * will be shown. See printLinksList for array format.
 	 * @param string $place - Place where the $navlinks are displayed.
 	 * Like 'display-browse', where 'display' is the file (display.php)
+	 * and 'browse' is the place inside that code (doBrowse).
 	 * @param array $env - Associative array of defined variables in the scope
 	 * of the caller. Allows to give some environment details to plugins.
-	 * and 'browse' is the place inside that code (doBrowse).
 	 */
 	function printNavLinks($navlinks, $place, $env = array()) {
 		return $this->getNavLinksRenderer()->printNavLinks($navlinks, $place, $env);
@@ -903,90 +361,13 @@ EOT;
 
 
 	/**
-	 * Do multi-page navigation.  Displays the prev, next and page options.
-	 * @param int $page - the page currently viewed
-	 * @param int $pages - the maximum number of pages
-	 * @param array $gets -  the parameters to include in the link to the wanted page
+	 * Print page navigation links
+	 * @param int $page Current page number
+	 * @param int $pages Total number of pages
+	 * @param array $gets Associative array of URL variables to include in links
 	 */
 	function printPageNavigation($page, $pages, $gets) {
-		global $conf, $lang;
-		static $limits = null;
-		if (!isset($limits)) {
-			$limits = [10, 50, 100, 250, 500, 1000, $conf['max_rows']];
-			sort($limits, SORT_NUMERIC);
-		}
-		$window = 3;
-
-		if ($page < 1 || $page > $pages) return;
-		if ($pages < 1) return;
-
-		unset($gets['page']);
-		$url = http_build_query($gets);
-
-		echo "<div class=\"pagenav-container\">\n";
-
-		echo "<form method=\"get\" action=\"?$url\" class=\"pagenav-form\">";
-		echo "<span class=\"me-1\">{$lang['strjumppage']}</span>\n";
-		echo "<input type=\"number\" class=\"page\" name=\"page\" min=\"1\" max=\"$pages\" value=\"$page\">\n";
-		echo "<button type=\"submit\">↩</button>\n";
-		echo "</form>\n";
-
-
-		$class = ($page > 1) ? "pagenav" : "pagenav disabled";
-		echo "<a class=\"$class\" href=\"?{$url}&page=" . max(1, $page-1) . "\">⮜</a>\n";
-
-		echo "<a class=\"pagenav" . ($page == 1 ? " current" : "") . "\" href=\"?{$url}&page=1\">1</a>\n";
-
-		$min_page = $page - $window;
-		$max_page = $page + $window;
-
-		if ($min_page < 2) {
-			$shift = 2 - $min_page;
-			$min_page = 2;
-			$max_page = min($pages - 1, $max_page + $shift);
-		}
-
-		if ($max_page > $pages - 1) {
-			$shift = $max_page - ($pages - 1);
-			$max_page = $pages - 1;
-			$min_page = max(2, $min_page - $shift);
-		}
-
-		if ($min_page > 2) {
-			echo "<span class=\"ellipsis\">…</span>\n";
-		}
-
-		for ($i = $min_page; $i <= $max_page; $i++) {
-			$class = ($i == $page) ? "pagenav current" : "pagenav";
-			echo "<a class=\"$class\" href=\"?{$url}&page={$i}\">$i</a>\n";
-		}
-
-		if ($max_page < $pages - 1) {
-			echo "<span class=\"ellipsis\">…</span>\n";
-		}
-
-		if ($pages > 1) {
-			echo "<a class=\"pagenav" . ($page == $pages ? " current" : "") . "\" href=\"?{$url}&page={$pages}\">$pages</a>\n";
-		}
-
-		$class = ($page < $pages) ? "pagenav" : "pagenav disabled";
-		echo "<a class=\"$class\" href=\"?{$url}&page=" . ($page+1) . "\">⮞</a>\n";
-
-		$query_params = $gets;
-		unset($query_params['max_rows']);
-		$sub_url = http_build_query($query_params);
-		echo "<form method=\"get\" action=\"?$sub_url\" class=\"pagenav-form ml-2\">";
-		echo "<span class=\"me-1\">{$lang['strselectmaxrows']}</span>\n";
-		echo "<select name=\"max_rows\" class=\"max_rows\" onchange=\"this.form.querySelector('button[type=submit]').click()\">\n";
-		foreach ($limits as $limit) {
-			$selected = ($limit == $gets['max_rows']) ? ' selected' : '';
-			echo "<option value=\"$limit\"{$selected}>$limit</option>\n";
-		}
-		echo "</select>\n";
-		echo "<button type=\"submit\" style=\"display:none;\"></button>\n";
-		echo "</form>\n";
-
-		echo "</div>\n";
+		$this->getLayoutRenderer()->printPageNavigation($page, $pages, $gets);
 	}
 
 	/**
@@ -995,14 +376,7 @@ EOT;
 	 * @param string $help - help section identifier
 	 */
 	function printHelp($str, $help) {
-		global $lang, $data;
-
-		echo $str;
-		if ($help) {
-			echo "<a class=\"help\" href=\"";
-			echo htmlspecialchars("help.php?help=" . urlencode($help) . "&server=" . urlencode($_REQUEST['server']));
-			echo "\" title=\"{$lang['strhelp']}\" target=\"phppgadminhelp\">{$lang['strhelpicon']}</a>";
-		}
+		$this->getLayoutRenderer()->printHelp($str, $help);
 	}
 
 	/**
@@ -1025,7 +399,7 @@ EOT;
 
 	private function getTrailRenderer() {
 		if ($this->trailRenderer === null) {
-			$this->trailRenderer = new TrailRenderer($this);
+			$this->trailRenderer = new TrailRenderer();
 		}
 
 		return $this->trailRenderer;
@@ -1033,7 +407,7 @@ EOT;
 
 	private function getTopbarRenderer() {
 		if ($this->topbarRenderer === null) {
-			$this->topbarRenderer = new TopbarRenderer($this);
+			$this->topbarRenderer = new TopbarRenderer();
 		}
 
 		return $this->topbarRenderer;
@@ -1041,7 +415,7 @@ EOT;
 
 	private function getNavLinksRenderer() {
 		if ($this->navLinksRenderer === null) {
-			$this->navLinksRenderer = new NavLinksRenderer($this);
+			$this->navLinksRenderer = new NavLinksRenderer();
 		}
 
 		return $this->navLinksRenderer;
@@ -1049,10 +423,34 @@ EOT;
 
 	private function getTableRenderer() {
 		if ($this->tableRenderer === null) {
-			$this->tableRenderer = new TableRenderer($this);
+			$this->tableRenderer = new TableRenderer();
 		}
 
 		return $this->tableRenderer;
+	}
+
+	private function getConnectionSelector() {
+		if ($this->connectionSelector === null) {
+			$this->connectionSelector = new ConnectionSelector();
+		}
+
+		return $this->connectionSelector;
+	}
+
+	private function getLayoutRenderer() {
+		if ($this->layoutRenderer === null) {
+			$this->layoutRenderer = new LayoutRenderer($this);
+		}
+
+		return $this->layoutRenderer;
+	}
+
+	private function getUrlBuilder() {
+		if ($this->urlBuilder === null) {
+			$this->urlBuilder = new UrlBuilder();
+		}
+
+		return $this->urlBuilder;
 	}
 
 	/**
@@ -1099,133 +497,30 @@ EOT;
 		}
 	}
 
-	/**
-	 * Returns URL given an action associative array.
-	 * NOTE: this function does not html-escape, only url-escape
-	 * @param array $action An associative array of the follow properties:
-	 *         'url'  => The first part of the URL (before the ?)
-	 *         'urlvars' => Associative array of (URL variable => field name)
-	 *                  these are appended to the URL
-	 * @param array $fields Field data from which 'urlfield' and 'vars' are obtained.
-	 */
-	function getActionUrl($action, $fields) {
-		$url = value($action['url'], $fields);
 
-		if ($url === false) return '';
-
-		if (!empty($action['urlvars'])) {
-			$urlvars = value($action['urlvars'], $fields);
-		} else {
-			$urlvars = array();
-		}
-
-		/* set server, database and schema parameter if not presents */
-		if (isset($urlvars['subject']))
-			$subject = value($urlvars['subject'], $fields);
-		else
-			$subject = '';
-
-		if (isset($_REQUEST['server']) and !isset($urlvars['server']) and $subject != 'root') {
-			$urlvars['server'] = $_REQUEST['server'];
-			if (isset($_REQUEST['database']) and !isset($urlvars['database']) and $subject != 'server') {
-				$urlvars['database'] = $_REQUEST['database'];
-				if (isset($_REQUEST['schema']) and !isset($urlvars['schema']) and $subject != 'database') {
-					$urlvars['schema'] = $_REQUEST['schema'];
-				}
-			}
-		}
-
-		$sep = '?';
-		foreach ($urlvars as $var => $varfield) {
-			if (is_array($varfield)) {
-				// 'orderby' => [ 'id' => 'asc' ]
-				$param = http_build_query([$var => $varfield]);
-			} else {
-				$param = value_url($var, $fields) . '=' . value_url($varfield, $fields);
-			}
-			if (!empty($param)) {
-				$url .= $sep;
-				$url .= $param;
-				$sep = '&';
-			}
-		}
-
-		return $url;
-	}
-
-	/**
-	 * @param string $subject
-	 * @return array
-	 */
-	function getRequestVars($subject = '') {
-		$v = array();
-		if (!empty($subject))
-			$v['subject'] = $subject;
-		if (isset($_REQUEST['server']) && $subject != 'root') {
-			$v['server'] = $_REQUEST['server'];
-			if (isset($_REQUEST['database']) && $subject != 'server') {
-				$v['database'] = $_REQUEST['database'];
-				if (isset($_REQUEST['schema']) && $subject != 'database') {
-					$v['schema'] = $_REQUEST['schema'];
-				}
-			}
-		}
-		return $v;
-	}
-
-	/**
-	 * @param array $vars
-	 * @param array $fields
-	 */
-	function printUrlVars($vars, $fields) {
-		foreach ($vars as $var => $varfield) {
-			echo "{$var}=", urlencode($fields[$varfield]), "&amp;";
-		}
-	}
-
-	/**
-	 * Display a table of data.
-	 * @param ADORecordSet $tabledata  A set of data to be formatted, as returned by $data->getDatabases() etc.
-	 * @param array $columns   An associative array of columns to be displayed:
-	 *         $columns = array(
-	 *            column_id => array(
-	 *               'title' => Column heading,
-	 *               'class' => The class to apply on the column cells,
-	 *               'field' => Field name for $tabledata->fields[...],
-	 *               'help'  => Help page for this column,
-	 *            ), ...
-	 *         );
-	 * @param array $actions   Actions that can be performed on each object:
-	 *         $actions = array(
-	 *            * multi action support
-	 *            * parameters are serialized for each entries and given in $_REQUEST['ma']
-	 *            'multiactions' => array(
-	 *               'keycols' => Associative array of (URL variable => field name), // fields included in the form
-	 *               'url' => URL submission,
-	 *               'default' => Default selected action in the form.
-	 *                           if null, an empty action is added & selected
-	 *            ),
-	 *            * actions *
-	 *            action_id => array(
-	 *               'title' => Action heading,
-	 *               'url'   => Static part of URL.  Often we rely
-	 *                        relative urls, usually the page itself (not '' !), or just a query string,
-	 *               'vars'  => Associative array of (URL variable => field name),
-	 *               'multiaction' => Name of the action to execute.
-	 *                              Add this action to the multi action form
-	 *            ), ...
-	 *         );
-	 * @param string $place     Place where the $actions are displayed. Like 'display-browse', where 'display' is the file (display.php)
-	 *                   and 'browse' is the place inside that code (doBrowse).
-	 * @param string $nodata    (optional) Message to display if data set is empty.
-	 * @param callable $pre_fn    (optional) Name of a function to call for each row,
-	 *                it will be passed two params: $rowdata and $actions,
-	 *                it may be used to derive new fields or modify actions.
-	 *                It can return an array of actions specific to the row,
-	 *                or if nothing is returned then the standard actions are used.
-	 *                (see tblproperties.php and constraints.php for examples)
-	 *                The function must not must not store urls because
-	 *                they are relative and won't work out of context.
+	/** Print a table
+	 * @param \ADORecordSet|array $tabledata A set of records to populate the table.
+	 * @param array $columns An associative array defining the columns to display.
+	 *        The array keys are the field names, and the values are arrays with
+	 *        the following possible keys:
+	 *        'title' - The column title
+	 *        'field' - The field name to use (if different from the array key)
+	 *        'type'  - The type of the field (for formatting)
+	 *        'params' - Additional parameters for formatting
+	 *        'orderby' - The ORDER BY clause to use when sorting by this column
+	 *        'align' - The alignment of the column ('left', 'right', 'center')
+	 * @param array $actions An associative array defining the actions to display.
+	 *        The array keys are action identifiers, and the values are arrays with
+	 *        the following possible keys:
+	 *        'content' - The link text
+	 *        'attr'    - Additional attributes for the link
+	 *        'url'     - The URL for the action (can include %s placeholders for fields)
+	 *        'multiaction' - True if this action applies to multiple selected rows
+	 *        'confirmation' - Confirmation message to display when action is clicked
+	 * @param string $place The place where the table is displayed (for plugins)
+	 * @param string $nodata Message to display when there is no data
+	 * @param callable $pre_fn Function to call before rendering each row.
+	 *        The function will be passed the row data as an associative array.
 	 */
 	function printTable($tabledata, &$columns, &$actions, $place, $nodata = null, $pre_fn = null) {
 		return $this->getTableRenderer()->printTable($tabledata, $columns, $actions, $place, $nodata, $pre_fn);
@@ -1246,7 +541,7 @@ EOT;
 	 * @param mixed $section The section where the branch is linked in the tree
 	 */
 	function printTree($_treedata, &$attrs, $section) {
-		global $plugin_manager;
+		$plugin_manager = $this->pluginManager();
 
 		$treedata = array();
 
@@ -1282,7 +577,8 @@ EOT;
 	 *        'nodata' - message to display when node has no children
 	 */
 	function printTreeXML($treedata, $attrs) {
-		global $conf, $lang;
+		$conf = $this->conf();
+		$lang = $this->lang();
 
 		header("Content-Type: text/xml; charset=UTF-8");
 		header("Cache-Control: no-cache");
@@ -1365,7 +661,7 @@ EOT;
 	 * @return string
 	 */
 	function icon($icon) {
-		global $conf;
+		$conf = $this->conf();
 		static $cache = null;
 		if (!isset($cache)) {
 			$cache = self::buildIconCache();
@@ -1387,7 +683,8 @@ EOT;
 	 * @return The escaped string
 	 */
 	function escapeShellArg($str) {
-		global $data, $lang;
+		$data = $this->data();
+		$lang = $this->lang();
 
 		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
 			// Due to annoying PHP bugs, shell arguments cannot be escaped
@@ -1409,7 +706,7 @@ EOT;
 	 * @return The escaped string
 	 */
 	function escapeShellCmd($str) {
-		global $data;
+		$data = $this->data();
 
 		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
 			$data->fieldClean($str);
@@ -1423,7 +720,8 @@ EOT;
 	 * @return ArrayRecordSet a recordset of servers' groups
 	 */
 	function getServersGroups($recordset = false, $group_id = false) {
-		global $conf, $lang;
+		$conf = $this->conf();
+		$lang = $this->lang();
 		$grps = array();
 
 		if (isset($conf['srv_groups'])) {
@@ -1490,7 +788,7 @@ EOT;
 	 * @param string $group a group name to filter the returned servers using $conf[srv_groups]
 	 */
 	function getServers($recordset = false, $group = false) {
-		global $conf;
+		$conf = $this->conf();
 
 		$logins = isset($_SESSION['webdbLogin']) && is_array($_SESSION['webdbLogin']) ? $_SESSION['webdbLogin'] : array();
 		$srvs = array();
@@ -1554,7 +852,9 @@ EOT;
 	 * @return array An associative array of server properties
 	 */
 	function getServerInfo($server_id = null) {
-		global $conf, $_reload_browser, $lang;
+		global $_reload_browser;
+		$conf = $this->conf();
+		$lang = $this->lang();
 
 		if ($server_id === null && isset($_REQUEST['server']))
 			$server_id = $_REQUEST['server'];
@@ -1620,7 +920,7 @@ EOT;
 	 */
 	function setCurrentSchema($schema) {
 		/** @var Postgres $data */
-		global $data;
+		$data = $this->data();
 		if ($data->_schema == $schema) {
 			return 0;
 		}
@@ -1654,51 +954,7 @@ EOT;
 	 * @param $onchange Javascript action to take when selections change.
 	 */
 	function printConnection($onchange) {
-		global $data, $lang, $misc;
-
-		echo "<table style=\"width: 100%\"><tr><td>\n";
-		echo "<label>";
-		$this->printHelp($lang['strserver'], 'pg.server');
-		echo "</label>";
-		echo ": <select name=\"server\" {$onchange}>\n";
-
-		$servers = $this->getServers();
-		foreach ($servers as $info) {
-			if (empty($info['username'])) continue; // not logged on this server
-			echo "<option value=\"", htmlspecialchars($info['id']), "\"",
-			((isset($_REQUEST['server']) && $info['id'] == $_REQUEST['server'])) ? ' selected="selected"' : '', ">",
-			htmlspecialchars("{$info['desc']} ({$info['id']})"), "</option>\n";
-		}
-		echo "</select>\n</td><td style=\"text-align: right\">\n";
-
-		// Get the list of all databases
-		$databases = $data->getDatabases();
-
-		if ($databases->recordCount() > 0) {
-
-			echo "<label>";
-			$this->printHelp($lang['strdatabase'], 'pg.database');
-			echo ": <select name=\"database\" {$onchange}>\n";
-
-			//if no database was selected, user should select one
-			if (!isset($_REQUEST['database']))
-				echo "<option value=\"\">--</option>\n";
-
-			while (!$databases->EOF) {
-				$dbname = $databases->fields['datname'];
-				echo "<option value=\"", htmlspecialchars($dbname), "\"",
-				((isset($_REQUEST['database']) && $dbname == $_REQUEST['database'])) ? ' selected="selected"' : '', ">",
-				htmlspecialchars($dbname), "</option>\n";
-				$databases->moveNext();
-			}
-			echo "</select></label>\n";
-		} else {
-			$server_info = $this->getServerInfo();
-			echo "<input type=\"hidden\" name=\"database\" value=\"",
-			htmlspecialchars($server_info['defaultdb']), "\" />\n";
-		}
-
-		echo "</td></tr></table>\n";
+		return $this->getConnectionSelector()->printConnection($onchange);
 	}
 
 	/**
@@ -1724,7 +980,7 @@ EOT;
 	 *   )
 	 **/
 	function getAutocompleteFKProperties($table) {
-		global $data;
+		$data = $this->data();
 
 		$fksprops = array(
 			'byconstr' => array(),
