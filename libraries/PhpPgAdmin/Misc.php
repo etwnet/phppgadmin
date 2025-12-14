@@ -5,7 +5,7 @@ namespace PhpPgAdmin;
 use ADORecordSet;
 use Connection;
 use PhpPgAdmin\Core\AbstractContext;
-use PhpPgAdmin\Core\Container;
+use PhpPgAdmin\Core\AppContainer;
 use PhpPgAdmin\Core\UrlBuilder;
 use PhpPgAdmin\Database\Actions\ConstraintActions;
 use PhpPgAdmin\Database\Actions\SchemaActions;
@@ -135,30 +135,6 @@ class Misc extends AbstractContext
 	}
 
 	/**
-	 * A function to recursively strip slashes.  Used to
-	 * enforce magic_quotes_gpc being off.
-	 * @param &var The variable to strip
-	 */
-	function stripVar(&$var)
-	{
-		if (is_array($var)) {
-			foreach ($var as $k => $v) {
-				$this->stripVar($var[$k]);
-
-				/* magic_quotes_gpc escape keys as well ...*/
-				if (is_string($k)) {
-					$ek = stripslashes($k);
-					if ($ek !== $k) {
-						$var[$ek] = $var[$k];
-						unset($var[$k]);
-					}
-				}
-			}
-		} else
-			$var = stripslashes($var);
-	}
-
-	/**
 	 * Print out the page heading and help link
 	 * @param string $title Title, already escaped
 	 * @param $help (optional) The identifier for the help link
@@ -182,7 +158,6 @@ class Misc extends AbstractContext
 	 */
 	function getDatabaseAccessor($database, $server_id = null)
 	{
-		global $postgresqlMinVer;
 		$lang = $this->lang();
 		$conf = $this->conf();
 
@@ -218,7 +193,7 @@ class Misc extends AbstractContext
 		// The description of the server is returned in $platform.
 		$driverName = $connector->getDriver($platform, $version, $majorVersion);
 		if ($driverName === null) {
-			printf($lang['strpostgresqlversionnotsupported'], $postgresqlMinVer);
+			printf($lang['strpostgresqlversionnotsupported'], AppContainer::getPgServerMinVersion());
 			exit;
 		}
 		$this->setServerInfo('platform', $platform, $server_id);
@@ -229,7 +204,7 @@ class Misc extends AbstractContext
 		$className = "\\PhpPgAdmin\\Database\\$driverName";
 		$postgres = new $className($connector->conn, $majorVersion);
 		$postgres->platform = $connector->platform;
-		Container::setPostgres($postgres);
+		AppContainer::setPostgres($postgres);
 
 		include_once('./classes/database/' . $driverName . '.php');
 		$data = new $driverName($connector->conn);
@@ -245,9 +220,6 @@ class Misc extends AbstractContext
 		return $data;
 	}
 
-	public $ajaxRequest = false;
-	public $frameContentRequest = false;
-
 	/**
 	 * Prints the page header.  If global variable $_no_html_frame is
 	 * set then no header is drawn.
@@ -259,7 +231,6 @@ class Misc extends AbstractContext
 		return $this->getLayoutRenderer()->printHeader($title, $scripts);
 	}
 
-	public $hasFrameset = false;
 
 	/**
 	 * Prints the page body.

@@ -9,10 +9,10 @@
 		echo "</table><div>{$errmsg}</div>\n";
 		exit;
 	}
-	
-	$_no_db_connection = true; /* load lib.inc.php without trying to connect */
 
-	require_once('./libraries/lib.inc.php');
+	$_ENV["SKIP_DB_CONNECTION"] = '1'; /* load bootstrap.php without trying to connect */
+
+	require_once('./libraries/bootstrap.php');
 	require('./tests/selenium/config.test.php');
 	require_once('./classes/database/Connection.php');
 

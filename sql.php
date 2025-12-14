@@ -15,7 +15,7 @@
 	if (!ini_get('safe_mode')) set_time_limit(0);
 
 	// Include application functions
-	include_once('./libraries/lib.inc.php');
+	include_once('./libraries/bootstrap.php');
 
 	/**
 	 * This is a callback function to display the result of each separate query

@@ -7,6 +7,10 @@ use PhpPgAdmin\Misc;
 
 class LayoutRenderer extends AbstractContext
 {
+	private $ajaxRequest = false;
+	private $frameContentRequest = false;
+	private $hasFrameset = false;
+
     private $misc;
 
     public function __construct(Misc $misc)
@@ -23,7 +27,7 @@ class LayoutRenderer extends AbstractContext
 
         // capture ajax/json requests
         if (!empty($_REQUEST['ajax'])) {
-            $this->misc->ajaxRequest = true;
+            $this->ajaxRequest = true;
             if ($_REQUEST['ajax'] == 'json') {
                 header("Content-Type: application/json; charset=utf-8");
             } else {
@@ -36,7 +40,7 @@ class LayoutRenderer extends AbstractContext
 
         // skip html frame for inner content links
         if ($_REQUEST['target'] ?? '' == 'content') {
-            $this->misc->frameContentRequest = true;
+            $this->frameContentRequest = true;
             $_no_html_frame = true;
             // update title through javascript
             echo "<script>\n";
@@ -102,12 +106,11 @@ class LayoutRenderer extends AbstractContext
     public function printBody()
     {
         global $_no_html_frame;
-        $lang = $this->lang();
 
-        if (!empty($_no_html_frame) || $this->misc->ajaxRequest) {
+        if (!empty($_no_html_frame) || $this->ajaxRequest) {
             return;
         }
-        $this->misc->hasFrameset = true;
+        $this->hasFrameset = true;
         echo <<<EOT
         <body>
         <div id="tooltip" role="tooltip">
@@ -135,10 +138,10 @@ EOT;
     public function printFooter()
     {
         global $_reload_browser, $_reload_tree;
-        global $_no_bottom_link, $_no_html_frame;
+        global $_no_html_frame;
         $lang = $this->lang();
 
-        if ($this->misc->ajaxRequest) {
+        if ($this->ajaxRequest) {
             return;
         }
 
@@ -148,21 +151,19 @@ EOT;
             $this->printReload(true);
         }
 
-        if ($this->misc->hasFrameset || $this->misc->frameContentRequest) {
+        if ($this->hasFrameset || $this->frameContentRequest) {
             echo "<hr>\n";
             echo "<div class=\"clearfix bottom-footer\">\n";
             echo "<a href=\"\" target=\"_blank\" class=\"new_window\" title=\"", htmlspecialchars($lang['strnewwindow']), "\"><img src=\"", $this->misc->icon("NewWindow"), "\" ></a>";
             echo "</div>\n";
         }
 
-        if (!isset($_no_bottom_link)) {
-            echo "<a href=\"#\" class=\"bottom_link\">⇱</a>";
-        }
+		 echo "<a href=\"#\" class=\"bottom_link\">⇱</a>";
 
         if (!empty($_no_html_frame)) {
             return;
         }
-        if ($this->misc->hasFrameset) {
+        if ($this->hasFrameset) {
             echo "</div>\n"; // close #content div
             echo "</div>\n"; // close #content-container div
             echo "</div>\n"; // close #frameset div
@@ -331,7 +332,7 @@ EOT;
 
 		echo $str;
 		if ($help) {
-			echo "<a class=\"help\" href=\"";
+			echo "<a target=\"_blank\" class=\"help\" href=\"";
 			echo htmlspecialchars("help.php?help=" . urlencode($help) . "&server=" . urlencode($_REQUEST['server']));
 			echo "\" title=\"{$lang['strhelp']}\" target=\"phppgadminhelp\">{$lang['strhelpicon']}</a>";
 		}

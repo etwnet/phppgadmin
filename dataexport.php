@@ -27,7 +27,7 @@
 		
 		// Include application functions
 		$_no_html_frame = true;
-		include_once('./libraries/lib.inc.php');
+		include_once('./libraries/bootstrap.php');
 		
 		switch ($_REQUEST['what']) {
 			case 'dataonly':
@@ -296,7 +296,7 @@
 	}
 	else {
 		// Include application functions
-		include_once('./libraries/lib.inc.php');
+		include_once('./libraries/bootstrap.php');
 
 		if ( !isset($_REQUEST['query']) or empty($_REQUEST['query']) )
 			$_REQUEST['query'] = $_SESSION['sqlquery'];

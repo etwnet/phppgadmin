@@ -7,9 +7,13 @@
 	 */
 
 	// Include application functions (no db conn)
-	$_no_db_connection = true;
-	include_once('./libraries/lib.inc.php');
-	include_once('./themes/themes.php');
+use PhpPgAdmin\Core\AppContainer;
+
+$_ENV["SKIP_DB_CONNECTION"] = '1';
+	include_once './libraries/bootstrap.php';
+	include_once './themes/themes.php';
+
+	$misc = AppContainer::getMisc();
 
 	$misc->printHeader();
 	$misc->printBody();

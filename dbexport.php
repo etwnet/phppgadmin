@@ -12,7 +12,7 @@
 	// Include application functions
 	$_no_html_frame = true;
 	$f_schema = $f_object = '';
-	include_once('./libraries/lib.inc.php');
+	include_once('./libraries/bootstrap.php');
 
 	// Are we doing a cluster-wide dump or just a per-database dump
 	$dumpall = ($_REQUEST['subject'] == 'server');

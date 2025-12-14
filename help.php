@@ -8,16 +8,45 @@
 
 
 // Include application functions
-include_once('./libraries/lib.inc.php');
+use PhpPgAdmin\Core\AppContainer;
+
+include_once('./libraries/bootstrap.php');
 
 $action = $_REQUEST['action'] ?? '';
 
-function doDefault() {
+/**
+ * Fetch a URL (or array of URLs) for a given help page.
+ */
+function getHelp($help)
+{
+	$pg = AppContainer::getPostgres();
+	$conf = AppContainer::getConf();
+
+	$help_base = sprintf($conf['help_base'], (string)$pg->major_version);
+
+	// Get help pages
+	$pages = include __DIR__ . '/help/PostgresDocBase.php';
+
+	if (isset($pages[$help])) {
+		if (is_array($pages[$help])) {
+			$urls = array();
+			foreach ($pages[$help] as $link) {
+				$urls[] = $help_base . $link;
+			}
+			return $urls;
+		} else
+			return $help_base . $pages[$help];
+	} else
+		return null;
+}
+
+function doDefault()
+{
 	/** @var Postgres $data */
 	global $data, $lang;
 
 	if (isset($_REQUEST['help'])) {
-		$url = $data->getHelp($_REQUEST['help']);
+		$url = getHelp($_REQUEST['help']);
 
 		if (is_array($url)) {
 			doChoosePage($url);
@@ -33,7 +62,8 @@ function doDefault() {
 	doBrowse($lang['strinvalidhelppage']);
 }
 
-function doBrowse($msg = '') {
+function doBrowse($msg = '')
+{
 	global $misc, $data, $lang;
 
 	$misc->printHeader($lang['strhelppagebrowser']);
@@ -45,11 +75,11 @@ function doBrowse($msg = '') {
 
 	echo "<dl>\n";
 
-	$pages = $data->getHelpPages();
+	$pages = getHelpPages();
 	foreach ($pages as $page => $dummy) {
 		echo "<dt>{$page}</dt>\n";
 
-		$urls = $data->getHelp($page);
+		$urls = getHelp($page);
 		if (!is_array($urls)) $urls = array($urls);
 		foreach ($urls as $url) {
 			echo "<dd><a href=\"{$url}\">{$url}</a></dd>\n";
@@ -61,7 +91,8 @@ function doBrowse($msg = '') {
 	$misc->printFooter();
 }
 
-function doChoosePage($urls) {
+function doChoosePage($urls)
+{
 	global $misc, $lang;
 
 	$misc->printHeader($lang['strhelppagebrowser']);
@@ -79,11 +110,10 @@ function doChoosePage($urls) {
 }
 
 switch ($action) {
-case 'browse':
-	doBrowse();
-	break;
-default:
-	doDefault();
-	break;
+	case 'browse':
+		doBrowse();
+		break;
+	default:
+		doDefault();
+		break;
 }
-

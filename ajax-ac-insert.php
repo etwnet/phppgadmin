@@ -1,5 +1,5 @@
 <?php
-include_once('./libraries/lib.inc.php');
+include_once('./libraries/bootstrap.php');
 /** @var Postgres $data */
 /** @var Misc $misc */
 /** @var array $lang */

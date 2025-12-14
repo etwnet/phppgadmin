@@ -2,7 +2,7 @@
 
 function pg_escape_id($id = ''): string
 {
-	$pg = \PhpPgAdmin\Core\Container::getPostgres();
+	$pg = \PhpPgAdmin\Core\AppContainer::getPostgres();
 	return pg_escape_identifier($pg->conn->_connectionID, $id);
 }
 

@@ -1,5 +1,5 @@
 <?php
-// $Id: decorator.inc.php,v 1.8 2007/04/05 11:09:38 mr-russ Exp $
+// $Id: decorator.php,v 1.8 2007/04/05 11:09:38 mr-russ Exp $
 
 // This group of functions and classes provides support for
 // resolving values in a lazy manner (ie, as and when required)

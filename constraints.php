@@ -7,7 +7,7 @@
 	 */
 
 	// Include application functions
-	include_once('./libraries/lib.inc.php');
+	include_once('./libraries/bootstrap.php');
 	include_once('./classes/class.select.php');
 
 	$action = $_REQUEST['action'] ?? '';

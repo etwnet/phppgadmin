@@ -21,7 +21,7 @@ use PHPSQLParser\PHPSQLParser;
 if (!ini_get('safe_mode')) set_time_limit(0);
 
 // Include application functions
-include_once('./libraries/lib.inc.php');
+include_once('./libraries/bootstrap.php');
 
 //global $data, $conf, $lang;
 

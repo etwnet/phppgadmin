@@ -5,6 +5,7 @@ namespace PhpPgAdmin\Database;
 
 
 use ADOConnection;
+use PhpPgAdmin\Core\AppContainer;
 
 class Connector
 {
@@ -62,30 +63,12 @@ class Connector
 	 */
 	function getDriver(&$description, &$version, &$majorVersion)
 	{
-		global $postgresqlMinVer;
-
 		$v = pg_version($this->conn->_connectionID);
-		if (isset($v['server'])) $version = $v['server'];
-
-		// If we didn't manage to get the version without a query, query...
-		if (!isset($version)) {
-
-			$rs = $this->conn->Execute("SELECT VERSION() AS version");
-			$field = $rs->fields['version'];
-
-			// Check the platform, if it's mingw, set it
-			if (preg_match('/ mingw /i', $field))
-				$this->platform = 'MINGW';
-
-			$params = explode(' ', $field);
-			if (!isset($params[1])) return -3;
-
-			$version = $params[1]; // eg. 18.1
-		}
+		$version = $v['server'];
 
 		$majorVersion = (float)substr($version, 0, 3);
 
-		if ($majorVersion < $postgresqlMinVer)
+		if ($majorVersion < AppContainer::getPgServerMinVersion())
 			return null;
 
 		$description = "PostgreSQL {$version}";

@@ -2,9 +2,9 @@
 	$subject = $_REQUEST['subject'] ?? 'root';
 	
 	if ($subject == 'root')
-		$_no_db_connection = true;
+		$_ENV["SKIP_DB_CONNECTION"] = '1';
 	
-	include_once('./libraries/lib.inc.php');
+	include_once('./libraries/bootstrap.php');
 	
 	$url = $misc->getLastTabURL($subject);
 	
@@ -14,11 +14,6 @@
 
 		foreach($url['urlvars'] as $k => $urlvar) {
 			$urlvars[$k] = value($urlvar, $_REQUEST);
-		}
-
-		/* parse_str function is affected by magic_quotes_gpc */
-		if (ini_get('magic_quotes_gpc')) {
-			$misc->stripVar($urlvars);
 		}
 
 		$_REQUEST = array_merge($_REQUEST, $urlvars);

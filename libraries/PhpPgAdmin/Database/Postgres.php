@@ -105,7 +105,45 @@ class Postgres extends AbstractConnection
 	public $typStorages = ['plain', 'external', 'extended', 'main'];
 	public $typStorageDef = 'plain';
 
-	// ... other PostgreSQL-specific constants ...
+	// Select operators
+	public $selectOps = [
+		'=' => 'i',
+		'!=' => 'i',
+		'<' => 'i',
+		'>' => 'i',
+		'<=' => 'i',
+		'>=' => 'i',
+		'<<' => 'i',
+		'>>' => 'i',
+		'<<=' => 'i',
+		'>>=' => 'i',
+		'LIKE' => 'i',
+		'NOT LIKE' => 'i',
+		'ILIKE' => 'i',
+		'NOT ILIKE' => 'i',
+		'SIMILAR TO' => 'i',
+		'NOT SIMILAR TO' => 'i',
+		'~' => 'i',
+		'!~' => 'i',
+		'~*' => 'i',
+		'!~*' => 'i',
+		'IS NULL' => 'p',
+		'IS NOT NULL' => 'p',
+		'IN' => 'x',
+		'NOT IN' => 'x',
+		'@@' => 'i',
+		'@@@' => 'i',
+		'@>' => 'i',
+		'<@' => 'i',
+		'@@ to_tsquery' => 't',
+		'@@@ to_tsquery' => 't',
+		'@> to_tsquery' => 't',
+		'<@ to_tsquery' => 't',
+		'@@ plainto_tsquery' => 't',
+		'@@@ plainto_tsquery' => 't',
+		'@> plainto_tsquery' => 't',
+		'<@ plainto_tsquery' => 't'
+	];
 
 	/**
 	 * Postgres constructor.
@@ -445,7 +483,8 @@ class Postgres extends AbstractConnection
 	/**
 	 * Fetch a URL (or array of URLs) for a given help page.
 	 */
-	function getHelp($help) {
+	function getHelp($help)
+	{
 		$this->getHelpPages();
 
 		if (isset($this->help_page[$help])) {
@@ -490,7 +529,8 @@ class Postgres extends AbstractConnection
 	 *        mapped to sort direction (asc or desc or '' or null) to order by
 	 * @return string The SQL query
 	 */
-	function getSelectSQL($table, $show, $values, $ops, $orderby = array()) {
+	function getSelectSQL($table, $show, $values, $ops, $orderby = array())
+	{
 		$this->fieldArrayClean($show);
 
 		// If an empty array is passed in, then show all columns
@@ -532,24 +572,24 @@ class Postgres extends AbstractConnection
 					}
 					// Different query format depending on operator type
 					switch ($this->selectOps[$ops[$k]]) {
-					case 'i':
-						// Only clean the field for the inline case
-						// this is because (x), subqueries need to
-						// to allow 'a','b' as input.
-						$this->clean($v);
-						$sql .= "\"{$k}\" {$ops[$k]} '{$v}'";
-						break;
-					case 'p':
-						$sql .= "\"{$k}\" {$ops[$k]}";
-						break;
-					case 'x':
-						$sql .= "\"{$k}\" {$ops[$k]} ({$v})";
-						break;
-					case 't':
-						$sql .= "\"{$k}\" {$ops[$k]}('{$v}')";
-						break;
-					default:
-						// Shouldn't happen
+						case 'i':
+							// Only clean the field for the inline case
+							// this is because (x), subqueries need to
+							// to allow 'a','b' as input.
+							$this->clean($v);
+							$sql .= "\"{$k}\" {$ops[$k]} '{$v}'";
+							break;
+						case 'p':
+							$sql .= "\"{$k}\" {$ops[$k]}";
+							break;
+						case 'x':
+							$sql .= "\"{$k}\" {$ops[$k]} ({$v})";
+							break;
+						case 't':
+							$sql .= "\"{$k}\" {$ops[$k]}('{$v}')";
+							break;
+						default:
+							// Shouldn't happen
 					}
 				}
 			}
@@ -573,6 +613,33 @@ class Postgres extends AbstractConnection
 
 		return $sql;
 	}
+
+	/**
+	 * Checks to see whether or not a table has a unique id column
+	 * @param string $table The table name
+	 * @return bool True if it has a unique id, false otherwise
+	 * @return null error
+	 **/
+	function hasObjectID($table)
+	{
+		if ($this->major_version > 11) {
+			return false;
+		}
+		$c_schema = $this->_schema;
+		$this->clean($c_schema);
+		$this->clean($table);
+
+		$sql = "SELECT relhasoids FROM pg_catalog.pg_class WHERE relname='{$table}'
+			AND relnamespace = (SELECT oid FROM pg_catalog.pg_namespace WHERE nspname='{$c_schema}')";
+
+		$rs = $this->selectSet($sql);
+		if ($rs->recordCount() != 1) return null;
+		else {
+			$rs->fields['relhasoids'] = $this->phpBool($rs->fields['relhasoids']);
+			return $rs->fields['relhasoids'];
+		}
+	}
+
 
 	// Capabilities
 

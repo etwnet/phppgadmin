@@ -4,11 +4,11 @@
 		exit;
 	}
 
-	$_no_db_connection = true; /* load lib.inc.php without trying to connect */
+	$_ENV["SKIP_DB_CONNECTION"] = '1'; /* load bootstrap.php without trying to connect */
 	$_REQUEST['language'] = 'english';
 	define('ADODB_ERROR_HANDLER','connection_failed');
 	chdir(dirname(__FILE__). '/../..');
-	require_once('./libraries/lib.inc.php');
+	require_once('./libraries/bootstrap.php');
 
 	/*
 	 * This class help building a selenium HTML test file for PPA.

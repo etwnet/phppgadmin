@@ -2,7 +2,7 @@
 
 # TODO: Check and fix links
 
-$this->help_page = array(
+return array(
 
 	'pg.database'			=> 'managing-databases.html',
 	'pg.database.create'	=> array('sql-createdatabase.html', 'manage-ag-createdb.html'),

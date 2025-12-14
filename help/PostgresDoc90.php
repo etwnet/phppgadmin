@@ -8,4 +8,4 @@
 
 $this->help_base = sprintf($GLOBALS['conf']['help_base'], '9.0');
 
-include('./help/PostgresDocBase.php');
+$this->help_page = include './help/PostgresDocBase.php';

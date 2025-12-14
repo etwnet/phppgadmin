@@ -158,15 +158,6 @@ class TableActions extends AbstractActions
     }
 
     /**
-     * Checks to see whether or not a table has a unique id column.
-        $this->connection = new \PhpPgAdmin\Database\Connection($connection);
-     */
-    public function hasObjectID($table)
-    {
-        return false;
-    }
-
-    /**
      * Returns table information.
      */
     public function getTable($table)

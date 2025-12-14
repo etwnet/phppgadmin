@@ -9,7 +9,7 @@
 // Include application functions
 use PhpPgAdmin\Database\ArrayRecordSet;
 
-include_once('./libraries/lib.inc.php');
+include_once('./libraries/bootstrap.php');
 
 $action = $_REQUEST['action'] ?? '';
 

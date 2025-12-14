@@ -7,8 +7,8 @@
  */
 
 // Include application functions
-$_no_db_connection = true;
-include_once('./libraries/lib.inc.php');
+$_ENV["SKIP_DB_CONNECTION"] = '1';
+include_once('./libraries/bootstrap.php');
 
 $action = $_REQUEST['action'] ?? '';
 if (!isset($msg)) $msg = '';
