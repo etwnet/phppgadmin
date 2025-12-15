@@ -473,52 +473,6 @@ class Postgres extends AbstractConnection
 		else return $rolsuper == 't';
 	}
 
-	// Help pages
-
-	// Default help URL
-	var $help_base;
-	// Help sub pages
-	var $help_page;
-
-	/**
-	 * Fetch a URL (or array of URLs) for a given help page.
-	 */
-	function getHelp($help)
-	{
-		$this->getHelpPages();
-
-		if (isset($this->help_page[$help])) {
-			if (is_array($this->help_page[$help])) {
-				$urls = array();
-				foreach ($this->help_page[$help] as $link) {
-					$urls[] = $this->help_base . $link;
-				}
-				return $urls;
-			} else
-				return $this->help_base . $this->help_page[$help];
-		} else
-			return null;
-	}
-
-	/**
-	 * Returns the help pages for this PostgreSQL version.
-	 * @return array The help pages
-	 */
-	function getHelpPages()
-	{
-		if (!isset($this->help_page)) {
-			// Determine the version-specific help file to include
-			$version = $this->major_version;
-
-			include './help/PostgresDocBase.php';
-
-			$conf = $this->conf();
-			$this->help_base = sprintf($conf['help_base'], (string)$version);
-		}
-
-		return $this->help_page;
-	}
-
 	/**
 	 * Generates the SQL for the 'select' function
 	 * @param $table string The table from which to select
@@ -602,7 +556,7 @@ class Postgres extends AbstractConnection
 			foreach ($orderby as $k => $v) {
 				$sql .= $sep;
 				$sep = ", ";
-				if (preg_match('/^[0-9]+$/', $k)) {
+				if (ctype_digit($k)) {
 					$sql .= $k;
 				} else {
 					$sql .= '"' . $this->fieldClean($k) . '"';
@@ -838,5 +792,15 @@ class Postgres extends AbstractConnection
 	{
 		// Server OIDs are available only until PostgreSQL 11
 		return $this->major_version <= 11;
+	}
+
+	function hasTypeAddValue()
+	{
+		return $this->major_version >= 9.1;
+	}
+
+	function hasTypeRenameValue()
+	{
+		return $this->major_version >= 10;
 	}
 }

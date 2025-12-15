@@ -215,29 +215,29 @@ class TypeActions extends AbstractActions
             }
 
             switch ($type[$i]) {
-            case 'timestamp with time zone':
-            case 'timestamp without time zone':
-                $qual = substr($type[$i], 9);
-                $sql .= "\"{$field[$i]}\" timestamp";
-                if ($length[$i] != '') {
-                    $sql .= "({$length[$i]})";
-                }
-                $sql .= $qual;
-                break;
-            case 'time with time zone':
-            case 'time without time zone':
-                $qual = substr($type[$i], 4);
-                $sql .= "\"{$field[$i]}\" time";
-                if ($length[$i] != '') {
-                    $sql .= "({$length[$i]})";
-                }
-                $sql .= $qual;
-                break;
-            default:
-                $sql .= "\"{$field[$i]}\" {$type[$i]}";
-                if ($length[$i] != '') {
-                    $sql .= "({$length[$i]})";
-                }
+                case 'timestamp with time zone':
+                case 'timestamp without time zone':
+                    $qual = substr($type[$i], 9);
+                    $sql .= "\"{$field[$i]}\" timestamp";
+                    if ($length[$i] != '') {
+                        $sql .= "({$length[$i]})";
+                    }
+                    $sql .= $qual;
+                    break;
+                case 'time with time zone':
+                case 'time without time zone':
+                    $qual = substr($type[$i], 4);
+                    $sql .= "\"{$field[$i]}\" time";
+                    if ($length[$i] != '') {
+                        $sql .= "({$length[$i]})";
+                    }
+                    $sql .= $qual;
+                    break;
+                default:
+                    $sql .= "\"{$field[$i]}\" {$type[$i]}";
+                    if ($length[$i] != '') {
+                        $sql .= "({$length[$i]})";
+                    }
             }
 
             if ($array[$i] == '[]') {
@@ -345,5 +345,49 @@ class TypeActions extends AbstractActions
         ";
 
         return $this->connection->selectSet($sql);
+    }
+
+    /**
+     * Edits an enum type by adding or removing values.
+     * @param string $schema The schema name
+     * @param string $type The enum type name
+     * @param array $newValues Array of new enum values
+     * @param array $oldValues Array of old enum values to remove
+     * @return int 0 on success, -1 on error
+     */
+    function editEnumType($schema, $type, $newValues = [], $oldValues = [])
+    {
+        $this->connection->clean($schema);
+        $this->connection->clean($type);
+
+        // First, remove old values
+        if (!empty($oldValues)) {
+            if ($this->connection->hasTypeRenameValue()) {
+                return -1;
+            }
+            foreach ($oldValues as $value) {
+                $this->connection->clean($value);
+                $sql = "ALTER TYPE \"{$schema}\".\"{$type}\" RENAME VALUE '{$value}' TO 'old_{$value}'";
+                if ($this->connection->execute($sql) != 0) {
+                    return -1;
+                }
+            }
+        }
+
+        // Then, add new values
+        if (!empty($newValues)) {
+            if (!$this->connection->hasTypeAddValue()) {
+                return -1;
+            }
+            foreach ($newValues as $value) {
+                $this->connection->clean($value);
+                $sql = "ALTER TYPE \"{$schema}\".\"{$type}\" ADD VALUE '{$value}'";
+                if ($this->connection->execute($sql) != 0) {
+                    return -1;
+                }
+            }
+        }
+
+        return 0;
     }
 }

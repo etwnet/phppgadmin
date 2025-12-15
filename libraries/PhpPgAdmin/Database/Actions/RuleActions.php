@@ -6,6 +6,8 @@ use PhpPgAdmin\Database\AbstractActions;
 
 class RuleActions extends AbstractActions
 {
+	// Rule action types
+	private $ruleEvents = ['SELECT', 'INSERT', 'UPDATE', 'DELETE'];
 
     /**
      * Returns a list of all rules on a table or view.
