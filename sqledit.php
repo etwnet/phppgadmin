@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 	/**
 	 * Alternative SQL editing window
 	 *
@@ -16,7 +18,9 @@
 	 * Private function to display server and list of databases
 	 */
 	function _printConnection() {
-		global $data, $action, $misc;
+		global $action;
+$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
 		
 		// The javascript action on the select box reloads the
 		// popup whenever the server or database is changed.
@@ -38,8 +42,10 @@
 	 * Searches for a named database object
 	 */
 	function doFind() {
-		global $data, $misc;
-		global $lang, $conf;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
+$conf = AppContainer::getConf();
 		
 		if (!isset($_REQUEST['term'])) $_REQUEST['term'] = '';
 		if (!isset($_REQUEST['filter'])) $_REQUEST['filter'] = '';
@@ -92,8 +98,9 @@
 	 * Allow execution of arbitrary SQL statements on a database
 	 */
 	function doDefault() {
-		global $data, $misc;
-		global $lang; 
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang(); 
 		
 		if (!isset($_SESSION['sqlquery'])) $_SESSION['sqlquery'] = '';
 		

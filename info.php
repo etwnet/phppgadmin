@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 	/**
 	 * List extra information on a table
 	 *
@@ -15,8 +17,9 @@
 	 * List all the information on the table
 	 */
 	function doDefault($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		$misc->printTrail('table');
 		$misc->printTabs('table','info');

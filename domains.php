@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 	/**
 	 * Manage domains in a database
 	 *
@@ -16,7 +18,8 @@
 	 * Function to save after altering a domain
 	 */
 	function doSaveAlter() {
-		global $data, $lang;
+		$data = AppContainer::getData();
+$lang = AppContainer::getLang();
 		
 		$status = $data->alterDomain($_POST['domain'], $_POST['domdefault'], 
 			isset($_POST['domnotnull']), $_POST['domowner']);
@@ -30,8 +33,9 @@
 	 * Allow altering a domain
 	 */
 	function doAlter($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 	
 		$misc->printTrail('domain');
 		$misc->printTitle($lang['stralter'],'pg.domain.alter');
@@ -87,8 +91,9 @@
 	 * Confirm and then actually add a CHECK constraint
 	 */
 	function addCheck($confirm, $msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if (!isset($_POST['name'])) $_POST['name'] = '';
 		if (!isset($_POST['definition'])) $_POST['definition'] = '';
@@ -136,8 +141,9 @@
 	 * Show confirmation of drop constraint and perform actual drop
 	 */
 	function doDropConstraint($confirm, $msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if ($confirm) {
 			$misc->printTrail('domain');
@@ -170,8 +176,9 @@
 	 * Show properties for a domain.  Allow manipulating constraints as well.
 	 */
 	function doProperties($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 	
 		$misc->printTrail('domain');
 		$misc->printTitle($lang['strproperties'],'pg.domain');
@@ -298,8 +305,9 @@
 	 * Show confirmation of drop and perform actual drop
 	 */
 	function doDrop($confirm) {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if ($confirm) {
 			$misc->printTrail('domain');
@@ -329,8 +337,9 @@
 	 * Displays a screen where they can enter a new domain
 	 */
 	function doCreate($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 		
 		if (!isset($_POST['domname'])) $_POST['domname'] = '';
 		if (!isset($_POST['domtype'])) $_POST['domtype'] = '';
@@ -394,7 +403,8 @@
 	 * Actually creates the new domain in the database
 	 */
 	function doSaveCreate() {
-		global $data, $lang;
+		$data = AppContainer::getData();
+$lang = AppContainer::getLang();
 		
 		if (!isset($_POST['domcheck'])) $_POST['domcheck'] = '';
 
@@ -414,8 +424,10 @@
 	 * Show default list of domains in the database
 	 */
 	function doDefault($msg = '') {
-		global $data, $conf, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$conf = AppContainer::getConf();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 		
 		$misc->printTrail('schema');
 		$misc->printTabs('schema','domains');
@@ -513,7 +525,8 @@
 	 * Generate XML for the browser tree.
 	 */
 	function doTree() {
-		global $misc, $data;
+		$misc = AppContainer::getMisc();
+$data = AppContainer::getData();
 		
 		$domains = $data->getDomains();
 		

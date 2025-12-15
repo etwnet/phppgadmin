@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 	/**
 	 * Manage casts in a database
 	 *
@@ -16,11 +18,13 @@
 	 * Show default list of casts in the database
 	 */
 	function doDefault($msg = '') {
-		global $data, $misc, $database;
-		global $lang;
+		global $database;
+$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		function renderCastContext($val) {
-			global $lang;
+			$lang = AppContainer::getLang();
 			switch ($val) {
 				case 'e': return $lang['strno'];
 				case 'a': return $lang['strinassignment'];
@@ -69,7 +73,8 @@
 	 * Generate XML for the browser tree.
 	 */
 	function doTree() {
-		global $misc, $data;
+		$misc = AppContainer::getMisc();
+$data = AppContainer::getData();
 		
 		$casts = $data->getCasts();
 		

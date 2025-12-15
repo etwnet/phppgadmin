@@ -888,6 +888,7 @@ class Postgres extends ADODB_base {
 	 * @return 0 success
 	 */
 	function setSchema($schema) {
+		throw new Exception($schema);
 		// Get the current schema search path, including 'pg_catalog'.
 		$search_path = $this->getSearchPath();
 		// Prepend $schema to search path

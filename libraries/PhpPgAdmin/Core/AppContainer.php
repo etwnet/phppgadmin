@@ -13,7 +13,8 @@ use PhpPgAdmin\Database\Postgres as PostgresNew;
  * IDE type support while we phase out globals.
  */
 #[\AllowDynamicProperties]
-class AppContainer {
+class AppContainer
+{
 
 	/** @var ?AppContainer */
 	private static $instance;
@@ -31,7 +32,17 @@ class AppContainer {
 	/**
 	 * @var bool
 	 */
-	private $skipHtmlFrame;
+	private $skipHtmlFrame = false;
+
+	/**
+	 * @var bool
+	 */
+	private $shouldReloadTree = false;
+
+	/**
+	 * @var bool
+	 */
+	private $shouldReloadPage = false;
 
 	/**
 	 * @var string
@@ -70,7 +81,8 @@ class AppContainer {
 
 
 	/** Retrieve the singleton instance. */
-	private static function instance(): AppContainer {
+	private static function instance(): AppContainer
+	{
 		if (self::$instance === null) {
 			self::$instance = new self();
 		}
@@ -78,127 +90,180 @@ class AppContainer {
 	}
 
 	/** Store a value by key. */
-	public static function set(string $key, $value): void {
+	public static function set(string $key, $value): void
+	{
 		$container = self::instance();
 		$container->{$key} = $value;
 	}
 
 	/** Retrieve a value or a default if absent. */
-	public static function get(string $key, $default = null) {
+	public static function get(string $key, $default = null)
+	{
 		$container = self::instance();
 		return $container->{$key} ?? $default;
 	}
 
 	/** Check whether a key exists in the container. */
-	public static function has(string $key): bool {
+	public static function has(string $key): bool
+	{
 		$container = self::instance();
 		return property_exists($container, $key);
 	}
 
 	/** Explicit setters/getters for common dependencies */
-	public static function setConf(array &$conf): void {
+	public static function setConf(array &$conf): void
+	{
 		self::instance()->conf = &$conf;
 	}
 
-	public static function &getConf(): array {
+	public static function &getConf(): array
+	{
 		return self::instance()->conf;
 	}
 
-	public static function setLang(array $lang): void {
+	public static function setLang(array $lang): void
+	{
 		self::instance()->lang = $lang;
 	}
 
-	public static function getLang(): array {
+	public static function getLang(): array
+	{
 		return self::instance()->lang;
 	}
 
-	public static function setMisc(Misc $misc): void {
+	public static function setMisc(Misc $misc): void
+	{
 		self::instance()->misc = $misc;
 	}
 
-	public static function getMisc(): Misc {
+	public static function getMisc(): Misc
+	{
 		return self::instance()->misc;
 	}
 
-	public static function setData(PostgresLegacy $data): void {
+	public static function setData(PostgresLegacy $data): void
+	{
 		self::instance()->data = $data;
 	}
 
-	public static function getData(): ?PostgresLegacy {
+	public static function getData(): ?PostgresLegacy
+	{
 		return self::instance()->data;
 	}
 
-	public static function setPostgres(PostgresNew $pg): void {
+	public static function setPostgres(PostgresNew $pg): void
+	{
 		self::instance()->postgres = $pg;
 	}
 
-	public static function getPostgres(): ?PostgresNew {
+	public static function getPostgres(): ?PostgresNew
+	{
 		return self::instance()->postgres;
 	}
 
-	public static function setPluginManager(PluginManager $pluginManager): void {
+	public static function setPluginManager(PluginManager $pluginManager): void
+	{
 		self::instance()->pluginManager = $pluginManager;
 	}
 
-	public static function getPluginManager(): PluginManager {
+	public static function getPluginManager(): PluginManager
+	{
 		return self::instance()->pluginManager;
 	}
 
 	/**
 	 * @return string
 	 */
-	public static function getAppName(): string {
+	public static function getAppName(): string
+	{
 		return self::instance()->appName;
 	}
 
 	/**
 	 * @param string $appName
 	 */
-	public static function setAppName(string $appName): void {
+	public static function setAppName(string $appName): void
+	{
 		self::instance()->appName = $appName;
 	}
 
 	/**
 	 * @return string
 	 */
-	public static function getAppVersion(): string {
+	public static function getAppVersion(): string
+	{
 		return self::instance()->appVersion;
 	}
 
 	/**
 	 * @param string $appVersion
 	 */
-	public static function setAppVersion(string $appVersion): void {
+	public static function setAppVersion(string $appVersion): void
+	{
 		self::instance()->appVersion = $appVersion;
 	}
 
 	/**
 	 * @return string
 	 */
-	public static function getPgServerMinVersion(): string {
+	public static function getPgServerMinVersion(): string
+	{
 		return self::instance()->pgServerMinVersion;
 	}
 
 	/**
 	 * @param string $pgServerMinVersion
 	 */
-	public static function setPgServerMinVersion(string $pgServerMinVersion): void {
+	public static function setPgServerMinVersion(string $pgServerMinVersion): void
+	{
 		self::instance()->pgServerMinVersion = $pgServerMinVersion;
 	}
 
 	/**
 	 * @return bool
 	 */
-	public static function isSkipHtmlFrame(): bool {
+	public static function isSkipHtmlFrame(): bool
+	{
 		return self::instance()->skipHtmlFrame;
 	}
 
 	/**
 	 * @param bool $skipHtmlFrame
 	 */
-	public static function setSkipHtmlFrame(bool $skipHtmlFrame): void {
+	public static function setSkipHtmlFrame(bool $skipHtmlFrame): void
+	{
 		self::instance()->skipHtmlFrame = $skipHtmlFrame;
 	}
 
+	/**
+	 * Return whether the layout tree should be reloaded.
+	 */
+	public static function shouldReloadTree(): bool
+	{
+		return self::instance()->shouldReloadTree;
+	}
 
+	/**
+	 * Mark whether the layout tree should be reloaded.
+	 */
+	public static function setShouldReloadTree(bool $should): void
+	{
+		self::instance()->shouldReloadTree = $should;
+	}
+
+	/**
+	 * Return whether the page should be reloaded.
+	 */
+	public static function shouldReloadPage(): bool
+	{
+		return self::instance()->shouldReloadPage;
+	}
+
+	/**
+	 * Mark whether the page should be reloaded.
+	 */
+	public static function setShouldReloadPage(bool $should): void
+	{
+		self::instance()->shouldReloadPage = $should;
+	}
 }

@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 	/**
 	 * Manage privileges in a database
 	 *
@@ -19,8 +21,9 @@
 	 * @param $msg (optional) A message to show
 	 */
 	function doAlter($confirm, $mode, $msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if (!isset($_REQUEST['username'])) $_REQUEST['username'] = array();
 		if (!isset($_REQUEST['groupname'])) $_REQUEST['groupname'] = array();
@@ -143,8 +146,10 @@
 	function doDefault($msg = '') {
 		/** @var Postgres $data */
 		/** @var Misc $misc */
-		global $data, $misc, $database;
-		global $lang;
+		global $database;
+$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		$misc->printTrail($_REQUEST['subject']);
 		

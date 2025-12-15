@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 	/**
 	 * Manage conversions in a database
 	 *
@@ -16,8 +18,11 @@
 	 * Show default list of conversions in the database
 	 */
 	function doDefault($msg = '') {
-		global $data, $conf, $misc, $database;
-		global $lang;
+		global $database;
+$data = AppContainer::getData();
+$conf = AppContainer::getConf();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		$misc->printTrail('schema');
 		$misc->printTabs('schema', 'conversions');
@@ -58,7 +63,8 @@
 	 * Generate XML for the browser tree.
 	 */
 	function doTree() {
-		global $misc, $data;
+		$misc = AppContainer::getMisc();
+$data = AppContainer::getData();
 		
 		$conversions = $data->getconversions();
 		

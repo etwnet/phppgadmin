@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 	/**
 	 * Manage operators in a database
 	 *
@@ -16,8 +18,9 @@
 	 * Show read only properties for an operator
 	 */
 	function doProperties($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		$misc->printTrail('operator');
 		$misc->printTitle($lang['strproperties'],'pg.operator');
@@ -88,8 +91,9 @@
 	 * Show confirmation of drop and perform actual drop
 	 */
 	function doDrop($confirm) {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if ($confirm) {
 			$misc->printTrail('operator');
@@ -121,8 +125,10 @@
 	 * Show default list of operators in the database
 	 */
 	function doDefault($msg = '') {
-		global $data, $conf, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$conf = AppContainer::getConf();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 		
 		$misc->printTrail('schema');
 		$misc->printTabs('schema','operators');
@@ -187,7 +193,8 @@
 	 * Generate XML for the browser tree.
 	 */
 	function doTree() {
-		global $misc, $data;
+		$misc = AppContainer::getMisc();
+$data = AppContainer::getData();
 		
 		$operators = $data->getOperators();
 		

@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 /**
  * Alternative SQL editing window
  *
@@ -14,7 +16,8 @@ include_once('./libraries/bootstrap.php');
 $action = $_REQUEST['action'] ?? '';
 
 function doDefault() {
-	global $misc, $lang;
+	$misc = AppContainer::getMisc();
+$lang = AppContainer::getLang();
 
 	$onchange = "onchange=\"location.href='history.php?server=' + encodeURI(server.options[server.selectedIndex].value) + '&amp;database=' + encodeURI(database.options[database.selectedIndex].value) + '&amp;'\"";
 
@@ -136,7 +139,8 @@ function doDefault() {
 }
 
 function doDelHistory($qid, $confirm) {
-	global $misc, $lang;
+	$misc = AppContainer::getMisc();
+$lang = AppContainer::getLang();
 
 	if ($confirm) {
 		$misc->printHeader($lang['strhistory']);
@@ -160,7 +164,8 @@ function doDelHistory($qid, $confirm) {
 }
 
 function doClearHistory($confirm) {
-	global $misc, $lang;
+	$misc = AppContainer::getMisc();
+$lang = AppContainer::getLang();
 
 	if ($confirm) {
 		$misc->printHeader($lang['strhistory']);

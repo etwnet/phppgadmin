@@ -51,14 +51,15 @@ class SchemaActions extends AbstractActions
     public function setSchema($schema)
     {
         $search_path = $this->getSearchPath();
-        array_unshift($search_path, $schema);
-        $status = $this->setSearchPath($search_path);
-        if ($status == 0) {
-            $this->connection->_schema = $schema;
-            return 0;
-        }
-
-        return $status;
+        $schema_by_key = array_flip($search_path);
+		if (!isset($schema_by_key[$schema])) {
+			$status = $this->setSearchPath($search_path);
+			if ($status != 0) {
+				return $status;
+			}
+		}
+		$this->connection->_schema = $schema;
+		return 0;
     }
 
     /**

@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 /**
  * Manage servers
  *
@@ -13,8 +15,11 @@ include_once('./libraries/bootstrap.php');
 $action = $_REQUEST['action'] ?? '';
 if (!isset($msg)) $msg = '';
 
-function doLogout() {
-	global $misc, $lang, $_reload_tree, $plugin_manager;
+function doLogout()
+{
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
+	$plugin_manager = AppContainer::getPluginManager();
 
 	$plugin_manager->do_hook('logout', $_REQUEST['logoutServer']);
 
@@ -25,12 +30,14 @@ function doLogout() {
 
 	doDefault(sprintf($lang['strlogoutmsg'], $server_info['desc']));
 
-	$_reload_tree = true;
+	AppContainer::setShouldReloadTree(true);
 }
 
-function doDefault($msg = '') {
-	global $conf, $misc;
-	global $lang;
+function doDefault($msg = '')
+{
+	$conf = AppContainer::getConf();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$misc->printTabs('root', 'servers');
 	$misc->printMsg($msg);
@@ -56,7 +63,8 @@ function doDefault($msg = '') {
 
 	$servers = $misc->getServers(true, $group);
 
-	function svPre(&$rowdata, $actions) {
+	function svPre(&$rowdata, $actions)
+	{
 		$actions['logout']['disable'] = empty($rowdata->fields['username']);
 		return $actions;
 	}
@@ -109,24 +117,26 @@ function doDefault($msg = '') {
 	$misc->printTable($servers, $columns, $actions, 'servers-servers', $lang['strnoobjects'], 'svPre');
 }
 
-function doTree() {
-	global $misc, $conf;
+function doTree()
+{
+	$misc = AppContainer::getMisc();
+	$conf = AppContainer::getConf();
 
 	$nodes = array();
 	$group_id = $_GET['group'] ?? false;
 
 	/* root with srv_groups */
-	if (isset($conf['srv_groups']) and count($conf['srv_groups']) > 0
-		and $group_id === false) {
+	if (
+		isset($conf['srv_groups']) and count($conf['srv_groups']) > 0
+		and $group_id === false
+	) {
 		$nodes = $misc->getServersGroups(true);
-	} /* group subtree */
-	else if (isset($conf['srv_groups']) and $group_id !== false) {
+	} /* group subtree */ else if (isset($conf['srv_groups']) and $group_id !== false) {
 		if ($group_id !== 'all')
 			$nodes = $misc->getServersGroups(false, $group_id);
 		$nodes = array_merge($nodes, $misc->getServers(false, $group_id));
 		$nodes = new \PhpPgAdmin\Database\ArrayRecordSet($nodes);
-	} /* no srv_group */
-	else {
+	} /* no srv_group */ else {
 		$nodes = $misc->getServers(true, false);
 	}
 
@@ -161,13 +171,12 @@ $misc->printBody();
 $misc->printTrail('root');
 
 switch ($action) {
-case 'logout':
-	doLogout();
-	break;
-default:
-	doDefault($msg);
-	break;
+	case 'logout':
+		doLogout();
+		break;
+	default:
+		doDefault($msg);
+		break;
 }
 
 $misc->printFooter();
-

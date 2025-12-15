@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 	/**
 	 * Manage users in a database cluster
 	 *
@@ -19,8 +21,9 @@
 	 * the PostgreSQL permissions will prevent them changing anything anyway.
 	 */
 	function doAccount($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 		
 		$server_info = $misc->getServerInfo();
 		
@@ -65,8 +68,10 @@
 	 * Show confirmation of change password and actually change password
 	 */
 	function doChangePassword($confirm, $msg = '') {
-		global $data, $misc;
-		global $lang, $conf;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
+$conf = AppContainer::getConf();
 		
 		$server_info = $misc->getServerInfo();
 		
@@ -115,8 +120,9 @@
 	 * Function to allow editing of a user
 	 */
 	function doEdit($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 	
 		$misc->printTrail('user');
 		$misc->printTitle($lang['stralter'],'pg.user.alter');
@@ -169,7 +175,8 @@
 	 * Function to save after editing a user
 	 */
 	function doSaveEdit() {
-		global $data, $lang;
+		$data = AppContainer::getData();
+$lang = AppContainer::getLang();
 		
 		// Check name and password
 		if (isset($_POST['newname']) && $_POST['newname'] == '')
@@ -190,8 +197,9 @@
 	 * Show confirmation of drop and perform actual drop
 	 */
 	function doDrop($confirm) {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if ($confirm) {
 			$misc->printTrail('user');
@@ -220,8 +228,10 @@
 	 * Displays a screen where they can enter a new user
 	 */
 	function doCreate($msg = '') {
-		global $data, $misc, $username;
-		global $lang;
+		global $username;
+$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 		
 		if (!isset($_POST['formUsername'])) $_POST['formUsername'] = '';
 		if (!isset($_POST['formPassword'])) $_POST['formPassword'] = '';
@@ -260,8 +270,8 @@
 	 * Actually creates the new user in the database
 	 */
 	function doSaveCreate() {
-		global $data;
-		global $lang;
+		$data = AppContainer::getData();
+		$lang = AppContainer::getLang();
 
 		// Check data
 		if ($_POST['formUsername'] == '')
@@ -282,11 +292,12 @@
 	 * Show default list of users in the database
 	 */
 	function doDefault($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 		
 		function renderUseExpires($val) {
-			global $lang;
+			$lang = AppContainer::getLang();
 			return $val == 'infinity' ? $lang['strnever'] : htmlspecialchars_nc($val);
  		}
 		

@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 /**
  * List tables in a database
  *
@@ -14,8 +16,11 @@ $action = $_REQUEST['action'] ?? '';
 /**
  * Function to save after altering a table
  */
-function doSaveAlter() {
-	global $data, $lang, $_reload_browser, $misc;
+function doSaveAlter()
+{
+	$data = AppContainer::getData();
+	$lang = AppContainer::getLang();
+	$misc = AppContainer::getMisc();
 
 	// For databases that don't allow owner change
 	if (!isset($_POST['owner'])) $_POST['owner'] = '';
@@ -31,13 +36,13 @@ function doSaveAlter() {
 			// Jump them to the new table name
 			$_REQUEST['table'] = $_POST['name'];
 			// Force a browser reload
-			$_reload_browser = true;
+			AppContainer::setShouldReloadTree(true);
 		}
 		// If schema has changed, need to change to the new schema and reload the browser
 		if (!empty($_POST['newschema']) && ($_POST['newschema'] != $data->_schema)) {
 			// Jump them to the new sequence schema
 			$misc->setCurrentSchema($_POST['newschema']);
-			$_reload_browser = true;
+			AppContainer::setShouldReloadTree(true);
 		}
 		doDefault($lang['strtablealtered']);
 	} else
@@ -47,9 +52,11 @@ function doSaveAlter() {
 /**
  * Function to allow altering of a table
  */
-function doAlter($msg = '') {
-	global $data, $misc;
-	global $lang;
+function doAlter($msg = '')
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$misc->printTrail('table');
 	$misc->printTitle($lang['stralter'], 'pg.table.alter');
@@ -82,8 +89,7 @@ function doAlter($msg = '') {
 			echo "<td class=\"data1\"><select name=\"owner\">";
 			while (!$users->EOF) {
 				$uname = $users->fields['usename'];
-				echo "<option value=\"", htmlspecialchars_nc($uname), "\"",
-				($uname == $_POST['owner']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($uname), "</option>\n";
+				echo "<option value=\"", htmlspecialchars_nc($uname), "\"", ($uname == $_POST['owner']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($uname), "</option>\n";
 				$users->moveNext();
 			}
 			echo "</select></td></tr>\n";
@@ -95,8 +101,7 @@ function doAlter($msg = '') {
 			echo "<td class=\"data1\"><select name=\"newschema\">";
 			while (!$schemas->EOF) {
 				$schema = $schemas->fields['nspname'];
-				echo "<option value=\"", htmlspecialchars_nc($schema), "\"",
-				($schema == $_POST['newschema']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($schema), "</option>\n";
+				echo "<option value=\"", htmlspecialchars_nc($schema), "\"", ($schema == $_POST['newschema']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($schema), "</option>\n";
 				$schemas->moveNext();
 			}
 			echo "</select></td></tr>\n";
@@ -107,13 +112,11 @@ function doAlter($msg = '') {
 			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strtablespace']}</th>\n";
 			echo "\t\t<td class=\"data1\">\n\t\t\t<select name=\"tablespace\">\n";
 			// Always offer the default (empty) option
-			echo "\t\t\t\t<option value=\"\"",
-			($_POST['tablespace'] == '') ? ' selected="selected"' : '', "></option>\n";
+			echo "\t\t\t\t<option value=\"\"", ($_POST['tablespace'] == '') ? ' selected="selected"' : '', "></option>\n";
 			// Display all other tablespaces
 			while (!$tablespaces->EOF) {
 				$spcname = htmlspecialchars_nc($tablespaces->fields['spcname']);
-				echo "\t\t\t\t<option value=\"{$spcname}\"",
-				($spcname == $_POST['tablespace']) ? ' selected="selected"' : '', ">{$spcname}</option>\n";
+				echo "\t\t\t\t<option value=\"{$spcname}\"", ($spcname == $_POST['tablespace']) ? ' selected="selected"' : '', ">{$spcname}</option>\n";
 				$tablespaces->moveNext();
 			}
 			echo "\t\t\t</select>\n\t\t</td>\n\t</tr>\n";
@@ -133,9 +136,11 @@ function doAlter($msg = '') {
 	} else echo "<p>{$lang['strnodata']}</p>\n";
 }
 
-function doExport($msg = '') {
-	global $data, $misc;
-	global $lang;
+function doExport($msg = '')
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	// Determine whether or not the table has an object ID (Always false if version>=12)
 	$hasID = $data->hasObjectID($_REQUEST['table']);
@@ -191,9 +196,11 @@ function doExport($msg = '') {
 	echo "</form>\n";
 }
 
-function doImport($msg = '') {
-	global $data, $misc;
-	global $lang;
+function doImport($msg = '')
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$misc->printTrail('table');
 	$misc->printTabs('table', 'import');
@@ -218,7 +225,7 @@ function doImport($msg = '') {
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strallowednulls']}</th>\n";
 			echo "\t\t<td><label><input type=\"checkbox\" name=\"allowednulls[0]\" value=\"\\N\" checked=\"checked\" />{$lang['strbackslashn']}</label><br />\n";
 			echo "\t\t<label><input type=\"checkbox\" name=\"allowednulls[1]\" value=\"NULL\" />NULL</label><br />\n";
-			echo "\t\t<label><input type=\"checkbox\" name=\"allowednulls[2]\" value=\"\" />{$lang['stremptystring'] }</label></td>\n\t</tr>\n";
+			echo "\t\t<label><input type=\"checkbox\" name=\"allowednulls[2]\" value=\"\" />{$lang['stremptystring']}</label></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strfile']}</th>\n";
 			echo "\t\t<td><input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"{$max_size}\" />";
 			echo "<input type=\"file\" name=\"source\" /></td>\n\t</tr>\n";
@@ -235,135 +242,149 @@ function doImport($msg = '') {
 /**
  * Displays a screen where they can add a column
  */
-function doAddColumn($msg = '') {
-	global $data, $misc, $_reload_browser;
-	global $lang;
+function doAddColumn($msg = '')
+{
+
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	if (!isset($_REQUEST['stage'])) $_REQUEST['stage'] = 1;
 
 	switch ($_REQUEST['stage']) {
-	case 1:
-		// Set variable defaults
-		if (!isset($_POST['field'])) $_POST['field'] = '';
-		if (!isset($_POST['type'])) $_POST['type'] = '';
-		if (!isset($_POST['array'])) $_POST['array'] = '';
-		if (!isset($_POST['length'])) $_POST['length'] = '';
-		if (!isset($_POST['default'])) $_POST['default'] = '';
-		if (!isset($_POST['comment'])) $_POST['comment'] = '';
+		case 1:
+			// Set variable defaults
+			if (!isset($_POST['field'])) $_POST['field'] = '';
+			if (!isset($_POST['type'])) $_POST['type'] = '';
+			if (!isset($_POST['array'])) $_POST['array'] = '';
+			if (!isset($_POST['length'])) $_POST['length'] = '';
+			if (!isset($_POST['default'])) $_POST['default'] = '';
+			if (!isset($_POST['comment'])) $_POST['comment'] = '';
 
-		// Fetch all available types
-		$types = $data->getTypes(true, false, true);
-		$types_for_js = array();
+			// Fetch all available types
+			$types = $data->getTypes(true, false, true);
+			$types_for_js = array();
 
-		$misc->printTrail('table');
-		$misc->printTitle($lang['straddcolumn'], 'pg.column.add');
-		$misc->printMsg($msg);
+			$misc->printTrail('table');
+			$misc->printTitle($lang['straddcolumn'], 'pg.column.add');
+			$misc->printMsg($msg);
 
-		echo "<script src=\"tables.js\" type=\"text/javascript\"></script>";
-		echo "<form action=\"tblproperties.php\" method=\"post\">\n";
+			echo "<script src=\"tables.js\" type=\"text/javascript\"></script>";
+			echo "<form action=\"tblproperties.php\" method=\"post\">\n";
 
-		// Output table header
-		echo "<table>\n";
-		echo "<tr><th class=\"data required\">{$lang['strname']}</th>\n<th colspan=\"2\" class=\"data required\">{$lang['strtype']}</th>\n";
-		echo "<th class=\"data\">{$lang['strlength']}</th>\n";
-		if ($data->hasCreateFieldWithConstraints())
-			echo "<th class=\"data\">{$lang['strnotnull']}</th>\n<th class=\"data\">{$lang['strdefault']}</th>\n";
-		echo "<th class=\"data\">{$lang['strcomment']}</th></tr>\n";
+			// Output table header
+			echo "<table>\n";
+			echo "<tr><th class=\"data required\">{$lang['strname']}</th>\n<th colspan=\"2\" class=\"data required\">{$lang['strtype']}</th>\n";
+			echo "<th class=\"data\">{$lang['strlength']}</th>\n";
+			if ($data->hasCreateFieldWithConstraints())
+				echo "<th class=\"data\">{$lang['strnotnull']}</th>\n<th class=\"data\">{$lang['strdefault']}</th>\n";
+			echo "<th class=\"data\">{$lang['strcomment']}</th></tr>\n";
 
-		echo "<tr><td><input name=\"field\" size=\"16\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-		htmlspecialchars_nc($_POST['field']), "\" /></td>\n";
-		echo "<td><select name=\"type\" id=\"type\" onchange=\"checkLengths(document.getElementById('type').value,'');\">\n";
-		// Output any "magic" types.  This came in with the alter column type so we'll check that
-		if ($data->hasMagicTypes()) {
-			foreach ($data->extraTypes as $v) {
-				$types_for_js[] = strtolower($v);
-				echo "\t<option value=\"", htmlspecialchars_nc($v), "\"",
-				($v == $_POST['type']) ? ' selected="selected"' : '', ">",
-				$misc->printVal($v), "</option>\n";
+			echo "<tr><td><input name=\"field\" size=\"16\" maxlength=\"{$data->_maxNameLen}\" value=\"",
+			htmlspecialchars_nc($_POST['field']), "\" /></td>\n";
+			echo "<td><select name=\"type\" id=\"type\" onchange=\"checkLengths(document.getElementById('type').value,'');\">\n";
+			// Output any "magic" types.  This came in with the alter column type so we'll check that
+			if ($data->hasMagicTypes()) {
+				foreach ($data->extraTypes as $v) {
+					$types_for_js[] = strtolower($v);
+					echo "\t<option value=\"", htmlspecialchars_nc($v), "\"", ($v == $_POST['type']) ? ' selected="selected"' : '', ">",
+					$misc->printVal($v), "</option>\n";
+				}
 			}
-		}
-		while (!$types->EOF) {
-			$typname = $types->fields['typname'];
-			$types_for_js[] = $typname;
-			echo "\t<option value=\"", htmlspecialchars_nc($typname), "\"", ($typname == $_POST['type']) ? ' selected="selected"' : '', ">",
-			$misc->printVal($typname), "</option>\n";
-			$types->moveNext();
-		}
-		echo "</select></td>\n";
+			while (!$types->EOF) {
+				$typname = $types->fields['typname'];
+				$types_for_js[] = $typname;
+				echo "\t<option value=\"", htmlspecialchars_nc($typname), "\"", ($typname == $_POST['type']) ? ' selected="selected"' : '', ">",
+				$misc->printVal($typname), "</option>\n";
+				$types->moveNext();
+			}
+			echo "</select></td>\n";
 
-		// Output array type selector
-		echo "<td><select name=\"array\">\n";
-		echo "\t<option value=\"\"", ($_POST['array'] == '') ? ' selected="selected"' : '', "></option>\n";
-		echo "\t<option value=\"[]\"", ($_POST['array'] == '[]') ? ' selected="selected"' : '', ">[ ]</option>\n";
-		echo "</select></td>\n";
-		$predefined_size_types = array_intersect($data->predefined_size_types, $types_for_js);
-		$escaped_predef_types = array(); // the JS escaped array elements
-		foreach ($predefined_size_types as $value) {
-			$escaped_predef_types[] = "'{$value}'";
-		}
+			// Output array type selector
+			echo "<td><select name=\"array\">\n";
+			echo "\t<option value=\"\"", ($_POST['array'] == '') ? ' selected="selected"' : '', "></option>\n";
+			echo "\t<option value=\"[]\"", ($_POST['array'] == '[]') ? ' selected="selected"' : '', ">[ ]</option>\n";
+			echo "</select></td>\n";
+			$predefined_size_types = array_intersect($data->predefined_size_types, $types_for_js);
+			$escaped_predef_types = array(); // the JS escaped array elements
+			foreach ($predefined_size_types as $value) {
+				$escaped_predef_types[] = "'{$value}'";
+			}
 
-		echo "<td><input name=\"length\" id=\"lengths\" size=\"8\" value=\"",
-		htmlspecialchars_nc($_POST['length']), "\" /></td>\n";
-		// Support for adding column with not null and default
-		if ($data->hasCreateFieldWithConstraints()) {
-			echo "<td><input type=\"checkbox\" name=\"notnull\"",
-			(isset($_REQUEST['notnull'])) ? ' checked="checked"' : '', " /></td>\n";
-			echo "<td><input name=\"default\" size=\"20\" value=\"",
-			htmlspecialchars_nc($_POST['default']), "\" /></td>\n";
-		}
-		echo "<td><input name=\"comment\" size=\"40\" value=\"",
-		htmlspecialchars_nc($_POST['comment']), "\" /></td></tr>\n";
-		echo "</table>\n";
-		echo "<p><input type=\"hidden\" name=\"action\" value=\"add_column\" />\n";
-		echo "<input type=\"hidden\" name=\"stage\" value=\"2\" />\n";
-		echo $misc->form;
-		echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
-		if (!$data->hasCreateFieldWithConstraints()) {
-			echo "<input type=\"hidden\" name=\"default\" value=\"\" />\n";
-		}
-		echo "<input type=\"submit\" value=\"{$lang['stradd']}\" />\n";
-		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
-		echo "</form>\n";
-		echo "<script type=\"text/javascript\">predefined_lengths = new Array(" . implode(",", $escaped_predef_types) . ");checkLengths(document.getElementById('type').value,'');</script>\n";
-		break;
-	case 2:
-		// Check inputs
-		if (trim($_POST['field']) == '') {
-			$_REQUEST['stage'] = 1;
-			doAddColumn($lang['strcolneedsname']);
-			return;
-		}
-		if (!isset($_POST['length'])) $_POST['length'] = '';
-		$status = $data->addColumn($_POST['table'], $_POST['field'],
-			$_POST['type'], $_POST['array'] != '', $_POST['length'], isset($_POST['notnull']),
-			$_POST['default'], $_POST['comment']);
-		if ($status == 0) {
-			$_reload_browser = true;
-			doDefault($lang['strcolumnadded']);
-		} else {
-			$_REQUEST['stage'] = 1;
-			doAddColumn($lang['strcolumnaddedbad']);
-			return;
-		}
-		break;
-	default:
-		echo "<p>{$lang['strinvalidparam']}</p>\n";
+			echo "<td><input name=\"length\" id=\"lengths\" size=\"8\" value=\"",
+			htmlspecialchars_nc($_POST['length']), "\" /></td>\n";
+			// Support for adding column with not null and default
+			if ($data->hasCreateFieldWithConstraints()) {
+				echo "<td><input type=\"checkbox\" name=\"notnull\"", (isset($_REQUEST['notnull'])) ? ' checked="checked"' : '', " /></td>\n";
+				echo "<td><input name=\"default\" size=\"20\" value=\"",
+				htmlspecialchars_nc($_POST['default']), "\" /></td>\n";
+			}
+			echo "<td><input name=\"comment\" size=\"40\" value=\"",
+			htmlspecialchars_nc($_POST['comment']), "\" /></td></tr>\n";
+			echo "</table>\n";
+			echo "<p><input type=\"hidden\" name=\"action\" value=\"add_column\" />\n";
+			echo "<input type=\"hidden\" name=\"stage\" value=\"2\" />\n";
+			echo $misc->form;
+			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+			if (!$data->hasCreateFieldWithConstraints()) {
+				echo "<input type=\"hidden\" name=\"default\" value=\"\" />\n";
+			}
+			echo "<input type=\"submit\" value=\"{$lang['stradd']}\" />\n";
+			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
+			echo "</form>\n";
+			echo "<script type=\"text/javascript\">predefined_lengths = new Array(" . implode(",", $escaped_predef_types) . ");checkLengths(document.getElementById('type').value,'');</script>\n";
+			break;
+		case 2:
+			// Check inputs
+			if (trim($_POST['field']) == '') {
+				$_REQUEST['stage'] = 1;
+				doAddColumn($lang['strcolneedsname']);
+				return;
+			}
+			if (!isset($_POST['length'])) $_POST['length'] = '';
+			$status = $data->addColumn(
+				$_POST['table'],
+				$_POST['field'],
+				$_POST['type'],
+				$_POST['array'] != '',
+				$_POST['length'],
+				isset($_POST['notnull']),
+				$_POST['default'],
+				$_POST['comment']
+			);
+			if ($status == 0) {
+				AppContainer::setShouldReloadTree(true);
+				doDefault($lang['strcolumnadded']);
+			} else {
+				$_REQUEST['stage'] = 1;
+				doAddColumn($lang['strcolumnaddedbad']);
+				return;
+			}
+			break;
+		default:
+			echo "<p>{$lang['strinvalidparam']}</p>\n";
 	}
 }
 
 /**
  * Show confirmation of drop column and perform actual drop
  */
-function doDrop($confirm) {
-	global $data, $database, $misc, $_reload_browser;
-	global $lang;
+function doDrop($confirm)
+{
+
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	if ($confirm) {
 		$misc->printTrail('column');
 		$misc->printTitle($lang['strdrop'], 'pg.column.drop');
 
-		echo "<p>", sprintf($lang['strconfdropcolumn'], $misc->printVal($_REQUEST['column']),
-			$misc->printVal($_REQUEST['table'])), "</p>\n";
+		echo "<p>", sprintf(
+			$lang['strconfdropcolumn'],
+			$misc->printVal($_REQUEST['column']),
+			$misc->printVal($_REQUEST['table'])
+		), "</p>\n";
 
 
 		echo "<form action=\"tblproperties.php\" method=\"post\">\n";
@@ -378,23 +399,25 @@ function doDrop($confirm) {
 	} else {
 		$status = $data->dropColumn($_POST['table'], $_POST['column'], isset($_POST['cascade']));
 		if ($status == 0) {
-			$_reload_browser = true;
+			AppContainer::setShouldReloadTree(true);
 			doDefault($lang['strcolumndropped']);
 		} else
 			doDefault($lang['strcolumndroppedbad']);
 	}
-
 }
 
-function doTree() {
-	global $misc, $data;
+function doTree()
+{
+	$misc = AppContainer::getMisc();
+	$data = AppContainer::getData();
 
 	$columns = $data->getTableAttributes($_REQUEST['table']);
 	$reqvars = $misc->getRequestVars('column');
 
 	$attrs = array(
 		'text' => field('attname'),
-		'action' => url('colproperties.php',
+		'action' => url(
+			'colproperties.php',
 			$reqvars,
 			array(
 				'table' => $_REQUEST['table'],
@@ -402,7 +425,8 @@ function doTree() {
 			)
 		),
 		'icon' => 'Column',
-		'iconAction' => url('display.php',
+		'iconAction' => url(
+			'display.php',
 			$reqvars,
 			array(
 				'table' => $_REQUEST['table'],
@@ -429,12 +453,16 @@ if ($action == 'tree') doTree();
 /**
  * Show default list of columns in the table
  */
-function doDefault($msg = '') {
-	global $data, $conf, $misc;
-	global $lang;
+function doDefault($msg = '')
+{
+	$data = AppContainer::getData();
+	$conf = AppContainer::getConf();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
-	function attPre(&$rowdata, $actions) {
-		global $data;
+	function attPre(&$rowdata, $actions)
+	{
+		$data = AppContainer::getData();
 		$rowdata->fields['+type'] = $data->formatType($rowdata->fields['type'], $rowdata->fields['atttypmod']);
 		$attname = $rowdata->fields['attname'];
 		$table = $_REQUEST['table'];
@@ -502,8 +530,10 @@ function doDefault($msg = '') {
 		),
 	);
 
-	function cstrRender($s, $p) {
-		global $misc, $data;
+	function cstrRender($s, $p)
+	{
+		$misc = AppContainer::getMisc();
+		$data = AppContainer::getData();
 
 		$str = '';
 		foreach ($p['keys'] as $k => $c) {
@@ -515,21 +545,21 @@ function doDefault($msg = '') {
 
 			if ($c['p_field'] == $s)
 				switch ($c['contype']) {
-				case 'p':
-					$str .= '<a href="constraints.php?' . $misc->href . "&amp;table=" . urlencode($c['p_table']) . "&amp;schema=" . urlencode($c['p_schema']) . "\"><img src=\"" .
-						$misc->icon('PrimaryKey') . '" alt="[pk]" title="' . htmlentities($c['consrc'], ENT_QUOTES, 'UTF-8') . '" /></a>';
-					break;
-				case 'f':
-					$str .= '<a href="tblproperties.php?' . $misc->href . "&amp;table=" . urlencode($c['f_table']) . "&amp;schema=" . urlencode($c['f_schema']) . "\"><img src=\"" .
-						$misc->icon('ForeignKey') . '" alt="[fk]" title="' . htmlentities($c['consrc'], ENT_QUOTES, 'UTF-8') . '" /></a>';
-					break;
-				case 'u':
-					$str .= '<a href="constraints.php?' . $misc->href . "&amp;table=" . urlencode($c['p_table']) . "&amp;schema=" . urlencode($c['p_schema']) . "\"><img src=\"" .
-						$misc->icon('UniqueConstraint') . '" alt="[uniq]" title="' . htmlentities($c['consrc'], ENT_QUOTES, 'UTF-8') . '" /></a>';
-					break;
-				case 'c':
-					$str .= '<a href="constraints.php?' . $misc->href . "&amp;table=" . urlencode($c['p_table']) . "&amp;schema=" . urlencode($c['p_schema']) . "\"><img src=\"" .
-						$misc->icon('CheckConstraint') . '" alt="[check]" title="' . htmlentities($c['consrc'], ENT_QUOTES, 'UTF-8') . '" /></a>';
+					case 'p':
+						$str .= '<a href="constraints.php?' . $misc->href . "&amp;table=" . urlencode($c['p_table']) . "&amp;schema=" . urlencode($c['p_schema']) . "\"><img src=\"" .
+							$misc->icon('PrimaryKey') . '" alt="[pk]" title="' . htmlentities($c['consrc'], ENT_QUOTES, 'UTF-8') . '" /></a>';
+						break;
+					case 'f':
+						$str .= '<a href="tblproperties.php?' . $misc->href . "&amp;table=" . urlencode($c['f_table']) . "&amp;schema=" . urlencode($c['f_schema']) . "\"><img src=\"" .
+							$misc->icon('ForeignKey') . '" alt="[fk]" title="' . htmlentities($c['consrc'], ENT_QUOTES, 'UTF-8') . '" /></a>';
+						break;
+					case 'u':
+						$str .= '<a href="constraints.php?' . $misc->href . "&amp;table=" . urlencode($c['p_table']) . "&amp;schema=" . urlencode($c['p_schema']) . "\"><img src=\"" .
+							$misc->icon('UniqueConstraint') . '" alt="[uniq]" title="' . htmlentities($c['consrc'], ENT_QUOTES, 'UTF-8') . '" /></a>';
+						break;
+					case 'c':
+						$str .= '<a href="constraints.php?' . $misc->href . "&amp;table=" . urlencode($c['p_table']) . "&amp;schema=" . urlencode($c['p_schema']) . "\"><img src=\"" .
+							$misc->icon('CheckConstraint') . '" alt="[check]" title="' . htmlentities($c['consrc'], ENT_QUOTES, 'UTF-8') . '" /></a>';
 				}
 		}
 
@@ -732,50 +762,48 @@ function doDefault($msg = '') {
 			'content' => $lang['stralter']
 		)
 	);
-	$misc->printNavLinks($navlinks,
-		'tblproperties-tblproperties'
-		, get_defined_vars()
+	$misc->printNavLinks(
+		$navlinks,
+		'tblproperties-tblproperties',
+		get_defined_vars()
 	);
-
 }
 
 $misc->printHeader($lang['strtables'] . ' - ' . $_REQUEST['table']);
 $misc->printBody();
 
 switch ($action) {
-case 'alter':
-	if (isset($_POST['alter'])) doSaveAlter();
-	else doDefault();
-	break;
-case 'confirm_alter':
-	doAlter();
-	break;
-case 'import':
-	doImport();
-	break;
-case 'export':
-	doExport();
-	break;
-case 'add_column':
-	if (isset($_POST['cancel'])) doDefault();
-	else doAddColumn();
-	break;
-case 'properties':
-	if (isset($_POST['cancel'])) doDefault();
-	else doProperties();
-	break;
-case 'drop':
-	if (isset($_POST['drop'])) doDrop(false);
-	else doDefault();
-	break;
-case 'confirm_drop':
-	doDrop(true);
-	break;
-default:
-	doDefault();
-	break;
+	case 'alter':
+		if (isset($_POST['alter'])) doSaveAlter();
+		else doDefault();
+		break;
+	case 'confirm_alter':
+		doAlter();
+		break;
+	case 'import':
+		doImport();
+		break;
+	case 'export':
+		doExport();
+		break;
+	case 'add_column':
+		if (isset($_POST['cancel'])) doDefault();
+		else doAddColumn();
+		break;
+	case 'properties':
+		if (isset($_POST['cancel'])) doDefault();
+		else doProperties();
+		break;
+	case 'drop':
+		if (isset($_POST['drop'])) doDrop(false);
+		else doDefault();
+		break;
+	case 'confirm_drop':
+		doDrop(true);
+		break;
+	default:
+		doDefault();
+		break;
 }
 
 $misc->printFooter();
-
-

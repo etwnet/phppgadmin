@@ -1,4 +1,7 @@
 <?php
+
+use PhpPgAdmin\Core\AppContainer;
+
 /** @var Misc $misc */
 /** @var array $lang */
 
@@ -18,9 +21,12 @@ if (!isset($msg)) $msg = '';
 /**
  * Display a form for alter and perform actual alter
  */
-function doAlter($confirm) {
-	global $data, $misc, $_reload_tree;
-	global $lang;
+function doAlter($confirm)
+{
+	AppContainer::setShouldReloadTree(true);
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	if ($confirm) {
 		$misc->printTrail('database');
@@ -44,8 +50,7 @@ function doAlter($confirm) {
 			echo "<td class=\"data1\"><select name=\"owner\">";
 			while (!$users->EOF) {
 				$uname = $users->fields['usename'];
-				echo "<option value=\"", htmlspecialchars_nc($uname), "\"",
-				($uname == $owner) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($uname), "</option>\n";
+				echo "<option value=\"", htmlspecialchars_nc($uname), "\"", ($uname == $owner) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($uname), "</option>\n";
 				$users->moveNext();
 			}
 			echo "</select></td></tr>\n";
@@ -70,7 +75,7 @@ function doAlter($confirm) {
 		if (!isset($_POST['owner'])) $_POST['owner'] = '';
 		if (!isset($_POST['dbcomment'])) $_POST['dbcomment'] = '';
 		if ($data->alterDatabase($_POST['oldname'], $_POST['newname'], $_POST['owner'], $_POST['dbcomment']) == 0) {
-			$_reload_tree = true;
+			AppContainer::setShouldReloadTree(true);
 			doDefault($lang['strdatabasealtered']);
 		} else
 			doDefault($lang['strdatabasealteredbad']);
@@ -80,9 +85,12 @@ function doAlter($confirm) {
 /**
  * Show confirmation of drop and perform actual drop
  */
-function doDrop($confirm) {
-	global $data, $misc;
-	global $lang, $_reload_drop_database;
+function doDrop($confirm)
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	global $_reload_drop_database;
+	$lang = AppContainer::getLang();
 
 	if (empty($_REQUEST['dropdatabase']) && empty($_REQUEST['ma'])) {
 		doDefault($lang['strspecifydatabasetodrop']);
@@ -103,11 +111,10 @@ function doDrop($confirm) {
 				echo "<p>", sprintf($lang['strconfdropdatabase'], $misc->printVal($a['database'])), "</p>\n";
 				printf('<input type="hidden" name="dropdatabase[]" value="%s" />', htmlspecialchars_nc($a['database']));
 			}
-
 		} else {
 			echo "<p>", sprintf($lang['strconfdropdatabase'], $misc->printVal($_REQUEST['dropdatabase'])), "</p>\n";
 			echo "<input type=\"hidden\" name=\"dropdatabase\" value=\"", htmlspecialchars_nc($_REQUEST['dropdatabase']), "\" />\n";
-		}// END if multi drop
+		} // END if multi drop
 
 		echo "<input type=\"hidden\" name=\"action\" value=\"drop\" />\n";
 		echo $misc->form;
@@ -127,7 +134,7 @@ function doDrop($confirm) {
 					doDefault(sprintf('%s%s: %s<br />', $msg, htmlentities($d, ENT_QUOTES, 'UTF-8'), $lang['strdatabasedroppedbad']));
 					return;
 				}
-			}// Everything went fine, back to Default page...
+			} // Everything went fine, back to Default page...
 			$_reload_drop_database = true;
 			doDefault($msg);
 		} else {
@@ -138,16 +145,18 @@ function doDrop($confirm) {
 			} else
 				doDefault($lang['strdatabasedroppedbad']);
 		}
-	}//END DROP
+	} //END DROP
 }// END FUNCTION
 
 
 /**
  * Displays a screen where they can enter a new database
  */
-function doCreate($msg = '') {
-	global $data, $misc;
-	global $lang;
+function doCreate($msg = '')
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$misc->printTrail('server');
 	$misc->printTitle($lang['strcreatedatabase'], 'pg.database.create');
@@ -178,16 +187,13 @@ function doCreate($msg = '') {
 	echo "\t\t<td class=\"data1\">\n";
 	echo "\t\t\t<select name=\"formTemplate\">\n";
 	// Always offer template0 and template1
-	echo "\t\t\t\t<option value=\"template0\"",
-	($_POST['formTemplate'] == 'template0') ? ' selected="selected"' : '', ">template0</option>\n";
-	echo "\t\t\t\t<option value=\"template1\"",
-	($_POST['formTemplate'] == 'template1') ? ' selected="selected"' : '', ">template1</option>\n";
+	echo "\t\t\t\t<option value=\"template0\"", ($_POST['formTemplate'] == 'template0') ? ' selected="selected"' : '', ">template0</option>\n";
+	echo "\t\t\t\t<option value=\"template1\"", ($_POST['formTemplate'] == 'template1') ? ' selected="selected"' : '', ">template1</option>\n";
 	while (!$templatedbs->EOF) {
 		$dbname = htmlspecialchars_nc($templatedbs->fields['datname']);
 		if ($dbname != 'template1') {
 			// filter out for $conf[show_system] users so we don't get duplicates
-			echo "\t\t\t\t<option value=\"{$dbname}\"",
-			($dbname == $_POST['formTemplate']) ? ' selected="selected"' : '', ">{$dbname}</option>\n";
+			echo "\t\t\t\t<option value=\"{$dbname}\"", ($dbname == $_POST['formTemplate']) ? ' selected="selected"' : '', ">{$dbname}</option>\n";
 		}
 		$templatedbs->moveNext();
 	}
@@ -200,8 +206,7 @@ function doCreate($msg = '') {
 	echo "\t\t\t<select name=\"formEncoding\">\n";
 	echo "\t\t\t\t<option value=\"\"></option>\n";
 	foreach ($data->codemap as $key) {
-		echo "\t\t\t\t<option value=\"", htmlspecialchars_nc($key), "\"",
-		($key == $_POST['formEncoding']) ? ' selected="selected"' : '', ">",
+		echo "\t\t\t\t<option value=\"", htmlspecialchars_nc($key), "\"", ($key == $_POST['formEncoding']) ? ' selected="selected"' : '', ">",
 		$misc->printVal($key), "</option>\n";
 	}
 	echo "\t\t\t</select>\n";
@@ -229,13 +234,11 @@ function doCreate($msg = '') {
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strtablespace']}</th>\n";
 		echo "\t\t<td class=\"data1\">\n\t\t\t<select name=\"formSpc\">\n";
 		// Always offer the default (empty) option
-		echo "\t\t\t\t<option value=\"\"",
-		($_POST['formSpc'] == '') ? ' selected="selected"' : '', "></option>\n";
+		echo "\t\t\t\t<option value=\"\"", ($_POST['formSpc'] == '') ? ' selected="selected"' : '', "></option>\n";
 		// Display all other tablespaces
 		while (!$tablespaces->EOF) {
 			$spcname = htmlspecialchars_nc($tablespaces->fields['spcname']);
-			echo "\t\t\t\t<option value=\"{$spcname}\"",
-			($spcname == $_POST['formSpc']) ? ' selected="selected"' : '', ">{$spcname}</option>\n";
+			echo "\t\t\t\t<option value=\"{$spcname}\"", ($spcname == $_POST['formSpc']) ? ' selected="selected"' : '', ">{$spcname}</option>\n";
 			$tablespaces->moveNext();
 		}
 		echo "\t\t\t</select>\n\t\t</td>\n\t</tr>\n";
@@ -259,8 +262,11 @@ function doCreate($msg = '') {
 /**
  * Actually creates the new view in the database
  */
-function doSaveCreate() {
-	global $data, $lang, $_reload_tree;
+function doSaveCreate()
+{
+	AppContainer::setShouldReloadTree(true);
+	$data = AppContainer::getData();
+	$lang = AppContainer::getLang();
 
 	// Default tablespace to null if it isn't set
 	if (!isset($_POST['formSpc'])) $_POST['formSpc'] = null;
@@ -277,10 +283,17 @@ function doSaveCreate() {
 	// Check that they've given a name and a definition
 	if ($_POST['formName'] == '') doCreate($lang['strdatabaseneedsname']);
 	else {
-		$status = $data->createDatabase($_POST['formName'], $_POST['formEncoding'], $_POST['formSpc'],
-			$_POST['formComment'], $_POST['formTemplate'], $_POST['formCollate'], $_POST['formCType']);
+		$status = $data->createDatabase(
+			$_POST['formName'],
+			$_POST['formEncoding'],
+			$_POST['formSpc'],
+			$_POST['formComment'],
+			$_POST['formTemplate'],
+			$_POST['formCollate'],
+			$_POST['formCType']
+		);
 		if ($status == 0) {
-			$_reload_tree = true;
+			AppContainer::setShouldReloadTree(true);
 			doDefault($lang['strdatabasecreated']);
 		} else
 			doCreate($lang['strdatabasecreatedbad']);
@@ -290,9 +303,11 @@ function doSaveCreate() {
 /**
  * Displays options for cluster download
  */
-function doExport($msg = '') {
-	global $data, $misc;
-	global $lang;
+function doExport($msg = '')
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$misc->printTrail('server');
 	$misc->printTabs('server', 'export');
@@ -343,10 +358,13 @@ function doExport($msg = '') {
 /**
  * Show default list of databases in the server
  */
-function doDefault($msg = '') {
+function doDefault($msg = '')
+{
 	/** @var Postgres $data */
-	global $data, $conf, $misc;
-	global $lang;
+	$data = AppContainer::getData();
+	$conf = AppContainer::getConf();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$misc->printTrail('server');
 	$misc->printTabs('server', 'databases');
@@ -471,11 +489,14 @@ function doDefault($msg = '') {
 	$misc->printNavLinks($navlinks, 'all_db-databases', get_defined_vars());
 }
 
-function doTree() {
+function doTree()
+{
 	/** @var Postgres $data */
 	/** @var Misc $misc */
 	/** @var array $lang */
-	global $misc, $data, $lang;
+	$misc = AppContainer::getMisc();
+	$data = AppContainer::getData();
+	$lang = AppContainer::getLang();
 
 	$databases = $data->getDatabases();
 
@@ -485,11 +506,13 @@ function doTree() {
 		'text' => field('datname'),
 		'icon' => 'Database',
 		'toolTip' => field('datcomment'),
-		'action' => url('redirect.php',
+		'action' => url(
+			'redirect.php',
 			$reqvars,
 			array('database' => field('datname'))
 		),
-		'branch' => url('database.php',
+		'branch' => url(
+			'database.php',
 			$reqvars,
 			array(
 				'action' => 'tree',
@@ -508,34 +531,33 @@ $misc->printHeader($lang['strdatabases']);
 $misc->printBody();
 
 switch ($action) {
-case 'export':
-	doExport();
-	break;
-case 'save_create':
-	if (isset($_POST['cancel'])) doDefault();
-	else doSaveCreate();
-	break;
-case 'create':
-	doCreate();
-	break;
-case 'drop':
-	if (isset($_REQUEST['drop'])) doDrop(false);
-	else doDefault();
-	break;
-case 'confirm_drop':
-	doDrop(true);
-	break;
-case 'alter':
-	if (isset($_POST['oldname']) && isset($_POST['newname']) && !isset($_POST['cancel'])) doAlter(false);
-	else doDefault();
-	break;
-case 'confirm_alter':
-	doAlter(true);
-	break;
-default:
-	doDefault();
-	break;
+	case 'export':
+		doExport();
+		break;
+	case 'save_create':
+		if (isset($_POST['cancel'])) doDefault();
+		else doSaveCreate();
+		break;
+	case 'create':
+		doCreate();
+		break;
+	case 'drop':
+		if (isset($_REQUEST['drop'])) doDrop(false);
+		else doDefault();
+		break;
+	case 'confirm_drop':
+		doDrop(true);
+		break;
+	case 'alter':
+		if (isset($_POST['oldname']) && isset($_POST['newname']) && !isset($_POST['cancel'])) doAlter(false);
+		else doDefault();
+		break;
+	case 'confirm_alter':
+		doAlter(true);
+		break;
+	default:
+		doDefault();
+		break;
 }
 
 $misc->printFooter();
-

@@ -100,6 +100,10 @@ abstract class AbstractConnection extends AbstractContext {
 		return htmlentities($data, ENT_QUOTES, 'UTF-8');
 	}
 
+	public function escapeIdentifier($id = ''): string {
+		return pg_escape_identifier($this->conn->_connectionID, $id);
+	}
+
 	/**
 	 * Executes a query on the underlying connection
 	 * @param string $sql The SQL query to execute

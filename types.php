@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 	/**
 	 * Manage types in a database
 	 *
@@ -16,8 +18,9 @@
 	 * Show read only properties for a type
 	 */
 	function doProperties($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		// Get type (using base name)
 		$typedata = $data->getType($_REQUEST['type']);
@@ -27,7 +30,7 @@
 		$misc->printMsg($msg);
 		
 		function attPre(&$rowdata) {
-			global $data;
+			$data = AppContainer::getData();
 			$rowdata->fields['+type'] = $data->formatType($rowdata->fields['type'], $rowdata->fields['atttypmod']);
 		}
 		
@@ -106,8 +109,9 @@
 	 * Show confirmation of drop and perform actual drop
 	 */
 	function doDrop($confirm) {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if ($confirm) {
 			$misc->printTrail('type');
@@ -138,8 +142,9 @@
 	 * Displays a screen where they can enter a new composite type
 	 */
 	function doCreateComposite($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if (!isset($_REQUEST['stage'])) $_REQUEST['stage'] = 1;
 		if (!isset($_REQUEST['name'])) $_REQUEST['name'] = '';
@@ -174,7 +179,7 @@
 				echo "</form>\n";
 				break;
 			case 2:
-				global $lang;
+				$lang = AppContainer::getLang();
 
 				// Check inputs
 				$fields = trim($_REQUEST['fields']);
@@ -245,7 +250,8 @@
 								
 				break;
 			case 3:
-				global $data, $lang;
+				$data = AppContainer::getData();
+$lang = AppContainer::getLang();
 
 				// Check inputs
 				$fields = trim($_REQUEST['fields']);
@@ -286,8 +292,9 @@
 	 * Displays a screen where they can enter a new enum type
 	 */
 	function doCreateEnum($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if (!isset($_REQUEST['stage'])) $_REQUEST['stage'] = 1;
 		if (!isset($_REQUEST['name'])) $_REQUEST['name'] = '';
@@ -322,7 +329,7 @@
 				echo "</form>\n";
 				break;
 			case 2:
-				global $lang;
+				$lang = AppContainer::getLang();
 
 				// Check inputs
 				$values = trim($_REQUEST['values']);
@@ -367,7 +374,8 @@
 
 				break;
 			case 3:
-				global $data, $lang;
+				$data = AppContainer::getData();
+$lang = AppContainer::getLang();
 
 				// Check inputs
 				$values = trim($_REQUEST['values']);
@@ -406,8 +414,9 @@
 	 * Displays a screen where they can enter a new type
 	 */
 	function doCreate($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if (!isset($_POST['typname'])) $_POST['typname'] = '';
 		if (!isset($_POST['typin'])) $_POST['typin'] = '';
@@ -499,8 +508,8 @@
 	 * Actually creates the new type in the database
 	 */
 	function doSaveCreate() {
-		global $data;
-		global $lang;
+		$data = AppContainer::getData();
+		$lang = AppContainer::getLang();
 
 		// Check that they've given a name and a length.
 		// Note: We're assuming they've given in and out functions here
@@ -531,8 +540,10 @@
 	 * Show default list of types in the database
 	 */
 	function doDefault($msg = '') {
-		global $data, $conf, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$conf = AppContainer::getConf();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		$misc->printTrail('schema');
 		$misc->printTabs('schema','types');
@@ -650,7 +661,8 @@
 	 * Generate XML for the browser tree.
 	 */
 	function doTree() {
-		global $misc, $data;
+		$misc = AppContainer::getMisc();
+$data = AppContainer::getData();
 		
 		$types = $data->getTypes();
 		

@@ -2,7 +2,9 @@
 
 namespace PhpPgAdmin\Database\Actions;
 
+use ADORecordSet;
 use PhpPgAdmin\Database\AbstractActions;
+use PhpPgAdmin\Database\AbstractConnection;
 use PhpPgAdmin\Database\Actions\AclActions;
 use PhpPgAdmin\Database\Actions\ConstraintActions;
 use PhpPgAdmin\Database\Actions\IndexActions;
@@ -28,11 +30,6 @@ class TableActions extends AbstractActions
      * @var array
      */
     private $allowedStorage = ['p', 'e', 'm', 'x'];
-
-    public function __construct(\PhpPgAdmin\Database\AbstractConnection $connection)
-    {
-        parent::__construct($connection);
-    }
 
     private function getAclAction()
     {
@@ -76,62 +73,6 @@ class TableActions extends AbstractActions
         return $this->connection->hasTablespaces();
     }
 
-    private function supportsCreateTableLikeWithConstraints()
-    {
-        return true;
-    }
-
-    private function supportsCreateTableLikeWithIndexes()
-    {
-        return true;
-    }
-
-    private function supportsCreateFieldWithConstraints()
-    {
-        return true;
-    }
-
-    
-
-    private function formatType($typname, $typmod)
-    {
-        $varhdrsz = 4;
-
-        $is_array = false;
-        if (substr($typname, 0, 1) == '_') {
-            $is_array = true;
-            $typname = substr($typname, 1);
-        }
-
-        if ($typname == 'bpchar') {
-            $len = $typmod - $varhdrsz;
-            $temp = 'character';
-            if ($len > 1) {
-                $temp .= "({$len})";
-            }
-        } elseif ($typname == 'varchar') {
-            $temp = 'character varying';
-            if ($typmod != -1) {
-                $temp .= '(' . ($typmod - $varhdrsz) . ')';
-            }
-        } elseif ($typname == 'numeric') {
-            $temp = 'numeric';
-            if ($typmod != -1) {
-                $tmp_typmod = $typmod - $varhdrsz;
-                $precision = ($tmp_typmod >> 16) & 0xffff;
-                $scale = $tmp_typmod & 0xffff;
-                $temp .= "({$precision}, {$scale})";
-            }
-        } else {
-            $temp = $typname;
-        }
-
-        if ($is_array) {
-            $temp .= '[]';
-        }
-
-        return $temp;
-    }
 
     private function getTriggersForTable($table)
     {
@@ -388,7 +329,7 @@ class TableActions extends AbstractActions
                 ($atts->fields['type'] == 'integer' || $atts->fields['type'] == 'bigint')) {
                 $sql .= ($atts->fields['type'] == 'integer') ? " SERIAL" : " BIGSERIAL";
             } else {
-                $sql .= " " . $this->formatType($atts->fields['type'], $atts->fields['atttypmod']);
+                $sql .= " " . $this->connection->formatType($atts->fields['type'], $atts->fields['atttypmod']);
                 if ($this->connection->phpBool($atts->fields['attnotnull'])) {
                     $sql .= " NOT NULL";
                 }
@@ -753,8 +694,8 @@ class TableActions extends AbstractActions
         $sql = "CREATE TABLE \"{$f_schema}\".\"{$name}\" (LIKE {$likeStr}";
 
         if ($defaults) $sql .= " INCLUDING DEFAULTS";
-        if ($this->supportsCreateTableLikeWithConstraints() && $constraints) $sql .= " INCLUDING CONSTRAINTS";
-        if ($this->supportsCreateTableLikeWithIndexes() && $idx) $sql .= " INCLUDING INDEXES";
+        if ($constraints) $sql .= " INCLUDING CONSTRAINTS";
+        if ($idx) $sql .= " INCLUDING INDEXES";
 
         $sql .= ")";
 
@@ -891,7 +832,7 @@ class TableActions extends AbstractActions
     /**
      * Returns SQL for changing current user.
      */
-    public function getChangeUserSQL($user)
+    private function getChangeUserSQL($user)
     {
         $this->connection->clean($user);
         return "SET SESSION AUTHORIZATION '{$user}';";
@@ -969,31 +910,29 @@ class TableActions extends AbstractActions
         $this->connection->clean($type);
         $this->connection->clean($length);
 
+		$sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ADD COLUMN \"{$column}\"";
         if ($length == '')
-            $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ADD COLUMN \"{$column}\" {$type}";
+            $sql .= " {$type}";
         else {
             switch ($type) {
             case 'timestamp with time zone':
             case 'timestamp without time zone':
                 $qual = substr($type, 9);
-                $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ADD COLUMN \"{$column}\" timestamp({$length}){$qual}";
+                $sql .= " timestamp({$length}){$qual}";
                 break;
             case 'time with time zone':
             case 'time without time zone':
                 $qual = substr($type, 4);
-                $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ADD COLUMN \"{$column}\" time({$length}){$qual}";
+                $sql .= " time({$length}){$qual}";
                 break;
             default:
-                $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ADD COLUMN \"{$column}\" {$type}({$length})";
+                $sql .= " {$type}({$length})";
             }
         }
 
         if ($array) $sql .= '[]';
-
-        if ($this->supportsCreateFieldWithConstraints()) {
-            if ($notnull) $sql .= ' NOT NULL';
-            if ($default != '') $sql .= ' DEFAULT ' . $default;
-        }
+		if ($notnull) $sql .= ' NOT NULL';
+		if ($default != '') $sql .= ' DEFAULT ' . $default;
 
         $status = $this->connection->execute($sql);
         if ($status == 0 && trim($comment) != '') {

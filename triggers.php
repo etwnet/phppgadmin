@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 	/**
 	 * List triggers on a table
 	 *
@@ -16,7 +18,8 @@
 	 * Function to save after altering a trigger
 	 */
 	function doSaveAlter() {
-		global $data, $lang;
+		$data = AppContainer::getData();
+$lang = AppContainer::getLang();
 		
 		$status = $data->alterTrigger($_POST['table'], $_POST['trigger'], $_POST['name']);
 		if ($status == 0)
@@ -29,8 +32,9 @@
 	 * Function to allow altering of a trigger
 	 */
 	function doAlter($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 		
 		$misc->printTrail('trigger');
 		$misc->printTitle($lang['stralter'],'pg.trigger.alter');
@@ -64,8 +68,9 @@
 	 * Show confirmation of drop and perform actual drop
 	 */
 	function doDrop($confirm) {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if ($confirm) {
 			$misc->printTrail('trigger');
@@ -98,8 +103,9 @@
 	 * Show confirmation of enable trigger and perform enabling the trigger
 	 */
 	function doEnable($confirm) {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if ($confirm) {
 			$misc->printTrail('trigger');
@@ -131,8 +137,9 @@
 	 * Show confirmation of disable trigger and perform disabling the trigger
 	 */
 	function doDisable($confirm) {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if ($confirm) {
 			$misc->printTrail('trigger');
@@ -164,8 +171,9 @@
 	 * Let them create s.th.
 	 */
 	function doCreate($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 		
 		$misc->printTrail('table');
 		$misc->printTitle($lang['strcreatetrigger'],'pg.trigger.create');
@@ -232,8 +240,8 @@
 	 * Actually creates the new trigger in the database
 	 */
 	function doSaveCreate() {
-		global $data;
-		global $lang;		
+		$data = AppContainer::getData();
+		$lang = AppContainer::getLang();		
 	
 		// Check that they've given a name and a definition
 
@@ -258,11 +266,13 @@
 	 * List all the triggers on the table
 	 */
 	function doDefault($msg = '') {
-		global $data, $misc, $database;
-		global $lang;
+		global $database;
+$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		function tgPre(&$rowdata,$actions) {
-			global $data;
+			$data = AppContainer::getData();
 			// toggle enable/disable trigger per trigger
 			if( ! $data->phpBool( $rowdata->fields["tgenabled"] ) ) {
 				unset( $actions['disable'] );
@@ -386,7 +396,8 @@
 
 	function doTree() {
 
-		global $misc, $data;
+		$misc = AppContainer::getMisc();
+$data = AppContainer::getData();
 
 		$triggers = $data->getTriggers($_REQUEST['table']);
 

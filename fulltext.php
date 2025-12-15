@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 /**
  * Manage fulltext configurations, dictionaries and mappings
  *
@@ -12,9 +14,11 @@ include_once('./libraries/bootstrap.php');
 $action = $_REQUEST['action'] ?? '';
 if (!isset($msg)) $msg = '';
 
-function doDefault($msg = '') {
-	global $data, $misc;
-	global $lang;
+function doDefault($msg = '')
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$misc->printTrail('schema');
 	$misc->printTabs('schema', 'fulltext');
@@ -94,9 +98,12 @@ function doDefault($msg = '') {
 	$misc->printNavLinks($navlinks, 'fulltext-fulltext', get_defined_vars());
 }
 
-function doDropConfig($confirm) {
-	global $data, $data, $misc;
-	global $lang, $_reload_browser;
+function doDropConfig($confirm)
+{
+	$data = AppContainer::getData();
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	if ($confirm) {
 		$misc->printTrail('ftscfg');
@@ -116,17 +123,19 @@ function doDropConfig($confirm) {
 	} else {
 		$status = $data->dropFtsConfiguration($_POST['ftscfg'], isset($_POST['cascade']));
 		if ($status == 0) {
-			$_reload_browser = true;
+			AppContainer::setShouldReloadTree(true);
 			doDefault($lang['strftsconfigdropped']);
 		} else
 			doDefault($lang['strftsconfigdroppedbad']);
 	}
-
 }
 
-function doDropDict($confirm) {
-	global $data, $data, $misc;
-	global $lang, $_reload_browser;
+function doDropDict($confirm)
+{
+	$data = AppContainer::getData();
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	if ($confirm) {
 		$misc->printTrail('ftscfg'); // TODO: change to smth related to dictionary
@@ -148,20 +157,21 @@ function doDropDict($confirm) {
 	} else {
 		$status = $data->dropFtsDictionary($_POST['ftsdict'], isset($_POST['cascade']));
 		if ($status == 0) {
-			$_reload_browser = true;
+			AppContainer::setShouldReloadTree(true);
 			doViewDicts($lang['strftsdictdropped']);
 		} else
 			doViewDicts($lang['strftsdictdroppedbad']);
 	}
-
 }
 
 /**
  * Displays a screen where one can enter a new FTS configuration
  */
-function doCreateConfig($msg = '') {
-	global $data, $misc;
-	global $lang;
+function doCreateConfig($msg = '')
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	include_once('./classes/Gui.php');
 
@@ -252,8 +262,10 @@ function doCreateConfig($msg = '') {
 /**
  * Actually creates the new FTS configuration in the database
  */
-function doSaveCreateConfig() {
-	global $data, $lang, $_reload_browser;
+function doSaveCreateConfig()
+{
+	$data = AppContainer::getData();
+	$lang = AppContainer::getLang();
 
 	$err = '';
 	// Check that they've given a name
@@ -269,7 +281,7 @@ function doSaveCreateConfig() {
 
 	$status = $data->createFtsConfiguration($_POST['formName'], $formParser, $formTemplate, $_POST['formComment']);
 	if ($status == 0) {
-		$_reload_browser = true;
+		AppContainer::setShouldReloadTree(true);
 		doDefault($lang['strftsconfigcreated']);
 	} else
 		doCreateConfig($lang['strftsconfigcreatedbad']);
@@ -278,8 +290,11 @@ function doSaveCreateConfig() {
 /**
  * Display a form to permit editing FTS configuration properties.
  */
-function doAlterConfig($msg = '') {
-	global $data, $misc, $lang;
+function doAlterConfig($msg = '')
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$misc->printTrail('ftscfg');
 	$misc->printTitle($lang['stralter'], 'pg.ftscfg.alter');
@@ -326,8 +341,11 @@ function doAlterConfig($msg = '') {
 /**
  * Save the form submission containing changes to a FTS configuration
  */
-function doSaveAlterConfig() {
-	global $data, $misc, $lang;
+function doSaveAlterConfig()
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$status = $data->updateFtsConfiguration($_POST['ftscfg'], $_POST['formComment'], $_POST['formName']);
 	if ($status == 0)
@@ -339,9 +357,11 @@ function doSaveAlterConfig() {
 /**
  * View list of FTS parsers
  */
-function doViewParsers($msg = '') {
-	global $data, $misc;
-	global $lang;
+function doViewParsers($msg = '')
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$misc->printTrail('schema');
 	$misc->printTabs('schema', 'fulltext');
@@ -376,9 +396,11 @@ function doViewParsers($msg = '') {
 /**
  * View list of FTS dictionaries
  */
-function doViewDicts($msg = '') {
-	global $data, $misc;
-	global $lang;
+function doViewDicts($msg = '')
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$misc->printTrail('schema');
 	$misc->printTabs('schema', 'fulltext');
@@ -460,9 +482,11 @@ function doViewDicts($msg = '') {
 /**
  * View details of FTS configuration given
  */
-function doViewConfig($ftscfg, $msg = '') {
-	global $data, $misc;
-	global $lang;
+function doViewConfig($ftscfg, $msg = '')
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$misc->printTrail('ftscfg');
 	$misc->printTabs('schema', 'fulltext');
@@ -556,9 +580,11 @@ function doViewConfig($ftscfg, $msg = '') {
 /**
  * Displays a screen where one can enter a details of a new FTS dictionary
  */
-function doCreateDict($msg = '') {
-	global $data, $misc;
-	global $lang;
+function doCreateDict($msg = '')
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	include_once('./classes/Gui.php');
 
@@ -659,8 +685,10 @@ function doCreateDict($msg = '') {
 /**
  * Actually creates the new FTS dictionary in the database
  */
-function doSaveCreateDict() {
-	global $data, $lang, $_reload_browser;
+function doSaveCreateDict()
+{
+	$data = AppContainer::getData();
+	$lang = AppContainer::getLang();
 
 	// Check that they've given a name
 	if ($_POST['formName'] == '') doCreateDict($lang['strftsdictneedsname']);
@@ -675,13 +703,18 @@ function doSaveCreateDict() {
 		if (!isset($_POST['formInit'])) $_POST['formInit'] = '';
 		if (!isset($_POST['formOption'])) $_POST['formOption'] = '';
 
-		$status = $data->createFtsDictionary($_POST['formName'], $_POST['formIsTemplate'],
-			$formTemplate, $_POST['formLexize'],
-			$_POST['formInit'], $_POST['formOption'], $_POST['formComment']
+		$status = $data->createFtsDictionary(
+			$_POST['formName'],
+			$_POST['formIsTemplate'],
+			$formTemplate,
+			$_POST['formLexize'],
+			$_POST['formInit'],
+			$_POST['formOption'],
+			$_POST['formComment']
 		);
 
 		if ($status == 0) {
-			$_reload_browser = true;
+			AppContainer::setShouldReloadTree(true);
 			doViewDicts($lang['strftsdictcreated']);
 		} else
 			doCreateDict($lang['strftsdictcreatedbad']);
@@ -691,8 +724,11 @@ function doSaveCreateDict() {
 /**
  * Display a form to permit editing FTS dictionary properties.
  */
-function doAlterDict($msg = '') {
-	global $data, $misc, $lang;
+function doAlterDict($msg = '')
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$misc->printTrail('ftscfg'); // TODO: change to smth related to dictionary
 	$misc->printTitle($lang['stralter'], 'pg.ftsdict.alter');
@@ -736,8 +772,11 @@ function doAlterDict($msg = '') {
 /**
  * Save the form submission containing changes to a FTS dictionary
  */
-function doSaveAlterDict() {
-	global $data, $misc, $lang;
+function doSaveAlterDict()
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$status = $data->updateFtsDictionary($_POST['ftsdict'], $_POST['formComment'], $_POST['formName']);
 	if ($status == 0)
@@ -749,9 +788,12 @@ function doSaveAlterDict() {
 /**
  * Show confirmation of drop and perform actual drop of FTS mapping
  */
-function doDropMapping($confirm) {
-	global $data, $misc;
-	global $lang, $_reload_drop_database;
+function doDropMapping($confirm)
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	global $_reload_drop_database;
+	$lang = AppContainer::getLang();
 
 	if (empty($_REQUEST['mapping']) && empty($_REQUEST['ma'])) {
 		doDefault($lang['strftsspecifymappingtodrop']);
@@ -777,7 +819,6 @@ function doDropMapping($confirm) {
 				echo "<p>", sprintf($lang['strconfdropftsmapping'], $misc->printVal($a['mapping']), $misc->printVal($_REQUEST['ftscfg'])), "</p>\n";
 				printf('<input type="hidden" name="mapping[]" value="%s" />', htmlspecialchars_nc($a['mapping']));
 			}
-
 		} else {
 			echo "<p>", sprintf($lang['strconfdropftsmapping'], $misc->printVal($_REQUEST['mapping']), $misc->printVal($_REQUEST['ftscfg'])), "</p>\n";
 			echo "<input type=\"hidden\" name=\"mapping\" value=\"", htmlspecialchars_nc($_REQUEST['mapping']), "\" />\n";
@@ -810,8 +851,11 @@ function doDropMapping($confirm) {
 	}
 }
 
-function doAlterMapping($msg = '') {
-	global $data, $misc, $lang;
+function doAlterMapping($msg = '')
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$misc->printTrail('ftscfg');
 	$misc->printTitle($lang['stralter'], 'pg.ftscfg.alter');
@@ -858,8 +902,7 @@ function doAlterMapping($msg = '') {
 		echo "\t\t\t<select name=\"formDictionary\">\n";
 		while (!$ftsdicts->EOF) {
 			$ftsdict = htmlspecialchars_nc($ftsdicts->fields['name']);
-			echo "\t\t\t\t<option value=\"{$ftsdict}\"",
-			($ftsdict == $_POST['formDictionary'] || $ftsdict == @$mapping->fields['dictionaries'] || $ftsdict == @$ma_mappings[0]->fields['dictionaries']) ? ' selected="selected"' : '', ">{$ftsdict}</option>\n";
+			echo "\t\t\t\t<option value=\"{$ftsdict}\"", ($ftsdict == $_POST['formDictionary'] || $ftsdict == @$mapping->fields['dictionaries'] || $ftsdict == @$ma_mappings[0]->fields['dictionaries']) ? ' selected="selected"' : '', ">{$ftsdict}</option>\n";
 			$ftsdicts->moveNext();
 		}
 
@@ -883,8 +926,11 @@ function doAlterMapping($msg = '') {
 /**
  * Save the form submission containing changes to a FTS mapping
  */
-function doSaveAlterMapping() {
-	global $data, $misc, $lang;
+function doSaveAlterMapping()
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$mappingArray = (is_array($_POST['formMapping']) ? $_POST['formMapping'] : array($_POST['formMapping']));
 	$status = $data->changeFtsMapping($_POST['ftscfg'], $mappingArray, 'alter', $_POST['formDictionary']);
@@ -897,8 +943,11 @@ function doSaveAlterMapping() {
 /**
  * Show the form to enter parameters of a new FTS mapping
  */
-function doAddMapping($msg = '') {
-	global $data, $misc, $lang;
+function doAddMapping($msg = '')
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$misc->printTrail('ftscfg');
 	$misc->printTitle($lang['stralter'], 'pg.ftscfg.alter');
@@ -959,8 +1008,11 @@ function doAddMapping($msg = '') {
 /**
  * Save the form submission containing parameters of a new FTS mapping
  */
-function doSaveAddMapping() {
-	global $data, $misc, $lang;
+function doSaveAddMapping()
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$mappingArray = (is_array($_POST['formMapping']) ? $_POST['formMapping'] : array($_POST['formMapping']));
 	$status = $data->changeFtsMapping($_POST['ftscfg'], $mappingArray, 'add', $_POST['formDictionary']);
@@ -973,8 +1025,11 @@ function doSaveAddMapping() {
 /**
  * Generate XML for the browser tree.
  */
-function doTree() {
-	global $misc, $data, $lang;
+function doTree()
+{
+	$misc = AppContainer::getMisc();
+	$data = AppContainer::getData();
+	$lang = AppContainer::getLang();
 
 	$tabs = $misc->getNavTabs('fulltext');
 	$items = $misc->adjustTabsForTree($tabs);
@@ -984,11 +1039,13 @@ function doTree() {
 	$attrs = array(
 		'text' => field('title'),
 		'icon' => field('icon'),
-		'action' => url('fulltext.php',
+		'action' => url(
+			'fulltext.php',
 			$reqvars,
 			field('urlvars')
 		),
-		'branch' => url('fulltext.php',
+		'branch' => url(
+			'fulltext.php',
 			$reqvars,
 			array(
 				'action' => 'subtree',
@@ -1002,24 +1059,27 @@ function doTree() {
 	exit;
 }
 
-function doSubTree($what) {
-	global $misc, $data, $lang;
+function doSubTree($what)
+{
+	$misc = AppContainer::getMisc();
+	$data = AppContainer::getData();
+	$lang = AppContainer::getLang();
 
 	switch ($what) {
-	case 'FtsCfg':
-		$items = $data->getFtsConfigurations(false);
-		$urlvars = array('action' => 'viewconfig', 'ftscfg' => field('name'));
-		break;
-	case 'FtsDict':
-		$items = $data->getFtsDictionaries(false);
-		$urlvars = array('action' => 'viewdicts');
-		break;
-	case 'FtsParser':
-		$items = $data->getFtsParsers(false);
-		$urlvars = array('action' => 'viewparsers');
-		break;
-	default:
-		exit;
+		case 'FtsCfg':
+			$items = $data->getFtsConfigurations(false);
+			$urlvars = array('action' => 'viewconfig', 'ftscfg' => field('name'));
+			break;
+		case 'FtsDict':
+			$items = $data->getFtsDictionaries(false);
+			$urlvars = array('action' => 'viewdicts');
+			break;
+		case 'FtsParser':
+			$items = $data->getFtsParsers(false);
+			$urlvars = array('action' => 'viewparsers');
+			break;
+		default:
+			exit;
 	}
 
 	$reqvars = $misc->getRequestVars('ftscfg');
@@ -1028,13 +1088,16 @@ function doSubTree($what) {
 		'text' => field('name'),
 		'icon' => $what,
 		'toolTip' => field('comment'),
-		'action' => url('fulltext.php',
+		'action' => url(
+			'fulltext.php',
 			$reqvars,
 			$urlvars
 		),
-		'branch' => ifempty(field('branch'),
+		'branch' => ifempty(
+			field('branch'),
 			'',
-			url('fulltext.php',
+			url(
+				'fulltext.php',
 				$reqvars,
 				array(
 					'action' => 'subtree',
@@ -1064,57 +1127,55 @@ if (isset($_POST['cancel'])) {
 }
 
 switch ($action) {
-case 'createconfig':
-	if (isset($_POST['create'])) doSaveCreateConfig();
-	else doCreateConfig();
-	break;
-case 'alterconfig':
-	if (isset($_POST['alter'])) doSaveAlterConfig();
-	else doAlterConfig();
-	break;
-case 'dropconfig':
-	if (isset($_POST['drop'])) doDropConfig(false);
-	else doDropConfig(true);
-	break;
-case 'viewconfig':
-	doViewConfig($_REQUEST['ftscfg']);
-	break;
-case 'viewparsers':
-	doViewParsers();
-	break;
-case 'viewdicts':
-	doViewDicts();
-	break;
-case 'createdict':
-	if (isset($_POST['create'])) doSaveCreateDict();
-	else doCreateDict();
-	break;
-case 'alterdict':
-	if (isset($_POST['alter'])) doSaveAlterDict();
-	else doAlterDict();
-	break;
-case 'dropdict':
-	if (isset($_POST['drop'])) doDropDict(false);
-	else doDropDict(true);
-	break;
-case 'dropmapping':
-	if (isset($_POST['drop'])) doDropMapping(false);
-	else doDropMapping(true);
-	break;
-case 'altermapping':
-	if (isset($_POST['alter'])) doSaveAlterMapping();
-	else doAlterMapping();
-	break;
-case 'addmapping':
-	if (isset($_POST['add'])) doSaveAddMapping();
-	else doAddMapping();
-	break;
+	case 'createconfig':
+		if (isset($_POST['create'])) doSaveCreateConfig();
+		else doCreateConfig();
+		break;
+	case 'alterconfig':
+		if (isset($_POST['alter'])) doSaveAlterConfig();
+		else doAlterConfig();
+		break;
+	case 'dropconfig':
+		if (isset($_POST['drop'])) doDropConfig(false);
+		else doDropConfig(true);
+		break;
+	case 'viewconfig':
+		doViewConfig($_REQUEST['ftscfg']);
+		break;
+	case 'viewparsers':
+		doViewParsers();
+		break;
+	case 'viewdicts':
+		doViewDicts();
+		break;
+	case 'createdict':
+		if (isset($_POST['create'])) doSaveCreateDict();
+		else doCreateDict();
+		break;
+	case 'alterdict':
+		if (isset($_POST['alter'])) doSaveAlterDict();
+		else doAlterDict();
+		break;
+	case 'dropdict':
+		if (isset($_POST['drop'])) doDropDict(false);
+		else doDropDict(true);
+		break;
+	case 'dropmapping':
+		if (isset($_POST['drop'])) doDropMapping(false);
+		else doDropMapping(true);
+		break;
+	case 'altermapping':
+		if (isset($_POST['alter'])) doSaveAlterMapping();
+		else doAlterMapping();
+		break;
+	case 'addmapping':
+		if (isset($_POST['add'])) doSaveAddMapping();
+		else doAddMapping();
+		break;
 
-default:
-	doDefault();
-	break;
+	default:
+		doDefault();
+		break;
 }
 
 $misc->printFooter();
-
-

@@ -1,8 +1,10 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 function pg_escape_id($id = ''): string
 {
-	$pg = \PhpPgAdmin\Core\AppContainer::getPostgres();
+	$pg = AppContainer::getPostgres();
 	return pg_escape_identifier($pg->conn->_connectionID, $id);
 }
 

@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 /**
  * Manage functions in a database
  *
@@ -15,8 +17,11 @@ if (!isset($msg)) $msg = '';
 /**
  * Function to save after editing a function
  */
-function doSaveEdit() {
-	global $data, $lang, $misc, $_reload_browser;
+function doSaveEdit()
+{
+	$data = AppContainer::getData();
+	$lang = AppContainer::getLang();
+	$misc = AppContainer::getMisc();
 
 	$fnlang = strtolower($_POST['original_lang']);
 
@@ -29,12 +34,24 @@ function doSaveEdit() {
 	}
 	if (!$data->hasFunctionAlterSchema()) $_POST['formFuncSchema'] = '';
 
-	$status = $data->setFunction($_POST['function_oid'], $_POST['original_function'], $_POST['formFunction'],
-		$_POST['original_arguments'], $_POST['original_returns'], $def,
-		$_POST['original_lang'], $_POST['formProperties'], isset($_POST['original_setof']),
-		$_POST['original_owner'], $_POST['formFuncOwn'], $_POST['original_schema'],
-		$_POST['formFuncSchema'], $_POST['formCost'] ?? null,
-		$_POST['formRows'] ?? 0, $_POST['formComment']);
+	$status = $data->setFunction(
+		$_POST['function_oid'],
+		$_POST['original_function'],
+		$_POST['formFunction'],
+		$_POST['original_arguments'],
+		$_POST['original_returns'],
+		$def,
+		$_POST['original_lang'],
+		$_POST['formProperties'],
+		isset($_POST['original_setof']),
+		$_POST['original_owner'],
+		$_POST['formFuncOwn'],
+		$_POST['original_schema'],
+		$_POST['formFuncSchema'],
+		$_POST['formCost'] ?? null,
+		$_POST['formRows'] ?? 0,
+		$_POST['formComment']
+	);
 
 	if ($status == 0) {
 		// If function has had schema altered, need to change to the new schema
@@ -42,8 +59,8 @@ function doSaveEdit() {
 		if (!empty($_POST['formFuncSchema']) && ($_POST['formFuncSchema'] != $_POST['original_schema'])) {
 			// Jump them to the new function schema
 			$misc->setCurrentSchema($_POST['formFuncSchema']);
-			// Force a browser reload
-			$_reload_browser = true;
+			// Reload navigation tree
+			AppContainer::setShouldReloadTree(true);
 		}
 		doProperties($lang['strfunctionupdated']);
 	} else {
@@ -54,9 +71,11 @@ function doSaveEdit() {
 /**
  * Function to allow editing of a Function
  */
-function doEdit($msg = '') {
-	global $data, $misc;
-	global $lang;
+function doEdit($msg = '')
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 	$misc->printTrail('function');
 	$misc->printTitle($lang['stralter'], 'pg.function.alter');
 	$misc->printMsg($msg);
@@ -96,21 +115,21 @@ function doEdit($msg = '') {
 				if ($i != 0) $args .= ', ';
 				if (isset($modes_arr[$i])) {
 					switch ($modes_arr[$i]) {
-					case 'i' :
-						$args .= " IN ";
-						break;
-					case 'o' :
-						$args .= " OUT ";
-						break;
-					case 'b' :
-						$args .= " INOUT ";
-						break;
-					case 'v' :
-						$args .= " VARIADIC ";
-						break;
-					case 't' :
-						$args .= " TABLE ";
-						break;
+						case 'i':
+							$args .= " IN ";
+							break;
+						case 'o':
+							$args .= " OUT ";
+							break;
+						case 'b':
+							$args .= " INOUT ";
+							break;
+						case 'v':
+							$args .= " VARIADIC ";
+							break;
+						case 't':
+							$args .= " TABLE ";
+							break;
 					}
 				}
 				if (isset($names_arr[$i]) && $names_arr[$i] != '') {
@@ -142,8 +161,7 @@ function doEdit($msg = '') {
 			echo "<select name=\"formFuncSchema\">";
 			while (!$schemas->EOF) {
 				$schema = $schemas->fields['nspname'];
-				echo "<option value=\"", htmlspecialchars_nc($schema), "\"",
-				($schema == $_POST['formFuncSchema']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($schema), "</option>\n";
+				echo "<option value=\"", htmlspecialchars_nc($schema), "\"", ($schema == $_POST['formFuncSchema']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($schema), "</option>\n";
 				$schemas->moveNext();
 			}
 			echo "</select>\n";
@@ -211,8 +229,7 @@ function doEdit($msg = '') {
 			foreach ($data->funcprops as $k => $v) {
 				echo "<select name=\"formProperties[{$i}]\">\n";
 				foreach ($v as $p) {
-					echo "<option value=\"", htmlspecialchars_nc($p), "\"",
-					($p == $_POST['formProperties'][$i]) ? ' selected="selected"' : '',
+					echo "<option value=\"", htmlspecialchars_nc($p), "\"", ($p == $_POST['formProperties'][$i]) ? ' selected="selected"' : '',
 					">", $misc->printVal($p), "</option>\n";
 				}
 				echo "</select><br />\n";
@@ -227,8 +244,7 @@ function doEdit($msg = '') {
 			echo "<tr><td class=\"data1\" colspan=\"5\">{$lang['strowner']}: <select name=\"formFuncOwn\">";
 			while (!$users->EOF) {
 				$uname = $users->fields['usename'];
-				echo "<option value=\"", htmlspecialchars_nc($uname), "\"",
-				($uname == $_POST['formFuncOwn']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($uname), "</option>\n";
+				echo "<option value=\"", htmlspecialchars_nc($uname), "\"", ($uname == $_POST['formFuncOwn']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($uname), "</option>\n";
 				$users->moveNext();
 			}
 			echo "</select>\n";
@@ -249,9 +265,11 @@ function doEdit($msg = '') {
 /**
  * Show read only properties of a function
  */
-function doProperties($msg = '') {
-	global $data, $misc;
-	global $lang;
+function doProperties($msg = '')
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$misc->printTrail('function');
 	$misc->printTitle($lang['strproperties'], 'pg.function');
@@ -275,21 +293,21 @@ function doProperties($msg = '') {
 				if ($i != 0) $args .= ', ';
 				if (isset($modes_arr[$i])) {
 					switch ($modes_arr[$i]) {
-					case 'i' :
-						$args .= " IN ";
-						break;
-					case 'o' :
-						$args .= " OUT ";
-						break;
-					case 'b' :
-						$args .= " INOUT ";
-						break;
-					case 'v' :
-						$args .= " VARIADIC ";
-						break;
-					case 't' :
-						$args .= " TABLE ";
-						break;
+						case 'i':
+							$args .= " IN ";
+							break;
+						case 'o':
+							$args .= " OUT ";
+							break;
+						case 'b':
+							$args .= " INOUT ";
+							break;
+						case 'v':
+							$args .= " VARIADIC ";
+							break;
+						case 't':
+							$args .= " TABLE ";
+							break;
 					}
 				}
 				if (isset($names_arr[$i]) && $names_arr[$i] != '') {
@@ -421,9 +439,11 @@ function doProperties($msg = '') {
 /**
  * Show confirmation of drop and perform actual drop
  */
-function doDrop($confirm) {
-	global $data, $misc;
-	global $lang, $_reload_browser;
+function doDrop($confirm)
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	if (empty($_REQUEST['function']) && empty($_REQUEST['ma'])) {
 		doDefault($lang['strspecifyfunctiontodrop']);
@@ -475,28 +495,29 @@ function doDrop($confirm) {
 			}
 			if ($data->endTransaction() == 0) {
 				// Everything went fine, back to the Default page....
-				$_reload_browser = true;
+				AppContainer::setShouldReloadTree(true);
 				doDefault($msg);
 			} else doDefault($lang['strfunctiondroppedbad']);
 		} else {
 			$status = $data->dropFunction($_POST['function_oid'], isset($_POST['cascade']));
 			if ($status == 0) {
-				$_reload_browser = true;
+				AppContainer::setShouldReloadTree(true);
 				doDefault($lang['strfunctiondropped']);
 			} else {
 				doDefault($lang['strfunctiondroppedbad']);
 			}
 		}
 	}
-
 }
 
 /**
  * Displays a screen where they can enter a new function
  */
-function doCreate($msg = '', $szJS = "") {
-	global $data, $misc;
-	global $lang;
+function doCreate($msg = '', $szJS = "")
+{
+	$data = AppContainer::getData();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$misc->printTrail('schema');
 	if (!isset($_POST['formFunction'])) $_POST['formFunction'] = '';
@@ -518,15 +539,15 @@ function doCreate($msg = '', $szJS = "") {
 	$fnlang = strtolower($_POST['formLanguage']);
 
 	switch ($fnlang) {
-	case 'c':
-		$misc->printTitle($lang['strcreatecfunction'], 'pg.function.create.c');
-		break;
-	case 'internal':
-		$misc->printTitle($lang['strcreateinternalfunction'], 'pg.function.create.internal');
-		break;
-	default:
-		$misc->printTitle($lang['strcreateplfunction'], 'pg.function.create.pl');
-		break;
+		case 'c':
+			$misc->printTitle($lang['strcreatecfunction'], 'pg.function.create.c');
+			break;
+		case 'internal':
+			$misc->printTitle($lang['strcreateinternalfunction'], 'pg.function.create.internal');
+			break;
+		default:
+			$misc->printTitle($lang['strcreateplfunction'], 'pg.function.create.pl');
+			break;
 	}
 	$misc->printMsg($msg);
 
@@ -697,8 +718,7 @@ function doCreate($msg = '', $szJS = "") {
 		foreach ($data->funcprops as $k => $v) {
 			echo "<select name=\"formProperties[{$i}]\">\n";
 			foreach ($v as $p) {
-				echo "<option value=\"", htmlspecialchars_nc($p), "\"",
-				($p == $_POST['formProperties'][$i]) ? ' selected="selected"' : '',
+				echo "<option value=\"", htmlspecialchars_nc($p), "\"", ($p == $_POST['formProperties'][$i]) ? ' selected="selected"' : '',
 				">", $misc->printVal($p), "</option>\n";
 			}
 			echo "</select><br />\n";
@@ -719,8 +739,10 @@ function doCreate($msg = '', $szJS = "") {
 /**
  * Actually creates the new function in the database
  */
-function doSaveCreate() {
-	global $data, $lang;
+function doSaveCreate()
+{
+	$data = AppContainer::getData();
+	$lang = AppContainer::getLang();
 
 	$fnlang = strtolower($_POST['formLanguage']);
 
@@ -757,10 +779,19 @@ function doSaveCreate() {
 	elseif ($fnlang != 'internal' && !$def) doCreate($lang['strfunctionneedsdef'], $szJS);
 	else {
 		// Append array symbol to type if chosen
-		$status = $data->createFunction($_POST['formFunction'], empty($_POST['nojs']) ? buildFunctionArguments($_POST) : $_POST['formArguments'],
-			$_POST['formReturns'] . $_POST['formArray'], $def, $_POST['formLanguage'],
-			$_POST['formProperties'], $_POST['formSetOf'] == 'SETOF',
-			$cost, $rows, $_POST['formComment'], false);
+		$status = $data->createFunction(
+			$_POST['formFunction'],
+			empty($_POST['nojs']) ? buildFunctionArguments($_POST) : $_POST['formArguments'],
+			$_POST['formReturns'] . $_POST['formArray'],
+			$def,
+			$_POST['formLanguage'],
+			$_POST['formProperties'],
+			$_POST['formSetOf'] == 'SETOF',
+			$cost,
+			$rows,
+			$_POST['formComment'],
+			false
+		);
 		if ($status == 0)
 			doDefault($lang['strfunctioncreated']);
 		else {
@@ -772,7 +803,8 @@ function doSaveCreate() {
 /**
  * Build out the function arguments string
  */
-function buildFunctionArguments($arrayVars) {
+function buildFunctionArguments($arrayVars)
+{
 	if (isset($_POST['formArgName'])) {
 		$arrayArgs = array();
 		foreach ($arrayVars['formArgName'] as $pK => $pV) {
@@ -786,7 +818,8 @@ function buildFunctionArguments($arrayVars) {
 /**
  * Build out JS to re-create table rows for arguments
  */
-function buildJSRows($szArgs) {
+function buildJSRows($szArgs)
+{
 	$arrayModes = array('IN', 'OUT', 'INOUT');
 	$arrayArgs = explode(',', $szArgs);
 	$arrayProperArgs = array();
@@ -814,8 +847,9 @@ function buildJSRows($szArgs) {
 }
 
 
-function buildJSData() {
-	global $data;
+function buildJSData()
+{
+	$data = AppContainer::getData();
 	$arrayModes = array('IN', 'OUT', 'INOUT');
 	$arrayTypes = $data->getTypes(true, true, true);
 	$arrayPTypes = array();
@@ -839,9 +873,13 @@ function buildJSData() {
 /**
  * Show default list of functions in the database
  */
-function doDefault($msg = '') {
-	global $data, $conf, $misc, $func;
-	global $lang;
+function doDefault($msg = '')
+{
+	global $func;
+	$data = AppContainer::getData();
+	$conf = AppContainer::getConf();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
 
 	$misc->printTrail('schema');
 	$misc->printTabs('schema', 'functions');
@@ -982,8 +1020,10 @@ function doDefault($msg = '') {
 /**
  * Generate XML for the browser tree.
  */
-function doTree() {
-	global $misc, $data;
+function doTree()
+{
+	$misc = AppContainer::getMisc();
+	$data = AppContainer::getData();
 
 	$funcs = $data->getFunctions();
 
@@ -995,7 +1035,8 @@ function doTree() {
 		'text' => $proto,
 		'icon' => 'Function',
 		'toolTip' => field('procomment'),
-		'action' => url('redirect.php',
+		'action' => url(
+			'redirect.php',
 			$reqvars,
 			array(
 				'action' => 'properties',
@@ -1015,35 +1056,33 @@ $misc->printHeader($lang['strfunctions']);
 $misc->printBody();
 
 switch ($action) {
-case 'save_create':
-	if (isset($_POST['cancel'])) doDefault();
-	else doSaveCreate();
-	break;
-case 'create':
-	doCreate();
-	break;
-case 'drop':
-	if (isset($_POST['drop'])) doDrop(false);
-	else doDefault();
-	break;
-case 'confirm_drop':
-	doDrop(true);
-	break;
-case 'save_edit':
-	if (isset($_POST['cancel'])) doDefault();
-	else doSaveEdit();
-	break;
-case 'edit':
-	doEdit();
-	break;
-case 'properties':
-	doProperties();
-	break;
-default:
-	doDefault();
-	break;
+	case 'save_create':
+		if (isset($_POST['cancel'])) doDefault();
+		else doSaveCreate();
+		break;
+	case 'create':
+		doCreate();
+		break;
+	case 'drop':
+		if (isset($_POST['drop'])) doDrop(false);
+		else doDefault();
+		break;
+	case 'confirm_drop':
+		doDrop(true);
+		break;
+	case 'save_edit':
+		if (isset($_POST['cancel'])) doDefault();
+		else doSaveEdit();
+		break;
+	case 'edit':
+		doEdit();
+		break;
+	case 'properties':
+		doProperties();
+		break;
+	default:
+		doDefault();
+		break;
 }
 
 $misc->printFooter();
-
-

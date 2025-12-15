@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 	/**
 	 * Manage schemas within a database
 	 *
@@ -21,7 +23,8 @@
 	 * Sends a signal to a process
 	 */
 	function doSignal() {
-		global $data, $lang;
+		$data = AppContainer::getData();
+$lang = AppContainer::getLang();
 
 		$status = $data->sendSignal($_REQUEST['pid'], $_REQUEST['signal']);
 		if ($status == 0)
@@ -34,8 +37,10 @@
 	 * Searches for a named database object
 	 */
 	function doFind($confirm = true, $msg = '') {
-		global $data, $misc;
-		global $lang, $conf;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
+$conf = AppContainer::getConf();
 
 		if (!isset($_REQUEST['term'])) $_REQUEST['term'] = '';
 		if (!isset($_REQUEST['filter'])) $_REQUEST['filter'] = '';
@@ -302,8 +307,9 @@
 	 * Displays options for database download
 	 */
 	function doExport($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		$misc->printTrail('database');
 		$misc->printTabs('database','export');
@@ -359,8 +365,9 @@
 	 * Show the current status of all database variables
 	 */
 	function doVariables() {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		// Fetch the variables from the database
 		$variables = $data->getVariables();	
@@ -388,8 +395,9 @@
 	 * are running.
 	 */
 	function doProcesses($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		$misc->printTrail('database');
 		$misc->printTabs('database','processes');
@@ -405,7 +413,9 @@
 	}
 	
 	function currentProcesses($isAjax = false) {
-		global $data, $misc, $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+$lang = AppContainer::getLang();
 		
 		// Display prepared transactions
 		if($data->hasPreparedXacts()) {
@@ -512,7 +522,9 @@
 	}
 
 	function currentLocks($isAjax = false) {
-		global $data, $misc, $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+$lang = AppContainer::getLang();
 
 		// Get the info from the pg_locks view
 		$variables = $data->getLocks();
@@ -561,8 +573,9 @@
 	 * Show the existing table locks in the current database
 	 */
 	function doLocks() {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		$misc->printTrail('database');
 		$misc->printTabs('database','locks');
@@ -578,8 +591,9 @@
 	 * Allow execution of arbitrary SQL statements on a database
 	 */
 	function doSQL() {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if ((!isset($_SESSION['sqlquery'])) || isset($_REQUEST['new'])) {
 			$_SESSION['sqlquery'] = '';
@@ -615,7 +629,9 @@
 	}
 
 	function doTree() {
-		global $misc, $data, $lang;
+		$misc = AppContainer::getMisc();
+$data = AppContainer::getData();
+$lang = AppContainer::getLang();
 
 		$reqvars = $misc->getRequestVars('database');
 

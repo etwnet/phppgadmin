@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 	/**
 	 * Does an import to a particular table from a text file
 	 *
@@ -23,8 +25,11 @@
 	 * Open tag handler for XML import feature
 	 */
 	function _startElement($parser, $name, $attrs) {
-		global $data, $misc, $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+$lang = AppContainer::getLang();
 		global $state, $curr_row, $curr_col_name, $curr_col_val, $curr_col_null;
+
 
 		switch ($name) {
 			case 'DATA':
@@ -86,8 +91,11 @@
 	 * Close tag handler for XML import feature
 	 */
 	function _endElement($parser, $name) {
-		global $data, $misc, $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+$lang = AppContainer::getLang();
 		global $state, $curr_row, $curr_col_name, $curr_col_val, $curr_col_null;
+
 
 		switch ($name) {
 			case 'DATA':
@@ -147,8 +155,11 @@
 	 * Character data handler for XML import feature
 	 */
 	function _charHandler($parser, $cdata) {
-		global $data, $misc, $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+$lang = AppContainer::getLang();
 		global $state, $curr_col_val;
+
 
 		if ($state == 'COLUMN') {
 			$curr_col_val .= $cdata;

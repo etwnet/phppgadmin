@@ -1,5 +1,13 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\Actions\ConstraintActions;
+use PhpPgAdmin\Database\Actions\RowActions;
+use PhpPgAdmin\Database\Actions\SchemaActions;
+use PhpPgAdmin\Database\Actions\TableActions;
+use PhpPgAdmin\Gui\FieldRenderer;
+use PHPSQLParser\PHPSQLParser;
+
 /**
  * Common relation browsing function that can be used for views,
  * tables, reports, arbitrary queries, etc. to avoid code duplication.
@@ -11,29 +19,24 @@
  * $Id: display.php,v 1.68 2008/04/14 12:44:27 ioguix Exp $
  */
 
-/** @var Misc $misc */
-/** @var Postgres $data */
-/** @var array $lang */
-
-// Prevent timeouts on large exports (non-safe mode only)
-use PHPSQLParser\PHPSQLParser;
-
-if (!ini_get('safe_mode')) set_time_limit(0);
-
 // Include application functions
 include_once('./libraries/bootstrap.php');
 
-//global $data, $conf, $lang;
+// Prevent timeouts on large exports (non-safe mode only)
+if (!ini_get('safe_mode')) set_time_limit(0);
 
-$action = $_REQUEST['action'] ?? '';
 
 /**
- * Show confirmation of edit and perform actual update
+ * Show confirmation of edit or insert and perform insert or update
  */
 function doEditRow($confirm, $msg = '') {
-	/** @var Postgres $data */
-	global $data, $misc, $conf;
-	global $lang;
+
+	$pg = AppContainer::getPostgres();
+	$misc = AppContainer::getMisc();
+	$conf = AppContainer::getConf();
+	$lang = AppContainer::getLang();
+	$rowActions = new RowActions($pg);
+	$tableActions = new TableActions($pg);
 
 	beginHtml();
 
@@ -43,12 +46,12 @@ function doEditRow($confirm, $msg = '') {
 			$keyFields = $_REQUEST['key'];
 		else
 			$keyFields = unserialize(urldecode($_REQUEST['key']));
-		$rs = $data->browseRow($_REQUEST['table'], $keyFields);
+		$rs = $rowActions->browseRow($_REQUEST['table'], $keyFields);
 	} else {
 		$rs = null;
 	}
 
-	$attrs = $data->getTableAttributes($_REQUEST['table']);
+	$attrs = $tableActions->getTableAttributes($_REQUEST['table']);
 
 	if (isset($_REQUEST['edit-inline'])) {
 		// edit field inline
@@ -60,6 +63,8 @@ function doEditRow($confirm, $msg = '') {
 	}
 
 	if ($confirm) {
+
+		$fieldRenderer = new FieldRenderer();
 
 		//var_dump($keyFields);
 		$initial = empty($_POST);
@@ -124,7 +129,7 @@ EOT;
 			$i = 0;
 			while (!$attrs->EOF) {
 
-				$attrs->fields['attnotnull'] = $data->phpBool($attrs->fields['attnotnull']);
+				$attrs->fields['attnotnull'] = $pg->phpBool($attrs->fields['attnotnull']);
 				$id = (($i & 1) == 0 ? '1' : '2');
 
 				// Initialise variables
@@ -158,7 +163,7 @@ EOT;
 				//echo "<td class=\"info\">#", $i+1, "</td>";
 				echo "<th>", $misc->printVal($attrs->fields['attname']), "</th>";
 				echo "<td>\n";
-				echo $misc->printVal($data->formatType($attrs->fields['type'], $attrs->fields['atttypmod']));
+				echo $misc->printVal($pg->formatType($attrs->fields['type'], $attrs->fields['atttypmod']));
 				//echo "<input type=\"hidden\" name=\"types[", htmlspecialchars($attrs->fields['attname']), "]\" value=\"", htmlspecialchars($attrs->fields['type']), "\" /></td>";
 				echo "<td>\n";
 				$sel_fnc_id = "sel_fnc_" . htmlspecialchars($attrs->fields['attname']);
@@ -166,7 +171,7 @@ EOT;
 				echo "<option></option>\n";
 				$format = $_REQUEST['format'][$attrs->fields['attname']] ?? '';
 				foreach ($functions_by_category as $category => $functions) {
-					echo "<optgroup label=\"", htmlspecialchars($category) ,"\">\n";
+					echo "<optgroup label=\"", htmlspecialchars($category), "\">\n";
 					foreach ($functions as $function) {
 						$selected = $format == $function ? " selected" : "";
 						$function_html = htmlspecialchars($function);
@@ -215,7 +220,7 @@ EOT;
 					$extras['autocomplete'] = 'off';
 				}
 
-				$data->printField(
+				$fieldRenderer->printField(
 					"values[{$attrs->fields['attname']}]",
 					$value,
 					$attrs->fields['type'],
@@ -245,7 +250,7 @@ EOT;
 		echo $misc->form;
 		if ($insert) {
 			if (!isset($_SESSION['counter'])) $_SESSION['counter'] = 0;
-			echo "<input type=\"hidden\" name=\"protection_counter\" value=\"".$_SESSION['counter']."\" />\n";
+			echo "<input type=\"hidden\" name=\"protection_counter\" value=\"" . $_SESSION['counter'] . "\" />\n";
 		} else {
 			foreach ($keyFields as $field => $val) {
 				echo "<input type=\"hidden\" name=\"key[", htmlspecialchars($field), "]\" value=\"", htmlspecialchars($val), "\" />\n";
@@ -303,7 +308,7 @@ EOT;
 				while (!$attrs->EOF) {
 					$fields[$attrs->fields['attnum']] = $attrs->fields['attname'];
 				}
-				$status = $data->insertRow(
+				$status = $rowActions->insertRow(
 					$_POST['table'], $fields, $_POST['values'], $_POST['nulls'],
 					$_POST['format'], $_POST['expr'], $_POST['types']
 				);
@@ -314,16 +319,15 @@ EOT;
 						unset($_REQUEST['expr']);
 						unset($_REQUEST['nulls']);
 						unset($_REQUEST['format']);
-						doInsertRow(true, $lang['strrowinserted']);
+						doEditRow(true, $lang['strrowinserted']);
 					} else
 						doBrowse($lang['strrowinserted']);
-				}
-				else
+				} else
 					doEditRow(true, $lang['strrowinsertedbad']);
 			} else
 				doEditRow(true, $lang['strrowduplicate']);
 		} else {
-			$status = $data->editRow(
+			$status = $rowActions->editRow(
 				$_POST['table'], $_POST['values'], $_POST['nulls'],
 				$_POST['format'], $_POST['expr'], $_POST['types'], $keyFields
 			);
@@ -342,8 +346,10 @@ EOT;
  * Show confirmation of drop and perform actual drop
  */
 function doDelRow($confirm) {
-	global $data, $misc;
-	global $lang;
+	$pg = AppContainer::getPostgres();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
+	$rowActions = new RowActions($pg);
 
 	beginHtml();
 
@@ -351,7 +357,7 @@ function doDelRow($confirm) {
 		$misc->printTrail($_REQUEST['subject']);
 		$misc->printTitle($lang['strdeleterow']);
 
-		$rs = $data->browseRow($_REQUEST['table'], $_REQUEST['key']);
+		$rs = $rowActions->browseRow($_REQUEST['table'], $_REQUEST['key']);
 
 		echo "<form action=\"display.php\" method=\"post\">\n";
 		echo $misc->form;
@@ -399,7 +405,7 @@ function doDelRow($confirm) {
 		echo "<input type=\"hidden\" name=\"key\" value=\"", htmlspecialchars_nc(urlencode(serialize($_REQUEST['key']))), "\" />\n";
 		echo "</form>\n";
 	} else {
-		$status = $data->deleteRow($_POST['table'], unserialize(urldecode($_POST['key'])));
+		$status = $rowActions->deleteRow($_POST['table'], unserialize(urldecode($_POST['key'])));
 		if ($status == 0)
 			doBrowse($lang['strrowdeleted']);
 		elseif ($status == -2)
@@ -412,14 +418,16 @@ function doDelRow($confirm) {
 
 /* build & return the FK information data structure
  * used when deciding if a field should have a FK link or not*/
-function &getFKInfo() {
-	global $data, $misc, $lang;
+function getFKInfo() {
+	$pg = AppContainer::getPostgres();
+	$misc = AppContainer::getMisc();
+	$constraintActions = new ConstraintActions($pg);
 
 	// Get the foreign key(s) information from the current table
 	$fkey_information = array('byconstr' => array(), 'byfield' => array());
 
 	if (isset($_REQUEST['table'])) {
-		$constraints = $data->getConstraintsWithFields($_REQUEST['table']);
+		$constraints = $constraintActions->getConstraintsWithFields($_REQUEST['table']);
 		if ($constraints->recordCount() > 0) {
 
 			$fkey_information['common_url'] = $misc->getHREF('schema') . '&amp;subject=table';
@@ -456,12 +464,14 @@ function &getFKInfo() {
  * @param $args - associative array for sort link parameters
  * */
 function printTableHeaderCells($rs, $args, $withOid) {
-	global $misc, $data, $conf;
+	$misc = AppContainer::getMisc();
+	$pg = AppContainer::getPostgres();
+	$conf = AppContainer::getConf();
 	$j = 0;
 
 	foreach ($rs->fields as $k => $v) {
 
-		if (($k === $data->id) && (!($withOid && $conf['show_oids']))) {
+		if (($k === $pg->id) && (!($withOid && $conf['show_oids']))) {
 			$j++;
 			continue;
 		}
@@ -501,7 +511,9 @@ function printTableHeaderCells($rs, $args, $withOid) {
  * @param bool $editable
  */
 function printTableRowCells($rs, $fkey_information, $withOid, $editable = false) {
-	global $data, $misc, $conf;
+	$pg = AppContainer::getPostgres();
+	$misc = AppContainer::getMisc();
+	$conf = AppContainer::getConf();
 	$j = 0;
 
 	if (!isset($_REQUEST['strings'])) $_REQUEST['strings'] = 'collapsed';
@@ -511,11 +523,11 @@ function printTableRowCells($rs, $fkey_information, $withOid, $editable = false)
 	foreach ($rs->fields as $k => $v) {
 		$finfo = $rs->fetchField($j++);
 
-		if (($k === $data->id) && (!($withOid && $conf['show_oids']))) continue;
+		if (($k === $pg->id) && (!($withOid && $conf['show_oids']))) continue;
 		elseif ($v !== null && $v == '') echo "<td>&nbsp;</td>";
 		else {
 
-			echo "<td class=\"$class\" data-type=\"$finfo->type\" data-name=\"".htmlspecialchars($finfo->name)."\">";
+			echo "<td class=\"$class\" data-type=\"$finfo->type\" data-name=\"" . htmlspecialchars($finfo->name) . "\">";
 
 			if (($v !== null) && isset($fkey_information['byfield'][$k])) {
 				foreach ($fkey_information['byfield'][$k] as $conid) {
@@ -547,21 +559,23 @@ function printTableRowCells($rs, $fkey_information, $withOid, $editable = false)
 
 /* Print the FK row, used in ajax requests */
 function doBrowseFK() {
-	/** @var Postgres $data */
-	global $data, $misc, $lang;
+	$pg = AppContainer::getPostgres();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
+	$rowActions = new RowActions($pg);
 
 	$ops = array();
 	foreach ($_REQUEST['fkey'] as $x => $y) {
 		$ops[$x] = '=';
 	}
-	$query = $data->getSelectSQL($_REQUEST['table'], array(), $_REQUEST['fkey'], $ops);
+	$query = $pg->getSelectSQL($_REQUEST['table'], array(), $_REQUEST['fkey'], $ops);
 	$_REQUEST['query'] = $query;
 
-	$fkinfo =& getFKInfo();
+	$fkinfo = getFKInfo();
 
 	$max_pages = 1;
 	// Retrieve page from query.  $max_pages is returned by reference.
-	$rs = $data->browseQuery('SELECT', $_REQUEST['table'], $_REQUEST['query'],
+	$rs = $rowActions->browseQuery('SELECT', $_REQUEST['table'], $_REQUEST['query'],
 		null, 1, 1, $max_pages);
 
 	echo "<a href=\"\" style=\"display:table-cell;\" class=\"fk_close\"><img alt=\"[close]\" src=\"" . $misc->icon('Close') . "\" /></a>\n";
@@ -592,8 +606,15 @@ function doBrowseFK() {
  * Displays requested data
  */
 function doBrowse($msg = '') {
-	/** @var Postgres $data */
-	global $data, $conf, $misc, $lang, $plugin_manager;
+
+	$pg = AppContainer::getPostgres();
+	$conf = AppContainer::getConf();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
+	$tableActions = new TableActions($pg);
+	$rowActions = new RowActions($pg);
+	$schemaActions = new SchemaActions($pg);
+	$plugin_manager = AppContainer::getPluginManager();
 
 	$save_history = !isset($_REQUEST['nohistory']);
 
@@ -603,7 +624,7 @@ function doBrowse($msg = '') {
 		foreach ($_REQUEST['fkey'] as $x => $y) {
 			$ops[$x] = '=';
 		}
-		$query = $data->getSelectSQL($_REQUEST['table'], array(), $_REQUEST['fkey'], $ops);
+		$query = $pg->getSelectSQL($_REQUEST['table'], array(), $_REQUEST['fkey'], $ops);
 		$_REQUEST['query'] = $query;
 	}
 
@@ -644,7 +665,7 @@ function doBrowse($msg = '') {
 	$parser = new PHPSQLParser();
 	$parsed = $parser->parse($query);
 
-	//$data->conn->debug = true;
+	//$pg->conn->debug = true;
 	//var_dump($parsed);
 
 	// update table/view name in url parameters
@@ -658,13 +679,13 @@ function doBrowse($msg = '') {
 			} else {
 				[$table] = $parts;
 				$changed = $table_name != $table;
-				$schema = $_REQUEST['schema'] ?? $data->_schema;
+				$schema = $_REQUEST['schema'] ?? $pg->_schema;
 			}
 			if ($changed) {
 				$misc->setCurrentSchema($schema);
 				$table_name = $table;
 				unset($_REQUEST[$subject]);
-				$subject = $data->getTableType($schema, $table) ?? '';
+				$subject = $tableActions->getTableType($schema, $table) ?? '';
 				if (!empty($subject)) {
 					$_REQUEST['subject'] = $subject;
 					$_REQUEST[$subject] = $table;
@@ -694,16 +715,15 @@ function doBrowse($msg = '') {
 
 	// Fetch unique row identifier, if this is a table browse request.
 	if (isset($table_name))
-		$key_fields = $data->getRowIdentifier($table_name);
+		$key_fields = $rowActions->getRowIdentifier($table_name);
 	else
 		$key_fields = array();
 
 	// Set the schema search path
 	if (isset($_REQUEST['search_path'])) {
-		if ($data->setSearchPath(
+		if ($schemaActions->setSearchPath(
 				array_map('trim', explode(',', $_REQUEST['search_path']))
-			) != 0)
-		{
+			) != 0) {
 			return;
 		}
 	}
@@ -782,7 +802,7 @@ function doBrowse($msg = '') {
 	}
 
 	// Retrieve page from query.  $max_pages is returned by reference.
-	$rs = $data->browseQuery($type,
+	$rs = $rowActions->browseQuery($type,
 		$table_name ?? null,
 		$query,
 		$orderBySet ? [] : $_REQUEST['orderby'], $_REQUEST['page'],
@@ -795,14 +815,14 @@ function doBrowse($msg = '') {
 	*/
 	$status_line = format_string($lang['strbrowsestatistics'], [
 		'count' => is_object($rs) ? $rs->rowCount() : 0,
-		'first' => is_object($rs) ? $data->lastQueryOffset + 1 : 0,
-		'last' => min($data->totalRowsFound, $data->lastQueryOffset + $data->lastQueryLimit),
-		'total' => $data->totalRowsFound,
-		'duration' => round($data->lastQueryTime, 5),
+		'first' => is_object($rs) ? $rowActions->lastQueryOffset + 1 : 0,
+		'last' => min($rowActions->totalRowsFound, $rowActions->lastQueryOffset + $rowActions->lastQueryLimit),
+		'total' => $rowActions->totalRowsFound,
+		'duration' => round($pg->lastQueryTime, 5),
 	]);
 	//var_dump($status_line);
 
-	$fkey_information =& getFKInfo();
+	$fkey_information = getFKInfo();
 
 	// Build strings for GETs in array
 	$_gets = array(
@@ -1172,22 +1192,11 @@ function doBrowse($msg = '') {
 }
 
 
-/* shortcuts: this function exit the script for ajax purpose */
-if ($action == 'dobrowsefk') {
-	doBrowseFK();
-}
-
-$scripts = "<script src=\"js/display.js\" defer type=\"text/javascript\"></script>";
-
-$scripts .= "<script type=\"text/javascript\">\n";
-$scripts .= "var Display = {\n";
-$scripts .= "errmsg: '" . str_replace("'", "\'", $lang['strconnectionfail']) . "'\n";
-$scripts .= "};\n";
-$scripts .= "</script>\n";
-
 // Put HTML header in a function to later adjust title if a custom query was send
 function beginHtml() {
-	global $misc, $lang, $scripts;
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
+
 	// Set the title based on the subject of the request
 	$subject_type = $_REQUEST['subject'] ?? '';
 	$subject_name = $_REQUEST[$subject_type] ?? '';
@@ -1207,9 +1216,29 @@ function beginHtml() {
 		$title = $lang['strqueryresults'];
 	}
 
+	$scripts = "<script src=\"js/display.js\" defer type=\"text/javascript\"></script>";
+	$scripts .= "<script type=\"text/javascript\">\n";
+	$scripts .= "var Display = {\n";
+	$scripts .= "errmsg: '" . str_replace("'", "\'", $lang['strconnectionfail']) . "'\n";
+	$scripts .= "};\n";
+	$scripts .= "</script>\n";
+
 	$misc->printHeader($title ?? '', $scripts);
 	$misc->printBody();
 }
+
+//$data = AppContainer::getData();
+//$conf = AppContainer::getConf();
+//$lang = AppContainer::getLang();
+$misc = AppContainer::getMisc();
+
+$action = $_REQUEST['action'] ?? '';
+
+/* shortcuts: this function exit the script for ajax purpose */
+if ($action == 'dobrowsefk') {
+	doBrowseFK();
+}
+
 
 switch ($action) {
 case 'editrow':

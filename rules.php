@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 	/**
 	 * List rules on a table OR view
 	 *
@@ -15,8 +17,9 @@
 	 * Confirm and then actually create a rule
 	 */
 	function createRule($confirm, $msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if (!isset($_POST['name'])) $_POST['name'] = '';
 		if (!isset($_POST['event'])) $_POST['event'] = '';
@@ -85,8 +88,9 @@
 	 * Show confirmation of drop and perform actual drop
 	 */
 	function doDrop($confirm) {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if ($confirm) {
 			$misc->printTrail($_REQUEST['subject']);
@@ -121,8 +125,9 @@
 	 * List all the rules on the table
 	 */
 	function doDefault($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		$misc->printTrail($_REQUEST['subject']);
 		$misc->printTabs($_REQUEST['subject'], 'rules');
@@ -187,7 +192,8 @@
 	}
 
 	function doTree() {
-		global $misc, $data;
+		$misc = AppContainer::getMisc();
+$data = AppContainer::getData();
 
 		$rules = $data->getRules($_REQUEST[$_REQUEST['subject']]);
 

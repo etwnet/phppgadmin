@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 	/**
 	 * List constraints on a table
 	 *
@@ -16,8 +18,9 @@
 	 * Confirm and then actually add a FOREIGN KEY constraint
 	 */
 	function addForeignKey($stage, $msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if (!isset($_POST['name'])) $_POST['name'] = '';
 		if (!isset($_POST['target'])) $_POST['target'] = '';
@@ -218,8 +221,9 @@
 	 * Confirm and then actually add a PRIMARY KEY or UNIQUE constraint
 	 */
 	function addPrimaryOrUniqueKey($type, $confirm, $msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if (!isset($_POST['name'])) $_POST['name'] = '';
 
@@ -345,8 +349,9 @@
 	 * Confirm and then actually add a CHECK constraint
 	 */
 	function addCheck($confirm, $msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if (!isset($_POST['name'])) $_POST['name'] = '';
 		if (!isset($_POST['definition'])) $_POST['definition'] = '';
@@ -394,8 +399,9 @@
 	 * Show confirmation of drop and perform actual drop
 	 */
 	function doDrop($confirm) {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if ($confirm) {
 			$misc->printTrail('constraint');
@@ -428,10 +434,12 @@
 	 * List all the constraints on the table
 	 */
 	function doDefault($msg = '') {
-		global $data, $misc, $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+$lang = AppContainer::getLang();
 
 		function cnPre(&$rowdata) {
-			global $data;
+			$data = AppContainer::getData();
 			if (is_null($rowdata->fields['consrc'])) {
 				$atts = $data->getAttributeNames($_REQUEST['table'], explode(' ', $rowdata->fields['indkey']));
 				$rowdata->fields['+definition'] = ($rowdata->fields['contype'] == 'u' ? "UNIQUE (" : "PRIMARY KEY (") . join(',', $atts) . ')';
@@ -551,7 +559,8 @@
 	}
 
 	function doTree() {
-		global $misc, $data;
+		$misc = AppContainer::getMisc();
+$data = AppContainer::getData();
 
 		$constraints = $data->getConstraints($_REQUEST['table']);
 

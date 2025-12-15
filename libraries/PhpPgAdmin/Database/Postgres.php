@@ -594,6 +594,55 @@ class Postgres extends AbstractConnection
 		}
 	}
 
+	/**
+	 * Formats a type correctly for display.  Postgres 7.0 had no 'format_type'
+	 * built-in function, and hence we need to do it manually.
+	 * @param string $typname The name of the type
+	 * @param string $typmod The contents of the typmod field
+	 */
+	public function formatType($typname, $typmod)
+	{
+		// This is a specific constant in the 7.0 source
+		$varhdrsz = 4;
+
+		// TODO: Can be replaced by:
+		// SELECT format_type(atttypid, atttypmod)
+		// FROM pg_attribute
+		// WHERE attrelid = 'mytable'::regclass;
+
+		// If the first character is an underscore, it's an array type
+		$is_array = false;
+		if (substr($typname, 0, 1) == '_') {
+			$is_array = true;
+			$typname = substr($typname, 1);
+		}
+
+		// Show lengths on bpchar and varchar
+		if ($typname == 'bpchar') {
+			$len = $typmod - $varhdrsz;
+			$temp = 'character';
+			if ($len > 1)
+				$temp .= "({$len})";
+		} elseif ($typname == 'varchar') {
+			$temp = 'character varying';
+			if ($typmod != -1)
+				$temp .= "(" . ($typmod - $varhdrsz) . ")";
+		} elseif ($typname == 'numeric') {
+			$temp = 'numeric';
+			if ($typmod != -1) {
+				$tmp_typmod = $typmod - $varhdrsz;
+				$precision = ($tmp_typmod >> 16) & 0xffff;
+				$scale = $tmp_typmod & 0xffff;
+				$temp .= "({$precision}, {$scale})";
+			}
+		} else $temp = $typname;
+
+		// Add array qualifier if it's an array
+		if ($is_array) $temp .= '[]';
+
+		return $temp;
+	}
+
 
 	// Capabilities
 

@@ -155,6 +155,7 @@ class Misc extends AbstractContext
 
 	/**
 	 * Creates a database accessor
+	 * @return \Postgres
 	 */
 	function getDatabaseAccessor($database, $server_id = null)
 	{
@@ -221,8 +222,8 @@ class Misc extends AbstractContext
 	}
 
 	/**
-	 * Prints the page header.  If global variable $_no_html_frame is
-	 * set then no header is drawn.
+	 * Prints the page header.  If AppContainer::isSkipHtmlFrame() is true,
+	 * then no HTML frame is printed.
 	 * @param string $title The title of the page
 	 * @param string $scripts script tags
 	 */
@@ -273,7 +274,7 @@ class Misc extends AbstractContext
 
 	/**
 	 * Display a single link
-	 * @param $link An associative array defining the link. See printLinksList for details.
+	 * @param array $link An associative array defining the link. See printLinksList for details.
 	 */
 	function printLink($link)
 	{
@@ -894,7 +895,7 @@ class Misc extends AbstractContext
 	 */
 	function getServerInfo($server_id = null)
 	{
-		global $_reload_browser;
+
 		$conf = $this->conf();
 		$lang = $this->lang();
 
@@ -912,7 +913,7 @@ class Misc extends AbstractContext
 				if (!isset($info['username']) && isset($_SESSION['sharedUsername'])) {
 					$info['username'] = $_SESSION['sharedUsername'];
 					$info['password'] = $_SESSION['sharedPassword'];
-					$_reload_browser = true;
+					AppContainer::setShouldReloadPage(true);
 					$this->setServerInfo(null, $info, $server_id);
 				}
 
@@ -974,6 +975,7 @@ class Misc extends AbstractContext
 
 		$_REQUEST['schema'] = $schema;
 		$this->setHREF();
+		$this->data()->_schema = $schema;
 		return 0;
 	}
 

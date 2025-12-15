@@ -12,6 +12,7 @@ require_once __DIR__ . '/../lang/translations.php';
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\Actions\SchemaActions;
 use PhpPgAdmin\Misc;
 use PhpPgAdmin\PluginManager;
 
@@ -47,6 +48,42 @@ if (file_exists($configFile)) {
 	echo 'Configuration error: Copy conf/config.inc.php-dist to conf/config.inc.php and edit appropriately.';
 	exit;
 }
+
+// Session storage configuration
+if (!empty($conf['session_path'])) {
+
+	$sessionPath = $conf['session_path'];
+
+	$isRelative = ($sessionPath[0] != '/' && $sessionPath[0] != '\\') &&
+		(strlen($sessionPath) <= 2 ||
+			($sessionPath[1] != ':' && !($sessionPath[0] == '\\' && $sessionPath[1] == '\\')));
+	if ($isRelative) {
+		// Relative path
+		$sessionPath = sys_get_temp_dir() . '/' . $sessionPath;
+	}
+
+	if (!is_dir($sessionPath)) {
+		@mkdir($sessionPath, 0755, true);
+	}
+
+	// Configure session storage
+	if (is_dir($sessionPath) && is_writable($sessionPath)) {
+		ini_set('session.save_path', $sessionPath);
+	} else {
+		echo "Configuration error: Session path '$sessionPath' is not writable.";
+		exit;
+	}
+
+	ini_set('session.save_handler', 'files');
+}
+
+// Session timeout duration in seconds
+if (!empty($conf['session_timeout'])) {
+	$sessionLifetime = (int)$conf['session_timeout'];
+	ini_set('session.cookie_lifetime', $sessionLifetime);
+	ini_set('session.gc_maxlifetime', $sessionLifetime);
+}
+
 
 // Start session (if not auto-started)
 if (!ini_get('session.auto_start')) {
@@ -157,8 +194,10 @@ if (isset($_POST['action'])) {
 ini_set('arg_separator.output', '&amp;');
 
 // If login action is set, then set session variables
-if (isset($_POST['loginServer']) && isset($_POST['loginUsername']) &&
-	isset($_POST['loginPassword_' . md5($_POST['loginServer'])])) {
+if (
+	isset($_POST['loginServer']) && isset($_POST['loginUsername']) &&
+	isset($_POST['loginPassword_' . md5($_POST['loginServer'])])
+) {
 
 	$_server_info = $misc->getServerInfo($_POST['loginServer']);
 
@@ -173,7 +212,7 @@ if (isset($_POST['loginServer']) && isset($_POST['loginUsername']) &&
 		$_SESSION['sharedPassword'] = $_POST['loginPassword_' . md5($_POST['loginServer'])];
 	}
 
-	$_reload_tree = true;
+	AppContainer::setShouldReloadTree(true);
 }
 
 /* select the theme */
@@ -210,13 +249,15 @@ if (!empty($info)) {
 	)
 		$_theme = $info['theme']['default'];
 
-	if (isset($_REQUEST['database'])
+	if (
+		isset($_REQUEST['database'])
 		and isset($info['theme']['db'][$_REQUEST['database']])
 		and is_file("./themes/{$info['theme']['db'][$_REQUEST['database']]}/global.css")
 	)
 		$_theme = $info['theme']['db'][$_REQUEST['database']];
 
-	if (isset($info['username'])
+	if (
+		isset($info['username'])
 		and isset($info['theme']['user'][$info['username']])
 		and is_file("./themes/{$info['theme']['user'][$info['username']]}/global.css")
 	)
@@ -268,10 +309,12 @@ if (empty($_ENV["SKIP_DB_CONNECTION"] ?? '')) {
 	// If schema is defined and database supports schemas, then set the
 	// schema explicitly.
 	if (isset($_REQUEST['database']) && isset($_REQUEST['schema'])) {
-		$status = $data->setSchema($_REQUEST['schema']);
+		$status = (new SchemaActions())->setSchema($_REQUEST['schema']);
+		//$status = $data->setSchema($_REQUEST['schema']);
 		if ($status != 0) {
 			echo $lang['strbadschema'];
 			exit;
 		}
+		$data->_schema = $_REQUEST['schema'];
 	}
 }

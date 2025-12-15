@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 	/**
 	 * Manage tablespaces in a database cluster
 	 *
@@ -16,8 +18,9 @@
 	 * Function to allow altering of a tablespace
 	 */
 	function doAlter($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 		
 		$misc->printTrail('tablespace');
 		$misc->printTitle($lang['stralter'],'pg.tablespace.alter');
@@ -72,7 +75,8 @@
 	 * Function to save after altering a tablespace
 	 */
 	function doSaveAlter() {
-		global $data, $lang;
+		$data = AppContainer::getData();
+$lang = AppContainer::getLang();
 
 		// Check data
 		if (trim($_POST['name']) == '')
@@ -96,8 +100,9 @@
 	 * Show confirmation of drop and perform actual drop
 	 */
 	function doDrop($confirm) {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if ($confirm) {
 			$misc->printTrail('tablespace');
@@ -126,8 +131,10 @@
 	 * Displays a screen where they can enter a new tablespace
 	 */
 	function doCreate($msg = '') {
-		global $data, $misc, $spcname;
-		global $lang;
+		global $spcname;
+$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 		
 		$server_info = $misc->getServerInfo();
 		
@@ -176,8 +183,8 @@
 	 * Actually creates the new tablespace in the cluster
 	 */
 	function doSaveCreate() {
-		global $data;
-		global $lang;
+		$data = AppContainer::getData();
+		$lang = AppContainer::getLang();
 
 		// Check data
 		if (trim($_POST['formSpcname']) == '')
@@ -200,8 +207,9 @@
 	 * Show default list of tablespaces in the cluster
 	 */
 	function doDefault($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 		
 		$misc->printTrail('server');
 		$misc->printTabs('server','tablespaces');

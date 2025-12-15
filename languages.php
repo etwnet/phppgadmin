@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 	/**
 	 * Manage languages in a database
 	 *
@@ -16,8 +18,10 @@
 	 * Show default list of languages in the database
 	 */
 	function doDefault($msg = '') {
-		global $data, $misc, $database;
-		global $lang;
+		global $database;
+$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 		
 		$misc->printTrail('database');
 		$misc->printTabs('database','languages');
@@ -50,7 +54,8 @@
 	 * Generate XML for the browser tree.
 	 */
 	function doTree() {
-		global $misc, $data;
+		$misc = AppContainer::getMisc();
+$data = AppContainer::getData();
 		
 		$languages = $data->getLanguages();
 		

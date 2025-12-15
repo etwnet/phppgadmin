@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 	/**
 	 * List indexes on a table
 	 *
@@ -16,8 +18,10 @@
 	 * Show confirmation of cluster index and perform actual cluster
 	 */
 	function doClusterIndex($confirm) {
-		global $data, $misc, $action;
-		global $lang;
+		global $action;
+$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if ($confirm) {
 			// Default analyze to on
@@ -56,7 +60,8 @@
 	}
 
 	function doReindex() {
-		global $data, $lang;
+		$data = AppContainer::getData();
+$lang = AppContainer::getLang();
 
 		$status = $data->reindex('INDEX', $_REQUEST['index']);
 		if ($status == 0)
@@ -69,8 +74,9 @@
 	 * Displays a screen where they can enter a new index
 	 */
 	function doCreateIndex($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if (!isset($_POST['formIndexName'])) $_POST['formIndexName'] = '';
 		if (!isset($_POST['formIndexType'])) $_POST['formIndexType'] = null;
@@ -181,8 +187,8 @@
 	 * @@ Note: this function can't handle columns with commas in them
 	 */
 	function doSaveCreateIndex() {
-		global $data;
-		global $lang;
+		$data = AppContainer::getData();
+		$lang = AppContainer::getLang();
 		
 		// Handle databases that don't have partial indexes
 		if (!isset($_POST['formWhere'])) $_POST['formWhere'] = '';
@@ -207,8 +213,9 @@
 	 * Show confirmation of drop index and perform actual drop
 	 */
 	function doDropIndex($confirm) {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if ($confirm) {
 			$misc->printTrail('index');
@@ -238,11 +245,13 @@
 
 	function doDefault($msg = '') {
 		/** @var Postgres $data */
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 		
 		function indPre(&$rowdata, $actions) {
-			global $data, $lang;
+			$data = AppContainer::getData();
+$lang = AppContainer::getLang();
 			
 			if ($data->phpBool($rowdata->fields['indisprimary'])) {
 				$rowdata->fields['+constraints'] = $lang['strprimarykey'];
@@ -362,7 +371,8 @@
 	}
 
 	function doTree() {
-		global $misc, $data;
+		$misc = AppContainer::getMisc();
+$data = AppContainer::getData();
 
 		$indexes = $data->getIndexes($_REQUEST['table']);
 

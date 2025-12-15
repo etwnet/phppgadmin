@@ -1,5 +1,7 @@
 <?php
 
+use PhpPgAdmin\Core\AppContainer;
+
 	/**
 	 * Manage groups in a database cluster
 	 *
@@ -16,8 +18,9 @@
 	 * Add user to a group
 	 */
 	function doAddMember() {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		$status = $data->addGroupMember($_REQUEST['group'], $_REQUEST['user']);
 		if ($status == 0)
@@ -30,8 +33,9 @@
 	 * Show confirmation of drop user from group and perform actual drop
 	 */
 	function doDropMember($confirm) {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if ($confirm) { 
 			$misc->printTrail('group');
@@ -61,8 +65,9 @@
 	 * Show read only properties for a group
 	 */
 	function doProperties($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 	
 		if (!isset($_POST['user'])) $_POST['user'] = '';
 	
@@ -137,8 +142,9 @@
 	 * Show confirmation of drop and perform actual drop
 	 */
 	function doDrop($confirm) {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 
 		if ($confirm) {
 			$misc->printTrail('group');
@@ -167,8 +173,9 @@
 	 * Displays a screen where they can enter a new group
 	 */
 	function doCreate($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 		
 		if (!isset($_POST['name'])) $_POST['name'] = '';
 		if (!isset($_POST['members'])) $_POST['members'] = array();
@@ -210,8 +217,8 @@
 	 * Actually creates the new group in the database
 	 */
 	function doSaveCreate() {
-		global $data;
-		global $lang;
+		$data = AppContainer::getData();
+		$lang = AppContainer::getLang();
 
 		if (!isset($_POST['members'])) $_POST['members'] = array();
 
@@ -231,8 +238,9 @@
 	 * Show default list of groups in the database
 	 */
 	function doDefault($msg = '') {
-		global $data, $misc;
-		global $lang;
+		$data = AppContainer::getData();
+$misc = AppContainer::getMisc();
+		$lang = AppContainer::getLang();
 		
 		$misc->printTrail('server');
 		$misc->printTabs('server','groups');
