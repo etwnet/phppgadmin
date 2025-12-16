@@ -1,6 +1,7 @@
 <?php
 
 use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\Actions\SqlFunctionActions;
 use PhpPgAdmin\Database\Actions\TableActions;
 use PhpPgAdmin\Database\Actions\TypeActions;
 
@@ -405,6 +406,7 @@ function doCreate($msg = '') {
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
 	$typeActions = new TypeActions($pg);
+	$fncActions = new SqlFunctionActions($pg);
 
 	if (!isset($_POST['typname'])) $_POST['typname'] = '';
 	if (!isset($_POST['typin'])) $_POST['typin'] = '';
@@ -417,7 +419,7 @@ function doCreate($msg = '') {
 	if (!isset($_POST['typstorage'])) $_POST['typstorage'] = $pg->typStorageDef;
 
 	// Retrieve all functions and types in the database
-	$funcs = $pg->getFunctions(true);
+	$funcs = $fncActions->getFunctions(true);
 	$types = $typeActions->getTypes(true);
 
 	$misc->printTrail('schema');
@@ -496,8 +498,9 @@ function doCreate($msg = '') {
  * Actually creates the new type in the database
  */
 function doSaveCreate() {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
+	$typeActions = new TypeActions($pg);
 
 	// Check that they've given a name and a length.
 	// Note: We're assuming they've given in and out functions here
@@ -505,7 +508,7 @@ function doSaveCreate() {
 	if ($_POST['typname'] == '') doCreate($lang['strtypeneedsname']);
 	elseif ($_POST['typlen'] == '') doCreate($lang['strtypeneedslen']);
 	else {
-		$status = $data->createType(
+		$status = $typeActions->createType(
 			$_POST['typname'],
 			$_POST['typin'],
 			$_POST['typout'],
@@ -528,16 +531,17 @@ function doSaveCreate() {
  * Show default list of types in the database
  */
 function doDefault($msg = '') {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$conf = AppContainer::getConf();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$typeActions = new TypeActions($pg);
 
 	$misc->printTrail('schema');
 	$misc->printTabs('schema', 'types');
 	$misc->printMsg($msg);
 
-	$types = $data->getTypes();
+	$types = $typeActions->getTypes();
 
 	$columns = array(
 		'type' => array(
@@ -638,7 +642,7 @@ function doDefault($msg = '') {
 		)
 	);
 
-	if (!$data->hasEnumTypes()) {
+	if (!$pg->hasEnumTypes()) {
 		unset($navlinks['enum']);
 	}
 
@@ -650,9 +654,10 @@ function doDefault($msg = '') {
  */
 function doTree() {
 	$misc = AppContainer::getMisc();
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
+	$typeActions = new TypeActions($pg);
 
-	$types = $data->getTypes();
+	$types = $typeActions->getTypes();
 
 	$reqvars = $misc->getRequestVars('type');
 
@@ -675,7 +680,7 @@ function doTree() {
 
 $action = $_REQUEST['action'] ?? '';
 
-//$data = AppContainer::getData();
+//$pg = AppContainer::getPostgres();
 //$conf = AppContainer::getConf();
 $lang = AppContainer::getLang();
 $misc = AppContainer::getMisc();

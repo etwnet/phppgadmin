@@ -1231,7 +1231,7 @@ function beginHtml() {
 	$misc->printBody();
 }
 
-//$data = AppContainer::getData();
+//$pg = AppContainer::getPostgres();
 //$conf = AppContainer::getConf();
 //$lang = AppContainer::getLang();
 $misc = AppContainer::getMisc();
