@@ -174,6 +174,7 @@ class TableActions extends AbstractActions
 
     /**
      * Retrieve the attribute definition of a table.
+	 * @return ADORecordSet|int
      */
     public function getTableAttributes($table, $field = '')
     {

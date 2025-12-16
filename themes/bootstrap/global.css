@@ -618,3 +618,8 @@ a img.icon {
 	margin-bottom: 2em;
 	font-size: 110%;
 }
+
+a.fk img {
+	width: 14px;
+	margin-right: 3px;
+}

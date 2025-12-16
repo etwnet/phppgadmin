@@ -347,47 +347,98 @@ class TypeActions extends AbstractActions
         return $this->connection->selectSet($sql);
     }
 
-    /**
-     * Edits an enum type by adding or removing values.
-     * @param string $schema The schema name
-     * @param string $type The enum type name
-     * @param array $newValues Array of new enum values
-     * @param array $oldValues Array of old enum values to remove
-     * @return int 0 on success, -1 on error
-     */
-    function editEnumType($schema, $type, $newValues = [], $oldValues = [])
-    {
-        $this->connection->clean($schema);
-        $this->connection->clean($type);
+	/**
+	 * Renames a type.
+	 */
+	public function renameType($typename, $newname)
+	{
+		$f_schema = $this->connection->_schema;
+		$this->connection->fieldClean($f_schema);
+		$this->connection->fieldClean($typename);
+		$this->connection->fieldClean($newname);
 
-        // First, remove old values
-        if (!empty($oldValues)) {
-            if ($this->connection->hasTypeRenameValue()) {
-                return -1;
-            }
-            foreach ($oldValues as $value) {
-                $this->connection->clean($value);
-                $sql = "ALTER TYPE \"{$schema}\".\"{$type}\" RENAME VALUE '{$value}' TO 'old_{$value}'";
-                if ($this->connection->execute($sql) != 0) {
-                    return -1;
-                }
-            }
-        }
+		$sql = "ALTER TYPE \"{$f_schema}\".\"{$typename}\" RENAME TO \"{$newname}\"";
 
-        // Then, add new values
-        if (!empty($newValues)) {
-            if (!$this->connection->hasTypeAddValue()) {
-                return -1;
-            }
-            foreach ($newValues as $value) {
-                $this->connection->clean($value);
-                $sql = "ALTER TYPE \"{$schema}\".\"{$type}\" ADD VALUE '{$value}'";
-                if ($this->connection->execute($sql) != 0) {
-                    return -1;
-                }
-            }
-        }
+		return $this->connection->execute($sql);
+	}
 
-        return 0;
-    }
+	/**
+	 * Changes the owner of a type.
+	 */
+	public function changeTypeOwner($typename, $newowner)
+	{
+		$f_schema = $this->connection->_schema;
+		$this->connection->fieldClean($f_schema);
+		$this->connection->fieldClean($typename);
+		$this->connection->fieldClean($newowner);
+
+		$sql = "ALTER TYPE \"{$f_schema}\".\"{$typename}\" OWNER TO \"{$newowner}\"";
+
+		return $this->connection->execute($sql);
+	}
+
+	/**
+	 * Changes the schema of a type.
+	 */
+	public function changeTypeSchema($typename, $newschema)
+	{
+		$f_schema = $this->connection->_schema;
+		$this->connection->fieldClean($f_schema);
+		$this->connection->fieldClean($typename);
+		$this->connection->fieldClean($newschema);
+
+		$sql = "ALTER TYPE \"{$f_schema}\".\"{$typename}\" SET SCHEMA \"{$newschema}\"";
+
+		return $this->connection->execute($sql);
+	}
+
+	/**
+	 * Renames an enum type value.
+	 */
+	public function renameEnumTypeValue($type, $oldValue, $newValue)
+	{
+		$f_schema = $this->connection->_schema;
+		$this->connection->fieldClean($f_schema);
+		$this->connection->fieldClean($type);
+		$this->connection->clean($oldValue);
+		$this->connection->clean($newValue);
+
+		$sql = "ALTER TYPE \"{$f_schema}\".\"{$type}\" RENAME VALUE '{$oldValue}' TO '{$newValue}'";
+
+		return $this->connection->execute($sql);
+	}
+
+	/**
+	 * Adds a new value to an enum type.
+	 */
+	public function addEnumTypeValue($type, $newValue, $before = null, $after = null)
+	{
+		$f_schema = $this->connection->_schema;
+		$this->connection->fieldClean($f_schema);
+		$this->connection->fieldClean($type);
+		$this->connection->clean($newValue);
+
+		$sql = "ALTER TYPE \"{$f_schema}\".\"{$type}\" ADD VALUE '{$newValue}'";
+
+		if ($before !== null) {
+			$this->connection->clean($before);
+			$sql .= " BEFORE '{$before}'";
+		} elseif ($after !== null) {
+			$this->connection->clean($after);
+			$sql .= " AFTER '{$after}'";
+		}
+
+		return $this->connection->execute($sql);
+	}
+
+	public function hasTypeAddValue(): bool
+	{
+		return $this->connection->major_version >= 9.1;
+	}
+
+	public function hasTypeRenameValue(): bool
+	{
+		return $this->connection->major_version >= 10;
+	}
+
 }

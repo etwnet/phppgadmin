@@ -302,15 +302,19 @@ EOT;
 		if (!isset($_POST['nulls'])) $_POST['nulls'] = array();
 		if (!isset($_POST['expr'])) $_POST['expr'] = array();
 
+		$fields = array();
+		$types = array();
+		while (!$attrs->EOF) {
+			$fields[$attrs->fields['attnum']] = $attrs->fields['attname'];
+			$types[$attrs->fields['attname']] = $attrs->fields['type'];
+			$attrs->moveNext();
+		}
+
 		if ($insert) {
 			if ($_SESSION['counter']++ == $_POST['protection_counter']) {
-				$fields = array();
-				while (!$attrs->EOF) {
-					$fields[$attrs->fields['attnum']] = $attrs->fields['attname'];
-				}
 				$status = $rowActions->insertRow(
 					$_POST['table'], $fields, $_POST['values'], $_POST['nulls'],
-					$_POST['format'], $_POST['expr'], $_POST['types']
+					$_POST['format'], $_POST['expr'], $types
 				);
 				if ($status == 0) {
 					if (isset($_POST['insert_and_repeat'])) {
@@ -329,7 +333,7 @@ EOT;
 		} else {
 			$status = $rowActions->editRow(
 				$_POST['table'], $_POST['values'], $_POST['nulls'],
-				$_POST['format'], $_POST['expr'], $_POST['types'], $keyFields
+				$_POST['format'], $_POST['expr'], $types, $keyFields
 			);
 			if ($status == 0)
 				doBrowse($lang['strrowupdated']);

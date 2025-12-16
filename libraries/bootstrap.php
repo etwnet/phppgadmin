@@ -49,17 +49,16 @@ if (file_exists($configFile)) {
 	exit;
 }
 
-// Session storage configuration
+// Setup session storage configuration
 if (!empty($conf['session_path'])) {
 
 	$sessionPath = $conf['session_path'];
 
 	$isRelative = ($sessionPath[0] != '/' && $sessionPath[0] != '\\') &&
-		(strlen($sessionPath) <= 2 ||
-			($sessionPath[1] != ':' && !($sessionPath[0] == '\\' && $sessionPath[1] == '\\')));
+		(strlen($sessionPath) <= 2 || $sessionPath[1] != ':');
 	if ($isRelative) {
 		// Relative path
-		$sessionPath = sys_get_temp_dir() . '/' . $sessionPath;
+		$sessionPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $sessionPath;
 	}
 
 	if (!is_dir($sessionPath)) {
@@ -77,7 +76,7 @@ if (!empty($conf['session_path'])) {
 	ini_set('session.save_handler', 'files');
 }
 
-// Session timeout duration in seconds
+// Set session timeout duration
 if (!empty($conf['session_timeout'])) {
 	$sessionLifetime = (int)$conf['session_timeout'];
 	ini_set('session.cookie_lifetime', $sessionLifetime);

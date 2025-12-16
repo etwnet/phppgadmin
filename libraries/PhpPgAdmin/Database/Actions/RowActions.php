@@ -258,7 +258,7 @@ class RowActions extends AbstractActions
 
 		if (!is_array($values) || !is_array($nulls)
 			|| !is_array($functions) || !is_array($expr) || !is_array($types)
-			|| count($types) != count($values)
+			|| count($types) != count($values) || empty($values)
 		) return -1;
 
 		$f_schema = $this->connection->_schema;
@@ -266,31 +266,28 @@ class RowActions extends AbstractActions
 		$this->connection->fieldClean($table);
 
 		// Build clause
-		if (count($values) > 0) {
+		$sql = "UPDATE \"{$f_schema}\".\"{$table}\" SET ";
+		$sep = "";
+		foreach ($values as $key => $value) {
+			$sql .= $sep;
+			$this->connection->fieldClean($key);
+			$sql .= "\"{$key}\"=";
 
-			$sql = "UPDATE \"{$f_schema}\".\"{$table}\" SET ";
-			$sep = "";
-			foreach ($values as $key => $value) {
-				$sql .= $sep;
-				$this->connection->fieldClean($key);
-				$sql .= "\"{$key}\"=";
+			// Handle NULL values
+			if (isset($nulls[$key])) $sql .= 'NULL';
+			else $sql .= $this->formatValue($types[$key], $functions[$key] ?? null, isset($expr[$key]), $value);
 
-				// Handle NULL values
-				if (isset($nulls[$key])) $sql .= 'NULL';
-				else $sql .= $this->formatValue($types[$key], $functions[$key] ?? null, isset($expr[$key]), $value);
-
-				$sep = ", ";
-			}
-			$first = true;
-			foreach ($keyarr as $k => $v) {
-				$this->connection->fieldClean($k);
-				$this->connection->clean($v);
-				if ($first) {
-					$sql .= " WHERE \"{$k}\"='{$v}'";
-					$first = false;
-				} else {
-					$sql .= " AND \"{$k}\"='{$v}'";
-				}
+			$sep = ", ";
+		}
+		$first = true;
+		foreach ($keyarr as $k => $v) {
+			$this->connection->fieldClean($k);
+			$this->connection->clean($v);
+			if ($first) {
+				$sql .= " WHERE \"{$k}\"='{$v}'";
+				$first = false;
+			} else {
+				$sql .= " AND \"{$k}\"='{$v}'";
 			}
 		}
 
@@ -315,6 +312,58 @@ class RowActions extends AbstractActions
 		// End transaction
 		return $this->connection->endTransaction();
 	}
+
+	/**
+	 * Formats a value or expression for sql purposes
+	 * @param string $type The type of the field
+	 * @param string $function A sql function
+	 * @param bool $expr Treat value as expression
+	 * @param ?string $value The actual value entered in the field.  Can be NULL
+	 * @return string The suitably quoted and escaped value.
+	 */
+	private function formatValue($type, $function, $expr, $value) {
+		switch ($type) {
+		case 'bool':
+		case 'boolean':
+			if ($value == 't')
+				return 'TRUE';
+			elseif ($value == 'f')
+				return 'FALSE';
+			elseif ($value == '')
+				return 'NULL';
+			else
+				return $value;
+		default:
+			if ($function) {
+				// ENCODE (value,'base64') => ENCODE ('test','base64')
+				if (!$expr) $value = "'" . $this->connection->clean($value) . "'";
+				return preg_replace('/\bvalue\b/', $value, $function);
+			}
+			if ($expr) {
+				return $value;
+			}
+			// Checking variable fields is difficult as there might be a size
+			// attribute...
+			$is_date_or_time = strlen($type) >= 4 && (
+					substr_compare($type, 'time', 0, 4) === 0 ||
+					substr_compare($type, 'date', 0, 4) === 0
+				);
+			if ($is_date_or_time) {
+				// Assume it's one of the time types...
+				if ($value == '') return "''";
+				elseif (strcasecmp($value, 'CURRENT_TIMESTAMP') == 0
+					|| strcasecmp($value, 'CURRENT_TIME') == 0
+					|| strcasecmp($value, 'CURRENT_DATE') == 0
+					|| strcasecmp($value, 'LOCALTIME') == 0
+					|| strcasecmp($value, 'LOCALTIMESTAMP') == 0) {
+					return $value;
+				}
+			}
+			$this->connection->clean($value);
+			return "'{$value}'";
+		}
+	}
+
 
 	/**
 	 * Delete a row from a table

@@ -843,13 +843,4 @@ class Postgres extends AbstractConnection
 		return $this->major_version <= 11;
 	}
 
-	function hasTypeAddValue()
-	{
-		return $this->major_version >= 9.1;
-	}
-
-	function hasTypeRenameValue()
-	{
-		return $this->major_version >= 10;
-	}
 }
