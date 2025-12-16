@@ -49,15 +49,14 @@
 | Created 2003-??-?? | All changes are in the log above. | Updated 2004-06-06 |
 \----------------------------------------------------------------------------*/
 
-
 //
 // WebFXTreePersisitance
 function WebFXTreePersistence() {}
 var _p = WebFXTreePersistence.prototype;
-_p.getExpanded = function (oNode) { return false; };
+_p.getExpanded = function (oNode) {
+	return false;
+};
 _p.setExpanded = function (oNode, bOpen) {};
-
-
 
 // Cookie handling
 function WebFXCookie() {}
@@ -76,7 +75,7 @@ _p.setCookie = function (sName, sValue, nDays) {
 };
 
 _p.getCookie = function (sName) {
-	var re = new RegExp("(\;|^)[^;]*(" + sName + ")\=([^;]*)(;|$)");
+	var re = new RegExp("(;|^)[^;]*(" + sName + ")=([^;]*)(;|$)");
 	var res = re.exec(document.cookie);
 	return res != null ? unescape(res[3]) : null;
 };
@@ -85,7 +84,6 @@ _p.removeCookie = function (name) {
 	this.setCookie(name, "", -1);
 };
 
-
 //
 // persistence using cookies
 //
@@ -93,18 +91,17 @@ _p.removeCookie = function (name) {
 //
 function WebFXTreeCookiePersistence() {
 	this._openedMap = {};
-	this._cookies = new WebFXCookie;
+	this._cookies = new WebFXCookie();
 	var s = this._cookies.getCookie(this.cookieName);
 	if (s) {
 		var a = s.split("+");
-		for (var i = a.length - 1; i >= 0; i--)
-			this._openedMap[a[i]] = true;
+		for (var i = a.length - 1; i >= 0; i--) this._openedMap[a[i]] = true;
 	}
 }
 
-_p = WebFXTreeCookiePersistence.prototype = new WebFXTreePersistence;
+_p = WebFXTreeCookiePersistence.prototype = new WebFXTreePersistence();
 
-_p.cookieName = "webfx-tree-cookie-persistence"
+_p.cookieName = "webfx-tree-cookie-persistence";
 
 _p.getExpanded = function (oNode) {
 	return oNode.id in this._openedMap;
@@ -121,13 +118,10 @@ _p.setExpanded = function (oNode, bOpen) {
 
 		var res = [];
 		var i = 0;
-		for (var id in this._openedMap)
-			res[i++] = id;
+		for (var id in this._openedMap) res[i++] = id;
 		this._cookies.setCookie(this.cookieName, res.join("+"));
 	}
 };
-
-
 
 // this object provides a few useful methods when working with arrays
 var arrayHelper = {
@@ -154,32 +148,32 @@ var arrayHelper = {
 		if (i != -1) {
 			a.splice(i, 1);
 		}
-	}
+	},
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 // WebFX Tree Config object                                                  //
 ///////////////////////////////////////////////////////////////////////////////
 var webFXTreeConfig = {
-	rootIcon        : "images/folder.png",
-	openRootIcon    : "images/openfolder.png",
-	folderIcon      : "images/folder.png",
-	openFolderIcon  : "images/openfolder.png",
-	fileIcon        : "images/file.png",
-	iIcon           : "images/I.png",
-	lIcon           : "images/L.png",
-	lMinusIcon      : "images/Lminus.png",
-	lPlusIcon       : "images/Lplus.png",
-	tIcon           : "images/T.png",
-	tMinusIcon      : "images/Tminus.png",
-	tPlusIcon       : "images/Tplus.png",
-	plusIcon        : "images/plus.png",
-	minusIcon       : "images/minus.png",
-	blankIcon       : "images/blank.png",
-	defaultText     : "Tree Item",
-	defaultAction   : null,
-	defaultBehavior : "classic",
-	usePersistence	: true
+	rootIcon: "images/folder.png",
+	openRootIcon: "images/openfolder.png",
+	folderIcon: "images/folder.png",
+	openFolderIcon: "images/openfolder.png",
+	fileIcon: "images/file.png",
+	iIcon: "images/I.png",
+	lIcon: "images/L.png",
+	lMinusIcon: "images/Lminus.png",
+	lPlusIcon: "images/Lplus.png",
+	tIcon: "images/T.png",
+	tMinusIcon: "images/Tminus.png",
+	tPlusIcon: "images/Tplus.png",
+	plusIcon: "images/plus.png",
+	minusIcon: "images/minus.png",
+	blankIcon: "images/blank.png",
+	defaultText: "Tree Item",
+	defaultAction: null,
+	defaultBehavior: "classic",
+	usePersistence: true,
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -191,9 +185,29 @@ var webFXTreeHandler = {
 	opera: /opera/i.test(navigator.userAgent),
 	idCounter: 0,
 	idPrefix: "wfxt-",
-	getUniqueId: function () {
+	idSeparator: "-",
+
+	// Generate a unique ID based on semantic ID or fallback to counter for stability
+	getUniqueId: function (oNode) {
+		// If a semantic ID is provided via data, use it - this is the preferred approach
+		if (oNode && oNode.semanticId) {
+			return this.idPrefix + this._sanitizeForId(oNode.semanticId);
+		}
+
+		// Fallback to counter-based ID if semantic ID not available
 		return this.idPrefix + this.idCounter++;
 	},
+
+	// Sanitize text for use in ID (alphanumeric, underscore, hyphen only)
+	_sanitizeForId: function (text) {
+		if (!text) return "node";
+		return text
+			.toLowerCase()
+			.replace(/[^a-z0-9_-]/g, "_")
+			.replace(/_+/g, "_")
+			.substring(0, 50); // Limit length
+	},
+
 	all: {},
 	getNodeById: function (sId) {
 		return all[sId];
@@ -201,7 +215,7 @@ var webFXTreeHandler = {
 	addNode: function (oNode) {
 		this.all[oNode.id] = oNode;
 	},
-	removeNode:	function (oNode) {
+	removeNode: function (oNode) {
 		delete this.all[oNode.id];
 	},
 
@@ -230,7 +244,10 @@ var webFXTreeHandler = {
 	},
 
 	htmlToText: function (s) {
-		return String(s).replace(/\s+|<([^>])+>|&amp;|&lt;|&gt;|&quot;|&nbsp;/gi, this._htmlToText);
+		return String(s).replace(
+			/\s+|<([^>])+>|&amp;|&lt;|&gt;|&quot;|&nbsp;/gi,
+			this._htmlToText
+		);
 	},
 
 	_htmlToText: function (s) {
@@ -242,7 +259,7 @@ var webFXTreeHandler = {
 			case "&gt;":
 				return ">";
 			case "&quot;":
-				return "\"";
+				return '"';
 			case "&nbsp;":
 				return String.fromCharCode(160);
 			default:
@@ -270,33 +287,32 @@ var webFXTreeHandler = {
 				return "&gt;";
 			case "\n":
 				return "<BR>";
-			case "\"":
-				return "&quot;";	// so we can use this in attributes
+			case '"':
+				return "&quot;"; // so we can use this in attributes
 			default:
 				return "&nbsp;";
 		}
 	},
 
-	persistenceManager: new WebFXTreeCookiePersistence()
+	persistenceManager: new WebFXTreeCookiePersistence(),
 };
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // WebFXTreeAbstractNode
 ///////////////////////////////////////////////////////////////////////////////
 
-function WebFXTreeAbstractNode(sText, oAction, oIconAction) {
+function WebFXTreeAbstractNode(sText, oAction, oIconAction, sSemanticId) {
 	this.childNodes = [];
 	if (sText) this.text = sText;
 	if (oAction) this.action = oAction;
 	if (oIconAction) this.iconAction = oIconAction;
-	this.id = webFXTreeHandler.getUniqueId();
+	this.semanticId = sSemanticId || null; // Support semantic IDs from server for stable identification
+	this.id = webFXTreeHandler.getUniqueId(this);
 	if (webFXTreeConfig.usePersistence) {
 		this.open = webFXTreeHandler.persistenceManager.getExpanded(this);
 	}
 	webFXTreeHandler.addNode(this);
 }
-
 
 _p = WebFXTreeAbstractNode.prototype;
 _p._selected = false;
@@ -316,12 +332,13 @@ _p.add = function (oChild, oBefore) {
 	var emptyBefore = this.childNodes.length == 0;
 	var p = oChild.parentNode;
 
-	if (oBefore == null) { // append
-		if (p != null)
-			p.remove(oChild);
+	if (oBefore == null) {
+		// append
+		if (p != null) p.remove(oChild);
 		oldLast = this.getLastChild();
 		this.childNodes.push(oChild);
-	} else { // insertBefore
+	} else {
+		// insertBefore
 		if (oBefore.parentNode != this) {
 			throw new Error("Can only add nodes before siblings");
 		}
@@ -372,15 +389,12 @@ _p.add = function (oChild, oBefore) {
 		if (emptyBefore) {
 			this.setExpanded(this.getExpanded());
 			// if we are using classic expand will not update icon
-			if (t && t.getBehavior() != "classic")
-				this.updateIcon();
+			if (t && t.getBehavior() != "classic") this.updateIcon();
 		}
 	}
 
 	return oChild;
 };
-
-
 
 _p.remove = function (oChild) {
 	// backwards compatible. If no argument remove the node
@@ -397,7 +411,10 @@ _p.remove = function (oChild) {
 	if (si == oChild || oChild.contains(si)) {
 		if (si.getFocused()) {
 			this.select();
-			window.setTimeout("WebFXTreeAbstractNode._onTimeoutFocus(\"" + this.id + "\")", 10);
+			window.setTimeout(
+				'WebFXTreeAbstractNode._onTimeoutFocus("' + this.id + '")',
+				10
+			);
 		} else {
 			this.select();
 		}
@@ -523,8 +540,10 @@ _p.findChildByText = function (s, n) {
 	}
 	var isRe = s instanceof RegExp;
 	for (var i = 0; i < this.childNodes.length; i++) {
-		if (isRe && s.test(this.childNodes[i].getText()) ||
-			this.childNodes[i].getText() == s) {
+		if (
+			(isRe && s.test(this.childNodes[i].getText())) ||
+			this.childNodes[i].getText() == s
+		) {
 			if (n == 0) {
 				return this.childNodes[i];
 			}
@@ -539,7 +558,7 @@ _p.findNodeByText = function (s, n) {
 		n = 0;
 	}
 	var isRe = s instanceof RegExp;
-	if (isRe && s.test(this.getText()) || this.getText() == s) {
+	if ((isRe && s.test(this.getText())) || this.getText() == s) {
 		if (n == 0) {
 			return this.childNodes[i];
 		}
@@ -586,7 +605,7 @@ _p._setSelected = function (b) {
 	if (this._selected != b) {
 		this._selected = b;
 
-		var wasFocused = false;	// used to keep focus state
+		var wasFocused = false; // used to keep focus state
 		var si = t.getSelected();
 		if (b && si != null && si != this) {
 			var oldFireChange = t._fireChange;
@@ -617,7 +636,6 @@ _p._setSelected = function (b) {
 		}
 	}
 };
-
 
 _p.getExpanded = function () {
 	return this.open;
@@ -650,8 +668,7 @@ _p.setExpanded = function (b) {
 		}
 	} else {
 		ce = this.getChildrenElement();
-		if (ce)
-			ce.style.display = "none";
+		if (ce) ce.style.display = "none";
 	}
 	if (t && t.getBehavior() == "classic") {
 		this.updateIcon();
@@ -708,7 +725,10 @@ _p.openPath = function (sPath, bSelect, bFocus) {
 			this.select();
 		}
 		if (bFocus) {
-			window.setTimeout("WebFXTreeAbstractNode._onTimeoutFocus(\"" + this.id + "\")", 10);
+			window.setTimeout(
+				'WebFXTreeAbstractNode._onTimeoutFocus("' + this.id + '")',
+				10
+			);
 		}
 		return;
 	}
@@ -728,7 +748,7 @@ _p.openPath = function (sPath, bSelect, bFocus) {
 		parts = sPath.split("/");
 		var ti = this.findChildByText(parts[0]);
 		if (!ti) {
-			throw "Could not find child node with text \"" + parts[0] + "\"";
+			throw 'Could not find child node with text "' + parts[0] + '"';
 		}
 		ti.openPath(remainingPath, bSelect, bFocus);
 	}
@@ -752,7 +772,6 @@ _p._setTabIndex = function (i) {
 	}
 };
 
-
 // HTML generation
 
 _p.toHtml = function () {
@@ -764,38 +783,54 @@ _p.toHtml = function () {
 	}
 
 	var t = this.getTree();
-	var hideLines = !t.getShowLines() || t == this.parentNode && !t.getShowRootLines();
+	var hideLines =
+		!t.getShowLines() || (t == this.parentNode && !t.getShowRootLines());
 
-	var childrenHtml = "<div class=\"webfx-tree-children" +
-		(hideLines ? "-nolines" : "") + "\" style=\"" +
+	var childrenHtml =
+		'<div class="webfx-tree-children' +
+		(hideLines ? "-nolines" : "") +
+		'" style="' +
 		this.getLineStyle() +
 		(this.getExpanded() && this.hasChildren() ? "" : "display:none;") +
-		"\">" +
+		'">' +
 		sb.join("") +
 		"</div>";
 
-	return "<div class=\"webfx-tree-item\" id=\"" +
-		this.id + "\"" + this.getEventHandlersHtml() + ">" +
+	return (
+		'<div class="webfx-tree-item" id="' +
+		this.id +
+		'"' +
+		this.getEventHandlersHtml() +
+		">" +
 		this.getRowHtml() +
 		childrenHtml +
-		"</div>";
+		"</div>"
+	);
 };
 
 _p.getRowHtml = function () {
 	var t = this.getTree();
-	return "<div class=\"" + this.getRowClassName() + "\" style=\"padding-left:" +
-		Math.max(0, (this.getDepth() - 1) * this.indentWidth) + "px\">" +
+	return (
+		'<div class="' +
+		this.getRowClassName() +
+		'" style="padding-left:' +
+		Math.max(0, (this.getDepth() - 1) * this.indentWidth) +
+		'px">' +
 		this.getExpandIconHtml() +
 		//"<span class=\"webfx-tree-icon-and-label\">" +
 		this.getIconHtml() +
 		this.getLabelHtml() +
 		//"</span>" +
-		"</div>";
+		"</div>"
+	);
 };
 
 _p.getRowClassName = function () {
-	return "webfx-tree-row" + (this.isSelected() ? " selected" : "") +
-		(this.action ? "" : " no-action");
+	return (
+		"webfx-tree-row" +
+		(this.isSelected() ? " selected" : "") +
+		(this.action ? "" : " no-action")
+	);
 };
 
 _p.getLabelHtml = function () {
@@ -803,36 +838,45 @@ _p.getLabelHtml = function () {
 	var target = this.getTarget();
 	var link = this._getHref();
 
-	if (link == '#') {
-		return "<span class=\"webfx-tree-item-label\" tabindex=\"-1\"" +
-			(toolTip ? " title=\"" + webFXTreeHandler.textToHtml(toolTip) + "\"" : "") +
-			" onfocus=\"webFXTreeHandler.handleEvent(event)\"" +
-			" onblur=\"webFXTreeHandler.handleEvent(event)\">" +
-			this.getHtml() + "</span>";
+	if (link == "#") {
+		return (
+			'<span class="webfx-tree-item-label" tabindex="-1"' +
+			(toolTip
+				? ' title="' + webFXTreeHandler.textToHtml(toolTip) + '"'
+				: "") +
+			' onfocus="webFXTreeHandler.handleEvent(event)"' +
+			' onblur="webFXTreeHandler.handleEvent(event)">' +
+			this.getHtml() +
+			"</span>"
+		);
 	}
 
-	return "<a href=\"" + webFXTreeHandler.textToHtml(link) +
-		"\" class=\"webfx-tree-item-label\" tabindex=\"-1\"" +
-		(toolTip ? " title=\"" + webFXTreeHandler.textToHtml(toolTip) + "\"" : "") +
-		(target ? " target=\"" + webFXTreeHandler._textToHtml(target) + "\"" : "") +
-		" onfocus=\"webFXTreeHandler.handleEvent(event)\"" +
-		" onblur=\"webFXTreeHandler.handleEvent(event)\">" +
-		this.getHtml() + "</a>";
+	return (
+		'<a href="' +
+		webFXTreeHandler.textToHtml(link) +
+		'" class="webfx-tree-item-label" tabindex="-1"' +
+		(toolTip
+			? ' title="' + webFXTreeHandler.textToHtml(toolTip) + '"'
+			: "") +
+		(target
+			? ' target="' + webFXTreeHandler._textToHtml(target) + '"'
+			: "") +
+		' onfocus="webFXTreeHandler.handleEvent(event)"' +
+		' onblur="webFXTreeHandler.handleEvent(event)">' +
+		this.getHtml() +
+		"</a>"
+	);
 };
 
 _p._getHref = function () {
-	if (typeof this.action == "string")
-		return this.action;
-	else
-		return "#";
+	if (typeof this.action == "string") return this.action;
+	else return "#";
 };
 
 _p._getIconHref = function () {
-	if (typeof this.iconAction == "string")
-		return this.iconAction;
-	else
-		return this._getHref();
-}
+	if (typeof this.iconAction == "string") return this.iconAction;
+	else return this._getHref();
+};
 
 _p.getEventHandlersHtml = function () {
 	return "";
@@ -842,11 +886,20 @@ _p.getIconHtml = function () {
 	// here we are not using textToHtml since the file names rarerly contains
 	// HTML...
 	var link = this._getIconHref();
-	if (link == '#')
-		return "<img class=\"webfx-tree-icon\" src=\"" + this.getIconSrc() + "\">&nbsp;";
+	if (link == "#")
+		return (
+			'<img class="webfx-tree-icon" src="' +
+			this.getIconSrc() +
+			'">&nbsp;'
+		);
 
-	return "<a href=\"" + webFXTreeHandler.textToHtml(link) +
-		"\"><img class=\"webfx-tree-icon\" src=\"" + this.getIconSrc() + "\"></a>";
+	return (
+		'<a href="' +
+		webFXTreeHandler.textToHtml(link) +
+		'"><img class="webfx-tree-icon" src="' +
+		this.getIconSrc() +
+		'"></a>'
+	);
 };
 
 _p.getIconSrc = function () {
@@ -856,15 +909,18 @@ _p.getIconSrc = function () {
 _p.getExpandIconHtml = function () {
 	// here we are not using textToHtml since the file names rarerly contains
 	// HTML...
-	return "<img class=\"webfx-tree-expand-icon\" src=\"" +
-		this.getExpandIconSrc() + "\">";
+	return (
+		'<img class="webfx-tree-expand-icon" src="' +
+		this.getExpandIconSrc() +
+		'">'
+	);
 };
-
 
 _p.getExpandIconSrc = function () {
 	var src;
 	var t = this.getTree();
-	var hideLines = !t.getShowLines() || t == this.parentNode && !t.getShowRootLines();
+	var hideLines =
+		!t.getShowLines() || (t == this.parentNode && !t.getShowRootLines());
 
 	if (this.hasChildren()) {
 		var bits = 0;
@@ -909,7 +965,7 @@ _p.getExpandIconSrc = function () {
 				return webFXTreeConfig.tPlusIcon;
 			case 10:
 				return webFXTreeConfig.tMinusIcon;
-			default:	// 0
+			default: // 0
 				return webFXTreeConfig.blankIcon;
 		}
 	} else {
@@ -928,7 +984,11 @@ _p.getLineStyle = function () {
 };
 
 _p.getLineStyle2 = function () {
-	return (this.isLastSibling() ? "-100" : (this.getDepth() - 1) * this.indentWidth) + "px 0";
+	return (
+		(this.isLastSibling()
+			? "-100"
+			: (this.getDepth() - 1) * this.indentWidth) + "px 0"
+	);
 };
 
 // End HTML generation
@@ -972,7 +1032,6 @@ _p.getChildrenElement = function () {
 	if (!el) return null;
 	return el.lastChild;
 };
-
 
 // IE uses about:blank if not attached to document and this can cause Win2k3
 // to fail
@@ -1079,12 +1138,11 @@ _p.setIconAction = function (oAction) {
 	var el = this.getIconElement();
 	if (el) {
 		el.href = this._getIconHref();
-	}   
-}   
+	}
+};
 
 _p.getIconAction = function () {
-	if (this.iconAction)
-		return this.iconAction;
+	if (this.iconAction) return this.iconAction;
 	return _p.getAction();
 };
 
@@ -1138,17 +1196,26 @@ _p._onmousedown = function (e) {
 	if (/webfx-tree-expand-icon/.test(el.className) && this.hasChildren()) {
 		this.toggle();
 		if (webFXTreeHandler.ie) {
-			window.setTimeout("WebFXTreeAbstractNode._onTimeoutFocus(\"" + this.id + "\")", 10);
+			window.setTimeout(
+				'WebFXTreeAbstractNode._onTimeoutFocus("' + this.id + '")',
+				10
+			);
 		}
 		return false;
 	}
 
 	this.select();
-	if (/*!/webfx-tree-item-label/.test(el.className) && */!webFXTreeHandler.opera)	{ // opera cancels the click if focus is called
-		
+	if (
+		/*!/webfx-tree-item-label/.test(el.className) && */ !webFXTreeHandler.opera
+	) {
+		// opera cancels the click if focus is called
+
 		// in case we are not clicking on the label
 		if (webFXTreeHandler.ie) {
-			window.setTimeout("WebFXTreeAbstractNode._onTimeoutFocus(\"" + this.id + "\")", 10);
+			window.setTimeout(
+				'WebFXTreeAbstractNode._onTimeoutFocus("' + this.id + '")',
+				10
+			);
 		} else {
 			this.focus();
 		}
@@ -1170,7 +1237,7 @@ _p._onclick = function (e) {
 
 	var doAction = null;
 	if (/webfx-tree-icon/.test(el.className) && this.iconAction) {
-		doAction = this.iconAction; 
+		doAction = this.iconAction;
 	} else {
 		doAction = this.action;
 	}
@@ -1183,7 +1250,6 @@ _p._onclick = function (e) {
 	}
 	return false;
 };
-
 
 _p._ondblclick = function (e) {
 	var el = e.target || e.srcElement;
@@ -1208,7 +1274,7 @@ _p._onkeydown = function (e) {
 	var n;
 	var rv = true;
 	switch (e.keyCode) {
-		case 39:	// RIGHT
+		case 39: // RIGHT
 			if (e.altKey) {
 				rv = true;
 				break;
@@ -1222,7 +1288,7 @@ _p._onkeydown = function (e) {
 			}
 			rv = false;
 			break;
-		case 37:	// LEFT
+		case 37: // LEFT
 			if (e.altKey) {
 				rv = true;
 				break;
@@ -1240,15 +1306,15 @@ _p._onkeydown = function (e) {
 			rv = false;
 			break;
 
-		case 40:	// DOWN
+		case 40: // DOWN
 			n = this.getNextShownNode();
 			if (n) {
 				n.focus();
 			}
 			rv = false;
 			break;
-		case 38:	// UP
-			n = this.getPreviousShownNode()
+		case 38: // UP
+			n = this.getPreviousShownNode();
 			if (n) {
 				n.focus();
 			}
@@ -1280,6 +1346,8 @@ _p.dispose = function () {
 	for (var i = this.childNodes.length - 1; i >= 0; i--) {
 		this.childNodes[i].dispose();
 	}
+	// Clean up from the handler's node registry before disposal
+	webFXTreeHandler.removeNode(this);
 	this.tree = null;
 	this.parentNode = null;
 	this.childNodes = null;
@@ -1325,24 +1393,18 @@ _p.getPreviousShownNode = function () {
 	return p;
 };
 
-
-
-
-
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // WebFXTree
 ///////////////////////////////////////////////////////////////////////////////
 
-function WebFXTree(sText, oAction, sBehavior, sIcon, oIconAction, sOpenIcon) {
-	WebFXTreeAbstractNode.call(this, sText, oAction, oIconAction);
+function WebFXTree(sText, oAction, sBehavior, sIcon, oIconAction, sOpenIcon, sSemanticId) {
+	WebFXTreeAbstractNode.call(this, sText, oAction, oIconAction, sSemanticId);
 	if (sIcon) this.icon = sIcon;
 	if (sOpenIcon) this.openIcon = sOpenIcon;
 	if (sBehavior) this.behavior = sBehavior;
 }
 
-_p = WebFXTree.prototype = new WebFXTreeAbstractNode;
+_p = WebFXTree.prototype = new WebFXTreeAbstractNode();
 _p.indentWidth = 19;
 _p.open = true;
 _p._selectedItem = null;
@@ -1366,11 +1428,13 @@ _p.getCreated = function () {
 	return this.rendered;
 };
 
-
 /* end tree model */
 
 _p.getExpanded = function () {
-	return !this.showRootNode || WebFXTreeAbstractNode.prototype.getExpanded.call(this);
+	return (
+		!this.showRootNode ||
+		WebFXTreeAbstractNode.prototype.getExpanded.call(this)
+	);
 };
 
 _p.setExpanded = function (b) {
@@ -1402,18 +1466,22 @@ _p.updateExpandIcon = function () {
 };
 
 _p.getRowClassName = function () {
-	return WebFXTreeAbstractNode.prototype.getRowClassName.call(this) +
-		(this.showRootNode ? "" : " webfx-tree-hide-root");
+	return (
+		WebFXTreeAbstractNode.prototype.getRowClassName.call(this) +
+		(this.showRootNode ? "" : " webfx-tree-hide-root")
+	);
 };
-
 
 // if classic then the openIcon is used for expanded, otherwise openIcon is used
 // for selected
 
 _p.getIconSrc = function () {
-	var behavior = this.getTree() ? this.getTree().getBehavior() : webFXTreeConfig.defaultBehavior;
-	var open = behavior == "classic" && this.getExpanded() ||
-			   behavior != "classic" && this.isSelected();
+	var behavior = this.getTree()
+		? this.getTree().getBehavior()
+		: webFXTreeConfig.defaultBehavior;
+	var open =
+		(behavior == "classic" && this.getExpanded()) ||
+		(behavior != "classic" && this.isSelected());
 	if (open && this.openIcon) {
 		return this.openIcon;
 	}
@@ -1425,11 +1493,13 @@ _p.getIconSrc = function () {
 };
 
 _p.getEventHandlersHtml = function () {
-	return " onclick=\"return webFXTreeHandler.handleEvent(event)\" " +
-		"onmousedown=\"return webFXTreeHandler.handleEvent(event)\" " +
-		"ondblclick=\"return webFXTreeHandler.handleEvent(event)\" " +
-		"onkeydown=\"return webFXTreeHandler.handleEvent(event)\" " +
-		"onkeypress=\"return webFXTreeHandler.handleEvent(event)\"";
+	return (
+		' onclick="return webFXTreeHandler.handleEvent(event)" ' +
+		'onmousedown="return webFXTreeHandler.handleEvent(event)" ' +
+		'ondblclick="return webFXTreeHandler.handleEvent(event)" ' +
+		'onkeydown="return webFXTreeHandler.handleEvent(event)" ' +
+		'onkeypress="return webFXTreeHandler.handleEvent(event)"'
+	);
 };
 
 _p.setSelected = function (o) {
@@ -1455,7 +1525,7 @@ _p.setTabIndex = function (i) {
 	this.tabIndex = i;
 	if (n) {
 		n._setTabIndex(i);
-	}	
+	}
 };
 
 _p.getTabIndex = function () {
@@ -1531,7 +1601,7 @@ _p.create = function () {
 	return el;
 };
 
-_p.write = function (id='') {
+_p.write = function (id = "") {
 	if (id) {
 		document.getElementById(id).innerHTML = this.toHtml();
 	} else {
@@ -1549,20 +1619,18 @@ _p.getSuspendRedraw = function () {
 	return this.suspendRedraw;
 };
 
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // WebFXTreeItem
 ///////////////////////////////////////////////////////////////////////////////
 
-function WebFXTreeItem(sText, oAction, eParent, sIcon, oIconAction, sOpenIcon) {
-	WebFXTreeAbstractNode.call(this, sText, oAction, oIconAction);
+function WebFXTreeItem(sText, oAction, eParent, sIcon, oIconAction, sOpenIcon, sSemanticId) {
+	WebFXTreeAbstractNode.call(this, sText, oAction, oIconAction, sSemanticId);
 	if (sIcon) this.icon = sIcon;
 	if (sOpenIcon) this.openIcon = sOpenIcon;
 	if (eParent) eParent.add(this);
 }
 
-_p = WebFXTreeItem.prototype = new WebFXTreeAbstractNode;
+_p = WebFXTreeItem.prototype = new WebFXTreeAbstractNode();
 _p.tree = null;
 
 /* tree model */
@@ -1573,7 +1641,7 @@ _p.getDepth = function () {
 	}
 	if (this.parentNode) {
 		var pd = this.parentNode.getDepth();
-		return this.depth = (pd != null ? pd + 1 : null);
+		return (this.depth = pd != null ? pd + 1 : null);
 	}
 	return null;
 };
@@ -1583,7 +1651,7 @@ _p.getTree = function () {
 		return this.tree;
 	}
 	if (this.parentNode) {
-		return this.tree = this.parentNode.getTree();
+		return (this.tree = this.parentNode.getTree());
 	}
 	return null;
 };
@@ -1596,9 +1664,12 @@ _p.getCreated = function () {
 // if classic then the openIcon is used for expanded, otherwise openIcon is used
 // for selected
 _p.getIconSrc = function () {
-	var behavior = this.getTree() ? this.getTree().getBehavior() : webFXTreeConfig.defaultBehavior;
-	var open = behavior == "classic" && this.getExpanded() ||
-	           behavior != "classic" && this.isSelected();
+	var behavior = this.getTree()
+		? this.getTree().getBehavior()
+		: webFXTreeConfig.defaultBehavior;
+	var open =
+		(behavior == "classic" && this.getExpanded()) ||
+		(behavior != "classic" && this.isSelected());
 	if (open && this.openIcon) {
 		return this.openIcon;
 	}
@@ -1608,14 +1679,14 @@ _p.getIconSrc = function () {
 
 	// fall back on default icons
 	if (this.hasChildren()) {
-		return open ? webFXTreeConfig.openFolderIcon : webFXTreeConfig.folderIcon;
+		return open
+			? webFXTreeConfig.openFolderIcon
+			: webFXTreeConfig.folderIcon;
 	}
 	return webFXTreeConfig.fileIcon;
 };
 
 /* end tree model */
-
-
 
 window.addEventListener("unload", function () {
 	for (var id in webFXTreeHandler.all) {

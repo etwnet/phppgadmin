@@ -227,7 +227,7 @@ EOT;
 			*/
 
 			function writeTree() {
-				webFXTreeHandler.idCounter = 0;
+				// Note: ID counter no longer reset here - using semantic IDs for stable node identification
 				const tree = new WebFXLoadTree(
 					"<?= $lang['strservers']; ?>",
 					"servers.php?action=tree",

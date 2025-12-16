@@ -585,7 +585,28 @@ class Misc extends AbstractContext
 
 		$plugin_manager->do_hook('tree', $tree_params);
 
-		$this->printTreeXML($treedata, $attrs);
+		$this->printTreeXML($treedata, $attrs, $section);
+	}
+
+	/** Generate a semantic ID for a tree node based on its text content
+	 * This ensures stable node identification across page reloads
+	 * @param string $text The node text to base the ID on
+	 * @param string $prefix Optional prefix for the semantic ID
+	 * @return string A sanitized semantic ID
+	 */
+	function generateSemanticTreeId($text, $prefix = '')
+	{
+		// Sanitize: lowercase, remove special chars, limit length
+		$id = strtolower($text);
+		$id = preg_replace('/[^a-z0-9_-]/', '_', $id);
+		$id = preg_replace('/_+/', '_', $id);
+		$id = substr($id, 0, 50);
+
+		if ($prefix) {
+			$id = $prefix . '_' . $id;
+		}
+
+		return $id;
 	}
 
 	/** Produce XML data for the browser tree
@@ -600,8 +621,9 @@ class Misc extends AbstractContext
 	 *        'branch' - URL for child nodes (tree XML)
 	 *        'expand' - the action to return XML for the subtree
 	 *        'nodata' - message to display when node has no children
+	 * @param string $section Optional section context for better semantic IDs
 	 */
-	function printTreeXML($treedata, $attrs)
+	function printTreeXML($treedata, $attrs, $section = null)
 	{
 		$conf = $this->conf();
 		$lang = $this->lang();
@@ -632,6 +654,19 @@ class Misc extends AbstractContext
 
 				echo value_xml_attr('tooltip', $attrs['toolTip'], $rec);
 
+				// Generate and add a stable semantic ID for better tree persistence
+				$nodeText = value($attrs['text'], $rec);
+				if ($nodeText) {
+					// Use tabkey if available (for navigation tabs with specific section names)
+					// Otherwise use the provided section parameter
+					$semanticPrefix = $section;
+					if (!empty($rec['tabkey'])) {
+						$semanticPrefix = $rec['tabkey'];
+					}
+					$semanticId = $this->generateSemanticTreeId($nodeText, $semanticPrefix);
+					echo value_xml_attr('semanticid', $semanticId, $rec);
+				}
+
 				echo " />\n";
 			}
 		} else {
@@ -648,13 +683,18 @@ class Misc extends AbstractContext
 	 */
 	function adjustTabsForTree(&$tabs)
 	{
-
-		foreach ($tabs as $i => $tab) {
+		$adjustedTabs = array();
+		
+		foreach ($tabs as $tabKey => $tab) {
 			if ((isset($tab['hide']) && $tab['hide'] === true) || (isset($tab['tree']) && $tab['tree'] === false)) {
-				unset($tabs[$i]);
+				continue;
 			}
+			// Preserve the tab key as the 'tabkey' field for semantic ID generation
+			$tab['tabkey'] = $tabKey;
+			$adjustedTabs[] = $tab;
 		}
-		return new ArrayRecordSet($tabs);
+		
+		return new ArrayRecordSet($adjustedTabs);
 	}
 
 	private static function buildIconCache()
