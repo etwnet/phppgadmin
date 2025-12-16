@@ -135,60 +135,60 @@ $misc = AppContainer::getMisc();
 
 		$rules = $data->getRules($_REQUEST[$_REQUEST['subject']]);
 
-		$columns = array(
-			'rule' => array(
+		$columns = [
+			'rule' => [
 				'title' => $lang['strname'],
 				'field' => field('rulename'),
-			),
-			'definition' => array(
+			],
+			'definition' => [
 				'title' => $lang['strdefinition'],
 				'field' => field('definition'),
-			),
-			'actions' => array(
+			],
+			'actions' => [
 				'title' => $lang['stractions'],
-			),
-		);
+			],
+		];
 
 		$subject = urlencode($_REQUEST['subject']);
 		$object = urlencode($_REQUEST[$_REQUEST['subject']]);
 
-		$actions = array(
-			'drop' => array(
+		$actions = [
+			'drop' => [
 				'icon' => $misc->icon('Delete'),
 				'content' => $lang['strdrop'],
-				'attr'=> array (
-					'href' => array (
+				'attr'=> [
+					'href' => [
 						'url' => 'rules.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'confirm_drop',
 							'reltype' => $subject,
 							$subject => $object,
 							'subject' => 'rule',
 							'rule' => field('rulename')
-						)
-					)
-				)
-			),
-		);
+						]
+					]
+				]
+			],
+		];
 
 		$misc->printTable($rules, $columns, $actions, 'rules-rules', $lang['strnorules']);
 
-		$misc->printNavLinks(array ('create' => array (
-				'attr'=> array (
-					'href' => array (
+		$misc->printNavLinks(['create' => [
+				'attr'=> [
+					'href' => [
 						'url' => 'rules.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'create_rule',
 							'server' => $_REQUEST['server'],
 							'database' => $_REQUEST['database'],
 							'schema' => $_REQUEST['schema'],
 							$subject => $object,
 							'subject' => $subject
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['strcreaterule']
-			)), 'rules-rules', get_defined_vars());
+		]], 'rules-rules', get_defined_vars());
 	}
 
 	function doTree() {
@@ -199,10 +199,10 @@ $data = AppContainer::getData();
 
 		$reqvars = $misc->getRequestVars($_REQUEST['subject']);
 
-		$attrs = array(
+		$attrs = [
 			'text'   => field('rulename'),
 			'icon'   => 'Rule',
-		);
+		];
 
 		$misc->printTree($rules, $attrs, 'rules');
 		exit;

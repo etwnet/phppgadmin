@@ -30,31 +30,31 @@ $misc = AppContainer::getMisc();
 		
 		$conversions = $data->getconversions();
 		
-		$columns = array(
-			'conversion' => array(
+		$columns = [
+			'conversion' => [
 				'title' => $lang['strname'],
 				'field' => field('conname'),
-			),
-			'source_encoding' => array(
+			],
+			'source_encoding' => [
 				'title' => $lang['strsourceencoding'],
 				'field' => field('conforencoding'),
-			),
-			'target_encoding' => array(
+			],
+			'target_encoding' => [
 				'title' => $lang['strtargetencoding'],
 				'field' => field('contoencoding'),
-			),
-			'default' => array(
+			],
+			'default' => [
 				'title' => $lang['strdefault'],
 				'field' => field('condefault'),
 				'type'  => 'yesno',
-			),
-			'comment' => array(
+			],
+			'comment' => [
 				'title' => $lang['strcomment'],
 				'field' => field('concomment'),
-			),
-		);
+			],
+		];
 		
-		$actions = array();
+		$actions = [];
 		
 		$misc->printTable($conversions, $columns, $actions, 'conversions-conversions', $lang['strnoconversions']);
 	}
@@ -68,11 +68,11 @@ $data = AppContainer::getData();
 		
 		$conversions = $data->getconversions();
 		
-		$attrs = array(
+		$attrs = [
 			'text'   => field('conname'),
 			'icon'   => 'Conversion',
 			'toolTip'=> field('concomment')
-		);
+		];
 		
 		$misc->printTree($conversions, $attrs, 'conversions');
 		exit;

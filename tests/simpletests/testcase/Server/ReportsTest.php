@@ -52,7 +52,7 @@ class ReportsTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
 
         // Turn to the create report page.
-		$this->assertTrue($this->get("$webUrl/reports.php", array('server' => $SERVER)));
+		$this->assertTrue($this->get("$webUrl/reports.php", ['server' => $SERVER]));
         $this->assertTrue($this->clickLink($lang['strcreatereport']));
 
         // Enter information for creating a report.
@@ -80,7 +80,7 @@ class ReportsTest extends PreconditionSet
         global $lang, $SERVER;
 
         // Run the existing report and verify it.
-		$this->assertTrue($this->get("$webUrl/reports.php", array('server' => $SERVER)));
+		$this->assertTrue($this->get("$webUrl/reports.php", ['server' => $SERVER]));
 		$this->assertTrue($this->clickLink($lang['strexecute']));
         $this->assertWantedText($lang['strnodata']);
 
@@ -114,7 +114,7 @@ class ReportsTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
 
         // Turn to the edit report page.
-        $this->assertTrue($this->get("$webUrl/reports.php", array('server' => $SERVER)));
+        $this->assertTrue($this->get("$webUrl/reports.php", ['server' => $SERVER]));
         $this->assertTrue($this->clickLink($this->_reportName));
         $this->assertTrue($this->clickLink($lang['stredit']));
 
@@ -143,7 +143,7 @@ class ReportsTest extends PreconditionSet
         global $lang, $SERVER;
 
         // Turn to the drop report page.
-        $this->assertTrue($this->get("$webUrl/reports.php", array('server' => $SERVER)));
+        $this->assertTrue($this->get("$webUrl/reports.php", ['server' => $SERVER]));
         $this->assertTrue($this->clickLink($lang['strdrop']));
        
         // Confirm to drop the report and verify it.        

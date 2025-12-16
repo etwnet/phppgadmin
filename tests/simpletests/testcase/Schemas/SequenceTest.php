@@ -58,11 +58,11 @@ class SequenceTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the "Create sequence" page.
-		$this->assertTrue($this->get("$webUrl/sequences.php", array(
+		$this->assertTrue($this->get("$webUrl/sequences.php", [
 			            'server' => $SERVER,
 						'action' => 'create',
 						'database' => $DATABASE,
-						'schema' => 'public'))
+						'schema' => 'public'])
 					);
                 
         // Enter the detail information of a sequence.
@@ -94,11 +94,11 @@ class SequenceTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the sequence-display page.
-		$this->assertTrue($this->get("$webUrl/sequences.php", array(
+		$this->assertTrue($this->get("$webUrl/sequences.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'subject' => 'schema'))
+						'subject' => 'schema'])
 					);
         // Browse the specified sequence.
         $this->assertTrue($this->clickLink('createsequence')); 
@@ -123,12 +123,12 @@ class SequenceTest extends PreconditionSet
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
         
-		$this->assertTrue($this->get("$webUrl/sequences.php", array(
+		$this->assertTrue($this->get("$webUrl/sequences.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_drop',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'sequence' => 'createsequence'))
+						'sequence' => 'createsequence'])
 					);
 
         $this->assertTrue($this->setField('cascade', TRUE));

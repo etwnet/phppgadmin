@@ -47,10 +47,10 @@ class TableRenderer extends AbstractContext
         $pluginManager = $this->pluginManager();
 
         // Action buttons hook's place
-        $plugin_functions_parameters = array(
+        $plugin_functions_parameters = [
             'actionbuttons' => &$actions,
             'place' => $place
-        );
+        ];
         if ($pluginManager) {
             $pluginManager->do_hook('actionbuttons', $plugin_functions_parameters);
         }
@@ -128,7 +128,7 @@ class TableRenderer extends AbstractContext
                     $classAttr = empty($class) ? '' : " class='$class'";
 
                     // Apply default values for missing parameters
-                    if (isset($column['url']) && !isset($column['vars'])) $column['vars'] = array();
+                    if (isset($column['url']) && !isset($column['vars'])) $column['vars'] = [];
 
                     switch ($column_id) {
                     case 'actions':
@@ -161,7 +161,7 @@ class TableRenderer extends AbstractContext
                                 echo "\">";
                             }
                             $type = $column['type'] ?? null;
-                            $params = $column['params'] ?? array();
+                            $params = $column['params'] ?? [];
                             echo $this->misc()->printVal($val, $type, $params);
                             if (isset($column['url'])) echo "</a>";
                         }

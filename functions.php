@@ -26,7 +26,7 @@ function doSaveEdit()
 	$fnlang = strtolower($_POST['original_lang']);
 
 	if ($fnlang == 'c') {
-		$def = array($_POST['formObjectFile'], $_POST['formLinkSymbol']);
+		$def = [$_POST['formObjectFile'], $_POST['formLinkSymbol']];
 	} else if ($fnlang == 'internal') {
 		$def = $_POST['formLinkSymbol'];
 	} else {
@@ -358,7 +358,7 @@ function doProperties($msg = '')
 				$temp = $funcdata->fields['prosrc'];
 				$tag = 'pre';
 			}
-			echo "<tr><td class=\"data1\" colspan=\"4\">", $misc->printVal($temp, $tag, array('class' => 'data1')), "</td></tr>\n";
+			echo "<tr><td class=\"data1\" colspan=\"4\">", $misc->printVal($temp, $tag, ['class' => 'data1']), "</td></tr>\n";
 		}
 
 		// Display function cost options
@@ -385,53 +385,53 @@ function doProperties($msg = '')
 		echo "</table>\n";
 	} else echo "<p>{$lang['strnodata']}</p>\n";
 
-	$navlinks = array(
-		'showall' => array(
-			'attr' => array(
-				'href' => array(
+	$navlinks = [
+		'showall' => [
+			'attr' => [
+				'href' => [
 					'url' => 'functions.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema'],
-					)
-				)
-			),
+					]
+				]
+			],
 			'content' => $lang['strshowallfunctions']
-		),
-		'alter' => array(
-			'attr' => array(
-				'href' => array(
+		],
+		'alter' => [
+			'attr' => [
+				'href' => [
 					'url' => 'functions.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'edit',
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema'],
 						'function' => $_REQUEST['function'],
 						'function_oid' => $_REQUEST['function_oid']
-					)
-				)
-			),
+					]
+				]
+			],
 			'content' => $lang['stralter']
-		),
-		'drop' => array(
-			'attr' => array(
-				'href' => array(
+		],
+		'drop' => [
+			'attr' => [
+				'href' => [
 					'url' => 'functions.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'confirm_drop',
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema'],
 						'function' => $func_full,
 						'function_oid' => $_REQUEST['function_oid']
-					)
-				)
-			),
+					]
+				]
+			],
 			'content' => $lang['strdrop']
-		)
-	);
+		]
+	];
 
 	$misc->printNavLinks($navlinks, 'functions-properties', get_defined_vars());
 }
@@ -622,7 +622,7 @@ function doCreate($msg = '', $szJS = "")
 
 	$szLanguage .= "</td>";
 	$szJSArguments = "<tr><th class=\"data\" colspan=\"7\">{$lang['strarguments']}</th></tr>";
-	$arrayModes = array("IN", "OUT", "INOUT");
+	$arrayModes = ["IN", "OUT", "INOUT"];
 	$szModes = "<select name=\"formArgModes[]\" style=\"width:100%;\">";
 	foreach ($arrayModes as $pV) {
 		$szModes .= "<option value=\"{$pV}\">{$pV}</option>";
@@ -747,7 +747,7 @@ function doSaveCreate()
 	$fnlang = strtolower($_POST['formLanguage']);
 
 	if ($fnlang == 'c') {
-		$def = array($_POST['formObjectFile'], $_POST['formLinkSymbol']);
+		$def = [$_POST['formObjectFile'], $_POST['formLinkSymbol']];
 	} else if ($fnlang == 'internal') {
 		$def = $_POST['formLinkSymbol'];
 	} else {
@@ -806,7 +806,7 @@ function doSaveCreate()
 function buildFunctionArguments($arrayVars)
 {
 	if (isset($_POST['formArgName'])) {
-		$arrayArgs = array();
+		$arrayArgs = [];
 		foreach ($arrayVars['formArgName'] as $pK => $pV) {
 			$arrayArgs[] = $arrayVars['formArgModes'][$pK] . ' ' . trim($pV) . ' ' . trim($arrayVars['formArgType'][$pK]) . $arrayVars['formArgArray'][$pK];
 		}
@@ -820,9 +820,9 @@ function buildFunctionArguments($arrayVars)
  */
 function buildJSRows($szArgs)
 {
-	$arrayModes = array('IN', 'OUT', 'INOUT');
+	$arrayModes = ['IN', 'OUT', 'INOUT'];
 	$arrayArgs = explode(',', $szArgs);
-	$arrayProperArgs = array();
+	$arrayProperArgs = [];
 	$nC = 0;
 	$szReturn = '';
 	foreach ($arrayArgs as $pV) {
@@ -839,7 +839,7 @@ function buildJSRows($szArgs)
 			$szArgType = str_replace('[]', '', implode(' ', $arrayWords));
 			$bArgIsArray = "true";
 		}
-		$arrayProperArgs[] = array($szMode, $szArgName, $szArgType, $bArgIsArray);
+		$arrayProperArgs[] = [$szMode, $szArgName, $szArgType, $bArgIsArray];
 		$szReturn .= "<script type=\"text/javascript\">RebuildArgTR('{$szMode}','{$szArgName}','{$szArgType}',new Boolean({$bArgIsArray}));</script>";
 		$nC++;
 	}
@@ -850,10 +850,10 @@ function buildJSRows($szArgs)
 function buildJSData()
 {
 	$data = AppContainer::getData();
-	$arrayModes = array('IN', 'OUT', 'INOUT');
+	$arrayModes = ['IN', 'OUT', 'INOUT'];
 	$arrayTypes = $data->getTypes(true, true, true);
-	$arrayPTypes = array();
-	$arrayPModes = array();
+	$arrayPTypes = [];
+	$arrayPModes = [];
 	$szTypes = '';
 
 	while (!$arrayTypes->EOF) {
@@ -887,132 +887,132 @@ function doDefault($msg = '')
 
 	$funcs = $data->getFunctions();
 
-	$columns = array(
-		'function' => array(
+	$columns = [
+		'function' => [
 			'title' => $lang['strfunction'],
 			'field' => field('proproto'),
 			'url' => "redirect.php?subject=function&amp;action=properties&amp;{$misc->href}&amp;",
-			'vars' => array('function' => 'proproto', 'function_oid' => 'prooid'),
-		),
-		'returns' => array(
+			'vars' => ['function' => 'proproto', 'function_oid' => 'prooid'],
+		],
+		'returns' => [
 			'title' => $lang['strreturns'],
 			'field' => field('proreturns'),
-		),
-		'owner' => array(
+		],
+		'owner' => [
 			'title' => $lang['strowner'],
 			'field' => field('proowner'),
-		),
-		'proglanguage' => array(
+		],
+		'proglanguage' => [
 			'title' => $lang['strproglanguage'],
 			'field' => field('prolanguage'),
-		),
-		'actions' => array(
+		],
+		'actions' => [
 			'title' => $lang['stractions'],
-		),
-		'comment' => array(
+		],
+		'comment' => [
 			'title' => $lang['strcomment'],
 			'field' => field('procomment'),
-		),
-	);
+		],
+	];
 
-	$actions = array(
-		'multiactions' => array(
-			'keycols' => array('function' => 'proproto', 'function_oid' => 'prooid'),
+	$actions = [
+		'multiactions' => [
+			'keycols' => ['function' => 'proproto', 'function_oid' => 'prooid'],
 			'url' => 'functions.php',
-		),
-		'alter' => array(
+		],
+		'alter' => [
 			'icon' => $misc->icon('Edit'),
 			'content' => $lang['stralter'],
-			'attr' => array(
-				'href' => array(
+			'attr' => [
+				'href' => [
 					'url' => 'functions.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'edit',
 						'function' => field('proproto'),
 						'function_oid' => field('prooid')
-					)
-				)
-			)
-		),
-		'drop' => array(
+					]
+				]
+			]
+		],
+		'drop' => [
 			'icon' => $misc->icon('Delete'),
 			'multiaction' => 'confirm_drop',
 			'content' => $lang['strdrop'],
-			'attr' => array(
-				'href' => array(
+			'attr' => [
+				'href' => [
 					'url' => 'functions.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'confirm_drop',
 						'function' => field('proproto'),
 						'function_oid' => field('prooid')
-					)
-				)
-			)
-		),
-		'privileges' => array(
+					]
+				]
+			]
+		],
+		'privileges' => [
 			'icon' => $misc->icon('Privileges'),
 			'content' => $lang['strprivileges'],
-			'attr' => array(
-				'href' => array(
+			'attr' => [
+				'href' => [
 					'url' => 'privileges.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'subject' => 'function',
 						'function' => field('proproto'),
 						'function_oid' => field('prooid')
-					)
-				)
-			)
-		),
-	);
+					]
+				]
+			]
+		],
+	];
 
 	$misc->printTable($funcs, $columns, $actions, 'functions-functions', $lang['strnofunctions']);
 
-	$navlinks = array(
-		'createpl' => array(
-			'attr' => array(
-				'href' => array(
+	$navlinks = [
+		'createpl' => [
+			'attr' => [
+				'href' => [
 					'url' => 'functions.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'create',
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema']
-					)
-				)
-			),
+					]
+				]
+			],
 			'content' => $lang['strcreateplfunction']
-		),
-		'createinternal' => array(
-			'attr' => array(
-				'href' => array(
+		],
+		'createinternal' => [
+			'attr' => [
+				'href' => [
 					'url' => 'functions.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'create',
 						'language' => 'internal',
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema']
-					)
-				)
-			),
+					]
+				]
+			],
 			'content' => $lang['strcreateinternalfunction']
-		),
-		'createc' => array(
-			'attr' => array(
-				'href' => array(
+		],
+		'createc' => [
+			'attr' => [
+				'href' => [
 					'url' => 'functions.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'create',
 						'language' => 'C',
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema']
-					)
-				)
-			),
+					]
+				]
+			],
 			'content' => $lang['strcreatecfunction']
-		)
-	);
+		]
+	];
 
 	$misc->printNavLinks($navlinks, 'functions-functions', get_defined_vars());
 }
@@ -1031,20 +1031,20 @@ function doTree()
 
 	$reqvars = $misc->getRequestVars('function');
 
-	$attrs = array(
+	$attrs = [
 		'text' => $proto,
 		'icon' => 'Function',
 		'toolTip' => field('procomment'),
 		'action' => url(
 			'redirect.php',
 			$reqvars,
-			array(
+			[
 				'action' => 'properties',
 				'function' => $proto,
 				'function_oid' => field('prooid')
-			)
+			]
 		)
-	);
+	];
 
 	$misc->printTree($funcs, $attrs, 'functions');
 	exit;

@@ -217,89 +217,89 @@ $misc = AppContainer::getMisc();
 		
 		$tablespaces = $data->getTablespaces();
 
-		$columns = array(
-			'database' => array(
+		$columns = [
+			'database' => [
 				'title' => $lang['strname'],
 				'field' => field('spcname')
-			),
-			'owner' => array(
+			],
+			'owner' => [
 				'title' => $lang['strowner'],
 				'field' => field('spcowner')
-			),
-			'location' => array(
+			],
+			'location' => [
 				'title' => $lang['strlocation'],
 				'field' => field('spclocation')
-			),
-			'actions' => array(
+			],
+			'actions' => [
 				'title' => $lang['stractions']
-			)
-		);
+			]
+		];
 
 		if ($data->hasSharedComments()) {
-			$columns['comment'] = array(
+			$columns['comment'] = [
 				'title' => $lang['strcomment'],
 				'field' => field('spccomment'),
-			);
+			];
 		}
 
 
 		
-		$actions = array(
-			'alter' => array(
+		$actions = [
+			'alter' => [
 				'icon' => $misc->icon('Edit'),
 				'content' => $lang['stralter'],
-				'attr'=> array (
-					'href' => array (
+				'attr'=> [
+					'href' => [
 						'url' => 'tablespaces.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'edit',
 							'tablespace' => field('spcname')
-						)
-					)
-				)
-			),
-			'drop' => array(
+						]
+					]
+				]
+			],
+			'drop' => [
 				'icon' => $misc->icon('Delete'),
 				'content' => $lang['strdrop'],
-				'attr'=> array (
-					'href' => array (
+				'attr'=> [
+					'href' => [
 						'url' => 'tablespaces.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'confirm_drop',
 							'tablespace' => field('spcname')
-						)
-					)
-				)
-			),
-			'privileges' => array(
+						]
+					]
+				]
+			],
+			'privileges' => [
 				'icon' => $misc->icon('Privileges'),
 				'content' => $lang['strprivileges'],
-				'attr'=> array (
-					'href' => array (
+				'attr'=> [
+					'href' => [
 						'url' => 'privileges.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'subject' => 'tablespace',
 							'tablespace' => field('spcname')
-						)
-					)
-				)
-			)
-		);
+						]
+					]
+				]
+			]
+		];
 				
 		$misc->printTable($tablespaces, $columns, $actions, 'tablespaces-tablespaces', $lang['strnotablespaces']);
 		
-		$misc->printNavLinks(array ('create' => array (
-				'attr'=> array (
-					'href' => array (
+		$misc->printNavLinks(['create' => [
+				'attr'=> [
+					'href' => [
 						'url' => 'tablespaces.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'create',
 							'server' => $_REQUEST['server']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['strcreatetablespace']
-			)), 'tablespaces-tablespaces', get_defined_vars());
+		]], 'tablespaces-tablespaces', get_defined_vars());
 	}
 
 	$misc->printHeader($lang['strtablespaces']);

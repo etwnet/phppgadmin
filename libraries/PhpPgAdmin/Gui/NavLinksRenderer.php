@@ -21,17 +21,17 @@ class NavLinksRenderer extends AbstractContext
      * of the caller. Allows to give some environment details to plugins.
      * and 'browse' is the place inside that code (doBrowse).
      */
-    public function printNavLinks($navlinks, $place, $env = array()): void
+    public function printNavLinks($navlinks, $place, $env = []): void
     {
         $pluginManager = $this->pluginManager();
 
         // Navlinks hook's place
         if ($pluginManager) {
-            $plugin_functions_parameters = array(
+            $plugin_functions_parameters = [
                 'navlinks' => &$navlinks,
                 'place' => $place,
                 'env' => $env
-            );
+			];
             $pluginManager->do_hook('navlinks', $plugin_functions_parameters);
         }
 

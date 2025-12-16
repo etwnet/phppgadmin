@@ -19,7 +19,7 @@ use PhpPgAdmin\Core\AppContainer;
 	$curr_col_name = null;
 	$curr_col_val = null;
 	$curr_col_null = false;
-	$curr_row = array();
+	$curr_row = [];
 
 	/**
 	 * Open tag handler for XML import feature
@@ -63,7 +63,7 @@ $lang = AppContainer::getLang();
 					exit;
 				}
 				$state = 'ROW';
-				$curr_row = array();
+				$curr_row = [];
 				break;
 			case 'COLUMN':
 				// We handle columns in rows
@@ -109,11 +109,11 @@ $lang = AppContainer::getLang();
 				break;
 			case 'ROW':
 				// Build value map in order to insert row into table
-				$fields = array();
-				$vars = array();
-				$nulls = array();
-				$format = array();		
-				$types = array();
+				$fields = [];
+				$vars = [];
+				$nulls = [];
+				$format = [];
+				$types = [];
 				$i = 0;			
 				foreach ($curr_row as $k => $v) {
 					$fields[$i] = $k;
@@ -133,7 +133,7 @@ $lang = AppContainer::getLang();
 					$misc->printMsg($lang['strimporterror']);
 					exit;
 				}
-				$curr_row = array();
+				$curr_row = [];
 				$state = 'RECORDS';
 				break;
 			case 'COLUMN':
@@ -167,7 +167,7 @@ $lang = AppContainer::getLang();
 	}
 
 	function loadNULLArray() {
-		$array = array();
+		$array = [];
 		if (isset($_POST['allowednulls'])) {
 			foreach ($_POST['allowednulls'] as $null_char)
 				$array[] = $null_char;
@@ -230,11 +230,11 @@ $lang = AppContainer::getLang();
 					$row = 2; //We start on the line AFTER the field names
 					while ($line = fgetcsv($fd, $csv_max_line, $csv_delimiter)) {
 						// Build value map
-						$t_fields = array();
-						$vars = array();
-						$nulls = array();
-						$format = array();
-						$types = array();
+						$t_fields = [];
+						$vars = [];
+						$nulls = [];
+						$format = [];
+						$types = [];
 						$i = 0;
 						foreach ($fields as $f) {
 							// Check that there is a column

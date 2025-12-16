@@ -58,11 +58,11 @@ class OpClassTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to schema "pg_catalog" page.
-		$this->assertTrue($this->get("$webUrl/opclasses.php", array(
+		$this->assertTrue($this->get("$webUrl/opclasses.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'pg_catalog',
-						'subject' => 'schema'))
+						'subject' => 'schema'])
 					);
         
         // Verify whether all the op classes are displayed.

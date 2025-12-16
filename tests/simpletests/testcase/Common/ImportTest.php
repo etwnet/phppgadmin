@@ -61,13 +61,13 @@ class ImportTest extends PreconditionSet
         $this->_dataFilePath = getcwd() . '/./data/';
         
         // Turn to the import data page.
-		$this->assertTrue($this->get("$webUrl/tblproperties.php", array(
+		$this->assertTrue($this->get("$webUrl/tblproperties.php", [
 			'server' => $SERVER,
 			'database' => $DATABASE,
 			'schema' => 'public',
 			'table' => $this->_tableName,
 			'subject' => 'table',
-			'action' => 'import'))
+			'action' => 'import'])
 		);
 
         // Enter information for importing the data.
@@ -95,13 +95,13 @@ class ImportTest extends PreconditionSet
         
         $this->_dataFilePath = getcwd() . '/./data/';
         // Turn to the import data page.
-		$this->assertTrue($this->get("$webUrl/tblproperties.php", array(
+		$this->assertTrue($this->get("$webUrl/tblproperties.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'table' => $this->_tableName,
 						'subject' => 'table',
-						'action' => 'import'))
+						'action' => 'import'])
 					);
        
         // Enter information for importing the data.
@@ -124,12 +124,12 @@ class ImportTest extends PreconditionSet
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
         
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_empty',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'table' => $this->_tableName))
+						'table' => $this->_tableName])
 					);
         $this->assertTrue($this->clickSubmit($lang['strempty']));
     	

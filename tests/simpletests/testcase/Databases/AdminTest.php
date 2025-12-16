@@ -56,10 +56,10 @@ class AdminTest extends PreconditionSet
         
         // Locate the list page of admin.
 		$this->assertTrue($this->get("$webUrl/database.php",
-			array('database' => $DATABASE,
+			['database' => $DATABASE,
 				'subject' => 'database',
 				'action' => 'admin',
-				'server' => $SERVER))
+				'server' => $SERVER])
 		);
         $this->assertTrue($this->setField('vacuum_analyze', TRUE));
         $this->assertTrue($this->setField('vacuum_full', TRUE));
@@ -80,10 +80,10 @@ class AdminTest extends PreconditionSet
         
         // Locate the list page of admin.
 		$this->assertTrue($this->get("$webUrl/database.php",
-			array('database' => $DATABASE,
+			['database' => $DATABASE,
 				'subject' => 'database',
 				'action' => 'admin',
-				'server' => $SERVER))
+				'server' => $SERVER])
 		);
         $this->assertTrue($this->setField('vacuum_freeze', TRUE));
         $this->assertTrue($this->clickSubmit($lang['strvacuum']));
@@ -103,10 +103,10 @@ class AdminTest extends PreconditionSet
         
         // Locate the list page of admin.
 		$this->assertTrue($this->get("$webUrl/database.php",
-			array('database' => $DATABASE,
+			['database' => $DATABASE,
 				'subject' => 'database',
 				'action' => 'admin',
-				'server' => $SERVER))
+				'server' => $SERVER])
 		);
         $this->assertTrue($this->clickSubmit($lang['stranalyze']));
         $this->assertWantedText($lang['stranalyzegood']);
@@ -124,11 +124,11 @@ class AdminTest extends PreconditionSet
         global $webUrl, $lang, $SERVER, $DATABASE;
         
         // Locate the list page of admin.
-		$this->assertTrue($this->get("$webUrl/database.php", array(
+		$this->assertTrue($this->get("$webUrl/database.php", [
 				'server' => $SERVER,
 				'database' => $DATABASE,
 				'subject' => 'database',
-				'action' => 'admin'))
+				'action' => 'admin'])
 		);
         $this->assertTrue($this->clickSubmit($lang['strcluster']));
         $this->assertWantedText($lang['strclusteredgood']);
@@ -146,11 +146,11 @@ class AdminTest extends PreconditionSet
         global $webUrl, $lang, $SERVER, $DATABASE;
 
         // Locate the list page of admin.
-		$this->assertTrue($this->get("$webUrl/database.php", array(
+		$this->assertTrue($this->get("$webUrl/database.php", [
 				'database' => $DATABASE,
 				'subject' => 'database',
 				'action' => 'admin',
-				'server' => $SERVER))
+				'server' => $SERVER])
 		);
         $this->assertTrue($this->setField('reindex_force', TRUE));
         $this->assertTrue($this->clickSubmit($lang['strreindex']));

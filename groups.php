@@ -79,32 +79,32 @@ $misc = AppContainer::getMisc();
 		$users = $data->getUsers();
 		
 		if ($groupdata->recordCount() > 0) {
-			$columns = array (
-				'members' => array (
+			$columns = [
+				'members' => [
 					'title' => $lang['strmembers'],
 					'field' => field('usename')
-				),
-				'actions' => array (
+				],
+				'actions' => [
 					'title' => $lang['stractions'],
-				)
-			);
+				]
+			];
 
-			$actions = array (
-				'drop' => array (
+			$actions = [
+				'drop' => [
 					'icon' => $misc->icon('Delete'),
 					'content' => $lang['strdrop'],
-						'attr'=> array (
-							'href' => array (
+						'attr'=> [
+							'href' => [
 								'url' => 'groups.php',
-								'urlvars' => array (
+								'urlvars' => [
 									'action' => 'confirm_drop_member',
 									'group' => $_REQUEST['group'],
 									'user' => field('usename')
-								)
-							)
-						)
-				)
-			);
+								]
+							]
+						]
+				]
+			];
 
 			$misc->printTable($groupdata, $columns, $actions, 'groups-members', $lang['strnousers']);
 		}
@@ -125,17 +125,17 @@ $misc = AppContainer::getMisc();
 		echo "<input type=\"hidden\" name=\"action\" value=\"add_member\" />\n";
 		echo "</form>\n";
 		
-		$misc->printNavLinks(array ('showall' => array (
-				'attr'=> array (
-					'href' => array (
+		$misc->printNavLinks(['showall' => [
+				'attr'=> [
+					'href' => [
 						'url' => 'groups.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'server' => $_REQUEST['server']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['strshowallgroups']
-			)), 'groups-properties', get_defined_vars());
+		]], 'groups-properties', get_defined_vars());
 	}
 	
 	/**
@@ -178,7 +178,7 @@ $misc = AppContainer::getMisc();
 		$lang = AppContainer::getLang();
 		
 		if (!isset($_POST['name'])) $_POST['name'] = '';
-		if (!isset($_POST['members'])) $_POST['members'] = array();
+		if (!isset($_POST['members'])) $_POST['members'] = [];
 
 		// Fetch a list of all users in the cluster
 		$users = $data->getUsers();
@@ -220,7 +220,7 @@ $misc = AppContainer::getMisc();
 		$data = AppContainer::getData();
 		$lang = AppContainer::getLang();
 
-		if (!isset($_POST['members'])) $_POST['members'] = array();
+		if (!isset($_POST['members'])) $_POST['members'] = [];
 
 		// Check form vars
 		if (trim($_POST['name']) == '')
@@ -248,47 +248,47 @@ $misc = AppContainer::getMisc();
 		
 		$groups = $data->getGroups();
 		
-		$columns = array(
-			'group' => array(
+		$columns = [
+			'group' => [
 				'title' => $lang['strgroup'],
 				'field' => field('groname'),
 				'url'   => "groups.php?action=properties&amp;{$misc->href}&amp;",
-				'vars'  => array('group' => 'groname'),
-			),
-			'actions' => array(
+				'vars'  => ['group' => 'groname'],
+			],
+			'actions' => [
 				'title' => $lang['stractions'],
-			),
-		);
+			],
+		];
 		
-		$actions = array(
-			'drop' => array(
+		$actions = [
+			'drop' => [
 				'content' => $lang['strdrop'],
-				'attr'=> array (
-					'href' => array (
+				'attr'=> [
+					'href' => [
 						'url' => 'groups.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'confirm_drop',
 							'group' => field('groname')
-						)
-					)
-				)
-			),
-		);
+						]
+					]
+				]
+			],
+		];
 		
 		$misc->printTable($groups, $columns, $actions, 'groups-properties', $lang['strnogroups']);
 		
-		$misc->printNavLinks(array ('create' => array (
-				'attr'=> array (
-					'href' => array (
+		$misc->printNavLinks(['create' => [
+				'attr'=> [
+					'href' => [
 						'url' => 'groups.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'create',
 							'server' => $_REQUEST['server']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['strcreategroup']
-			)), 'groups-groups', get_defined_vars());
+		]], 'groups-groups', get_defined_vars());
 
 	}
 

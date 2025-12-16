@@ -57,11 +57,11 @@ function value(&$var, $fields, $esc = null) {
 	if (is_string($val)) {
 		switch($esc) {
 			case 'xml':
-				return strtr($val, array(
+				return strtr($val, [
 					'&' => '&amp;',
 					"'" => '&apos;', '"' => '&quot;',
 					'<' => '&lt;', '>' => '&gt;'
-				));
+				]);
 			case 'html':
 				return htmlentities($val, ENT_COMPAT, 'UTF-8');
 			case 'url':
@@ -120,7 +120,7 @@ class ArrayMergeDecorator extends Decorator
 	}
 	
 	function value($fields) {
-		$accum = array();
+		$accum = [];
 		foreach($this->m as $var) {
 			$accum = array_merge($accum, value($var, $fields));
 		}

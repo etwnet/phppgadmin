@@ -60,10 +60,10 @@ class HelpTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
 
         // Locate the list page of database.
-		$this->assertTrue($this->get("$webUrl/database.php", array(
+		$this->assertTrue($this->get("$webUrl/database.php", [
 		               'server' => $SERVER,
 					   'database' => $DATABASE,
-					   'subject' => 'database'))
+					   'subject' => 'database'])
 				   );
 
         // Click the link about help.
@@ -89,13 +89,13 @@ class HelpTest extends PreconditionSet
         global $webUrl, $SERVER, $DATABASE;
 
         // Locate the list page of language.
-		$this->assertTrue($this->get("$webUrl/database.php", array(
+		$this->assertTrue($this->get("$webUrl/database.php", [
 			'server' => $SERVER,
 			'database' => $DATABASE,
-			'subject' => 'database'))
+			'subject' => 'database'])
 		);
 
-        $this->assertTrue($this->get("$webUrl/help.php", array('server' => $SERVER)));        
+        $this->assertTrue($this->get("$webUrl/help.php", ['server' => $SERVER]));
 
 		// XXX fail because of the version number in the URL
 		$this->assertTrue($this->clickLink(/*'http://www.postgresql.org/docs/8.0/' .*/

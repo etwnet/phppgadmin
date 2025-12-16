@@ -56,10 +56,10 @@ class LanguageTest extends PreconditionSet
 		global $webUrl, $SERVER, $DATABASE;
 
         // Locate the list page of language.
-		$this->assertTrue($this->get("$webUrl/languages.php", array(
+		$this->assertTrue($this->get("$webUrl/languages.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
-						'subject' => 'database'))
+						'subject' => 'database'])
 					);
 
         $this->assertWantedPattern('/sql/');

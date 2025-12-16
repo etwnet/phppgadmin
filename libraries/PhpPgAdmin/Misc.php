@@ -129,7 +129,7 @@ class Misc extends AbstractContext
 	 * @param array $params Additional parameters for formatting
 	 * @return string The formatted value
 	 */
-	function printVal($str, $type = null, $params = array())
+	function printVal($str, $type = null, $params = [])
 	{
 		return $this->getLayoutRenderer()->printVal($str, $type, $params);
 	}
@@ -168,7 +168,7 @@ class Misc extends AbstractContext
 		if ($conf['extra_login_security']) {
 			// Disallowed logins if extra_login_security is enabled.
 			// These must be lowercase.
-			$bad_usernames = array('pgsql', 'postgres', 'root', 'administrator');
+			$bad_usernames = ['pgsql', 'postgres', 'root', 'administrator'];
 
 			$username = strtolower($server_info['username']);
 
@@ -338,7 +338,7 @@ class Misc extends AbstractContext
 	/**
 	 * Display a bread crumb trail.
 	 */
-	function printTrail($trail = array())
+	function printTrail($trail = [])
 	{
 		$this->printTopbar();
 		return $this->getTrailRenderer()->printTrail($trail);
@@ -364,7 +364,7 @@ class Misc extends AbstractContext
 	 * @param array $env - Associative array of defined variables in the scope
 	 * of the caller. Allows to give some environment details to plugins.
 	 */
-	function printNavLinks($navlinks, $place, $env = array())
+	function printNavLinks($navlinks, $place, $env = [])
 	{
 		return $this->getNavLinksRenderer()->printNavLinks($navlinks, $place, $env);
 	}
@@ -498,7 +498,7 @@ class Misc extends AbstractContext
 		// This function will take the string value of an ini 'size' parameter,
 		// and return a double (64-bit float) representing the number of bytes
 		// that the parameter represents. Or false if $strIniSize is unparsable.
-		$a_IniParts = array();
+		$a_IniParts = [];
 
 		if (!is_string($strIniSize))
 			return false;
@@ -568,7 +568,7 @@ class Misc extends AbstractContext
 	{
 		$plugin_manager = $this->pluginManager();
 
-		$treedata = array();
+		$treedata = [];
 
 		if ($_treedata->recordCount() > 0) {
 			while (!$_treedata->EOF) {
@@ -577,11 +577,11 @@ class Misc extends AbstractContext
 			}
 		}
 
-		$tree_params = array(
+		$tree_params = [
 			'treedata' => &$treedata,
 			'attrs' => &$attrs,
 			'section' => $section
-		);
+		];
 
 		$plugin_manager->do_hook('tree', $tree_params);
 
@@ -683,7 +683,7 @@ class Misc extends AbstractContext
 	 */
 	function adjustTabsForTree(&$tabs)
 	{
-		$adjustedTabs = array();
+		$adjustedTabs = [];
 		
 		foreach ($tabs as $tabKey => $tab) {
 			if ((isset($tab['hide']) && $tab['hide'] === true) || (isset($tab['tree']) && $tab['tree'] === false)) {
@@ -793,7 +793,7 @@ class Misc extends AbstractContext
 	{
 		$conf = $this->conf();
 		$lang = $this->lang();
-		$grps = array();
+		$grps = [];
 
 		if (isset($conf['srv_groups'])) {
 			foreach ($conf['srv_groups'] as $i => $group) {
@@ -808,45 +808,45 @@ class Misc extends AbstractContext
 						))
 					) /* nested group */
 				)
-					$grps[$i] = array(
+					$grps[$i] = [
 						'id' => $i,
 						'desc' => $group['desc'],
 						'icon' => 'Servers',
 						'action' => url(
 							'servers.php',
-							array(
+							[
 								'group' => field('id')
-							)
+							]
 						),
 						'branch' => url(
 							'servers.php',
-							array(
+							[
 								'action' => 'tree',
 								'group' => $i
-							)
+							]
 						)
-					);
+					];
 			}
 
 			if ($group_id === false)
-				$grps['all'] = array(
+				$grps['all'] = [
 					'id' => 'all',
 					'desc' => $lang['strallservers'],
 					'icon' => 'Servers',
 					'action' => url(
 						'servers.php',
-						array(
+						[
 							'group' => field('id')
-						)
+						]
 					),
 					'branch' => url(
 						'servers.php',
-						array(
+						[
 							'action' => 'tree',
 							'group' => 'all'
-						)
+						]
 					)
-				);
+				];
 		}
 
 		if ($recordset) {
@@ -867,8 +867,8 @@ class Misc extends AbstractContext
 	{
 		$conf = $this->conf();
 
-		$logins = isset($_SESSION['webdbLogin']) && is_array($_SESSION['webdbLogin']) ? $_SESSION['webdbLogin'] : array();
-		$srvs = array();
+		$logins = isset($_SESSION['webdbLogin']) && is_array($_SESSION['webdbLogin']) ? $_SESSION['webdbLogin'] : [];
+		$srvs = [];
 
 		if (($group !== false) and ($group !== 'all'))
 			if (isset($conf['srv_groups'][$group]['servers']))
@@ -894,20 +894,20 @@ class Misc extends AbstractContext
 				$srvs[$server_id]['id'] = $server_id;
 				$srvs[$server_id]['action'] = url(
 					'redirect.php',
-					array(
+					[
 						'subject' => 'server',
 						'server' => field('id')
-					)
+					]
 				);
 				if (isset($srvs[$server_id]['username'])) {
 					$srvs[$server_id]['icon'] = 'Server';
 					$srvs[$server_id]['branch'] = url(
 						'all_db.php',
-						array(
+						[
 							'action' => 'tree',
 							'subject' => 'server',
 							'server' => field('id')
-						)
+						]
 					);
 				} else {
 					$srvs[$server_id]['icon'] = 'DisconnectedServer';
@@ -1027,11 +1027,11 @@ class Misc extends AbstractContext
 	{
 		list($usec, $sec) = explode(' ', microtime());
 		$time = ((float)$usec + (float)$sec);
-		$_SESSION['history'][$_REQUEST['server']][$_REQUEST['database']]["$time"] = array(
+		$_SESSION['history'][$_REQUEST['server']][$_REQUEST['database']]["$time"] = [
 			'query' => $script,
 			'paginate' => (!isset($_REQUEST['paginate']) ? 'f' : 't'),
 			'queryid' => $time,
-		);
+		];
 	}
 
 	/*
@@ -1070,11 +1070,11 @@ class Misc extends AbstractContext
 	{
 		$pg = $this->postgres();
 
-		$fksprops = array(
-			'byconstr' => array(),
-			'byfield' => array(),
+		$fksprops = [
+			'byconstr' => [],
+			'byfield' => [],
 			'code' => ''
-		);
+		];
 
 		$constrs = (new ConstraintActions($pg))->getConstraintsWithFields($table);
 
@@ -1083,14 +1083,14 @@ class Misc extends AbstractContext
 			while (!$constrs->EOF) {
 				if ($constrs->fields['contype'] == 'f') {
 					if (!isset($fksprops['byconstr'][$constrs->fields['conid']])) {
-						$fksprops['byconstr'][$constrs->fields['conid']] = array(
+						$fksprops['byconstr'][$constrs->fields['conid']] = [
 							'confrelid' => $constrs->fields['confrelid'],
 							'f_table' => $constrs->fields['f_table'],
 							'f_schema' => $constrs->fields['f_schema'],
-							'pattnums' => array(),
-							'pattnames' => array(),
-							'fattnames' => array()
-						);
+							'pattnums' => [],
+							'pattnames' => [],
+							'fattnames' => []
+						];
 					}
 
 					$fksprops['byconstr'][$constrs->fields['conid']]['pattnums'][] = $constrs->fields['p_attnum'];
@@ -1098,7 +1098,7 @@ class Misc extends AbstractContext
 					$fksprops['byconstr'][$constrs->fields['conid']]['fattnames'][] = $constrs->fields['f_field'];
 
 					if (!isset($fksprops['byfield'][$constrs->fields['p_attnum']]))
-						$fksprops['byfield'][$constrs->fields['p_attnum']] = array();
+						$fksprops['byfield'][$constrs->fields['p_attnum']] = [];
 					$fksprops['byfield'][$constrs->fields['p_attnum']][] = $constrs->fields['conid'];
 				}
 				$constrs->moveNext();

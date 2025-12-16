@@ -14,7 +14,7 @@ class TrailRenderer extends AbstractContext
     /**
      * Display a bread crumb trail.
      */
-    public function printTrail($trail = array()): void
+    public function printTrail($trail = []): void
     {
         $lang = $this->lang();
 
@@ -69,114 +69,114 @@ class TrailRenderer extends AbstractContext
 
         $appName = $GLOBALS['appName'] ?? 'phpPgAdmin';
 
-        $trail = array();
+        $trail = [];
         $vars = '';
         $done = false;
 
-        $trail['root'] = array(
+        $trail['root'] = [
             'text' => $appName,
             'url' => 'redirect.php?subject=root',
             'icon' => 'Introduction'
-        );
+		];
 
         if ($subject == 'root') $done = true;
 
         if (!$done) {
             $server_info = $this->misc()->getServerInfo();
-            $trail['server'] = array(
+            $trail['server'] = [
                 'title' => $lang['strserver'],
                 'text' => $server_info['desc'],
                 'url' => $this->misc()->getHREFSubject('server'),
                 'help' => 'pg.server',
                 'icon' => 'Server'
-            );
+			];
         }
         if ($subject == 'server') $done = true;
 
         if (isset($_REQUEST['database']) && !$done) {
-            $trail['database'] = array(
+            $trail['database'] = [
                 'title' => $lang['strdatabase'],
                 'text' => $_REQUEST['database'],
                 'url' => $this->misc()->getHREFSubject('database'),
                 'help' => 'pg.database',
                 'icon' => 'Database'
-            );
+			];
         } elseif (isset($_REQUEST['rolename']) && !$done) {
-            $trail['role'] = array(
+            $trail['role'] = [
                 'title' => $lang['strrole'],
                 'text' => $_REQUEST['rolename'],
                 'url' => $this->misc()->getHREFSubject('role'),
                 'help' => 'pg.role',
                 'icon' => 'Roles'
-            );
+			];
         }
         if ($subject == 'database' || $subject == 'role') $done = true;
 
         if (isset($_REQUEST['schema']) && !$done) {
-            $trail['schema'] = array(
+            $trail['schema'] = [
                 'title' => $lang['strschema'],
                 'text' => $_REQUEST['schema'],
                 'url' => $this->misc()->getHREFSubject('schema'),
                 'help' => 'pg.schema',
                 'icon' => 'Schema'
-            );
+			];
         }
         if ($subject == 'schema') $done = true;
 
         if (isset($_REQUEST['table']) && !$done) {
-            $trail['table'] = array(
+            $trail['table'] = [
                 'title' => $lang['strtable'],
                 'text' => $_REQUEST['table'],
                 'url' => $this->misc()->getHREFSubject('table'),
                 'help' => 'pg.table',
                 'icon' => 'Table'
-            );
+			];
         } elseif (isset($_REQUEST['view']) && !$done) {
-            $trail['view'] = array(
+            $trail['view'] = [
                 'title' => $lang['strview'],
                 'text' => $_REQUEST['view'],
                 'url' => $this->misc()->getHREFSubject('view'),
                 'help' => 'pg.view',
                 'icon' => 'View'
-            );
+			];
         } elseif (isset($_REQUEST['ftscfg']) && !$done) {
-            $trail['ftscfg'] = array(
+            $trail['ftscfg'] = [
                 'title' => $lang['strftsconfig'],
                 'text' => $_REQUEST['ftscfg'],
                 'url' => $this->misc()->getHREFSubject('ftscfg'),
                 'help' => 'pg.ftscfg.example',
                 'icon' => 'Fts'
-            );
+			];
         }
         if ($subject == 'table' || $subject == 'view' || $subject == 'ftscfg') $done = true;
 
         if (!$done && !is_null($subject)) {
             switch ($subject) {
             case 'function':
-                $trail[$subject] = array(
+                $trail[$subject] = [
                     'title' => $lang['str' . $subject],
                     'text' => $_REQUEST[$subject],
                     'url' => $this->misc()->getHREFSubject('function'),
                     'help' => 'pg.function',
                     'icon' => 'Function'
-                );
+				];
                 break;
             case 'aggregate':
-                $trail[$subject] = array(
+                $trail[$subject] = [
                     'title' => $lang['straggregate'],
                     'text' => $_REQUEST['aggrname'],
                     'url' => $this->misc()->getHREFSubject('aggregate'),
                     'help' => 'pg.aggregate',
                     'icon' => 'Aggregate'
-                );
+				];
                 break;
             case 'column':
-                $trail['column'] = array(
+                $trail['column'] = [
                     'title' => $lang['strcolumn'],
                     'text' => $_REQUEST['column'],
                     'icon' => 'Column',
                     'url' => $this->misc()->getHREFSubject('column')
-                );
+				];
                 break;
             default:
                 if (isset($_REQUEST[$subject])) {
@@ -197,22 +197,22 @@ class TrailRenderer extends AbstractContext
                         $icon = null;
                         break;
                     }
-                    $trail[$subject] = array(
+                    $trail[$subject] = [
                         'title' => $lang['str' . $subject],
                         'text' => $_REQUEST[$subject],
                         'help' => 'pg.' . $subject,
                         'icon' => $icon,
-                    );
+					];
                 }
             }
         }
 
         // Trail hook's place
         if ($pluginManager) {
-            $plugin_functions_parameters = array(
+            $plugin_functions_parameters = [
                 'trail' => &$trail,
                 'section' => $subject
-            );
+			];
             $pluginManager->do_hook('trail', $plugin_functions_parameters);
         }
 

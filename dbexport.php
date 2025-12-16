@@ -29,7 +29,7 @@ if ($misc->isDumpEnabled($dumpall)) {
 	$exe = $misc->escapeShellCmd($server_info[$dumpall ? 'pg_dumpall_path' : 'pg_dump_path']);
 
 	// Obtain the pg_dump version number and check if the path is good
-	$version = array();
+	$version = [];
 	preg_match("/(\d+(?:\.\d+)?)(?:\.\d+)?.*$/", exec($exe . " --version"), $version);
 
 	if (empty($version)) {

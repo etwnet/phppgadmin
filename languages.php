@@ -29,23 +29,23 @@ $misc = AppContainer::getMisc();
 		
 		$languages = $data->getLanguages();
 
-		$columns = array(
-			'language' => array(
+		$columns = [
+			'language' => [
 				'title' => $lang['strname'],
 				'field' => field('lanname'),
-			),
-			'trusted' => array(
+			],
+			'trusted' => [
 				'title' => $lang['strtrusted'],
 				'field' => field('lanpltrusted'),
 				'type'  => 'yesno',
-			),
-			'function' => array(
+			],
+			'function' => [
 				'title' => $lang['strfunction'],
 				'field' => field('lanplcallf'),
-			),
-		);
+			],
+		];
 
-		$actions = array();
+		$actions = [];
 
 		$misc->printTable($languages, $columns, $actions, 'languages-languages', $lang['strnolanguages']);
 	}
@@ -59,10 +59,10 @@ $data = AppContainer::getData();
 		
 		$languages = $data->getLanguages();
 		
-		$attrs = array(
+		$attrs = [
 			'text'   => field('lanname'),
 			'icon'   => 'Language'
-		);
+		];
 		
 		$misc->printTree($languages, $attrs, 'languages');
 		exit;

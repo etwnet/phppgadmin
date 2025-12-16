@@ -29,7 +29,7 @@ function getHelp($help)
 
 	if (isset($pages[$help])) {
 		if (is_array($pages[$help])) {
-			$urls = array();
+			$urls = [];
 			foreach ($pages[$help] as $link) {
 				$urls[] = $help_base . $link;
 			}
@@ -80,7 +80,7 @@ function doBrowse($msg = '')
 		echo "<dt>{$page}</dt>\n";
 
 		$urls = getHelp($page);
-		if (!is_array($urls)) $urls = array($urls);
+		if (!is_array($urls)) $urls = [$urls];
 		foreach ($urls as $url) {
 			echo "<dd><a href=\"{$url}\">{$url}</a></dd>\n";
 		}

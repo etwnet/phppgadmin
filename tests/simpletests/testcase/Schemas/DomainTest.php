@@ -55,11 +55,11 @@ class DomainTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the "Create domain" page.
-		$this->assertTrue($this->get("$webUrl/domains.php", array(
+		$this->assertTrue($this->get("$webUrl/domains.php", [
 			            'server' => $SERVER,
 						'action' => 'create',
 						'database' => $DATABASE,
-						'schema' => 'public'))
+						'schema' => 'public'])
 					);
                 
         // Enter the detail information of the new domain.
@@ -87,12 +87,12 @@ class DomainTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Display the domain which is to be altered.
-		$this->assertTrue($this->get("$webUrl/domains.php", array(
+		$this->assertTrue($this->get("$webUrl/domains.php", [
 			            'server' => $SERVER,
 						'action' => 'properties',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'domain' => 'spikedomain'))
+						'domain' => 'spikedomain'])
 					);
 
         $this->assertTrue($this->clickLink($lang['stralter']));
@@ -116,12 +116,12 @@ class DomainTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
 
         // Display the domain to be be altered.
-		$this->assertTrue($this->get("$webUrl/domains.php", array(
+		$this->assertTrue($this->get("$webUrl/domains.php", [
 			            'server' => $SERVER,
 						'action' => 'properties',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'domain' => 'spikedomain'))
+						'domain' => 'spikedomain'])
 					);
 
         $this->assertTrue($this->clickLink($lang['straddcheck']));
@@ -150,24 +150,24 @@ class DomainTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
 
         // Turn to the domains-display page.
-		$this->assertTrue($this->get("$webUrl/domains.php", array(
+		$this->assertTrue($this->get("$webUrl/domains.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
-						'schema' => 'public&'))
+						'schema' => 'public&'])
 					);
 
         // Display the specified damain.
         $this->assertTrue($this->clickLink('spikedomain'));
 
         // Drop the constraint.
-		$this->assertTrue($this->get("$webUrl/domains.php", array(
+		$this->assertTrue($this->get("$webUrl/domains.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_drop_con',
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'constraint' => 'newcheck',
 						'domain' => 'spikedomain',
-						'type' => 'c'))
+						'type' => 'c'])
 					);
 
         $this->assertTrue($this->setField('cascade', TRUE));
@@ -190,19 +190,19 @@ class DomainTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
 
         // Turn to the "domains" page.
-		$this->assertTrue($this->get("$webUrl/domains.php", array(
+		$this->assertTrue($this->get("$webUrl/domains.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'subject' => 'schema'))
+						'subject' => 'schema'])
 					);
 
-		$this->assertTrue($this->get("$webUrl/domains.php", array(
+		$this->assertTrue($this->get("$webUrl/domains.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_drop',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'domain' => 'spikedomain'))
+						'domain' => 'spikedomain'])
 					);
         $this->assertTrue($this->setField('cascade', TRUE));    
         

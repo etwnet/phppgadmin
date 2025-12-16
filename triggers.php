@@ -290,108 +290,108 @@ $misc = AppContainer::getMisc();
 
 		$triggers = $data->getTriggers($_REQUEST['table']);
 
-		$columns = array(
-			'trigger' => array(
+		$columns = [
+			'trigger' => [
 				'title' => $lang['strname'],
 				'field' => field('tgname'),
-			),
-			'definition' => array(
+			],
+			'definition' => [
 				'title' => $lang['strdefinition'],
 				'field' => field('tgdef'),
-			),
-			'function' => array(
+			],
+			'function' => [
 				'title' => $lang['strfunction'],
 				'field' => field('proproto'),
 				'url' => "functions.php?action=properties&amp;server={$_REQUEST['server']}&amp;database={$_REQUEST['database']}&amp;",
-				'vars' => array(
+				'vars' => [
 					'schema' => 'pronamespace',
 					'function' => 'proproto',
 					'function_oid' => 'prooid',
-				),
-			),
-			'actions' => array(
+				],
+			],
+			'actions' => [
 				'title' => $lang['stractions'],
-			),
-		);
+			],
+		];
 
-		$actions = array(
-			'alter' => array(
+		$actions = [
+			'alter' => [
 				'icon' => $misc->icon('Edit'),
 				'content' => $lang['stralter'],
-					'attr'=> array (
-						'href' => array (
+					'attr'=> [
+						'href' => [
 							'url' => 'triggers.php',
-							'urlvars' => array (
+							'urlvars' => [
 								'action' => 'confirm_alter',
 								'table' => $_REQUEST['table'],
 								'trigger' => field('tgname')
-							)
-						)
-					)
-			),
-			'drop' => array(
+							]
+						]
+					]
+			],
+			'drop' => [
 				'icon' => $misc->icon('Delete'),
 				'content' => $lang['strdrop'],
-					'attr'=> array (
-						'href' => array (
+					'attr'=> [
+						'href' => [
 							'url' => 'triggers.php',
-							'urlvars' => array (
+							'urlvars' => [
 								'action' => 'confirm_drop',
 								'table' => $_REQUEST['table'],
 								'trigger' => field('tgname')
-							)
-						)
-					)
-			),
-		);
+							]
+						]
+					]
+			],
+		];
 		if($data->hasDisableTriggers()) {
-			$actions['enable'] = array(
+			$actions['enable'] = [
 				'icon' => $misc->icon('Show'),
 				'content' => $lang['strenable'],
-				'attr'=> array (
-					'href' => array (
+				'attr'=> [
+					'href' => [
 						'url' => 'triggers.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'confirm_enable',
 							'table' => $_REQUEST['table'],
 							'trigger' => field('tgname')
-						)
-					)
-				)
-			);
-			$actions['disable'] = array(
+						]
+					]
+				]
+			];
+			$actions['disable'] = [
 				'icon' => $misc->icon('Hide'),
 				'content' => $lang['strdisable'],
-				'attr'=> array (
-					'href' => array (
+				'attr'=> [
+					'href' => [
 						'url' => 'triggers.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'confirm_disable',
 							'table' => $_REQUEST['table'],
 							'trigger' => field('tgname')
-						)
-					)
-				)
-			);
+						]
+					]
+				]
+			];
 		}
 
 		$misc->printTable($triggers, $columns, $actions, 'triggers-triggers', $lang['strnotriggers'], 'tgPre');
 		
-		$misc->printNavLinks(array ('create' => array (
-				'attr'=> array (
-					'href' => array (
+		$misc->printNavLinks(['create' => [
+				'attr'=> [
+					'href' => [
 					'url' => 'triggers.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'create',
 							'server' => $_REQUEST['server'],
 							'database' => $_REQUEST['database'],
 							'schema' => $_REQUEST['schema'],
 							'table' => $_REQUEST['table']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['strcreatetrigger']
-			)), 'triggers-triggers', get_defined_vars());
+		]], 'triggers-triggers', get_defined_vars());
 	}
 
 	function doTree() {
@@ -403,10 +403,10 @@ $data = AppContainer::getData();
 
 		$reqvars = $misc->getRequestVars('table');
 		
-		$attrs = array(
+		$attrs = [
 			'text'   => field('tgname'),
 			'icon'   => 'Trigger',
-		);
+		];
 
 		$misc->printTree($triggers, $attrs, 'triggers');
 		exit;

@@ -58,12 +58,12 @@ if (!$res->EOF) {
 			if (in_array($n, $f_keynames)) {
 				$field_name = htmlspecialchars($keyspos[$n]);
 				echo "<td><a href=\"javascript:void(0)\" class=\"fkval\" name=\"{$field_name}\">",
-				$misc->printVal($v, $finfo->type, array('clip' => 'collapsed')),
+				$misc->printVal($v, $finfo->type, ['clip' => 'collapsed']),
 				"</a></td>";
 			}
 			else {
 				echo "<td><a href=\"javascript:void(0)\">",
-				$misc->printVal($v, $finfo->type, array('clip' => 'collapsed')),
+				$misc->printVal($v, $finfo->type, ['clip' => 'collapsed']),
 				"</a></td>";
 			}
 		}

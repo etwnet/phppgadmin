@@ -13,7 +13,7 @@ class FieldRenderer extends AbstractContext {
 	 * @param string $type The database type of the field
 	 * @param array $extras An array of attributes name as key and attributes' values as value
 	 */
-	function printField($name, $value, $type, $extras = array()) {
+	function printField($name, $value, $type, $extras = []) {
 		global $lang;
 
 		if (!isset($value)) {

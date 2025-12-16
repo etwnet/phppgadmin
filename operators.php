@@ -67,20 +67,20 @@ $misc = AppContainer::getMisc();
 			}
 			echo "</table>\n";
 
-			$misc->printNavLinks(array (
-				'showall' => array (
-					'attr'=> array (
-						'href' => array (
+			$misc->printNavLinks([
+				'showall' => [
+					'attr'=> [
+						'href' => [
 							'url' => 'operators.php',
-							'urlvars' => array (
+							'urlvars' => [
 								'server' => $_REQUEST['server'],
 								'database' => $_REQUEST['database'],
 								'schema' => $_REQUEST['schema']
-							)
-						)
-					),
+							]
+						]
+					],
 					'content' => $lang['strshowalloperators']
-				)), 'operators-properties', get_defined_vars()
+				]], 'operators-properties', get_defined_vars()
 			);
 		}
 		else
@@ -136,53 +136,53 @@ $misc = AppContainer::getMisc();
 		
 		$operators = $data->getOperators();
 
-		$columns = array(
-			'operator' => array(
+		$columns = [
+			'operator' => [
 				'title' => $lang['stroperator'],
 				'field' => field('oprname'),
 				'url'   => "operators.php?action=properties&amp;{$misc->href}&amp;",
-				'vars'  => array('operator' => 'oprname', 'operator_oid' => 'oid'),
-			),
-			'leftarg' => array(
+				'vars'  => ['operator' => 'oprname', 'operator_oid' => 'oid'],
+			],
+			'leftarg' => [
 				'title' => $lang['strleftarg'],
 				'field' => field('oprleftname'),
-			),
-			'rightarg' => array(
+			],
+			'rightarg' => [
 				'title' => $lang['strrightarg'],
 				'field' => field('oprrightname'),
-			),
-			'returns' => array(
+			],
+			'returns' => [
 				'title' => $lang['strreturns'],
 				'field' => field('resultname'),
-			),
-			'actions' => array(
+			],
+			'actions' => [
 				'title' => $lang['stractions'],
-			),
-			'comment' => array(
+			],
+			'comment' => [
 				'title' => $lang['strcomment'],
 				'field' => field('oprcomment'),
-			),
-		);
+			],
+		];
 
-		$actions = array(
-			'drop' => array(
+		$actions = [
+			'drop' => [
 				// 'title' => $lang['strdrop'],
 				// 'url'   => "operators.php?action=confirm_drop&amp;{$misc->href}&amp;",
 				// 'vars'  => array('operator' => 'oprname', 'operator_oid' => 'oid'),
 				'icon' => $misc->icon('Delete'),
 				'content' => $lang['strdrop'],
-				'attr'=> array (
-					'href' => array (
+				'attr'=> [
+					'href' => [
 						'url' => 'operators.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'confirm_drop',
 							'operator' => field('oprname'),
 							'operator_oid' => field('oid')
-						)
-					)
-				)
-			)
-		);
+						]
+					]
+				]
+			]
+		];
 		
 		$misc->printTable($operators, $columns, $actions, 'operators-operators', $lang['strnooperators']);
 		
@@ -203,19 +203,19 @@ $data = AppContainer::getData();
 		
 		$reqvars = $misc->getRequestVars('operator');
 		
-		$attrs = array(
+		$attrs = [
 			'text'   => $proto,
 			'icon'   => 'Operator',
 			'toolTip'=> field('oprcomment'),
 			'action' => url('operators.php',
 							$reqvars,
-							array(
+							[
 								'action'  => 'properties',
 								'operator' => $proto,
 								'operator_oid' => field('oid')
-							)
+							]
 						)
-		);
+		];
 		
 		$misc->printTree($operators, $attrs, 'operators');
 		exit;

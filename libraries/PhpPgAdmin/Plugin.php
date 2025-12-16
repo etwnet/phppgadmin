@@ -51,7 +51,7 @@ abstract class Plugin extends AbstractContext {
 	 * @returns an associative of parameter_name => value
 	 */
 	function get_subject_params() {
-		$vars = array();
+		$vars = [];
 		return $vars;
 	}
 
@@ -70,6 +70,6 @@ abstract class Plugin extends AbstractContext {
 	 * @return the information suitable for the method $misc->icon()
 	 */
 	function icon($img) {
-		return array($this->name, $img);
+		return [$this->name, $img];
 	}
 }

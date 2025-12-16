@@ -57,7 +57,7 @@ class TableSpacesTest extends PreconditionSet
         $this->_location = getcwd() . '/data/TableSpace';
 
         // Turn to the create tablespace page.
-        $this->assertTrue($this->get("$webUrl/tablespaces.php", array('server' => $SERVER)));
+        $this->assertTrue($this->get("$webUrl/tablespaces.php", ['server' => $SERVER]));
         $this->assertTrue($this->clickLink($lang['strcreatetablespace']));
        
         // Enter information for creating a tablespace.
@@ -84,11 +84,11 @@ class TableSpacesTest extends PreconditionSet
         global $lang, $SERVER;
         
         // Turn to the alter tablespace page.
-		$this->assertTrue($this->get("$webUrl/tablespaces.php", array('server' => $SERVER)));
-		$this->assertTrue($this->get("$webUrl/tablespaces.php", array(
+		$this->assertTrue($this->get("$webUrl/tablespaces.php", ['server' => $SERVER]));
+		$this->assertTrue($this->get("$webUrl/tablespaces.php", [
 			            'server' => $SERVER,
 						'action' => 'edit',
-						'tablespace' => $this->_tableSpaceName))
+						'tablespace' => $this->_tableSpaceName])
 					);
 
         // Enter information for altering the tableSpace's properties.
@@ -113,16 +113,16 @@ class TableSpacesTest extends PreconditionSet
         global $lang, $SERVER;
         
         // Turn to the privileges page.
-        $this->assertTrue($this->get("$webUrl/privileges.php", array('server' => $SERVER)));
-		$this->assertTrue($this->get("$webUrl/privileges.php", array(
+        $this->assertTrue($this->get("$webUrl/privileges.php", ['server' => $SERVER]));
+		$this->assertTrue($this->get("$webUrl/privileges.php", [
 			            'server' => $SERVER,
 						'subject' => 'tablespace',
-						'tablespace' => $this->_tableSpaceName))
+						'tablespace' => $this->_tableSpaceName])
 					);
        
         // Grant with no privileges selected.
         $this->assertTrue($this->clickLink($lang['strgrant']));
-        $this->assertTrue($this->setField('username[]', array($NORMAL_USER_NAME)));
+        $this->assertTrue($this->setField('username[]', [$NORMAL_USER_NAME]));
         $this->assertTrue($this->setField('privilege[CREATE]', TRUE));
         $this->assertTrue($this->setField('privilege[ALL PRIVILEGES]', TRUE));
         $this->assertTrue($this->setField('grantoption', TRUE));
@@ -146,16 +146,16 @@ class TableSpacesTest extends PreconditionSet
         global $lang, $SERVER;
         
         // Turn to the privileges page.
-        $this->assertTrue($this->get("$webUrl/privileges.php", array('server' => $SERVER)));
-		$this->assertTrue($this->get("$webUrl/privileges.php", array(
+        $this->assertTrue($this->get("$webUrl/privileges.php", ['server' => $SERVER]));
+		$this->assertTrue($this->get("$webUrl/privileges.php", [
 			            'server' => $SERVER,
 						'subject' => 'tablespace',
-						'tablespace' => $this->_tableSpaceName))
+						'tablespace' => $this->_tableSpaceName])
 					);
        
         // Revoke with no users selected.
         $this->assertTrue($this->clickLink($lang['strrevoke']));
-        $this->assertTrue($this->setField('username[]', array($NORMAL_USER_NAME)));
+        $this->assertTrue($this->setField('username[]', [$NORMAL_USER_NAME]));
         $this->assertTrue($this->setField('privilege[ALL PRIVILEGES]', TRUE));
                
         // Then submit and verify it.
@@ -178,16 +178,16 @@ class TableSpacesTest extends PreconditionSet
         global $lang, $SERVER;
         
         // Turn to the privileges page.
-        $this->assertTrue($this->get("$webUrl/privileges.php", array('server' => $SERVER)));
-		$this->assertTrue($this->get("$webUrl/privileges.php", array(
+        $this->assertTrue($this->get("$webUrl/privileges.php", ['server' => $SERVER]));
+		$this->assertTrue($this->get("$webUrl/privileges.php", [
 			            'server' => $SERVER,
 						'subject' => 'tablespace',
-						'tablespace' => $this->_tableSpaceName))
+						'tablespace' => $this->_tableSpaceName])
 		);
        
         // Grant whit no privilege selected.
         $this->assertTrue($this->clickLink($lang['strgrant']));
-        $this->assertTrue($this->setField('username[]', array($NORMAL_USER_NAME)));
+        $this->assertTrue($this->setField('username[]', [$NORMAL_USER_NAME]));
 
         // Then submit and verify it.
         $this->assertTrue($this->clickSubmit($lang['strgrant']));
@@ -207,11 +207,11 @@ class TableSpacesTest extends PreconditionSet
         global $lang, $SERVER;
         
         // Turn to the privileges page.
-        $this->assertTrue($this->get("$webUrl/privileges.php", array('server' => $SERVER)));
-		$this->assertTrue($this->get("$webUrl/privileges.php", array(
+        $this->assertTrue($this->get("$webUrl/privileges.php", ['server' => $SERVER]));
+		$this->assertTrue($this->get("$webUrl/privileges.php", [
 			            'server' => $SERVER,
 						'subject' => 'tablespace',
-						'tablespace' => $this->_tableSpaceName))
+						'tablespace' => $this->_tableSpaceName])
 		);
        
         // Revoke whit no users selected.
@@ -235,11 +235,11 @@ class TableSpacesTest extends PreconditionSet
         global $lang, $SERVER;
         
         // Turn to the drop user page.
-        $this->assertTrue($this->get("$webUrl/tablespaces.php", array('server' => $SERVER)));
-		$this->assertTrue($this->get("$webUrl/tablespaces.php", array(
+        $this->assertTrue($this->get("$webUrl/tablespaces.php", ['server' => $SERVER]));
+		$this->assertTrue($this->get("$webUrl/tablespaces.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_drop',
-						'tablespace' => $this->_tableSpaceName))
+						'tablespace' => $this->_tableSpaceName])
 		);
 
         // Confirm to drop the user and verify it.

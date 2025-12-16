@@ -8,7 +8,7 @@
 	
 	// List of language files, and encoded language name.
 	
-	$appLangFiles = array(
+	$appLangFiles = [
 		'afrikaans' => 'Afrikaans',
 		'arabic' => '&#1593;&#1585;&#1576;&#1610;',
 		'catalan' => 'Catal&#224;',
@@ -38,7 +38,7 @@
 		'spanish' => 'Espa&ntilde;ol',
 		'turkish' => 'T&uuml;rk&ccedil;e',
 		'ukrainian' => '&#1059;&#1082;&#1088;&#1072;&#1111;&#1085;&#1089;&#1100;&#1082;&#1072;'
-	);
+	];
 	
 	
 	// ISO639 language code to language file mapping.
@@ -48,7 +48,7 @@
 	// 'language' translation (eg. 'portuguese-br', but not 'portuguese')
 	// specify both 'la' => 'language-country' and 'la-co' => 'language-country'.
 	
-	$availableLanguages = array(
+	$availableLanguages = [
 		'af' => 'afrikaans',
 		'ar' => 'arabic',
 		'ca' => 'catalan',
@@ -78,5 +78,5 @@
 		'es' => 'spanish',
 		'tr' => 'turkish',
 		'uk' => 'ukrainian'
-	);
+	];
 

@@ -55,11 +55,11 @@ class AggregateTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
 
         // Turn to "sql" page.
-		$this->assertTrue($this->get("$webUrl/database.php", array(
+		$this->assertTrue($this->get("$webUrl/database.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'subject' => 'database',
-						'action' => 'sql'))
+						'action' => 'sql'])
 					);
         // Enter the definition of the new aggregate.
         $this->assertTrue($this->setField('query', 'CREATE AGGREGATE ' .
@@ -85,11 +85,11 @@ class AggregateTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to "Aggregates" page.
-		$this->assertTrue($this->get("$webUrl/aggregates.php", array(
+		$this->assertTrue($this->get("$webUrl/aggregates.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'subject' => 'schema')
+						'subject' => 'schema']
 					));
 
         // Verify whether the aggregates is displayed correctly.
@@ -106,11 +106,11 @@ class AggregateTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to "sql" page.
-		$this->assertTrue($this->get("$webUrl/database.php", array(
+		$this->assertTrue($this->get("$webUrl/database.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'subject' => 'database',
-						'action' => 'sql'))
+						'action' => 'sql'])
 					);
 
         $this->assertTrue($this->setField('query', 'DROP AGGREGATE' .

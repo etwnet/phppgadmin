@@ -483,7 +483,7 @@ class Postgres extends AbstractConnection
 	 *        mapped to sort direction (asc or desc or '' or null) to order by
 	 * @return string The SQL query
 	 */
-	function getSelectSQL($table, $show, $values, $ops, $orderby = array())
+	function getSelectSQL($table, $show, $values, $ops, $orderby = [])
 	{
 		$this->fieldArrayClean($show);
 
@@ -701,10 +701,14 @@ class Postgres extends AbstractConnection
 		return true;
 	}
 
+	/*
+	 * moved to TypeActions...
+	 *
 	function hasEnumTypes()
 	{
 		return true;
 	}
+	*/
 
 	function hasFTS()
 	{

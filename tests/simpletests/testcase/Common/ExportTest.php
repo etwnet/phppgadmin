@@ -48,9 +48,9 @@ class ExportTest extends PreconditionSet
         global $webUrl, $lang, $SERVER, $DATABASE;
         
         // Turn to the export data page.
-		$this->assertTrue($this->get("$webUrl/all_db.php", array(
+		$this->assertTrue($this->get("$webUrl/all_db.php", [
 			'action' => 'export',
-			'server' => $SERVER))
+			'server' => $SERVER])
 		);
        
         // Enter information for exporting the data.
@@ -75,9 +75,9 @@ class ExportTest extends PreconditionSet
         global $webUrl, $lang, $SERVER, $DATABASE;
         
         // Turn to the export data page.
-		$this->assertTrue($this->get("$webUrl/all_db.php", array(
+		$this->assertTrue($this->get("$webUrl/all_db.php", [
 			'action' => 'export',
-			'server' => $SERVER))
+			'server' => $SERVER])
 		);
        
         // Enter information for exporting the data.
@@ -101,11 +101,11 @@ class ExportTest extends PreconditionSet
         global $webUrl, $lang, $SERVER, $DATABASE;
         
         // Turn to the export data page.
-		$this->assertTrue($this->get("$webUrl/database.php", array(
+		$this->assertTrue($this->get("$webUrl/database.php", [
 			'server' => $SERVER,
 			'database' => $DATABASE,
 			'subject' => 'database',
-			'action' => 'export'))
+			'action' => 'export'])
 		);
        
         // Enter information for exporting the data.
@@ -130,11 +130,11 @@ class ExportTest extends PreconditionSet
         global $webUrl, $lang, $SERVER, $DATABASE;
         
         // Turn to the export data page.
-		$this->assertTrue($this->get("$webUrl/database.php", array(
+		$this->assertTrue($this->get("$webUrl/database.php", [
 			'server' => $SERVER,
 			'database' => $DATABASE,
 			'subject' => 'database',
-			'action' => 'export'))
+			'action' => 'export'])
 		);
        
         // Enter information for exporting the data.
@@ -161,12 +161,12 @@ class ExportTest extends PreconditionSet
         global $webUrl, $lang, $SERVER, $DATABASE;
         
         // Turn to the "Insert row" interface.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			'server' => $SERVER,
 			'action' => 'confinsertrow',
 			'database' => $DATABASE,
 			'schema' => 'public',
-			'table' => 'student'))
+			'table' => 'student'])
 		);
         // Set the value of the fields.		
         $this->assertTrue($this->setField('values[name]', 'testname'));
@@ -180,13 +180,13 @@ class ExportTest extends PreconditionSet
         $this->assertTrue($this->assertWantedText($lang['strrowinserted']));
         
         // Turn to the export data page.
-		$this->assertTrue($this->get("$webUrl/tblproperties.php", array(
+		$this->assertTrue($this->get("$webUrl/tblproperties.php", [
 			'server' => $SERVER,
 			'database' => $DATABASE,
 			'schema' => 'public',
 			'table' => 'student',
 			'subject' => 'table',
-			'action' => 'export'))
+			'action' => 'export'])
 		);
         // Enter information for export the data.
         $this->assertTrue($this->setField('what', 'dataonly'));
@@ -199,13 +199,13 @@ class ExportTest extends PreconditionSet
         
         
         // Turn to the export data page.
-		$this->assertTrue($this->get("$webUrl/tblproperties.php", array(
+		$this->assertTrue($this->get("$webUrl/tblproperties.php", [
 			'server' => $SERVER,
 			'database' => $DATABASE,
 			'schema' => 'public',
 			'table' => 'student',
 			'subject' => 'table',
-			'action' => 'export'))
+			'action' => 'export'])
 		);
        
         // Enter information for exporting the data.
@@ -218,12 +218,12 @@ class ExportTest extends PreconditionSet
         $this->assertWantedPattern('/testname/');
         
         // Empty the data in the table.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			'server' => $SERVER,
 			'action' => 'confirm_empty',
 			'database' => $DATABASE,
 			'schema' => 'public',
-			'table' => 'student'))
+			'table' => 'student'])
 		);
         $this->assertTrue($this->clickSubmit($lang['strempty']));
 
@@ -240,13 +240,13 @@ class ExportTest extends PreconditionSet
         global $webUrl, $lang, $SERVER, $DATABASE;
         
         // Turn to the export data page.
-		$this->assertTrue($this->get("$webUrl/tblproperties.php", array(
+		$this->assertTrue($this->get("$webUrl/tblproperties.php", [
 			'server' => $SERVER,
 			'database' => $DATABASE,
 			'schema' => 'public',
 			'table' => 'student',
 			'subject' => 'table',
-			'action' => 'export'))
+			'action' => 'export'])
 		);
        
         // Enter information for exporting the data.
@@ -270,13 +270,13 @@ class ExportTest extends PreconditionSet
         global $webUrl, $lang, $SERVER, $DATABASE;
         
         // Turn to the export data page.
-		$this->assertTrue($this->get("$webUrl/viewproperties.php", array(
+		$this->assertTrue($this->get("$webUrl/viewproperties.php", [
 			'server' => $SERVER,
 			'database' => $DATABASE,
 			'schema' => 'pg_catalog',
 			'view' => 'pg_user',
 			'subject' => 'view',
-			'action' => 'export'))
+			'action' => 'export'])
 		);
        
         // Enter information for exporting the data.

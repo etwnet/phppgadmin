@@ -449,7 +449,7 @@ EOT;
 	 *
 	 * @return The HTML rendered value
 	 */
-	function printVal($str, $type = null, $params = array())
+	function printVal($str, $type = null, $params = [])
 	{
 		$lang = $this->lang();
 		$conf = $this->conf();

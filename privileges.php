@@ -25,9 +25,9 @@ use PhpPgAdmin\Core\AppContainer;
 $misc = AppContainer::getMisc();
 		$lang = AppContainer::getLang();
 
-		if (!isset($_REQUEST['username'])) $_REQUEST['username'] = array();
-		if (!isset($_REQUEST['groupname'])) $_REQUEST['groupname'] = array();
-		if (!isset($_REQUEST['privilege'])) $_REQUEST['privilege'] = array();
+		if (!isset($_REQUEST['username'])) $_REQUEST['username'] = [];
+		if (!isset($_REQUEST['groupname'])) $_REQUEST['groupname'] = [];
+		if (!isset($_REQUEST['privilege'])) $_REQUEST['privilege'] = [];
 	
 		if ($confirm) {
 			// Get users from the database
@@ -261,7 +261,7 @@ $misc = AppContainer::getMisc();
 		
 		if ($_REQUEST['subject'] == 'function') {
 			$objectoid = $_REQUEST[$_REQUEST['subject'].'_oid'];
-			$urlvars = array (
+			$urlvars = [
 				'action' => 'alter',
 				'server' => $_REQUEST['server'],
 				'database' => $_REQUEST['database'],
@@ -269,17 +269,17 @@ $misc = AppContainer::getMisc();
 				$subject => $object,
 				"{$subject}_oid" => $objectoid,
 				'subject'=> $subject
-			);
+			];
 		}
 		else if ($_REQUEST['subject'] == 'column') {
-			$urlvars = array (
+			$urlvars = [
 				'action' => 'alter',
 				'server' => $_REQUEST['server'],
 				'database' => $_REQUEST['database'],
 				'schema' => $_REQUEST['schema'],
 				$subject => $object,
 				'subject'=> $subject
-			);
+			];
 
 			if (isset($_REQUEST['table']))
 				$urlvars['table'] = $_REQUEST['table'];
@@ -287,52 +287,52 @@ $misc = AppContainer::getMisc();
 				$urlvars['view'] = $_REQUEST['view'];
 		}
 		else {
-			$urlvars = array (
+			$urlvars = [
 				'action' => 'alter',
 				'server' => $_REQUEST['server'],
 				'database' => $_REQUEST['database'],
 				$subject => $object,
 				'subject'=> $subject
-			);
+			];
 			if (isset($_REQUEST['schema'])) {
 				$urlvars['schema'] = $_REQUEST['schema'];
 			}
 		}
 
-		$navlinks = array (
-			'grant' => array (
-				'attr'=> array (
-					'href' => array (
+		$navlinks = [
+			'grant' => [
+				'attr'=> [
+					'href' => [
 						'url' => 'privileges.php',
-						'urlvars' => array_merge($urlvars, array('mode' => 'grant'))
-					)
-				),
+						'urlvars' => array_merge($urlvars, ['mode' => 'grant'])
+					]
+				],
 				'content' => $lang['strgrant']
-			),
-			'revoke' => array (
-				'attr'=> array (
-					'href' => array (
+			],
+			'revoke' => [
+				'attr'=> [
+					'href' => [
 						'url' => 'privileges.php',
-						'urlvars' => array_merge($urlvars, array('mode' => 'revoke'))
-					)
-				),
+						'urlvars' => array_merge($urlvars, ['mode' => 'revoke'])
+					]
+				],
 				'content' => $lang['strrevoke']
-			)
-		);
+			]
+		];
 
 		if (isset($allurl)) {
-			$navlinks[$alllabel] = array (
-				'attr'=> array (
-					'href' => array (
+			$navlinks[$alllabel] = [
+				'attr'=> [
+					'href' => [
 						'url' => $allurl,
-						'urlvars' => array (
+						'urlvars' => [
 							'server' => $_REQUEST['server'],
 							'database' => $_REQUEST['database']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $alltxt
-			);
+			];
 			if (isset($_REQUEST['schema'])) {
 				$navlinks[$alllabel]['attr']['href']['urlvars']['schema'] = $_REQUEST['schema'];
 			}

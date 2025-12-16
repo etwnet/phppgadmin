@@ -134,7 +134,8 @@
 			return;
 		}
 
-		if (target.target == "_blank") {
+		const url = new URL(target.href, window.location.origin);
+		if (target.target || url.host !== window.location.host) {
 			// Ignore external links
 			return;
 		}

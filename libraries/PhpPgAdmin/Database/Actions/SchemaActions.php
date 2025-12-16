@@ -75,7 +75,7 @@ class SchemaActions extends AbstractActions
             $paths[0] = 'pg_catalog';
         }
 
-        $temp = array();
+        $temp = [];
         foreach ($paths as $schema) {
             if ($schema != '') {
                 $temp[] = $schema;

@@ -269,57 +269,57 @@ function doProperties($msg = '')
 		echo "</table>\n";
 	} else echo "<p>{$lang['strnodata']}</p>\n";
 
-	$navlinks = array(
-		'showall' => array(
-			'attr' => array(
-				'href' => array(
+	$navlinks = [
+		'showall' => [
+			'attr' => [
+				'href' => [
 					'url' => 'aggregates.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema']
-					)
-				)
-			),
+					]
+				]
+			],
 			'content' => $lang['straggrshowall']
-		)
-	);
+		]
+	];
 
 	if ($data->hasAlterAggregate()) {
-		$navlinks['alter'] = array(
-			'attr' => array(
-				'href' => array(
+		$navlinks['alter'] = [
+			'attr' => [
+				'href' => [
 					'url' => 'aggregates.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'alter',
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema'],
 						'aggrname' => $_REQUEST['aggrname'],
 						'aggrtype' => $_REQUEST['aggrtype']
-					)
-				)
-			),
+					]
+				]
+			],
 			'content' => $lang['stralter']
-		);
+		];
 	}
 
-	$navlinks['drop'] = array(
-		'attr' => array(
-			'href' => array(
+	$navlinks['drop'] = [
+		'attr' => [
+			'href' => [
 				'url' => 'aggregates.php',
-				'urlvars' => array(
+				'urlvars' => [
 					'action' => 'confirm_drop',
 					'server' => $_REQUEST['server'],
 					'database' => $_REQUEST['database'],
 					'schema' => $_REQUEST['schema'],
 					'aggrname' => $_REQUEST['aggrname'],
 					'aggrtype' => $_REQUEST['aggrtype']
-				)
-			)
-		),
+				]
+			]
+		],
 		'content' => $lang['strdrop']
-	);
+	];
 
 	$misc->printNavLinks($navlinks, 'aggregates-properties', get_defined_vars());
 }
@@ -341,84 +341,84 @@ function doDefault($msg = '')
 
 	$aggregates = $data->getAggregates();
 
-	$columns = array(
-		'aggrname' => array(
+	$columns = [
+		'aggrname' => [
 			'title' => $lang['strname'],
 			'field' => field('proname'),
 			'url'   => "redirect.php?subject=aggregate&amp;action=properties&amp;{$misc->href}&amp;",
-			'vars'  => array('aggrname' => 'proname', 'aggrtype' => 'proargtypes'),
-		),
-		'aggrtype' => array(
+			'vars'  => ['aggrname' => 'proname', 'aggrtype' => 'proargtypes'],
+		],
+		'aggrtype' => [
 			'title' => $lang['strtype'],
 			'field' => field('proargtypes'),
-		),
-		'aggrtransfn' => array(
+		],
+		'aggrtransfn' => [
 			'title' => $lang['straggrsfunc'],
 			'field' => field('aggtransfn'),
-		),
-		'owner' => array(
+		],
+		'owner' => [
 			'title' => $lang['strowner'],
 			'field' => field('usename'),
-		),
-		'actions' => array(
+		],
+		'actions' => [
 			'title' => $lang['stractions'],
-		),
-		'comment' => array(
+		],
+		'comment' => [
 			'title' => $lang['strcomment'],
 			'field' => field('aggrcomment'),
-		),
-	);
+		],
+	];
 
-	$actions = array(
-		'alter' => array(
+	$actions = [
+		'alter' => [
 			'icon' => $misc->icon('Edit'),
 			'content' => $lang['stralter'],
-			'attr' => array(
-				'href' => array(
+			'attr' => [
+				'href' => [
 					'url' => 'aggregates.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'alter',
 						'aggrname' => field('proname'),
 						'aggrtype' => field('proargtypes')
-					)
-				)
-			)
-		),
-		'drop' => array(
+					]
+				]
+			]
+		],
+		'drop' => [
 			'icon' => $misc->icon('Delete'),
 			'content' => $lang['strdrop'],
-			'attr' => array(
-				'href' => array(
+			'attr' => [
+				'href' => [
 					'url' => 'aggregates.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'confirm_drop',
 						'aggrname' => field('proname'),
 						'aggrtype' => field('proargtypes')
-					)
-				)
-			)
-		)
-	);
+					]
+				]
+			]
+		]
+	];
 
 	if (!$data->hasAlterAggregate()) unset($actions['alter']);
 	$misc->printTable($aggregates, $columns, $actions, 'aggregates-aggregates', $lang['strnoaggregates']);
 
-	$navlinks = array(
-		'create' => array(
-			'attr' => array(
-				'href' => array(
+	$navlinks = [
+		'create' => [
+			'attr' => [
+				'href' => [
 					'url' => 'aggregates.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'create',
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema'],
-					)
-				)
-			),
+					]
+				]
+			],
 			'content' => $lang['strcreateaggregate']
-		)
-	);
+		]
+	];
 	$misc->printNavLinks($navlinks, 'aggregates-aggregates', get_defined_vars());
 }
 
@@ -435,20 +435,20 @@ function doTree()
 	$proto = concat(field('proname'), ' (', field('proargtypes'), ')');
 	$reqvars = $misc->getRequestVars('aggregate');
 
-	$attrs = array(
+	$attrs = [
 		'text'    => $proto,
 		'icon'    => 'Aggregate',
 		'toolTip' => field('aggcomment'),
 		'action'  => url(
 			'redirect.php',
 			$reqvars,
-			array(
+			[
 				'action' => 'properties',
 				'aggrname' => field('proname'),
 				'aggrtype' => field('proargtypes')
-			)
+			]
 		)
-	);
+	];
 
 	$misc->printTree($aggregates, $attrs, 'aggregates');
 	exit;

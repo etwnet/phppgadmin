@@ -642,12 +642,20 @@
 	$lang['strconfdroptype'] = 'Are you sure you want to drop the type "%s"?';
 	$lang['strtypedropped'] = 'Type dropped.';
 	$lang['strtypedroppedbad'] = 'Type drop failed.';
+	$lang['strtypealtered'] = 'Type altered.';
+	$lang['strtyperenamedbad'] = 'Type rename failed.';
+	$lang['strtypeownerbad'] = 'Type owner change failed.';
 	$lang['strflavor'] = 'Flavor';
 	$lang['strbasetype'] = 'Base';
 	$lang['strcompositetype'] = 'Composite';
 	$lang['strpseudotype'] = 'Pseudo';
 	$lang['strenum'] = 'Enum';
 	$lang['strenumvalues'] = 'Enum values';
+	$lang['straddenumvalue'] = 'Add enum value';
+	$lang['strrenamevalue'] = 'Rename to';
+	$lang['strenumvaluerenamedbad'] = 'Enum value rename "{old}" to "{new}" failed.';
+	$lang['strenumvalueaddedbad'] = 'Adding enum value "{new}" failed.';
+	$lang['strnewname'] = 'New name';
 
 	// Schemas
 	$lang['strschema'] = 'Schema';

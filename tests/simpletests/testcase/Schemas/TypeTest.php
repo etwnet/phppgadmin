@@ -57,11 +57,11 @@ class TypeTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to "Types" page.
-		$this->assertTrue($this->get("$webUrl/types.php", array(
+		$this->assertTrue($this->get("$webUrl/types.php", [
 			'server' => $SERVER,
 			'database' => $DATABASE,
 			'schema' => 'public',
-			'subject' => 'schema'))
+			'subject' => 'schema'])
 		);
         $this->assertTrue($this->clickLink($lang['strcreatetype']));
         
@@ -88,11 +88,11 @@ class TypeTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to "Types" page.
-		$this->assertTrue($this->get("$webUrl/types.php", array(
+		$this->assertTrue($this->get("$webUrl/types.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'subject' => 'schema'))
+						'subject' => 'schema'])
 					);
         $this->assertTrue($this->clickLink($lang['strcreatecomptype']));
 
@@ -146,11 +146,11 @@ class TypeTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to "Types" page.
-		$this->assertTrue($this->get("$webUrl/types.php", array(
+		$this->assertTrue($this->get("$webUrl/types.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'pg_catalog',
-						'subject' => 'schema'))
+						'subject' => 'schema'])
 					);
                 
         // Show the properties of general type.
@@ -160,11 +160,11 @@ class TypeTest extends PreconditionSet
         
         
         // Turn to "Types" page.
-		$this->assertTrue($this->get("$webUrl/types.php", array(
+		$this->assertTrue($this->get("$webUrl/types.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'subject' => 'schema'))
+						'subject' => 'schema'])
 					);
                 
         // Show the properties of a composite type "compositetype".
@@ -186,12 +186,12 @@ class TypeTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to type-dropped confirm page.
-		$this->assertTrue($this->get("$webUrl/types.php", array(
+		$this->assertTrue($this->get("$webUrl/types.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_drop',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'type' => 'compositetype'))
+						'type' => 'compositetype'])
 					);
                 
         $this->assertTrue($this->setField('cascade', TRUE));        

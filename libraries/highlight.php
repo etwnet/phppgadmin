@@ -67,16 +67,16 @@ function sch_syntax_helper($text)
 
 function syntax_highlight_helper($text, $language)
 {
-    $preproc = array();
-    $preproc["C++"] = array(
+    $preproc = [];
+    $preproc["C++"] = [
     "if",    "ifdef",   "ifndef", "elif",  "else",
     "endif", "include", "define", "undef", "line",
-    "error", "pragma");
+    "error", "pragma"];
     $preproc["C89"] = & $preproc["C++"];
     $preproc["C"] = & $preproc["C89"];
 
-    $keywords = array(
-    "C++" => array(
+    $keywords = [
+    "C++" => [
     "asm",          "auto",      "bool",     "break",            "case",
     "catch",        "char",      /*class*/   "const",            "const_cast",
     "continue",     "default",   "delete",   "do",               "double",
@@ -89,27 +89,27 @@ function syntax_highlight_helper($text, $language)
     "struct",       "switch",    "template", "this",             "throw", 
     "true",         "try",       "typedef",  "typeid",           "typename",
     "union",        "unsigned",  "using",    "virtual",          "void",
-    "volatile",     "wchar_t",   "while"),
+    "volatile",     "wchar_t",   "while"],
 
-    "C89" => array(
+    "C89" => [
     "auto",     "break",    "case",     "char",     "const",
     "continue", "default",  "do",       "double",   "else",
     "enum",     "extern",   "float",    "for",      "goto",
     "if",       "int",      "long",     "register", "return",
     "short",    "signed",   "sizeof",   "static",   "struct",
     "switch",   "typedef",  "union",    "unsigned", "void",
-    "volatile", "while"),
+    "volatile", "while"],
 
-    "C" => array(
+    "C" => [
     "auto",     "break",    "case",     "char",     "const",
     "continue", "default",  "do",       "double",   "else",
     "enum",     "extern",   "float",    "for",      "goto",
     "if",       "int",      "long",     "register", "return",
     "short",    "signed",   "sizeof",   "static",   "struct",
     "switch",   "typedef",  "union",    "unsigned", "void",
-    "volatile", "while",    "__restrict","_Bool"),
+    "volatile", "while",    "__restrict","_Bool"],
 
-    "PHP" => array(
+    "PHP" => [
     "and",          "or",           "xor",      "__FILE__",     "__LINE__",
     "array",        "as",           "break",    "case",         "cfunction",
     /*class*/       "const",        "continue", "declare",      "default",
@@ -120,9 +120,9 @@ function syntax_highlight_helper($text, $language)
     "include",      "include_once", "isset",    "list",         "new",
     "old_function", "print",        "require",  "require_once", "return",
     "static",       "switch",       "unset",    "use",          "var",
-    "while",        "__FUNCTION__", "__CLASS__"),
+    "while",        "__FUNCTION__", "__CLASS__"],
 
-    "Perl" => array(
+    "Perl" => [
     "-A",           "-B",           "-C",       "-M",           "-O",
     "-R",           "-S",           "-T",       "-W",           "-X",
     "-b",           "-c",           "-d",       "-e",           "-f",
@@ -174,9 +174,9 @@ function syntax_highlight_helper($text, $language)
     "untie",        "until",        "use",      "utime",        "values",
     "vec",          "wait",         "waitpid",  "wantarray",    "warn", 
     "while",        "write",        "y",        "or",           "and",
-    "not"),
+    "not"],
 
-    "Java" => array(
+    "Java" => [
     "abstract",     "boolean",      "break",    "byte",         "case",
     "catch",        "char",         /*class*/   "const",        "continue",
     "default",      "do",           "double",   "else",         "extends",
@@ -186,9 +186,9 @@ function syntax_highlight_helper($text, $language)
     "private",      "protected",    "public",   "return",       "short",
     "static",       "strictfp",     "super",    "switch",       "synchronized",
     "this",         "throw",        "throws",   "transient",    "try",
-    "void",         "volatile",     "while"),
+    "void",         "volatile",     "while"],
 
-    "VB" => array(
+    "VB" => [
     "AddressOf",    "Alias",        "And",      "Any",          "As",
     "Binary",       "Boolean",      "ByRef",    "Byte",         "ByVal",
     "Call",         "Case",         "CBool",    "CByte",        "CCur",
@@ -216,9 +216,9 @@ function syntax_highlight_helper($text, $language)
     "Step",         "Stop",         "String",   "Sub",          "Tab",
     "Then",         "To",           "Type",     "UBound",       "Unlock",
     "Variant",      "Wend",         "While",    "With",         "WithEvents",
-    "Write",        "Xor"),
+    "Write",        "Xor"],
 
-    "C#" => array(
+    "C#" => [
     "abstract",     "as",           "base",     "bool",         "break",
     "byte",         "case",         "catch",    "char",         "checked",
     /*class*/       "const",        "continue", "decimal",      "default",
@@ -234,9 +234,9 @@ function syntax_highlight_helper($text, $language)
     "struct",       "switch",       "this",     "throw",        "true",
     "try",          "typeof",       "uint",     "ulong",        "unchecked",
     "unsafe",       "ushort",       "using",    "virtual",      "volatile",
-    "void",         "while"),
+    "void",         "while"],
     
-    "Ruby" => array(
+    "Ruby" => [
     "alias",        "and",          "begin",    "break",        "case",
     /*class*/       "def",          "defined",  "do",           "else",
     "elsif",        "end",          "ensure",   "false",        "for",
@@ -244,17 +244,17 @@ function syntax_highlight_helper($text, $language)
     "next",         "nil",          "not",      "or",           "redo",
     "rescue",       "retry",        "return",   "self",         "super",
     "then",         "true",         "undef",    "unless",       "until",
-    "when",         "while",        "yield"),
+    "when",         "while",        "yield"],
 
-    "Python" => array(
+    "Python" => [
     "and",          "assert",       "break",    /*"class",*/    "continue",
     "def",          "del",          "elif",     "else",         "except",
     "exec",         "finally",      "for",      "from",         "global",
     "if",           "import",       "in",       "is",           "lambda",
     "not",          "or",           "pass",     "print",        "raise",
-    "return",       "try",          "while",    "yield"),
+    "return",       "try",          "while",    "yield"],
 
-    "Pascal" => array(
+    "Pascal" => [
     "Absolute",     "Abstract",     "All",      "And",          "And_then",
     "Array",        "Asm",          "Begin",    "Bindable",     "Case",
     /*"Class",*/    "Const",        "Constructor","Destructor", "Div",
@@ -268,12 +268,12 @@ function syntax_highlight_helper($text, $language)
     "Qualified",    "Record",       "Repeat",   "Restricted",   "Set",
     "Shl",          "Shr",          "Then",     "To",           "Type",
     "Unit",         "Until",        "Uses",     "Value",        "Var",
-    "View",         "Virtual",      "While",    "With",         "Xor"),
+    "View",         "Virtual",      "While",    "With",         "Xor"],
 
-    "mIRC" => array(
-        ),
+    "mIRC" => [
+	 ],
 
-    "PL/I" => array(
+    "PL/I" => [
     "A",            "ABS",            "ACOS",        "%ACTIVATE",    "ACTUALCOUNT", 
     "ADD",            "ADDR",            "ADDREL",    "ALIGNED",        "ALLOCATE", 
     "ALLOC",        "ALLOCATION",    "ALLOCN",    "ANY",            "ANYCONDITION", 
@@ -356,9 +356,9 @@ function syntax_highlight_helper($text, $language)
     "VARIANT",        "VARYING",        "VAR",        "VAXCONDITION",    "VERIFY",
     "WAIT_FOR_RECORD",                "%WARN",    "WARN",            "WHEN",    
     "WHILE",        "WORLD_PROTECTION",            "WRITE",        "WRITE_BEHIND",
-    "WRITE_CHECK",    "X",            "ZERODIVIDE"),
+    "WRITE_CHECK",    "X",            "ZERODIVIDE"],
 
-    "SQL" => array(
+    "SQL" => [
     "abort", "abs", "absolute", "access",
     "action", "ada", "add", "admin",
     "after", "aggregate", "alias", "all",
@@ -491,16 +491,16 @@ function syntax_highlight_helper($text, $language)
     "varchar", "variable", "varying", "verbose",
     "version", "view", "volatile", "when",
     "whenever", "where", "with", "without",
-    "work", "write", "year", "zone")
+    "work", "write", "year", "zone"]
 
-    );
+	 ];
 
-    $case_insensitive = array(
+    $case_insensitive = [
         "VB" => true,
         "Pascal" => true,
         "PL/I"   => true,
         "SQL"    => true
-    );
+	 ];
     $ncs = false;
     if (array_key_exists($language, $case_insensitive))
         $ncs = true;
@@ -849,7 +849,7 @@ function syntax_highlight($text, $language)
     //
     // Main state transition table
     //
-    $states = array(
+    $states = [
         "C89"   => $c89,
         "C" => $c99,
         "C++" => $cpp,
@@ -866,7 +866,7 @@ function syntax_highlight($text, $language)
         "SQL"  => $sql,
         "XML"  => $xml,
         "Scheme" => $sch
-    );
+	 ];
 
 
     //

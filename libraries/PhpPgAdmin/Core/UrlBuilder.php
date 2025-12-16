@@ -37,94 +37,94 @@ class UrlBuilder extends AbstractContext
     public function getSubjectParams($subject)
     {
         $plugin_manager = $this->pluginManager();
-        $vars = array();
+        $vars = [];
 
         switch ($subject) {
             case 'root':
-                $vars = array('params' => array('subject' => 'root'));
+                $vars = ['params' => ['subject' => 'root']];
                 break;
             case 'server':
-                $vars = array('params' => array(
+                $vars = ['params' => [
                     'server' => $_REQUEST['server'],
                     'subject' => 'server'
-                ));
+				]];
                 break;
             case 'role':
-                $vars = array('params' => array(
+                $vars = ['params' => [
                     'server' => $_REQUEST['server'],
                     'subject' => 'role',
                     'action' => 'properties',
                     'rolename' => $_REQUEST['rolename']
-                ));
+				]];
                 break;
             case 'database':
-                $vars = array('params' => array(
+                $vars = ['params' => [
                     'server' => $_REQUEST['server'],
                     'subject' => 'database',
                     'database' => $_REQUEST['database'],
-                ));
+				]];
                 break;
             case 'schema':
-                $vars = array('params' => array(
+                $vars = ['params' => [
                     'server' => $_REQUEST['server'],
                     'subject' => 'schema',
                     'database' => $_REQUEST['database'],
                     'schema' => $_REQUEST['schema']
-                ));
+				]];
                 break;
             case 'table':
-                $vars = array('params' => array(
+                $vars = ['params' => [
                     'server' => $_REQUEST['server'],
                     'subject' => 'table',
                     'database' => $_REQUEST['database'],
                     'schema' => $_REQUEST['schema'],
                     'table' => $_REQUEST['table']
-                ));
+				]];
                 break;
             case 'selectrows':
-                $vars = array(
+                $vars = [
                     'url' => 'tables.php',
-                    'params' => array(
+                    'params' => [
                         'server' => $_REQUEST['server'],
                         'subject' => 'table',
                         'database' => $_REQUEST['database'],
                         'schema' => $_REQUEST['schema'],
                         'table' => $_REQUEST['table'],
                         'action' => 'confselectrows'
-                    ));
+					]];
                 break;
             case 'view':
-                $vars = array('params' => array(
+                $vars = ['params' => [
                     'server' => $_REQUEST['server'],
                     'subject' => 'view',
                     'database' => $_REQUEST['database'],
                     'schema' => $_REQUEST['schema'],
                     'view' => $_REQUEST['view']
-                ));
+				]];
                 break;
             case 'fulltext':
             case 'ftscfg':
-                $vars = array('params' => array(
+                $vars = ['params' => [
                     'server' => $_REQUEST['server'],
                     'subject' => 'fulltext',
                     'database' => $_REQUEST['database'],
                     'schema' => $_REQUEST['schema'],
                     'action' => 'viewconfig',
                     'ftscfg' => $_REQUEST['ftscfg']
-                ));
+				]];
                 break;
             case 'function':
-                $vars = array('params' => array(
+                $vars = ['params' => [
                     'server' => $_REQUEST['server'],
                     'subject' => 'function',
                     'database' => $_REQUEST['database'],
                     'schema' => $_REQUEST['schema'],
                     'function' => $_REQUEST['function'],
                     'function_oid' => $_REQUEST['function_oid']
-                ));
+				]];
                 break;
             case 'aggregate':
-                $vars = array('params' => array(
+                $vars = ['params' => [
                     'server' => $_REQUEST['server'],
                     'subject' => 'aggregate',
                     'action' => 'properties',
@@ -132,36 +132,36 @@ class UrlBuilder extends AbstractContext
                     'schema' => $_REQUEST['schema'],
                     'aggrname' => $_REQUEST['aggrname'],
                     'aggrtype' => $_REQUEST['aggrtype']
-                ));
+				]];
                 break;
             case 'column':
                 if (isset($_REQUEST['table']))
-                    $vars = array('params' => array(
+                    $vars = ['params' => [
                         'server' => $_REQUEST['server'],
                         'subject' => 'column',
                         'database' => $_REQUEST['database'],
                         'schema' => $_REQUEST['schema'],
                         'table' => $_REQUEST['table'],
                         'column' => $_REQUEST['column']
-                    ));
+					]];
                 else
-                    $vars = array('params' => array(
+                    $vars = ['params' => [
                         'server' => $_REQUEST['server'],
                         'subject' => 'column',
                         'database' => $_REQUEST['database'],
                         'schema' => $_REQUEST['schema'],
                         'view' => $_REQUEST['view'],
                         'column' => $_REQUEST['column']
-                    ));
+					]];
                 break;
             case 'plugin':
-                $vars = array(
+                $vars = [
                     'url' => 'plugin.php',
-                    'params' => array(
+                    'params' => [
                         'server' => $_REQUEST['server'],
                         'subject' => 'plugin',
                         'plugin' => $_REQUEST['plugin'],
-                    ));
+					]];
 
                 if ($plugin_manager && !is_null($plugin_manager->getPlugin($_REQUEST['plugin']))) {
                     $vars['params'] = array_merge($vars['params'], $plugin_manager->getPlugin($_REQUEST['plugin'])->get_subject_params());
@@ -200,7 +200,7 @@ class UrlBuilder extends AbstractContext
 		if (!empty($action['urlvars'])) {
 			$urlvars = value($action['urlvars'], $fields);
 		} else {
-			$urlvars = array();
+			$urlvars = [];
 		}
 
 		/* set server, database and schema parameter if not presents */
@@ -242,7 +242,7 @@ class UrlBuilder extends AbstractContext
 	 * @return array
 	 */
 	function getRequestVars($subject = '') {
-		$v = array();
+		$v = [];
 		if (!empty($subject))
 			$v['subject'] = $subject;
 		if (isset($_REQUEST['server']) && $subject != 'root') {

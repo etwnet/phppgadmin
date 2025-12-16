@@ -57,11 +57,11 @@ class FunctionTest extends PreconditionSet
         global $lang, $DATABASE, $SERVER;
 
         // Turn to the "Create SQL/PL function" page.
-		$this->assertTrue($this->get("$webUrl/functions.php", array(
+		$this->assertTrue($this->get("$webUrl/functions.php", [
 			            'server' => $SERVER,
 						'action' => 'create',
 						'database' => $DATABASE,
-						'schema' => 'public'))
+						'schema' => 'public'])
 					);
           
         // Enter the detail information of a SQL/PL function.
@@ -95,12 +95,12 @@ class FunctionTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the "Create internal function" page.
-		$this->assertTrue($this->get("$webUrl/functions.php", array(
+		$this->assertTrue($this->get("$webUrl/functions.php", [
 			            'server' => $SERVER,
 						'action' => 'create',
 						'language' => 'internal',
 						'database' => $DATABASE,
-						'schema' => 'public'))
+						'schema' => 'public'])
 					);
                 
         // Enter the detail information of a SQL/PL function.
@@ -132,10 +132,10 @@ class FunctionTest extends PreconditionSet
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
 
-		$this->assertTrue($this->get("$webUrl/functions.php", array(
+		$this->assertTrue($this->get("$webUrl/functions.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
-						'schema' => 'public'))
+						'schema' => 'public'])
 					);
         // Turn to the C-function create page.
         $this->assertTrue($this->clickLink($lang['strcreatecfunction']));  
@@ -170,11 +170,11 @@ class FunctionTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the function-display page.
-		$this->assertTrue($this->get("$webUrl/functions.php", array(
+		$this->assertTrue($this->get("$webUrl/functions.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'subject' => 'schema'))
+						'subject' => 'schema'])
 					);
         
         // Alter the definition of "cfunction".        
@@ -205,11 +205,11 @@ class FunctionTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the function-display page.
-		$this->assertTrue($this->get("$webUrl/functions.php", array(
+		$this->assertTrue($this->get("$webUrl/functions.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'subject' => 'schema'))
+						'subject' => 'schema'])
 					);
        
         // Drop the function "sqlplfunction". 

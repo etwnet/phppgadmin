@@ -645,7 +645,7 @@ class TableActions extends AbstractActions
 
         if (!$found) return -1;
 
-        $primarykeycolumns = array();
+        $primarykeycolumns = [];
         for ($i = 0; $i < $fields; $i++) {
             if (isset($primarykey[$i])) {
                 $primarykeycolumns[] = "\"{$field[$i]}\"";
@@ -864,7 +864,7 @@ class TableActions extends AbstractActions
         $this->connection->arrayClean($atts);
 
         if (!is_array($atts)) return -1;
-        if (sizeof($atts) == 0) return array();
+        if (sizeof($atts) == 0) return [];
 
         $sql = "SELECT attnum, attname FROM pg_catalog.pg_attribute WHERE
             attrelid=(SELECT oid FROM pg_catalog.pg_class WHERE relname='{$table}' AND
@@ -875,7 +875,7 @@ class TableActions extends AbstractActions
         if ($rs->recordCount() != sizeof($atts)) {
             return -2;
         } else {
-            $temp = array();
+            $temp = [];
             while (!$rs->EOF) {
                 $temp[$rs->fields['attnum']] = $rs->fields['attname'];
                 $rs->moveNext();

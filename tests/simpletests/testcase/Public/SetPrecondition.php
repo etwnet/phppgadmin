@@ -37,7 +37,7 @@ class PreconditionSet extends WebTestCase
     	global $lang, $SERVER;
 
 		$this->setCookie("PHPCOVERAGE_HOME", $PHP_SIMPLETEST_HOME);
-		$this->get($loginPageUrl, array('server' => $SERVER));
+		$this->get($loginPageUrl, ['server' => $SERVER]);
 		$this->setField('loginUsername', $userName);
 		$this->setFieldById('loginPassword', $password);
 		$this->submitFormByid('login_form');
@@ -62,7 +62,7 @@ class PreconditionSet extends WebTestCase
 		
         $this->login($SUPER_USER_NAME, $SUPER_USER_PASSWORD, 
 		             "$webUrl/login.php");
-        $this->get("$webUrl/all_db.php", array('server' => $SERVER));	
+        $this->get("$webUrl/all_db.php", ['server' => $SERVER]);
         $this->clickLink('Create database');
          
         $this->setField('formName', $databaseName);
@@ -93,13 +93,13 @@ class PreconditionSet extends WebTestCase
         $this->login($SUPER_USER_NAME, $SUPER_USER_PASSWORD, 
                      "$webUrl/login.php");
         
-        $this->get("$webUrl/all_db.php", array('server' => $SERVER));
-		$this->get("$webUrl/all_db.php", array(
+        $this->get("$webUrl/all_db.php", ['server' => $SERVER]);
+		$this->get("$webUrl/all_db.php", [
 			'server' => $SERVER,
 			'action' => 'confirm_drop',
 			'subject' => 'database',
 			'database' => $databaseName,
-			'dropdatabase' => $databaseName)
+			'dropdatabase' => $databaseName]
 		);
 		$this->clickSubmit($lang['strdrop']);
         
@@ -130,11 +130,11 @@ class PreconditionSet extends WebTestCase
         $this->login($SUPER_USER_NAME, $SUPER_USER_PASSWORD, 
                      "$webUrl/login.php");
 		
-		$this->get("$webUrl/tables.php", array(
+		$this->get("$webUrl/tables.php", [
 			'server' => $SERVER,
 			'action' => 'create',
 			'database' => $databaseName,
-			'schema' => $schema)
+			'schema' => $schema]
 		);
 
         $this->setField('name', $tableName);
@@ -190,12 +190,12 @@ class PreconditionSet extends WebTestCase
         $this->login($SUPER_USER_NAME, $SUPER_USER_PASSWORD, 
                      "$webUrl/login.php");
 		
-		$this->get("$webUrl/tables.php", array(
+		$this->get("$webUrl/tables.php", [
 			'server' => $SERVER,
 			'action' => 'confirm_drop',
 			'database' => $databaseName,
 			'schema' => $schema,
-			'table'	=> $tableName )
+			'table'	=> $tableName]
 		); 
 		           
         // Click the button "Drop" for dropping the table from the database.           

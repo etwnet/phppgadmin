@@ -38,33 +38,33 @@ $misc = AppContainer::getMisc();
 		
 		$casts = $data->getCasts();
 
-		$columns = array(
-			'source_type' => array(
+		$columns = [
+			'source_type' => [
 				'title' => $lang['strsourcetype'],
 				'field' => field('castsource'),
-			),
-			'target_type' => array(
+			],
+			'target_type' => [
 				'title' => $lang['strtargettype'],
 				'field' => field('casttarget'),
-			),
-			'function' => array(
+			],
+			'function' => [
 				'title' => $lang['strfunction'],
 				'field' => field('castfunc'),
-				'params'=> array('null' => $lang['strbinarycompat']),
-			),
-			'implicit' => array(
+				'params'=> ['null' => $lang['strbinarycompat']],
+			],
+			'implicit' => [
 				'title' => $lang['strimplicit'],
 				'field' => field('castcontext'),
 				'type'  => 'callback',
-				'params'=> array('function' => 'renderCastContext', 'align' => 'center'),
-			),
-			'comment' => array(
+				'params'=> ['function' => 'renderCastContext', 'align' => 'center'],
+			],
+			'comment' => [
 				'title' => $lang['strcomment'],
 				'field' => field('castcomment'),
-			),
-		);
+			],
+		];
 
-		$actions = array();
+		$actions = [];
 		
 		$misc->printTable($casts, $columns, $actions, 'casts-casts', $lang['strnocasts']);
 	}
@@ -80,10 +80,10 @@ $data = AppContainer::getData();
 		
 		$proto = concat(field('castsource'), ' AS ', field('casttarget'));
 		
-		$attrs = array(
+		$attrs = [
 			'text'   => $proto,
 			'icon'   => 'Cast'
-		);
+		];
 		
 		$misc->printTree($casts, $attrs, 'casts');
 		exit;

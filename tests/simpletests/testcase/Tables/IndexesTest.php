@@ -52,17 +52,17 @@ class IndexesTest extends PreconditionSet{
         global $lang, $SERVER, $DATABASE;
         
         // Go to the Indexes page
-		$this->assertTrue($this->get("$webUrl/indexes.php", array(
+		$this->assertTrue($this->get("$webUrl/indexes.php", [
 			'server' => $SERVER,
 			'action' => 'create_index',
 			'database' => $DATABASE,
 			'schema' => 'public',
-			'table' => 'student'))
+			'table' => 'student'])
 		);
         
         // Set properties for the new index    
         $this->assertTrue($this->setField('formIndexName', 'stu_name_idx'));
-        $this->assertTrue($this->setField('TableColumnList', array('name')));
+        $this->assertTrue($this->setField('TableColumnList', ['name']));
         $this->assertTrue($this->setField('IndexColumnList[]', 'name'));     
         $this->assertTrue($this->setField('formIndexType', 'BTREE')); 
         $this->assertTrue($this->setField('formUnique', FALSE));
@@ -86,17 +86,17 @@ class IndexesTest extends PreconditionSet{
         global $lang, $SERVER, $DATABASE;
         
         // Go to the Indexes page
-		$this->assertTrue($this->get("$webUrl/indexes.php", array(
+		$this->assertTrue($this->get("$webUrl/indexes.php", [
 			            'server' => $SERVER,
 						'action' => 'create_index',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'table' => 'student'))
+						'table' => 'student'])
 					);
         
         // Set properties for the new index    
         $this->assertTrue($this->setField('formIndexName', 'stu_name_idx'));
-        $this->assertTrue($this->setField('TableColumnList', array('name')));
+        $this->assertTrue($this->setField('TableColumnList', ['name']));
         $this->assertTrue($this->setField('IndexColumnList[]', 'name'));        
         $this->assertTrue($this->setField('formIndexType', 'BTREE')); 
         $this->assertTrue($this->setField('formUnique', TRUE));
@@ -117,13 +117,13 @@ class IndexesTest extends PreconditionSet{
         global $lang, $SERVER, $DATABASE;
         
         // Go to the Indexes page
-		$this->assertTrue($this->get("$webUrl/indexes.php", array(
+		$this->assertTrue($this->get("$webUrl/indexes.php", [
 			            'server' => $SERVER,
 						'action' => 'reindex',
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'table' => 'student',
-						'index' => 'stu_name_idx'))
+						'index' => 'stu_name_idx'])
 					);
         
         // Verify if the index is reindexed correctly.
@@ -142,13 +142,13 @@ class IndexesTest extends PreconditionSet{
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
         
-		$this->assertTrue($this->get("$webUrl/indexes.php", array(
+		$this->assertTrue($this->get("$webUrl/indexes.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_cluster_index',
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'table' => 'student',
-						'index' => 'student_pkey'))
+						'index' => 'student_pkey'])
 					);
         $this->assertTrue($this->setField('analyze', TRUE));
         $this->assertTrue($this->clickSubmit($lang['strcluster'])); 
@@ -169,13 +169,13 @@ class IndexesTest extends PreconditionSet{
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
         
-		$this->assertTrue($this->get("$webUrl/indexes.php", array(
+		$this->assertTrue($this->get("$webUrl/indexes.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_cluster_index',
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'table' => 'student',
-						'index' => 'student_pkey'))
+						'index' => 'student_pkey'])
 					);
         $this->assertTrue($this->setField('analyze', FALSE));
         $this->assertTrue($this->clickSubmit($lang['strcluster']));
@@ -195,13 +195,13 @@ class IndexesTest extends PreconditionSet{
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
         
-		$this->assertTrue($this->get("$webUrl/indexes.php", array(
+		$this->assertTrue($this->get("$webUrl/indexes.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_cluster_index',
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'table' => 'student',
-						'constraint' => 'student_pkey'))
+						'constraint' => 'student_pkey'])
 					);
         $this->assertTrue($this->setField('analyze', TRUE));
         $this->assertTrue($this->clickSubmit($lang['strcancel']));
@@ -218,13 +218,13 @@ class IndexesTest extends PreconditionSet{
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
         
-		$this->assertTrue($this->get("$webUrl/indexes.php", array(
+		$this->assertTrue($this->get("$webUrl/indexes.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_drop_index',
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'table' => 'student',
-						'index' => 'stu_name_idx'))
+						'index' => 'stu_name_idx'])
 					);
         $this->assertField($this->setField('cascade', FALSE));
         $this->assertTrue($this->clickSubmit($lang['strcancel']));
@@ -241,13 +241,13 @@ class IndexesTest extends PreconditionSet{
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
         
-		$this->assertTrue($this->get("$webUrl/indexes.php", array(
+		$this->assertTrue($this->get("$webUrl/indexes.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_drop_index',
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'table' => 'student',
-						'index' => 'stu_name_idx'))
+						'index' => 'stu_name_idx'])
 					);
         $this->assertField($this->setField('cascade', TRUE));
         $this->assertTrue($this->clickSubmit($lang['strdrop']));

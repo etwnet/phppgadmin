@@ -33,7 +33,7 @@
 			continue;
 
 		$fd = opendir($test_src_dir);
-		$files = array();
+		$files = [];
 		while ($file = readdir($fd))
 			if (preg_match('@[0-9]+.*\.php$@', $file))
 				$files[] = $file;

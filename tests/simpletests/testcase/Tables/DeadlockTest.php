@@ -66,12 +66,12 @@ class DeadlockTest extends PreconditionSet{
         
         // Try to add a check constraint to the table student
         // Go to the constraints page
-		$this->assertTrue($this->get("$webUrl/constraints.php", array(
+		$this->assertTrue($this->get("$webUrl/constraints.php", [
 			'server' => $SERVER,
 			'action' => 'add_check',
 			'database' => $DATABASE,
 			'schema' => 'public',
-			'table' => 'student'))
+			'table' => 'student'])
 		);
         
         // Set properties for the new constraint    
@@ -89,10 +89,10 @@ class DeadlockTest extends PreconditionSet{
                      
         // Alter the user's password
         $this->assertTrue($newBrowser->get("$webUrl/users.php"));
-		$this->assertTrue($newBrowser->get("$webUrl/users.php", array(
+		$this->assertTrue($newBrowser->get("$webUrl/users.php", [
 			'server' => $SERVER,
 			'action' => 'edit',
-			'username' => $POWER_USER_NAME))
+			'username' => $POWER_USER_NAME])
 		);       
         // Enter the information for altering the user's properties.
         $this->assertTrue($newBrowser->setField('newname', $POWER_USER_NAME));
@@ -111,10 +111,10 @@ class DeadlockTest extends PreconditionSet{
         
         // Rollback the changes to return to the original state
         $this->assertTrue($newBrowser->get("$webUrl/users.php"));
-		$this->assertTrue($newBrowser->get("$webUrl/users.php", array(
+		$this->assertTrue($newBrowser->get("$webUrl/users.php", [
 			'server' => $SERVER,
 			'action' => 'edit',
-			'username' => $POWER_USER_NAME))
+			'username' => $POWER_USER_NAME])
 		);
        
         // Change back the user's password
@@ -157,9 +157,9 @@ class DeadlockTest extends PreconditionSet{
         
         // Try to create a database 'newdb', without commit the operation                 
         $this->assertTrue ($this->get ("$webUrl/all_db.php"));              
-		$this->assertTrue ($this->get ("$webUrl/all_db.php", array(
+		$this->assertTrue ($this->get ("$webUrl/all_db.php", [
 			'server' => $SERVER,
-			'action' => 'create'))
+			'action' => 'create'])
 		);       
         $this->assertTrue ($this->setfield('formName', 'newdb'));
         $this->assertTrue ($this->setfield('formEncoding', 'UNICODE'));                      
@@ -175,10 +175,10 @@ class DeadlockTest extends PreconditionSet{
                      
         // Revoke the user's createdb privilege
         $this->assertTrue($newBrowser->get("$webUrl/users.php"));
-		$this->assertTrue($newBrowser->get("$webUrl/users.php", array(
+		$this->assertTrue($newBrowser->get("$webUrl/users.php", [
 			'server' => $SERVER,
 			'action' => 'edit',
-			'username' => $POWER_USER_NAME))
+			'username' => $POWER_USER_NAME])
 		);
         $this->assertTrue($newBrowser->setField('newname', $POWER_USER_NAME));
         $this->assertTrue($newBrowser->setField('formPassword', 'tester'));
@@ -195,10 +195,10 @@ class DeadlockTest extends PreconditionSet{
           
         // Rollback the changes to return to the original state
         $this->assertTrue($newBrowser->get("$webUrl/users.php"));
-		$this->assertTrue($newBrowser->get("$webUrl/users.php", array(
+		$this->assertTrue($newBrowser->get("$webUrl/users.php", [
 			'server' => $SERVER,
 			'action' => 'edit',
-			'username' => $POWER_USER_NAME))
+			'username' => $POWER_USER_NAME])
 		);
 
         $this->assertTrue($newBrowser->setField('newname', $POWER_USER_NAME));
@@ -235,12 +235,12 @@ class DeadlockTest extends PreconditionSet{
                      "$webUrl/login.php");
         
         // Add a column "sid"
-		$this->assertTrue($this->get("$webUrl/tblproperties.php", array(
+		$this->assertTrue($this->get("$webUrl/tblproperties.php", [
 			'server' => $SERVER,
 			'action' => 'add_column',
 			'database' => $DATABASE,
 			'schema' => 'public',
-			'table' => 'student'))
+			'table' => 'student'])
 		);
         // Set properties for the new column    
         $this->assertTrue($this->setField('field', 'sid'));        
@@ -251,13 +251,13 @@ class DeadlockTest extends PreconditionSet{
         
         
         // Try to alter the column as "ssid"
-		$this->assertTrue($this->get("$webUrl/tblproperties.php", array(
+		$this->assertTrue($this->get("$webUrl/tblproperties.php", [
 			'server' => $SERVER,
 			'action' => 'properties',
 			'database' => $DATABASE,
 			'schema' => 'public',
 			'table' => 'student',
-			'column' => 'sid'))
+			'column' => 'sid'])
 		);
         // Set properties for the new column    
         $this->assertTrue($this->setField('field', 'ssid'));        
@@ -274,13 +274,13 @@ class DeadlockTest extends PreconditionSet{
         $this->assertTrue($newBrowser->clickSubmit('Login'));
 
         // Drop the column
-		$this->assertTrue($newBrowser->get("$webUrl/tblproperties.php", array(
+		$this->assertTrue($newBrowser->get("$webUrl/tblproperties.php", [
 		    'server' => $SERVER,
 			'action' => 'confirm_drop',
 			'database' => $DATABASE,
 			'schema' => 'public',
 			'table' => 'student',
-			'column' => 'sid'))
+			'column' => 'sid'])
 		);
         $this->assertTrue($newBrowser->clickSubmit($lang['strdrop']));
         
@@ -317,11 +317,11 @@ class DeadlockTest extends PreconditionSet{
         $this->login($SUPER_USER_NAME, $SUPER_USER_PASSWORD, 
                      "$webUrl/login.php");
         // Create a table.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			'server' => $SERVER,
 			'action' => 'create',
 			'database' => $DATABASE,
-			'schema' => 'public'))
+			'schema' => 'public'])
 		);
         
         // Enter the table name and field number.
@@ -353,12 +353,12 @@ class DeadlockTest extends PreconditionSet{
         // Issue a SELECT query
         
         // Turn to the "tables" page.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 		    'server' => $SERVER,
 			'action' => 'confselectrows',
 			'database' => $DATABASE,
 			'schema' => 'public',
-			'table' => 'newtable'))
+			'table' => 'newtable'])
 		);
         
         // Select all the rows.
@@ -375,12 +375,12 @@ class DeadlockTest extends PreconditionSet{
         $this->assertTrue($newBrowser->clickSubmit('Login'));
                      
         // Drop the table
-		$newBrowser->get("$webUrl/tables.php", array(
+		$newBrowser->get("$webUrl/tables.php", [
 			'server' => $SERVER,
 			'action' => 'confirm_drop',
 			'database' => $DATABASE,
 			'schema' => 'public',
-			'table' => 'newtable')
+			'table' => 'newtable']
 		); 
         $this->assertTrue($newBrowser->clickSubmit($lang['strdrop']));
         

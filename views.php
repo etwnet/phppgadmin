@@ -97,9 +97,9 @@ function doSelectRows($confirm, $msg = '')
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 		echo "</form>\n";
 	} else {
-		if (!isset($_POST['show'])) $_POST['show'] = array();
-		if (!isset($_POST['values'])) $_POST['values'] = array();
-		if (!isset($_POST['nulls'])) $_POST['nulls'] = array();
+		if (!isset($_POST['show'])) $_POST['show'] = [];
+		if (!isset($_POST['values'])) $_POST['values'] = [];
+		if (!isset($_POST['nulls'])) $_POST['nulls'] = [];
 
 		// Verify that they haven't supplied a value for unary operators
 		foreach ($_POST['ops'] as $k => $v) {
@@ -231,7 +231,7 @@ function doSetParamsCreate($msg = '')
 		$rsLinkKeys = $data->getLinkingKeys($arrSelTables);
 		$linkCount = $rsLinkKeys->recordCount() > $tblCount ? $rsLinkKeys->recordCount() : $tblCount;
 
-		$arrFields = array(); //array that will hold all our table/field names
+		$arrFields = []; //array that will hold all our table/field names
 
 		//if we have schemas we need to specify the correct schema for each table we're retrieiving
 		//with getTableAttributes
@@ -244,11 +244,11 @@ function doSetParamsCreate($msg = '')
 			$attrs = $data->getTableAttributes($arrSelTables[$i]['tablename']);
 			while (!$attrs->EOF) {
 				$arrFields["{$arrSelTables[$i]['schemaname']}.{$arrSelTables[$i]['tablename']}.{$attrs->fields['attname']}"] = serialize(
-					array(
+					[
 						'schemaname' => $arrSelTables[$i]['schemaname'],
 						'tablename' => $arrSelTables[$i]['tablename'],
 						'fieldname' => $attrs->fields['attname']
-					)
+					]
 				);
 				$attrs->moveNext();
 			}
@@ -292,8 +292,8 @@ function doSetParamsCreate($msg = '')
 			echo "<tr>\n<td class=\"$rowClass\">\n";
 
 			if (!$rsLinkKeys->EOF) {
-				$curLeftLink = htmlspecialchars_nc(serialize(array('schemaname' => $rsLinkKeys->fields['p_schema'], 'tablename' => $rsLinkKeys->fields['p_table'], 'fieldname' => $rsLinkKeys->fields['p_field'])));
-				$curRightLink = htmlspecialchars_nc(serialize(array('schemaname' => $rsLinkKeys->fields['f_schema'], 'tablename' => $rsLinkKeys->fields['f_table'], 'fieldname' => $rsLinkKeys->fields['f_field'])));
+				$curLeftLink = htmlspecialchars_nc(serialize(['schemaname' => $rsLinkKeys->fields['p_schema'], 'tablename' => $rsLinkKeys->fields['p_table'], 'fieldname' => $rsLinkKeys->fields['p_field']]));
+				$curRightLink = htmlspecialchars_nc(serialize(['schemaname' => $rsLinkKeys->fields['f_schema'], 'tablename' => $rsLinkKeys->fields['f_table'], 'fieldname' => $rsLinkKeys->fields['f_field']]));
 				$rsLinkKeys->moveNext();
 			} else {
 				$curLeftLink = '';
@@ -309,7 +309,7 @@ function doSetParamsCreate($msg = '')
 		echo "</table>\n<br />\n";
 
 		// Build list of available operators (infix only)
-		$arrOperators = array();
+		$arrOperators = [];
 		foreach ($data->selectOps as $k => $v) {
 			if ($v == 'i') $arrOperators[$k] = $k;
 		}
@@ -361,9 +361,9 @@ function doWizardCreate($msg = '')
 	echo "<tr><th class=\"data\">{$lang['strtables']}</th></tr>";
 	echo "<tr>\n<td class=\"data1\">\n";
 
-	$arrTables = array();
+	$arrTables = [];
 	while (!$tables->EOF) {
-		$arrTmp = array();
+		$arrTmp = [];
 		$arrTmp['schemaname'] = $tables->fields['nspname'];
 		$arrTmp['tablename'] = $tables->fields['relname'];
 		$arrTables[$tables->fields['nspname'] . '.' . $tables->fields['relname']] = serialize($arrTmp);
@@ -458,7 +458,7 @@ function doSaveCreateWiz()
 		$selFields = '';
 
 		if (! empty($_POST['dblFldMeth']))
-			$tmpHsh = array();
+			$tmpHsh = [];
 
 		foreach ($_POST['formFields'] as $curField) {
 			$arrTmp = unserialize($curField);
@@ -484,7 +484,7 @@ function doSaveCreateWiz()
 		// If we have links, out put the JOIN ... ON statements
 		if (is_array($_POST['formLink'])) {
 			// Filter out invalid/blank entries for our links
-			$arrLinks = array();
+			$arrLinks = [];
 			foreach ($_POST['formLink'] as $curLink) {
 				if (strlen($curLink['leftlink']) && strlen($curLink['rightlink']) && strlen($curLink['operator'])) {
 					$arrLinks[] = $curLink;
@@ -492,8 +492,8 @@ function doSaveCreateWiz()
 			}
 			// We must perform some magic to make sure that we have a valid join order
 			$count = sizeof($arrLinks);
-			$arrJoined = array();
-			$arrUsedTbls = array();
+			$arrJoined = [];
+			$arrUsedTbls = [];
 
 			// If we have at least one join condition, output it
 			if ($count > 0) {
@@ -580,59 +580,59 @@ function doDefault($msg = '')
 
 	$views = $data->getViews();
 
-	$columns = array(
-		'view' => array(
+	$columns = [
+		'view' => [
 			'title'	=> $lang['strview'],
 			'field'	=> field('relname'),
 			'url' => "redirect.php?subject=view&amp;{$misc->href}&amp;",
-			'vars'  => array('view' => 'relname'),
-		),
-		'owner' => array(
+			'vars'  => ['view' => 'relname'],
+		],
+		'owner' => [
 			'title'	=> $lang['strowner'],
 			'field'	=> field('relowner'),
-		),
-		'actions' => array(
+		],
+		'actions' => [
 			'title'	=> $lang['stractions'],
-		),
-		'comment' => array(
+		],
+		'comment' => [
 			'title'	=> $lang['strcomment'],
 			'field'	=> field('relcomment'),
-		),
-	);
+		],
+	];
 
-	$actions = array(
-		'multiactions' => array(
-			'keycols' => array('view' => 'relname'),
+	$actions = [
+		'multiactions' => [
+			'keycols' => ['view' => 'relname'],
 			'url' => 'views.php',
-		),
-		'browse' => array(
+		],
+		'browse' => [
 			'icon' => $misc->icon('Table'),
 			'content' => $lang['strbrowse'],
-			'attr' => array(
-				'href' => array(
+			'attr' => [
+				'href' => [
 					'url' => 'display.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'confselectrows',
 						'subject' => 'view',
 						'return' => 'schema',
 						'view' => field('relname')
-					)
-				)
-			)
-		),
-		'select' => array(
+					]
+				]
+			]
+		],
+		'select' => [
 			'icon' => $misc->icon('Search'),
 			'content' => $lang['strselect'],
-			'attr' => array(
-				'href' => array(
+			'attr' => [
+				'href' => [
 					'url' => 'views.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'confselectrows',
 						'view' => field('relname')
-					)
-				)
-			)
-		),
+					]
+				]
+			]
+		],
 
 		// Insert is possible if the relevant rule for the view has been created.
 		//			'insert' => array(
@@ -641,67 +641,67 @@ function doDefault($msg = '')
 		//				'vars'	=> array('view' => 'relname'),
 		//			),
 
-		'alter' => array(
+		'alter' => [
 			'icon' => $misc->icon('Edit'),
 			'content' => $lang['stralter'],
-			'attr' => array(
-				'href' => array(
+			'attr' => [
+				'href' => [
 					'url' => 'viewproperties.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'confirm_alter',
 						'view' => field('relname')
-					)
-				)
-			)
-		),
-		'drop' => array(
+					]
+				]
+			]
+		],
+		'drop' => [
 			'multiaction' => 'confirm_drop',
 			'icon' => $misc->icon('Delete'),
 			'content' => $lang['strdrop'],
-			'attr' => array(
-				'href' => array(
+			'attr' => [
+				'href' => [
 					'url' => 'views.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'confirm_drop',
 						'view' => field('relname')
-					)
-				)
-			)
-		),
-	);
+					]
+				]
+			]
+		],
+	];
 
 	$misc->printTable($views, $columns, $actions, 'views-views',  $lang['strnoviews']);
 
-	$navlinks = array(
-		'create' => array(
-			'attr' => array(
-				'href' => array(
+	$navlinks = [
+		'create' => [
+			'attr' => [
+				'href' => [
 					'url' => 'views.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'create',
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema']
-					)
-				)
-			),
+					]
+				]
+			],
 			'content' => $lang['strcreateview']
-		),
-		'createwiz' => array(
-			'attr' => array(
-				'href' => array(
+		],
+		'createwiz' => [
+			'attr' => [
+				'href' => [
 					'url' => 'views.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'wiz_create',
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema']
-					)
-				)
-			),
+					]
+				]
+			],
 			'content' => $lang['strcreateviewwiz']
-		)
-	);
+		]
+	];
 	$misc->printNavLinks($navlinks, 'views-views', get_defined_vars());
 }
 
@@ -717,21 +717,21 @@ function doTree()
 
 	$reqvars = $misc->getRequestVars('view');
 
-	$attrs = array(
+	$attrs = [
 		'text'   => field('relname'),
 		'icon'   => 'View',
-		'iconAction' => url('display.php', $reqvars, array('view' => field('relname'))),
+		'iconAction' => url('display.php', $reqvars, ['view' => field('relname')]),
 		'toolTip' => field('relcomment'),
-		'action' => url('redirect.php',	$reqvars, array('view' => field('relname'))),
+		'action' => url('redirect.php',	$reqvars, ['view' => field('relname')]),
 		'branch' => url(
 			'views.php',
 			$reqvars,
-			array(
+			[
 				'action' => 'subtree',
 				'view' => field('relname')
-			)
+			]
 		)
-	);
+	];
 
 	$misc->printTree($views, $attrs, 'views');
 	exit;
@@ -746,10 +746,10 @@ function doSubTree()
 	$items = $misc->adjustTabsForTree($tabs);
 	$reqvars = $misc->getRequestVars('view');
 
-	$attrs = array(
+	$attrs = [
 		'text'   => field('title'),
 		'icon'   => field('icon'),
-		'action' => url(field('url'),	$reqvars, field('urlvars'),	array('view' => $_REQUEST['view'])),
+		'action' => url(field('url'),	$reqvars, field('urlvars'),	['view' => $_REQUEST['view']]),
 		'branch' => ifempty(
 			field('branch'),
 			'',
@@ -757,13 +757,13 @@ function doSubTree()
 				field('url'),
 				field('urlvars'),
 				$reqvars,
-				array(
+				[
 					'action' => 'tree',
 					'view' => $_REQUEST['view']
-				)
+				]
 			)
 		),
-	);
+	];
 
 	$misc->printTree($items, $attrs, 'view');
 	exit;

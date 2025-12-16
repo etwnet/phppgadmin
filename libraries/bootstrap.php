@@ -37,7 +37,7 @@ if (version_compare(phpversion(), $phpMinVer, '<'))
 // Check to see if the configuration file exists, if not, explain
 $configFile = __DIR__ . '/../conf/config.inc.php';
 if (file_exists($configFile)) {
-	$conf = array();
+	$conf = [];
 	require $configFile;
 	if (empty($conf['theme'])) {
 		$conf['theme'] = 'bootstrap';
@@ -92,7 +92,7 @@ if (!ini_get('session.auto_start')) {
 
 // Always include english.php, since it's the master language file
 if (!isset($conf['default_lang'])) $conf['default_lang'] = 'english';
-$lang = array();
+$lang = [];
 require_once __DIR__ . '/../lang/english.php';
 
 // Determine language file to import

@@ -9,14 +9,14 @@ use PhpPgAdmin\Core\AppContainer;
  * $Id: dataexport.php,v 1.26 2007/07/12 19:26:22 xzilla Exp $
  */
 
-$extensions = array(
+$extensions = [
 	'sql' => 'sql',
 	'copy' => 'sql',
 	'csv' => 'csv',
 	'tab' => 'txt',
 	'html' => 'html',
 	'xml' => 'xml'
-);
+];
 
 // Prevent timeouts on large exports (non-safe mode only)
 if (!ini_get('safe_mode')) set_time_limit(0);

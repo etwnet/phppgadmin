@@ -39,65 +39,65 @@ class TopbarRenderer extends AbstractContext
 
             /* top right information when connected */
 
-            $toplinks = array(
-                'sql' => array(
-                    'attr' => array(
-                        'href' => array(
+            $toplinks = [
+                'sql' => [
+                    'attr' => [
+                        'href' => [
                             'url' => 'sqledit.php',
-                            'urlvars' => array_merge($reqvars, array(
+                            'urlvars' => array_merge($reqvars, [
                                 'action' => 'sql'
-                            ))
-                        ),
+									 ])
+								],
                         'target' => "sqledit",
                         'id' => 'toplink_sql',
-                    ),
+						  ],
                     'content' => $lang['strsql']
-                ),
-                'history' => array(
-                    'attr' => array(
-                        'href' => array(
+					 ],
+                'history' => [
+                    'attr' => [
+                        'href' => [
                             'url' => 'history.php',
-                            'urlvars' => array_merge($reqvars, array(
+                            'urlvars' => array_merge($reqvars, [
                                 'action' => 'pophistory'
-                            ))
-                        ),
+									 ])
+								],
                         'id' => 'toplink_history',
-                    ),
+						  ],
                     'content' => $lang['strhistory']
-                ),
-                'find' => array(
-                    'attr' => array(
-                        'href' => array(
+					 ],
+                'find' => [
+                    'attr' => [
+                        'href' => [
                             'url' => 'sqledit.php',
-                            'urlvars' => array_merge($reqvars, array(
+                            'urlvars' => array_merge($reqvars, [
                                 'action' => 'find'
-                            ))
-                        ),
+									 ])
+								],
                         'target' => "sqledit",
                         'id' => 'toplink_find',
-                    ),
+						  ],
                     'content' => $lang['strfind']
-                ),
-                'logout' => array(
-                    'attr' => array(
-                        'href' => array(
+					 ],
+                'logout' => [
+                    'attr' => [
+                        'href' => [
                             'url' => 'servers.php',
-                            'urlvars' => array(
+                            'urlvars' => [
                                 'action' => 'logout',
                                 'logoutServer' => "{$server_info['host']}:{$server_info['port']}:{$server_info['sslmode']}"
-                            )
-                        ),
+									 ]
+								],
                         'id' => 'toplink_logout',
-                    ),
+						  ],
                     'content' => $lang['strlogout']
-                )
-            );
+					 ]
+				];
 
             // Toplink hook's place
             if ($pluginManager) {
-                $plugin_functions_parameters = array(
+                $plugin_functions_parameters = [
                     'toplinks' => &$toplinks
-                );
+					 ];
                 $pluginManager->do_hook('toplinks', $plugin_functions_parameters);
             }
 

@@ -7,6 +7,7 @@
 
 namespace PhpPgAdmin\Database\Actions;
 
+use ADORecordSet;
 use PhpPgAdmin\Database\AbstractActions;
 
 /**
@@ -83,7 +84,7 @@ class RoleActions extends AbstractActions {
 	 * @param string $rolename The role/user to revoke from
 	 * @param int $admin (optional) Only revoke ADMIN OPTION (0 or 1)
 	 * @param string $type (optional) RESTRICT or CASCADE
-	 * @return 0 success
+	 * @return int 0 success
 	 */
 	public function revokeRole($role, $rolename, $admin = 0, $type = 'RESTRICT') {
 		$this->connection->fieldClean($role);
@@ -108,7 +109,7 @@ class RoleActions extends AbstractActions {
 
 	/**
 	 * Returns all users (legacy API - users are now roles)
-	 * @return A recordset
+	 * @return ADORecordSet A recordset
 	 */
 	public function getUsers() {
 		$sql = "
@@ -122,7 +123,7 @@ class RoleActions extends AbstractActions {
 	/**
 	 * Returns information for a specific user (legacy API - users are now roles)
 	 * @param string $username The user name
-	 * @return A recordset
+	 * @return ADORecordSet A recordset
 	 */
 	public function getUser($username) {
 		$this->connection->clean($username);
@@ -149,11 +150,11 @@ class RoleActions extends AbstractActions {
 	 * @param array $memberof Array of roles to add this role to (optional)
 	 * @param array $members Array of roles/users to add to this role (optional)
 	 * @param array $adminmembers Array of roles/users to add as admin members (optional)
-	 * @return 0 success
+	 * @return int 0 success
 	 */
 	public function createRole($rolename, $password = '', $superuser = 0, $createdb = 0,
 							   $createrole = 0, $inherits = 1, $login = 1, $connlimit = -1,
-							   $expiry = '', $memberof = array(), $members = array(), $adminmembers = array()) {
+							   $expiry = '', $memberof = [], $members = [], $adminmembers = []) {
 		$this->connection->fieldClean($rolename);
 
 		$sql = "CREATE ROLE \"{$rolename}\"";
@@ -230,8 +231,8 @@ class RoleActions extends AbstractActions {
 	 */
 	public function setRole($rolename, $password = '', $superuser = 0, $createdb = 0,
 							$createrole = 0, $inherits = 1, $login = 1, $connlimit = -1,
-							$expiry = '', $memberof = array(), $members = array(), $adminmembers = array(),
-							$memberofold = array(), $membersold = array(), $adminmembersold = array()) {
+							$expiry = '', $memberof = [], $members = [], $adminmembers = [],
+							$memberofold = [], $membersold = [], $adminmembersold = []) {
 		$this->connection->fieldClean($rolename);
 
 		$sql = "ALTER ROLE \"{$rolename}\"";
@@ -362,9 +363,9 @@ class RoleActions extends AbstractActions {
 	 */
 	public function setRenameRole($rolename, $newrolename, $password = '', $superuser = 0,
 								  $createdb = 0, $createrole = 0, $inherits = 1, $login = 1,
-								  $connlimit = -1, $expiry = '', $memberof = array(), $members = array(),
-								  $adminmembers = array(), $memberofold = array(), $membersold = array(),
-								  $adminmembersold = array()) {
+								  $connlimit = -1, $expiry = '', $memberof = [], $members = [],
+								  $adminmembers = [], $memberofold = [], $membersold = [],
+								  $adminmembersold = []) {
 		$status = $this->connection->beginTransaction();
 		if ($status != 0) return -1;
 
@@ -412,16 +413,16 @@ class RoleActions extends AbstractActions {
 	 * @return 0 success
 	 */
 	public function createUser($username, $password = '', $createdb = 0, $createuser = 0,
-							   $expiry = '', $groups = array()) {
+							   $expiry = '', $groups = []) {
 		// Legacy user creation maps to createRole
 		$superuser = 0;
 		$createrole = $createuser;
 		$inherits = 1;
 		$login = 1;
 		$connlimit = -1;
-		$memberof = array();
-		$members = array();
-		$adminmembers = array();
+		$memberof = [];
+		$members = [];
+		$adminmembers = [];
 
 		return $this->createRole($username, $password, $superuser, $createdb, $createrole,
 								 $inherits, $login, $connlimit, $expiry, $memberof, $members, $adminmembers);

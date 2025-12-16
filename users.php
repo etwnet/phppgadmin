@@ -50,18 +50,18 @@ $misc = AppContainer::getMisc();
 		}
 		else echo "<p>{$lang['strnodata']}</p>\n";
 		
-		$misc->printNavLinks(array ('changepassword' => array (
-				'attr'=> array (
-					'href' => array (
+		$misc->printNavLinks(['changepassword' => [
+				'attr'=> [
+					'href' => [
 						'url' => 'users.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'confchangepassword',
 							'server' => $_REQUEST['server']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['strchangepassword']
-			)), 'users-account', get_defined_vars());
+		]], 'users-account', get_defined_vars());
 	}
 	
 	/**
@@ -280,7 +280,7 @@ $misc = AppContainer::getMisc();
 			doCreate($lang['strpasswordconfirm']);
 		else {		
 			$status = $data->createUser($_POST['formUsername'], $_POST['formPassword'], 
-				isset($_POST['formCreateDB']), isset($_POST['formSuper']), $_POST['formExpires'], array());
+				isset($_POST['formCreateDB']), isset($_POST['formSuper']), $_POST['formExpires'], []);
 			if ($status == 0)
 				doDefault($lang['strusercreated']);
 			else
@@ -307,79 +307,79 @@ $misc = AppContainer::getMisc();
 		
 		$users = $data->getUsers();
 		
-		$columns = array(
-			'user' => array(
+		$columns = [
+			'user' => [
 				'title' => $lang['strusername'],
 				'field' => field('usename'),
-			),
-			'superuser' => array(
+			],
+			'superuser' => [
 				'title' => $lang['strsuper'],
 				'field' => field('usesuper'),
 				'type'  => 'yesno',
-			),
-			'createdb' => array(
+			],
+			'createdb' => [
 				'title' => $lang['strcreatedb'],
 				'field' => field('usecreatedb'),
 				'type'  => 'yesno',
-			),
-			'expires' => array(
+			],
+			'expires' => [
 				'title' => $lang['strexpires'],
 				'field' => field('useexpires'),
 				'type'  => 'callback',
-				'params'=> array('function' => 'renderUseExpires', 'null' => $lang['strnever']),
-			),
-			'defaults' => array(
+				'params'=> ['function' => 'renderUseExpires', 'null' => $lang['strnever']],
+			],
+			'defaults' => [
 				'title' => $lang['strsessiondefaults'],
 				'field' => field('useconfig'),
-			),
-			'actions' => array(
+			],
+			'actions' => [
 				'title' => $lang['stractions'],
-			),
-		);
+			],
+		];
 		
-		$actions = array(
-			'alter' => array(
+		$actions = [
+			'alter' => [
 				'icon' => $misc->icon('Edit'),
 				'content' => $lang['stralter'],
-				'attr'=> array (
-					'href' => array (
+				'attr'=> [
+					'href' => [
 						'url' => 'users.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'edit',
 							'username' => field('usename')
-						)
-					)
-				)
-			),
-			'drop' => array(
+						]
+					]
+				]
+			],
+			'drop' => [
 				'icon' => $misc->icon('Delete'),
 				'content' => $lang['strdrop'],
-				'attr'=> array (
-					'href' => array (
+				'attr'=> [
+					'href' => [
 						'url' => 'users.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'confirm_drop',
 							'username' => field('usename')
-						)
-					)
-				)
-			),
-		);
+						]
+					]
+				]
+			],
+		];
 		
 		$misc->printTable($users, $columns, $actions, 'users-users', $lang['strnousers']);
 
-		$misc->printNavLinks(array ('create' => array (
-				'attr'=> array (
-					'href' => array (
+		$misc->printNavLinks(['create' => [
+				'attr'=> [
+					'href' => [
 						'url' => 'users.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'create',
 							'server' => $_REQUEST['server']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['strcreateuser']
-			)), 'users-users', get_defined_vars());
+		]], 'users-users', get_defined_vars());
 
 	}
 

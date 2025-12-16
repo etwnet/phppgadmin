@@ -56,10 +56,10 @@ class SqlTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
 
 		$this->assertTrue($this->get("$webUrl/database.php", 
-			array('database' => $DATABASE,
+			['database' => $DATABASE,
 				'subject' => 'database',
 				'action' => 'sql',
-				'server' => $SERVER))
+				'server' => $SERVER])
 		);
         $this->assertTrue($this->setFieldById(0, "select id from student;"));
         
@@ -79,11 +79,11 @@ class SqlTest extends PreconditionSet
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
 
-		$this->assertTrue($this->get("$webUrl/database.php", array(
+		$this->assertTrue($this->get("$webUrl/database.php", [
 			'server' => $SERVER,
 			'database' => $DATABASE,
 			'subject' => 'database',
-			'action' => 'sql'))
+			'action' => 'sql'])
 		);
         $this->assertTrue($this->setField('query', 'delete from "student";'));
         
@@ -102,11 +102,11 @@ class SqlTest extends PreconditionSet
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
 
-		$this->assertTrue($this->get("$webUrl/database.php", array(
+		$this->assertTrue($this->get("$webUrl/database.php", [
 			'server' => $SERVER,
 			'database' => $DATABASE,
 			'subject' => 'database',
-			'action' => 'sql'))
+			'action' => 'sql'])
 		);
         $this->assertTrue($this->setField('query',
                                           "insert into studen t values " .
@@ -129,11 +129,11 @@ class SqlTest extends PreconditionSet
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
 
-		$this->assertTrue($this->get("$webUrl/database.php", array(
+		$this->assertTrue($this->get("$webUrl/database.php", [
 			'database' => $DATABASE,
 			'server' => $SERVER,
 			'subject' => 'database',
-			'action' => 'sql'))
+			'action' => 'sql'])
 		);
         $this->assertTrue($this->setField('query',
                                           'update public."student" ' .
@@ -155,11 +155,11 @@ class SqlTest extends PreconditionSet
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
 
-		$this->assertTrue($this->get("$webUrl/database.php", array(
+		$this->assertTrue($this->get("$webUrl/database.php", [
 			'server' => $SERVER,
 			'database' => $DATABASE,
 			'subject' => 'database',
-			'action' => 'sql'))
+			'action' => 'sql'])
 		);
 
         $this->assertTrue($this->setField('query',
@@ -187,11 +187,11 @@ class SqlTest extends PreconditionSet
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
 
-		$this->assertTrue($this->get("$webUrl/database.php", array(
+		$this->assertTrue($this->get("$webUrl/database.php", [
 			'database' => $DATABASE,
 			'server' => $SERVER,
 			'subject' => 'database',
-			'action' => 'sql'))
+			'action' => 'sql'])
 		);
         $this->assertTrue($this->setField('query',
                                           'select "id" from "student";'));
@@ -222,11 +222,11 @@ class SqlTest extends PreconditionSet
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
 
-		$this->assertTrue($this->get("$webUrl/database.php", array(
+		$this->assertTrue($this->get("$webUrl/database.php", [
 			'server' => $SERVER,
 			'database' => $DATABASE,
 			'subject' => 'database',
-			'action' => 'sql'))
+			'action' => 'sql'])
 		);
 
         $webServerUrl = getcwd();
@@ -252,7 +252,7 @@ class SqlTest extends PreconditionSet
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
 
-        $this->get("$webUrl/sqledit.php", array('action' => 'sql', 'server' => $SERVER));
+        $this->get("$webUrl/sqledit.php", ['action' => 'sql', 'server' => $SERVER]);
 
         $this->assertTrue($this->setField('database', $DATABASE));
         $this->assertTrue($this->setField('query', 'select * from student;'));
@@ -275,7 +275,7 @@ class SqlTest extends PreconditionSet
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
 
-        $this->get("$webUrl/sqledit.php", array('action' => 'sql', 'server' => $SERVER));
+        $this->get("$webUrl/sqledit.php", ['action' => 'sql', 'server' => $SERVER]);
 
         $this->assertTrue($this->setField('database', $DATABASE));
         $this->assertTrue($this->setField('query', 'select * from student;'));
@@ -304,11 +304,11 @@ class SqlTest extends PreconditionSet
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
 
-		$this->assertTrue($this->get("$webUrl/reports.php", array(
+		$this->assertTrue($this->get("$webUrl/reports.php", [
 			'action' => 'create',
 			'server' => $SERVER,
 			'db_name' => $DATABASE,
-			'report_sql' => 'select id from student;')
+			'report_sql' => 'select id from student;']
 		));
 
         $this->assertTrue($this->setField('report_name', 'ppasimpletestreport'));
@@ -330,10 +330,10 @@ class SqlTest extends PreconditionSet
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
 
-		$this->assertTrue($this->get("$webUrl/dataexport.php", array(
+		$this->assertTrue($this->get("$webUrl/dataexport.php", [
 			'server' => $SERVER,
 			'query' => 'select+id+from+student%3B',
-			'database' => $DATABASE))
+			'database' => $DATABASE])
 		);
 
         $this->assertTrue($this->setField('d_format', 'XML'));

@@ -53,12 +53,12 @@ class InfoTest extends PreconditionSet{
         global $lang, $SERVER, $DATABASE;
         
         // Go to the Rules page
-		$this->assertTrue($this->get("$webUrl/info.php", array(
+		$this->assertTrue($this->get("$webUrl/info.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'table' => 'student',
-						'subject' => 'table'))
+						'subject' => 'table'])
 					);
         
         return TRUE;            
@@ -75,12 +75,12 @@ class InfoTest extends PreconditionSet{
         global $lang, $SERVER, $DATABASE;
         
         // Go to the Rules page
-		$this->assertTrue($this->get("$webUrl/info.php", array(
+		$this->assertTrue($this->get("$webUrl/info.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'table' => 'college_student',
-						'subject' => 'table'))
+						'subject' => 'table'])
 					); 
         
         return TRUE;          
@@ -97,12 +97,12 @@ class InfoTest extends PreconditionSet{
         global $lang, $SERVER, $DATABASE;
         
         // Go to the Rules page
-		$this->assertTrue($this->get("$webUrl/info.php", array(
+		$this->assertTrue($this->get("$webUrl/info.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'table' => 'department',
-						'subject' => 'table'))
+						'subject' => 'table'])
 					);
         
         return TRUE;
@@ -118,12 +118,12 @@ class InfoTest extends PreconditionSet{
         global $lang, $SERVER, $DATABASE;
         
         // Go to the Rules page
-		$this->assertTrue($this->get("$webUrl/info.php?", array(
+		$this->assertTrue($this->get("$webUrl/info.php?", [
             'server' => $SERVER,
 			'database' => $DATABASE,
 			'schema' => 'public',
 			'table' => 'department',
-			'subject' => 'table'))
+			'subject' => 'table'])
 		);
              
         $this->assertTrue($this->clickLink($lang['strproperties']));

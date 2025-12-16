@@ -158,21 +158,21 @@ function doDefinition($msg = '')
 		echo "</table>\n";
 	} else echo "<p>{$lang['strnodata']}</p>\n";
 
-	$misc->printNavLinks(array('alter' => array(
-		'attr' => array(
-			'href' => array(
+	$misc->printNavLinks(['alter' => [
+		'attr' => [
+			'href' => [
 				'url' => 'viewproperties.php',
-				'urlvars' => array(
+				'urlvars' => [
 					'action' => 'edit',
 					'server' => $_REQUEST['server'],
 					'database' => $_REQUEST['database'],
 					'schema' => $_REQUEST['schema'],
 					'view' => $_REQUEST['view']
-				)
-			)
-		),
+				]
+			]
+		],
 		'content' => $lang['stralter']
-	)), 'viewproperties-definition', get_defined_vars());
+	]], 'viewproperties-definition', get_defined_vars());
 }
 
 /**
@@ -374,34 +374,34 @@ function doTree()
 	$reqvars = $misc->getRequestVars('column');
 	$columns = $data->getTableAttributes($_REQUEST['view']);
 
-	$attrs = array(
+	$attrs = [
 		'text'   => field('attname'),
 		'action' => url(
 			'colproperties.php',
 			$reqvars,
-			array(
+			[
 				'view'     => $_REQUEST['view'],
 				'column'    => field('attname')
-			)
+			]
 		),
 		'icon'   => 'Column',
 		'iconAction' => url(
 			'display.php',
 			$reqvars,
-			array(
+			[
 				'view'     => $_REQUEST['view'],
 				'column'    => field('attname'),
 				'query'     => replace(
 					'SELECT "%column%", count(*) AS "count" FROM %view% GROUP BY "%column%" ORDER BY "%column%"',
-					array(
+					[
 						'%column%' => field('attname'),
 						'%view%' => $_REQUEST['view']
-					)
+					]
 				)
-			)
+			]
 		),
 		'toolTip' => field('comment')
-	);
+	];
 
 	$misc->printTree($columns, $attrs, 'viewcolumns');
 
@@ -438,114 +438,114 @@ function doDefault($msg = '')
 	if ($vdata->fields['relcomment'] !== null)
 		echo "<p class=\"comment\">", $misc->printVal($vdata->fields['relcomment']), "</p>\n";
 
-	$columns = array(
-		'column' => array(
+	$columns = [
+		'column' => [
 			'title' => $lang['strcolumn'],
 			'field' => field('attname'),
 			'url'   => "colproperties.php?subject=column&amp;{$misc->href}&amp;view=" . urlencode($_REQUEST['view']) . "&amp;",
-			'vars'  => array('column' => 'attname'),
-		),
-		'type' => array(
+			'vars'  => ['column' => 'attname'],
+		],
+		'type' => [
 			'title' => $lang['strtype'],
 			'field' => field('+type'),
-		),
-		'default' => array(
+		],
+		'default' => [
 			'title' => $lang['strdefault'],
 			'field' => field('adsrc'),
-		),
-		'actions' => array(
+		],
+		'actions' => [
 			'title' => $lang['stractions'],
-		),
-		'comment' => array(
+		],
+		'comment' => [
 			'title' => $lang['strcomment'],
 			'field' => field('comment'),
-		),
-	);
+		],
+	];
 
-	$actions = array(
-		'alter' => array(
+	$actions = [
+		'alter' => [
 			'icon' => $misc->icon('Edit'),
 			'content' => $lang['stralter'],
-			'attr' => array(
-				'href' => array(
+			'attr' => [
+				'href' => [
 					'url' => 'viewproperties.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'properties',
 						'view' => $_REQUEST['view'],
 						'column' => field('attname')
-					)
-				)
-			)
-		),
-	);
+					]
+				]
+			]
+		],
+	];
 
 	$misc->printTable($attrs, $columns, $actions, 'viewproperties-viewproperties', null, 'attPre');
 
 	echo "<br />\n";
 
-	$navlinks = array(
-		'browse' => array(
-			'attr' => array(
-				'href' => array(
+	$navlinks = [
+		'browse' => [
+			'attr' => [
+				'href' => [
 					'url' => 'display.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema'],
 						'view' => $_REQUEST['view'],
 						'subject' => 'view',
 						'return' => 'view'
-					)
-				)
-			),
+					]
+				]
+			],
 			'content' => $lang['strbrowse']
-		),
-		'select' => array(
-			'attr' => array(
-				'href' => array(
+		],
+		'select' => [
+			'attr' => [
+				'href' => [
 					'url' => 'views.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'confselectrows',
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema'],
 						'view' => $_REQUEST['view']
-					)
-				)
-			),
+					]
+				]
+			],
 			'content' => $lang['strselect']
-		),
-		'drop' => array(
-			'attr' => array(
-				'href' => array(
+		],
+		'drop' => [
+			'attr' => [
+				'href' => [
 					'url' => 'views.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'confirm_drop',
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema'],
 						'view' => $_REQUEST['view']
-					)
-				)
-			),
+					]
+				]
+			],
 			'content' => $lang['strdrop']
-		),
-		'alter' => array(
-			'attr' => array(
-				'href' => array(
+		],
+		'alter' => [
+			'attr' => [
+				'href' => [
 					'url' => 'viewproperties.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'confirm_alter',
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema'],
 						'view' => $_REQUEST['view']
-					)
-				)
-			),
+					]
+				]
+			],
 			'content' => $lang['stralter']
-		)
-	);
+		]
+	];
 
 	$misc->printNavLinks($navlinks, 'viewproperties-viewproperties', get_defined_vars());
 }

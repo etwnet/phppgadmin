@@ -263,7 +263,7 @@ abstract class AbstractConnection extends AbstractContext {
 	 * @return int -2 if a referential constraint is violated
 	 * @return int -3 on no rows deleted
 	 */
-	function update($table, $vars, $where, $nulls = array()) {
+	function update($table, $vars, $where, $nulls = []) {
 		$this->fieldClean($table);
 
 		$setClause = '';
@@ -311,7 +311,7 @@ abstract class AbstractConnection extends AbstractContext {
 	 * @return int 0 success
 	 */
 	function beginTransaction() {
-		return !$this->conn->BeginTrans();
+		return $this->conn->BeginTrans() ? 0 : -1;
 	}
 
 	/**
@@ -319,7 +319,7 @@ abstract class AbstractConnection extends AbstractContext {
 	 * @return int 0 success
 	 */
 	function endTransaction() {
-		return !$this->conn->CommitTrans();
+		return $this->conn->CommitTrans() ? 0 : -1;
 	}
 
 	/**
@@ -327,7 +327,7 @@ abstract class AbstractConnection extends AbstractContext {
 	 * @return int 0 success
 	 */
 	function rollbackTransaction() {
-		return !$this->conn->RollbackTrans();
+		return $this->conn->RollbackTrans() ? 0 : -1;
 	}
 
 	/**
@@ -368,7 +368,7 @@ abstract class AbstractConnection extends AbstractContext {
 
 		// Pick out array entries by carefully parsing.  This is necessary in order
 		// to cope with double quotes and commas, etc.
-		$elements = array();
+		$elements = [];
 		$i = $j = 0;
 		$in_quotes = false;
 		while ($i < strlen($arr)) {

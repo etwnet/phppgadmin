@@ -17,8 +17,18 @@ class TypeActions extends AbstractActions
     {
         $this->connection->clean($typname);
 
-        $sql = "SELECT typtype, typbyval, typname, typinput AS typin, typoutput AS typout, typlen, typalign
-            FROM pg_type WHERE typname='{$typname}'";
+        $sql = "SELECT
+				t.typtype,
+				t.typbyval,
+				t.typname,
+				t.typinput AS typin,
+				t.typoutput AS typout,
+				t.typlen,
+				t.typalign,
+				pu.usename AS typowner
+            FROM pg_type t
+				LEFT JOIN pg_catalog.pg_user pu ON t.typowner = pu.usesysid
+			WHERE typname='{$typname}'";
 
         return $this->connection->selectSet($sql);
     }
@@ -439,6 +449,12 @@ class TypeActions extends AbstractActions
 	public function hasTypeRenameValue(): bool
 	{
 		return $this->connection->major_version >= 10;
+	}
+
+	public function hasEnumTypes(): bool
+	{
+		// Todo remove validation?
+		return true;
 	}
 
 }

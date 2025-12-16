@@ -57,11 +57,11 @@ class OperatorTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to "sql" page.
-		$this->assertTrue($this->get("$webUrl/database.php", array(
+		$this->assertTrue($this->get("$webUrl/database.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'subject' => 'database',
-						'action' => 'sql'))
+						'action' => 'sql'])
 					);
         // Enter the definition of the new operator.
         $this->assertTrue($this->setField('query', 'CREATE OPERATOR === (' .
@@ -88,11 +88,11 @@ class OperatorTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to "Operators" page.
-		$this->assertTrue($this->get("$webUrl/operators.php", array(
+		$this->assertTrue($this->get("$webUrl/operators.php", [
 		               'server' => $SERVER,
 					   'database' => $DATABASE,
 					   'schema' => 'public',
-					   'subject' => 'schema'))
+					   'subject' => 'schema'])
 				   );
         // Show the properties of the operator "===".
         $this->assertTrue($this->clickLink('==='));
@@ -113,11 +113,11 @@ class OperatorTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to "Operators" page.
-		$this->assertTrue($this->get("$webUrl/operators.php", array(
+		$this->assertTrue($this->get("$webUrl/operators.php", [
 		               'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'subject' => 'schema'))
+						'subject' => 'schema'])
 					);
                 
         // Drop the first operator.        

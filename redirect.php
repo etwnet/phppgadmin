@@ -10,7 +10,7 @@
 	
 	// Load query vars into superglobal arrays
 	if (isset($url['urlvars'])) {
-		$urlvars = array();
+		$urlvars = [];
 
 		foreach($url['urlvars'] as $k => $urlvar) {
 			$urlvars[$k] = value($urlvar, $_REQUEST);

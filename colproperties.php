@@ -84,11 +84,11 @@ function doAlter($msg = '')
 			htmlspecialchars_nc($_REQUEST['field']), "\" /></td>\n";
 
 			// Column type
-			$escaped_predef_types = array(); // the JS escaped array elements
+			$escaped_predef_types = []; // the JS escaped array elements
 			if ($data->hasAlterColumnType()) {
 				// Fetch all available types
 				$types = $data->getTypes(true, false, true);
-				$types_for_js = array();
+				$types_for_js = [];
 
 				echo "<td><select name=\"type\" id=\"type\" onchange=\"checkLengths(document.getElementById('type').value,'');\">\n";
 				while (!$types->EOF) {
@@ -216,31 +216,31 @@ function doDefault($msg = '', $isTable = true)
 		if ($attrs->fields['comment'] !== null)
 			echo "<p class=\"comment\">", $misc->printVal($attrs->fields['comment']), "</p>\n";
 
-		$column = array(
-			'column' => array(
+		$column = [
+			'column' => [
 				'title' => $lang['strcolumn'],
 				'field' => field('attname'),
-			),
-			'type' => array(
+			],
+			'type' => [
 				'title' => $lang['strtype'],
 				'field' => field('+type'),
-			)
-		);
+			]
+		];
 
 		if ($isTable) {
-			$column['notnull'] = array(
+			$column['notnull'] = [
 				'title' => $lang['strnotnull'],
 				'field' => field('attnotnull'),
 				'type'  => 'bool',
-				'params' => array('true' => 'NOT NULL', 'false' => '')
-			);
-			$column['default'] = array(
+				'params' => ['true' => 'NOT NULL', 'false' => '']
+			];
+			$column['default'] = [
 				'title' => $lang['strdefault'],
 				'field' => field('adsrc'),
-			);
+			];
 		}
 
-		$actions = array();
+		$actions = [];
 		$misc->printTable($attrs, $column, $actions, 'colproperties-colproperties', null, 'attPre');
 
 		echo "<br />\n";
@@ -259,12 +259,12 @@ function doDefault($msg = '', $isTable = true)
 			/* FIXME browsing a col should somehow be a action so we don't
 				 * send an ugly SQL in the URL */
 
-			$navlinks = array(
-				'browse' => array(
-					'attr' => array(
-						'href' => array(
+			$navlinks = [
+				'browse' => [
+					'attr' => [
+						'href' => [
 							'url' => 'display.php',
-							'urlvars' => array(
+							'urlvars' => [
 								'subject' => 'column',
 								'server' => $_REQUEST['server'],
 								'database' => $_REQUEST['database'],
@@ -273,52 +273,52 @@ function doDefault($msg = '', $isTable = true)
 								'column' => $_REQUEST['column'],
 								'return' => 'column',
 								'query' => $query
-							)
-						)
-					),
+							]
+						]
+					],
 					'content' => $lang['strbrowse'],
-				),
-				'alter' => array(
-					'attr' => array(
-						'href' => array(
+				],
+				'alter' => [
+					'attr' => [
+						'href' => [
 							'url' => 'colproperties.php',
-							'urlvars' => array(
+							'urlvars' => [
 								'action' => 'properties',
 								'server' => $_REQUEST['server'],
 								'database' => $_REQUEST['database'],
 								'schema' => $_REQUEST['schema'],
 								'table' => $tableName,
 								'column' => $_REQUEST['column'],
-							)
-						)
-					),
+							]
+						]
+					],
 					'content' => $lang['stralter'],
-				),
-				'drop' => array(
-					'attr' => array(
-						'href' => array(
+				],
+				'drop' => [
+					'attr' => [
+						'href' => [
 							'url' => 'tblproperties.php',
-							'urlvars' => array(
+							'urlvars' => [
 								'action' => 'confirm_drop',
 								'server' => $_REQUEST['server'],
 								'database' => $_REQUEST['database'],
 								'schema' => $_REQUEST['schema'],
 								'table' => $tableName,
 								'column' => $_REQUEST['column'],
-							)
-						)
-					),
+							]
+						]
+					],
 					'content' => $lang['strdrop'],
-				)
-			);
+				]
+			];
 		} else {
 			/* Browse link */
-			$navlinks = array(
-				'browse' => array(
-					'attr' => array(
-						'href' => array(
+			$navlinks = [
+				'browse' => [
+					'attr' => [
+						'href' => [
 							'url' => 'display.php',
-							'urlvars' => array(
+							'urlvars' => [
 								'subject' => 'column',
 								'server' => $_REQUEST['server'],
 								'database' => $_REQUEST['database'],
@@ -327,12 +327,12 @@ function doDefault($msg = '', $isTable = true)
 								'column' => $_REQUEST['column'],
 								'return' => 'column',
 								'query' => $query
-							)
-						)
-					),
+							]
+						]
+					],
 					'content' => $lang['strbrowse']
-				)
-			);
+				]
+			];
 		}
 
 		$misc->printNavLinks($navlinks, 'colproperties-colproperties', get_defined_vars());

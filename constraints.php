@@ -192,7 +192,7 @@ $misc = AppContainer::getMisc();
 				echo "<tr>";
 				echo "<td class=\"data1\" colspan=\"3\"><select name=\"target\">";
 				while (!$tables->EOF) {
-					$key = array('schemaname' => $tables->fields['nspname'], 'tablename' => $tables->fields['relname']);
+					$key = ['schemaname' => $tables->fields['nspname'], 'tablename' => $tables->fields['relname']];
 					$key = serialize($key);
 					echo "<option value=\"", htmlspecialchars_nc($key), "\">";
 					if ($tables->fields['nspname'] != $_REQUEST['schema']) {
@@ -454,107 +454,107 @@ $lang = AppContainer::getLang();
 
 		$constraints = $data->getConstraints($_REQUEST['table']);
 
-		$columns = array(
-			'constraint' => array(
+		$columns = [
+			'constraint' => [
 				'title' => $lang['strname'],
 				'field' => field('conname'),
-			),
-			'definition' => array(
+			],
+			'definition' => [
 				'title' => $lang['strdefinition'],
 				'field' => field('+definition'),
 				'type'  => 'pre',
-			),
-			'actions' => array(
+			],
+			'actions' => [
 				'title' => $lang['stractions'],
-			),
-			'comment' => array(
+			],
+			'comment' => [
 				'title' => $lang['strcomment'],
 				'field' => field('constcomment'),
-			),
-		);
+			],
+		];
 
-		$actions = array(
-			'drop' => array(
+		$actions = [
+			'drop' => [
 				'icon' => $misc->icon('Delete'),
 				'content' => $lang['strdrop'],
-				'attr'=> array (
-					'href' => array (
+				'attr'=> [
+					'href' => [
 						'url' => 'constraints.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'confirm_drop',
 							'table' => $_REQUEST['table'],
 							'constraint' => field('conname'),
 							'type' => field('contype')
-						)
-					)
-				)
-			)
-		);
+						]
+					]
+				]
+			]
+		];
 
 		$misc->printTable($constraints, $columns, $actions, 'constraints-constraints', $lang['strnoconstraints'], 'cnPre');
 
-		$navlinks = array (
-			'addcheck' => array (
-				'attr'=> array (
-					'href' => array (
+		$navlinks = [
+			'addcheck' => [
+				'attr'=> [
+					'href' => [
 						'url' => 'constraints.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'add_check',
 							'server' => $_REQUEST['server'],
 							'database' => $_REQUEST['database'],
 							'schema' => $_REQUEST['schema'],
 							'table' => $_REQUEST['table']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['straddcheck'],
-			),
-			'adduniq' => array (
-				'attr'=> array (
-					'href' => array (
+			],
+			'adduniq' => [
+				'attr'=> [
+					'href' => [
 						'url' => 'constraints.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'add_unique_key',
 							'server' => $_REQUEST['server'],
 							'database' => $_REQUEST['database'],
 							'schema' => $_REQUEST['schema'],
 							'table' => $_REQUEST['table']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['stradduniq'],
-			),
-			'addpk' => array (
-				'attr'=> array (
-					'href' => array (
+			],
+			'addpk' => [
+				'attr'=> [
+					'href' => [
 						'url' => 'constraints.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'add_primary_key',
 							'server' => $_REQUEST['server'],
 							'database' => $_REQUEST['database'],
 							'schema' => $_REQUEST['schema'],
 							'table' => $_REQUEST['table']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['straddpk'],
-			),
-			'addfk' => array (
-				'attr'=> array (
-					'href' => array (
+			],
+			'addfk' => [
+				'attr'=> [
+					'href' => [
 						'url' => 'constraints.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'add_foreign_key',
 							'server' => $_REQUEST['server'],
 							'database' => $_REQUEST['database'],
 							'schema' => $_REQUEST['schema'],
 							'table' => $_REQUEST['table']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['straddfk']
-			)
-		);
+			]
+		];
 		$misc->printNavLinks($navlinks, 'constraints-constraints', get_defined_vars());
 	}
 
@@ -580,10 +580,10 @@ $data = AppContainer::getData();
 			}
 		}
 
-		$attrs = array(
+		$attrs = [
 			'text'   => field('conname'),
 			'icon'   => callback('getIcon'),
-		);
+		];
 
 		$misc->printTree($constraints, $attrs, 'constraints');
 		exit;

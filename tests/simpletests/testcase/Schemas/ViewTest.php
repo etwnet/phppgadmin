@@ -60,11 +60,11 @@ class ViewTest extends PreconditionSet
         $this->createTable($DATABASE, 'public', 'viewtest', '3');       
 
         // Turn to the "Create view" page.
-		$this->assertTrue($this->get("$webUrl/views.php", array(
+		$this->assertTrue($this->get("$webUrl/views.php", [
 			            'server' => $SERVER,
 						'action' => 'create',
 						'database' => $DATABASE,
-						'schema' => 'public'))
+						'schema' => 'public'])
 					);
 
         // Enter the definition of the view.        
@@ -93,15 +93,15 @@ class ViewTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
          
         // Turn to the "Create view with wizard" page.
-		$this->assertTrue($this->get("$webUrl/views.php", array(
+		$this->assertTrue($this->get("$webUrl/views.php", [
 			            'server' => $SERVER,
 						'action' => 'wiz_create',
 						'database' => $DATABASE,
-						'schema' => 'public'))
+						'schema' => 'public'])
 					);
 
         // Select the table.        
-        $this->assertTrue($this->setField('formTables[]',  array('public.viewtest')));    
+        $this->assertTrue($this->setField('formTables[]',  ['public.viewtest']));
        
         //$this->assertTrue($this->clickSubmit($lang['strnext']));
         // If we do not hardcoded it here, it will cause fail. Encoding issue.
@@ -129,11 +129,11 @@ class ViewTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the "Create view" page.
-		$this->assertTrue($this->get("$webUrl/views.php", array(
+		$this->assertTrue($this->get("$webUrl/views.php", [
 			            'server' => $SERVER,
 						'action' => 'create',
 						'database' => $DATABASE,
-						'schema' => 'public'))
+						'schema' => 'public'])
 					);
          
         // Enter the definition of the view.        
@@ -164,15 +164,15 @@ class ViewTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
          
         // Turn to the "Create view with wizard" page.
-		$this->assertTrue($this->get("$webUrl/views.php", array(
+		$this->assertTrue($this->get("$webUrl/views.php", [
 			            'server' => $SERVER,
 						'action' => 'wiz_create',
 						'database' => $DATABASE,
-						'schema' => 'public'))
+						'schema' => 'public'])
 					);
                  
         // Select the table.        
-        $this->assertTrue($this->setField('formTables[]', array('public.viewtest')));
+        $this->assertTrue($this->setField('formTables[]', ['public.viewtest']));
         //$this->assertTrue($this->clickSubmit($lang['strnext']));
         // If we do not hardcoded it here, it will cause fail. Encoding issue.
         $this->assertTrue($this->clickSubmit('Next >'));
@@ -199,14 +199,14 @@ class ViewTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
          
         // Browse the view "createviewdirectly" created just now.
-		$this->assertTrue($this->get("$webUrl/display.php", array(
+		$this->assertTrue($this->get("$webUrl/display.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'subject' => 'view',
 						'return_url' => 'views.php%3Fdatabase%3Dtest%26amp%3Bschema%3Dpublic',
 						'return_desc' => 'Back',
-						'view' => 'createviewdirectly'))
+						'view' => 'createviewdirectly'])
 					); 
                   
         // Click the links in the view-display page.
@@ -228,12 +228,12 @@ class ViewTest extends PreconditionSet
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
         
-		$this->assertTrue($this->get("$webUrl/views.php", array(
+		$this->assertTrue($this->get("$webUrl/views.php", [
 			            'server' => $SERVER,
 						'action' => 'confselectrows',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'view' => 'createviewdirectly'))
+						'view' => 'createviewdirectly'])
 					); 
      
         // Enter the query conditions.
@@ -259,11 +259,11 @@ class ViewTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
          
          // Turn to the view display page.
-		 $this->assertTrue($this->get("$webUrl/views.php", array(
+		 $this->assertTrue($this->get("$webUrl/views.php", [
 			             'server' => $SERVER,
 						 'database' => $DATABASE,
 						 'schema' => 'public',
-						 'subject' => 'schema'))
+						 'subject' => 'schema'])
 					 );
          // Select a view.
          $this->assertTrue($this->clickLink('createviewdirectly'));
@@ -292,11 +292,11 @@ class ViewTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
          
         // Turn to the view display page.
-		$this->assertTrue($this->get("$webUrl/views.php", array(
+		$this->assertTrue($this->get("$webUrl/views.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'subject' => 'schema'))
+						'subject' => 'schema'])
 					);
         // Select a view.
         $this->assertTrue($this->clickLink('createviewdirectly'));
@@ -329,12 +329,12 @@ class ViewTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
          
         // Drop the view which was created in the last case.
-		$this->assertTrue($this->get("$webUrl/views.php", array(
+		$this->assertTrue($this->get("$webUrl/views.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_drop',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'view' => 'createviewdirectly'))
+						'view' => 'createviewdirectly'])
 					);
                 
         $this->assertTrue($this->setField('cascade', TRUE));         

@@ -47,9 +47,9 @@ class RowActions extends AbstractActions
 		// single row.  Otherwise, return empty array.
 		if ($rs->recordCount() == 0) {
 			// Check for OID column
-			$temp = array();
+			$temp = [];
 			if ($this->connection->hasObjectID($table)) {
-				$temp = array('oid');
+				$temp = ['oid'];
 			}
 			$this->connection->endTransaction();
 			return $temp;
@@ -94,7 +94,7 @@ class RowActions extends AbstractActions
 
 		// If $type is TABLE, then generate the query
 		if (empty($query) && $type == "TABLE") {
-			$query = $this->connection->getSelectSQL($table, array(), array(), array(), $orderby);
+			$query = $this->connection->getSelectSQL($table, [], [], [], $orderby);
 		}
 		if (empty($query)) {
 			return -4;
@@ -216,7 +216,7 @@ class RowActions extends AbstractActions
 		// Build clause
 		if (count($values) > 0) {
 			// Escape all field names
-			$fields = array_map(array('Postgres', 'fieldClean'), $fields);
+			$fields = array_map(['Postgres', 'fieldClean'], $fields);
 			$f_schema = $this->connection->_schema;
 			$this->connection->fieldClean($table);
 			$this->connection->fieldClean($f_schema);

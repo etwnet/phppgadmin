@@ -1,6 +1,7 @@
 <?php
 
 use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\Actions\RoleActions;
 use PhpPgAdmin\Database\Actions\SqlFunctionActions;
 use PhpPgAdmin\Database\Actions\TableActions;
 use PhpPgAdmin\Database\Actions\TypeActions;
@@ -17,7 +18,8 @@ require_once __DIR__ . '/libraries/bootstrap.php';
 /**
  * Show read only properties for a type
  */
-function doProperties($msg = '') {
+function doProperties($msg = '')
+{
 	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
@@ -31,7 +33,8 @@ function doProperties($msg = '') {
 	$misc->printTitle($lang['strproperties'], 'pg.type');
 	$misc->printMsg($msg);
 
-	function attPre($rowdata) {
+	function attPre($rowdata)
+	{
 		$pg = AppContainer::getPostgres();
 		$rowdata->fields['+type'] = $pg->formatType($rowdata->fields['type'], $rowdata->fields['atttypmod']);
 	}
@@ -39,78 +42,307 @@ function doProperties($msg = '') {
 	if ($typedata->recordCount() > 0) {
 		$vals = false;
 		switch ($typedata->fields['typtype']) {
-		case 'c':
-			$attrs = $tableActions->getTableAttributes($_REQUEST['type']);
+			case 'c':
+				$attrs = $tableActions->getTableAttributes($_REQUEST['type']);
 
-			$columns = array(
-				'field' => array(
-					'title' => $lang['strfield'],
-					'field' => field('attname'),
-				),
-				'type' => array(
-					'title' => $lang['strtype'],
-					'field' => field('+type'),
-				),
-				'comment' => array(
-					'title' => $lang['strcomment'],
-					'field' => field('comment'),
-				)
-			);
+				$columns = [
+					'field' => [
+						'title' => $lang['strfield'],
+						'field' => field('attname'),
+					],
+					'type' => [
+						'title' => $lang['strtype'],
+						'field' => field('+type'),
+					],
+					'comment' => [
+						'title' => $lang['strcomment'],
+						'field' => field('comment'),
+					]
+				];
 
-			$actions = array();
+				$actions = [];
 
-			$misc->printTable($attrs, $columns, $actions, 'types-properties', null, 'attPre');
+				$misc->printTable($attrs, $columns, $actions, 'types-properties', null, 'attPre');
 
-			break;
-		case 'e':
-			$vals = $typeActions->getEnumValues($typedata->fields['typname']);
-		default:
-			$byval = $pg->phpBool($typedata->fields['typbyval']);
-			echo "<table>\n";
-			echo "<tr><th class=\"data left\">{$lang['strname']}</th>\n";
-			echo "<td class=\"data1\">", $misc->printVal($typedata->fields['typname']), "</td></tr>\n";
-			echo "<tr><th class=\"data left\">{$lang['strinputfn']}</th>\n";
-			echo "<td class=\"data1\">", $misc->printVal($typedata->fields['typin']), "</td></tr>\n";
-			echo "<tr><th class=\"data left\">{$lang['stroutputfn']}</th>\n";
-			echo "<td class=\"data1\">", $misc->printVal($typedata->fields['typout']), "</td></tr>\n";
-			echo "<tr><th class=\"data left\">{$lang['strlength']}</th>\n";
-			echo "<td class=\"data1\">", $misc->printVal($typedata->fields['typlen']), "</td></tr>\n";
-			echo "<tr><th class=\"data left\">{$lang['strpassbyval']}</th>\n";
-			echo "<td class=\"data1\">", ($byval) ? $lang['stryes'] : $lang['strno'], "</td></tr>\n";
-			echo "<tr><th class=\"data left\">{$lang['stralignment']}</th>\n";
-			echo "<td class=\"data1\">", $misc->printVal($typedata->fields['typalign']), "</td></tr>\n";
-			if ($pg->hasEnumTypes() && $vals) {
-				$vals = $vals->getArray();
-				$nbVals = count($vals);
-				echo "<tr>\n\t<th class=\"data left\" rowspan=\"$nbVals\">{$lang['strenumvalues']}</th>\n";
-				echo "<td class=\"data2\">{$vals[0]['enumval']}</td></tr>\n";
-				for ($i = 1; $i < $nbVals; $i++)
-					echo "<td class=\"data", 2 - ($i % 2), "\">{$vals[$i]['enumval']}</td></tr>\n";
-			}
-			echo "</table>\n";
+				break;
+			case 'e':
+				$vals = $typeActions->getEnumValues($typedata->fields['typname']);
+			default:
+				$byval = $pg->phpBool($typedata->fields['typbyval']);
+				echo "<table>\n";
+				echo "<tr><th class=\"data left\">{$lang['strname']}</th>\n";
+				echo "<td class=\"data1\">", $misc->printVal($typedata->fields['typname']), "</td></tr>\n";
+				echo "<tr><th class=\"data left\">{$lang['strinputfn']}</th>\n";
+				echo "<td class=\"data1\">", $misc->printVal($typedata->fields['typin']), "</td></tr>\n";
+				echo "<tr><th class=\"data left\">{$lang['stroutputfn']}</th>\n";
+				echo "<td class=\"data1\">", $misc->printVal($typedata->fields['typout']), "</td></tr>\n";
+				echo "<tr><th class=\"data left\">{$lang['strlength']}</th>\n";
+				echo "<td class=\"data1\">", $misc->printVal($typedata->fields['typlen']), "</td></tr>\n";
+				echo "<tr><th class=\"data left\">{$lang['strpassbyval']}</th>\n";
+				echo "<td class=\"data1\">", ($byval) ? $lang['stryes'] : $lang['strno'], "</td></tr>\n";
+				echo "<tr><th class=\"data left\">{$lang['stralignment']}</th>\n";
+				echo "<td class=\"data1\">", $misc->printVal($typedata->fields['typalign']), "</td></tr>\n";
+				if ($typeActions->hasEnumTypes() && $vals) {
+					$vals = $vals->getArray();
+					$nbVals = count($vals);
+					echo "<tr>\n\t<th class=\"data left\" rowspan=\"$nbVals\">{$lang['strenumvalues']}</th>\n";
+					echo "<td class=\"data2\">{$vals[0]['enumval']}</td></tr>\n";
+					for ($i = 1; $i < $nbVals; $i++)
+						echo "<td class=\"data", 2 - ($i % 2), "\">{$vals[$i]['enumval']}</td></tr>\n";
+				}
+				echo "</table>\n";
 		}
 
-		$misc->printNavLinks(array('showall' => array(
-			'attr' => array(
-				'href' => array(
-					'url' => 'types.php',
-					'urlvars' => array(
-						'server' => $_REQUEST['server'],
-						'database' => $_REQUEST['database'],
-						'schema' => $_REQUEST['schema'],
-					)
-				)
-			),
-			'content' => $lang['strshowalltypes']
-		)), 'types-properties', get_defined_vars());
+		$navlinks = [
+			'showall' => [
+				'attr' => [
+					'href' => [
+						'url' => 'types.php',
+						'urlvars' => [
+							'server' => $_REQUEST['server'],
+							'database' => $_REQUEST['database'],
+							'schema' => $_REQUEST['schema'],
+						]
+					]
+				],
+				'icon' => $misc->icon('Return'),
+				'content' => $lang['strshowalltypes']
+			],
+			'alter' => [
+				'attr' => [
+					'href' => [
+						'url' => 'types.php',
+						'urlvars' => [
+							'action' => 'alter',
+							'server' => $_REQUEST['server'],
+							'database' => $_REQUEST['database'],
+							'schema' => $_REQUEST['schema'],
+							'type' => $_REQUEST['type'],
+						]
+					]
+				],
+				'icon' => $misc->icon('Edit'),
+				'content' => $lang['stredit']
+			],
+		];
+
+		$misc->printNavLinks($navlinks, 'types-properties', get_defined_vars());
 	} else
 		doDefault($lang['strinvalidparam']);
 }
 
 /**
+ * Alters a type (rename, owner change, enum values)
+ */
+function doAlter($msg = '')
+{
+	$pg = AppContainer::getPostgres();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
+	$typeActions = new TypeActions($pg);
+	$roleActions = new RoleActions($pg);
+
+	// Get type (using base name)
+	$typedata = $typeActions->getType($_REQUEST['type']);
+
+	if ($typedata->recordCount() === 0) {
+		doDefault($lang['strinvalidparam']);
+		return;
+	}
+
+	$typname = $typedata->fields['typname'];
+	$typtype = $typedata->fields['typtype'];
+	$typowner = $typedata->fields['typowner'];
+	//var_dump($typedata->fields);
+
+	// Initialize POST variables if not set
+	if (!isset($_POST['name'])) $_POST['name'] = $typname;
+	if (!isset($_POST['owner'])) $_POST['owner'] = $typowner;
+	if (!isset($_POST['newEnumValues'])) $_POST['newEnumValues'] = [];
+	if (!isset($_POST['renameEnumOld'])) $_POST['renameEnumOld'] = [];
+	if (!isset($_POST['renameEnumNew'])) $_POST['renameEnumNew'] = [];
+
+	$misc->printTrail('type');
+	$misc->printTitle($lang['stredit'] . ' - ' . $misc->printVal($typname), 'pg.type.alter');
+	$misc->printMsg($msg);
+
+	echo "<form action=\"types.php\" method=\"post\">\n";
+	echo "<table>\n";
+	echo "<tr><th class=\"data left required\">{$lang['strname']}</th>\n";
+	echo "<td class=\"data1\"><input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
+	htmlspecialchars_nc($_POST['name']), "\" /></td></tr>\n";
+
+	// Owner change (superusers only)
+	if ($pg->isSuperUser()) {
+		$users = $roleActions->getUsers();
+		echo "<tr><th class=\"data left required\">{$lang['strowner']}</th>\n";
+		echo "<td class=\"data1\"><select name=\"owner\">\n";
+		foreach ($users as $user) {
+			$uname = $user['usename'];
+			echo "<option value=\"", htmlspecialchars($uname), "\"", ($uname == $_POST['owner']) ? ' selected="selected"' : '', ">",
+			htmlspecialchars($uname), "</option>\n";
+		}
+		echo "</select></td></tr>\n";
+	}
+
+	// Enum value management
+	if ($typtype === 'e' && $typeActions->hasEnumTypes()) {
+		$enumValues = $typeActions->getEnumValues($typname);
+
+		// Display existing enum values
+		if ($enumValues->recordCount() > 0) {
+			$enumValues = $enumValues->getArray();
+			$nbVals = count($enumValues);
+
+			echo "<tr><th class=\"data left\">{$lang['strenumvalues']}</th>\n";
+			echo "<td class=\"data1\">\n";
+			echo "<table style=\"border: 1px solid #999; width: 100%;\">\n";
+			echo "<tr><th class=\"data left\" style=\"width: 50%;\">{$lang['strvalue']}</th>";
+			if ($typeActions->hasTypeRenameValue()) {
+				echo "<th class=\"data left\" style=\"width: 50%;\">{$lang['strrenamevalue']}</th>";
+			}
+			echo "</tr>\n";
+
+			for ($i = 0; $i < $nbVals; $i++) {
+				echo "<tr><td class=\"data\">" . htmlspecialchars($enumValues[$i]['enumval']) . "</td>";
+				if ($typeActions->hasTypeRenameValue()) {
+					$newValue = htmlspecialchars($_POST['renameEnumNew'][$i] ?? '');
+					echo "<td class=\"data\">\n";
+					echo "<input type=\"hidden\" name=\"renameEnumOld[$i]\" value=\"",	htmlspecialchars($enumValues[$i]['enumval']), "\" />\n";
+					echo "<input name=\"renameEnumNew[$i]\" size=\"24\" value=\"$newValue\" placeholder=\"{$lang['strnewname']}\" />\n";
+					echo "</td>";
+				}
+
+				echo "</tr>\n";
+			}
+
+			echo "</table>\n";
+		}
+
+		// Add new enum values
+		if ($typeActions->hasTypeAddValue()) {
+			echo "<tr><th class=\"data left\">{$lang['straddenumvalue']}</th>\n";
+			echo "<td class=\"data1\">\n";
+			for ($i = 0; $i < 5; $i++) {
+				$newValue = htmlspecialchars($_POST['newEnumValues'][$i] ?? '');
+				echo "<input name=\"newEnumValues[$i]\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" placeholder=\"{$lang['strvalue']}\" value=\"$newValue\" /><br />\n";
+			}
+		}
+	}
+
+	echo "</table>\n";
+	echo "<p><input type=\"hidden\" name=\"action\" value=\"save_alter\" />\n";
+	echo "<input type=\"hidden\" name=\"type\" value=\"", htmlspecialchars_nc($_REQUEST['type']), "\" />\n";
+	echo $misc->form;
+	echo "<input type=\"submit\" value=\"{$lang['strsave']}\" />\n";
+	echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
+	echo "</form>\n";
+}
+
+/**
+ * Save altered type
+ */
+function doSaveAlter()
+{
+	$pg = AppContainer::getPostgres();
+	$lang = AppContainer::getLang();
+	$typeActions = new TypeActions($pg);
+
+	if (isset($_POST['cancel']) || !isset($_POST['type'])) {
+		doDefault();
+		return;
+	}
+
+	$originalType = $_POST['type'];
+	$newName = trim($_POST['name'] ?? '');
+	$newOwner = trim($_POST['owner'] ?? '');
+
+	// Validate name
+	if ($newName === '') {
+		doAlter($lang['strtypeneedsname']);
+		return;
+	}
+
+	$pg->beginTransaction();
+
+	// Rename type if name changed
+	if ($newName !== $originalType) {
+		$status = $typeActions->renameType($originalType, $newName);
+		if ($status != 0) {
+			$pg->rollbackTransaction();
+			doAlter($lang['strtyperenamedbad']);
+			return;
+		}
+	}
+
+	// Change owner if superuser selected one
+	if ($pg->isSuperUser() && $newOwner) {
+		$status = $typeActions->changeTypeOwner($newName, $newOwner);
+		if ($status != 0) {
+			$pg->rollbackTransaction();
+			doAlter($lang['strtypeownerbad']);
+			return;
+		}
+	}
+
+	// Handle enum value changes
+	$typetype = null;
+	$typedata = $typeActions->getType($newName);
+	if ($typedata->recordCount() > 0) {
+		$typetype = $typedata->fields['typtype'];
+	}
+
+	if ($typetype === 'e' && $typeActions->hasEnumTypes()) {
+		// Handle enum value renames
+		if ($typeActions->hasTypeRenameValue() && isset($_POST['renameEnumOld'])) {
+			foreach ($_POST['renameEnumOld'] as $i => $oldValue) {
+				$oldValue = trim($oldValue);
+				$newValue = trim($_POST['renameEnumNew'][$i] ?? '');
+
+				if ($newValue && $newValue !== $oldValue) {
+					$status = $typeActions->renameEnumTypeValue($newName, $oldValue, $newValue);
+					if ($status != 0) {
+						$pg->rollbackTransaction();
+						$msg = format_string($lang['strenumvaluerenamedbad'], [
+							'old' => $oldValue,
+							'new' => $newValue
+						]);
+						doAlter($msg);
+						return;
+					}
+				}
+			}
+		}
+
+		// Handle adding new enum values
+		if ($typeActions->hasTypeAddValue() && isset($_POST['newEnumValues'])) {
+			foreach ($_POST['newEnumValues'] as $newValue) {
+				$newValue = trim($newValue);
+				if ($newValue) {
+					$status = $typeActions->addEnumTypeValue($newName, $newValue);
+					if ($status != 0) {
+						$pg->rollbackTransaction();
+						$msg = format_string($lang['strenumvalueaddedbad'], [
+							'new' => $newValue
+						]);
+						doAlter($msg);
+						return;
+					}
+				}
+			}
+		}
+	}
+
+	$pg->endTransaction();
+	AppContainer::setShouldReloadTree(true);
+	doDefault($lang['strtypealtered']);
+}
+
+/**
  * Show confirmation of drop and perform actual drop
  */
-function doDrop($confirm) {
+function doDrop($confirm)
+{
 	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
@@ -137,13 +369,13 @@ function doDrop($confirm) {
 		else
 			doDefault($lang['strtypedroppedbad']);
 	}
-
 }
 
 /**
  * Displays a screen where they can enter a new composite type
  */
-function doCreateComposite($msg = '') {
+function doCreateComposite($msg = '')
+{
 	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
@@ -155,138 +387,145 @@ function doCreateComposite($msg = '') {
 	if (!isset($_REQUEST['typcomment'])) $_REQUEST['typcomment'] = '';
 
 	switch ($_REQUEST['stage']) {
-	case 1:
-		$misc->printTrail('type');
-		$misc->printTitle($lang['strcreatecomptype'], 'pg.type.create');
-		$misc->printMsg($msg);
+		case 1:
+			$misc->printTrail('type');
+			$misc->printTitle($lang['strcreatecomptype'], 'pg.type.create');
+			$misc->printMsg($msg);
 
-		echo "<form action=\"types.php\" method=\"post\">\n";
-		echo "<table>\n";
-		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
-		echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-		htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
-		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strnumfields']}</th>\n";
-		echo "\t\t<td class=\"data\"><input name=\"fields\" size=\"5\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-		htmlspecialchars_nc($_REQUEST['fields']), "\" /></td>\n\t</tr>\n";
+			echo "<form action=\"types.php\" method=\"post\">\n";
+			echo "<table>\n";
+			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
+			echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
+			htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
+			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strnumfields']}</th>\n";
+			echo "\t\t<td class=\"data\"><input name=\"fields\" size=\"5\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
+			htmlspecialchars_nc($_REQUEST['fields']), "\" /></td>\n\t</tr>\n";
 
-		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
-		echo "\t\t<td><textarea name=\"typcomment\" rows=\"3\" cols=\"32\">",
-		htmlspecialchars_nc($_REQUEST['typcomment']), "</textarea></td>\n\t</tr>\n";
+			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
+			echo "\t\t<td><textarea name=\"typcomment\" rows=\"3\" cols=\"32\">",
+			htmlspecialchars_nc($_REQUEST['typcomment']), "</textarea></td>\n\t</tr>\n";
 
-		echo "</table>\n";
-		echo "<p><input type=\"hidden\" name=\"action\" value=\"create_comp\" />\n";
-		echo "<input type=\"hidden\" name=\"stage\" value=\"2\" />\n";
-		echo $misc->form;
-		echo "<input type=\"submit\" value=\"{$lang['strnext']}\" />\n";
-		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
-		echo "</form>\n";
-		break;
-	case 2:
-		// Check inputs
-		$fields = trim($_REQUEST['fields']);
-		if (trim($_REQUEST['name']) == '') {
-			$_REQUEST['stage'] = 1;
-			doCreateComposite($lang['strtypeneedsname']);
-			return;
-		} elseif ($fields == '' || !is_numeric($fields) || $fields != (int)$fields || $fields < 1) {
-			$_REQUEST['stage'] = 1;
-			doCreateComposite($lang['strtypeneedscols']);
-			return;
-		}
-
-		$types = $typeActions->getTypes(true, false, true);
-
-		$misc->printTrail('schema');
-		$misc->printTitle($lang['strcreatecomptype'], 'pg.type.create');
-		$misc->printMsg($msg);
-
-		echo "<form action=\"types.php\" method=\"post\">\n";
-
-		// Output table header
-		echo "<table>\n";
-		echo "\t<tr><th colspan=\"2\" class=\"data required\">{$lang['strfield']}</th><th colspan=\"2\" class=\"data required\">{$lang['strtype']}</th>";
-		echo "<th class=\"data\">{$lang['strlength']}</th><th class=\"data\">{$lang['strcomment']}</th></tr>\n";
-
-		for ($i = 0; $i < $_REQUEST['fields']; $i++) {
-			if (!isset($_REQUEST['field'][$i])) $_REQUEST['field'][$i] = '';
-			if (!isset($_REQUEST['length'][$i])) $_REQUEST['length'][$i] = '';
-			if (!isset($_REQUEST['colcomment'][$i])) $_REQUEST['colcomment'][$i] = '';
-
-			echo "\t<tr>\n\t\t<td>", $i + 1, ".&nbsp;</td>\n";
-			echo "\t\t<td><input name=\"field[{$i}]\" size=\"16\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-			htmlspecialchars_nc($_REQUEST['field'][$i]), "\" /></td>\n";
-			echo "\t\t<td>\n\t\t\t<select name=\"type[{$i}]\">\n";
-			$types->moveFirst();
-			while (!$types->EOF) {
-				$typname = $types->fields['typname'];
-				echo "\t\t\t\t<option value=\"", htmlspecialchars_nc($typname), "\"",
-				(isset($_REQUEST['type'][$i]) && $typname == $_REQUEST['type'][$i]) ? ' selected="selected"' : '', ">",
-				$misc->printVal($typname), "</option>\n";
-				$types->moveNext();
+			echo "</table>\n";
+			echo "<p><input type=\"hidden\" name=\"action\" value=\"create_comp\" />\n";
+			echo "<input type=\"hidden\" name=\"stage\" value=\"2\" />\n";
+			echo $misc->form;
+			echo "<input type=\"submit\" value=\"{$lang['strnext']}\" />\n";
+			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
+			echo "</form>\n";
+			break;
+		case 2:
+			// Check inputs
+			$fields = trim($_REQUEST['fields']);
+			if (trim($_REQUEST['name']) == '') {
+				$_REQUEST['stage'] = 1;
+				doCreateComposite($lang['strtypeneedsname']);
+				return;
+			} elseif ($fields == '' || !is_numeric($fields) || $fields != (int)$fields || $fields < 1) {
+				$_REQUEST['stage'] = 1;
+				doCreateComposite($lang['strtypeneedscols']);
+				return;
 			}
-			echo "\t\t\t</select>\n\t\t</td>\n";
 
-			// Output array type selector
-			echo "\t\t<td>\n\t\t\t<select name=\"array[{$i}]\">\n";
-			echo "\t\t\t\t<option value=\"\"", (isset($_REQUEST['array'][$i]) && $_REQUEST['array'][$i] == '') ? ' selected="selected"' : '', "></option>\n";
-			echo "\t\t\t\t<option value=\"[]\"", (isset($_REQUEST['array'][$i]) && $_REQUEST['array'][$i] == '[]') ? ' selected="selected"' : '', ">[ ]</option>\n";
-			echo "\t\t\t</select>\n\t\t</td>\n";
+			$types = $typeActions->getTypes(true, false, true);
 
-			echo "\t\t<td><input name=\"length[{$i}]\" size=\"10\" value=\"",
-			htmlspecialchars_nc($_REQUEST['length'][$i]), "\" /></td>\n";
-			echo "\t\t<td><input name=\"colcomment[{$i}]\" size=\"40\" value=\"",
-			htmlspecialchars_nc($_REQUEST['colcomment'][$i]), "\" /></td>\n\t</tr>\n";
-		}
-		echo "</table>\n";
-		echo "<p><input type=\"hidden\" name=\"action\" value=\"create_comp\" />\n";
-		echo "<input type=\"hidden\" name=\"stage\" value=\"3\" />\n";
-		echo $misc->form;
-		echo "<input type=\"hidden\" name=\"name\" value=\"", htmlspecialchars_nc($_REQUEST['name']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"fields\" value=\"", htmlspecialchars_nc($_REQUEST['fields']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"typcomment\" value=\"", htmlspecialchars_nc($_REQUEST['typcomment']), "\" />\n";
-		echo "<input type=\"submit\" value=\"{$lang['strcreate']}\" />\n";
-		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
-		echo "</form>\n";
+			$misc->printTrail('schema');
+			$misc->printTitle($lang['strcreatecomptype'], 'pg.type.create');
+			$misc->printMsg($msg);
 
-		break;
-	case 3:
-		// Check inputs
-		$fields = trim($_REQUEST['fields']);
-		if (trim($_REQUEST['name']) == '') {
-			$_REQUEST['stage'] = 1;
-			doCreateComposite($lang['strtypeneedsname']);
-			return;
-		} elseif ($fields == '' || !is_numeric($fields) || $fields != (int)$fields || $fields <= 0) {
-			$_REQUEST['stage'] = 1;
-			doCreateComposite($lang['strtypeneedscols']);
-			return;
-		}
+			echo "<form action=\"types.php\" method=\"post\">\n";
 
-		$status = $typeActions->createCompositeType($_REQUEST['name'], $_REQUEST['fields'], $_REQUEST['field'],
-			$_REQUEST['type'], $_REQUEST['array'], $_REQUEST['length'], $_REQUEST['colcomment'],
-			$_REQUEST['typcomment']);
+			// Output table header
+			echo "<table>\n";
+			echo "\t<tr><th colspan=\"2\" class=\"data required\">{$lang['strfield']}</th><th colspan=\"2\" class=\"data required\">{$lang['strtype']}</th>";
+			echo "<th class=\"data\">{$lang['strlength']}</th><th class=\"data\">{$lang['strcomment']}</th></tr>\n";
 
-		if ($status == 0)
-			doDefault($lang['strtypecreated']);
-		elseif ($status == -1) {
-			$_REQUEST['stage'] = 2;
-			doCreateComposite($lang['strtypeneedsfield']);
-			return;
-		} else {
-			$_REQUEST['stage'] = 2;
-			doCreateComposite($lang['strtypecreatedbad']);
-			return;
-		}
-		break;
-	default:
-		echo "<p>{$lang['strinvalidparam']}</p>\n";
+			for ($i = 0; $i < $_REQUEST['fields']; $i++) {
+				if (!isset($_REQUEST['field'][$i])) $_REQUEST['field'][$i] = '';
+				if (!isset($_REQUEST['length'][$i])) $_REQUEST['length'][$i] = '';
+				if (!isset($_REQUEST['colcomment'][$i])) $_REQUEST['colcomment'][$i] = '';
+
+				echo "\t<tr>\n\t\t<td>", $i + 1, ".&nbsp;</td>\n";
+				echo "\t\t<td><input name=\"field[{$i}]\" size=\"16\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
+				htmlspecialchars_nc($_REQUEST['field'][$i]), "\" /></td>\n";
+				echo "\t\t<td>\n\t\t\t<select name=\"type[{$i}]\">\n";
+				$types->moveFirst();
+				while (!$types->EOF) {
+					$typname = $types->fields['typname'];
+					echo "\t\t\t\t<option value=\"", htmlspecialchars_nc($typname), "\"", (isset($_REQUEST['type'][$i]) && $typname == $_REQUEST['type'][$i]) ? ' selected="selected"' : '', ">",
+					$misc->printVal($typname), "</option>\n";
+					$types->moveNext();
+				}
+				echo "\t\t\t</select>\n\t\t</td>\n";
+
+				// Output array type selector
+				echo "\t\t<td>\n\t\t\t<select name=\"array[{$i}]\">\n";
+				echo "\t\t\t\t<option value=\"\"", (isset($_REQUEST['array'][$i]) && $_REQUEST['array'][$i] == '') ? ' selected="selected"' : '', "></option>\n";
+				echo "\t\t\t\t<option value=\"[]\"", (isset($_REQUEST['array'][$i]) && $_REQUEST['array'][$i] == '[]') ? ' selected="selected"' : '', ">[ ]</option>\n";
+				echo "\t\t\t</select>\n\t\t</td>\n";
+
+				echo "\t\t<td><input name=\"length[{$i}]\" size=\"10\" value=\"",
+				htmlspecialchars_nc($_REQUEST['length'][$i]), "\" /></td>\n";
+				echo "\t\t<td><input name=\"colcomment[{$i}]\" size=\"40\" value=\"",
+				htmlspecialchars_nc($_REQUEST['colcomment'][$i]), "\" /></td>\n\t</tr>\n";
+			}
+			echo "</table>\n";
+			echo "<p><input type=\"hidden\" name=\"action\" value=\"create_comp\" />\n";
+			echo "<input type=\"hidden\" name=\"stage\" value=\"3\" />\n";
+			echo $misc->form;
+			echo "<input type=\"hidden\" name=\"name\" value=\"", htmlspecialchars_nc($_REQUEST['name']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"fields\" value=\"", htmlspecialchars_nc($_REQUEST['fields']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"typcomment\" value=\"", htmlspecialchars_nc($_REQUEST['typcomment']), "\" />\n";
+			echo "<input type=\"submit\" value=\"{$lang['strcreate']}\" />\n";
+			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
+			echo "</form>\n";
+
+			break;
+		case 3:
+			// Check inputs
+			$fields = trim($_REQUEST['fields']);
+			if (trim($_REQUEST['name']) == '') {
+				$_REQUEST['stage'] = 1;
+				doCreateComposite($lang['strtypeneedsname']);
+				return;
+			} elseif ($fields == '' || !is_numeric($fields) || $fields != (int)$fields || $fields <= 0) {
+				$_REQUEST['stage'] = 1;
+				doCreateComposite($lang['strtypeneedscols']);
+				return;
+			}
+
+			$status = $typeActions->createCompositeType(
+				$_REQUEST['name'],
+				$_REQUEST['fields'],
+				$_REQUEST['field'],
+				$_REQUEST['type'],
+				$_REQUEST['array'],
+				$_REQUEST['length'],
+				$_REQUEST['colcomment'],
+				$_REQUEST['typcomment']
+			);
+
+			if ($status == 0)
+				doDefault($lang['strtypecreated']);
+			elseif ($status == -1) {
+				$_REQUEST['stage'] = 2;
+				doCreateComposite($lang['strtypeneedsfield']);
+				return;
+			} else {
+				$_REQUEST['stage'] = 2;
+				doCreateComposite($lang['strtypecreatedbad']);
+				return;
+			}
+			break;
+		default:
+			echo "<p>{$lang['strinvalidparam']}</p>\n";
 	}
 }
 
 /**
  * Displays a screen where they can enter a new enum type
  */
-function doCreateEnum($msg = '') {
+function doCreateEnum($msg = '')
+{
 	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
@@ -298,110 +537,111 @@ function doCreateEnum($msg = '') {
 	if (!isset($_REQUEST['typcomment'])) $_REQUEST['typcomment'] = '';
 
 	switch ($_REQUEST['stage']) {
-	case 1:
-		$misc->printTrail('type');
-		$misc->printTitle($lang['strcreateenumtype'], 'pg.type.create');
-		$misc->printMsg($msg);
+		case 1:
+			$misc->printTrail('type');
+			$misc->printTitle($lang['strcreateenumtype'], 'pg.type.create');
+			$misc->printMsg($msg);
 
-		echo "<form action=\"types.php\" method=\"post\">\n";
-		echo "<table>\n";
-		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
-		echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-		htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
-		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strnumvalues']}</th>\n";
-		echo "\t\t<td class=\"data\"><input name=\"values\" size=\"5\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-		htmlspecialchars_nc($_REQUEST['values']), "\" /></td>\n\t</tr>\n";
+			echo "<form action=\"types.php\" method=\"post\">\n";
+			echo "<table>\n";
+			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
+			echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
+			htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
+			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strnumvalues']}</th>\n";
+			echo "\t\t<td class=\"data\"><input name=\"values\" size=\"5\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
+			htmlspecialchars_nc($_REQUEST['values']), "\" /></td>\n\t</tr>\n";
 
-		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
-		echo "\t\t<td><textarea name=\"typcomment\" rows=\"3\" cols=\"32\">",
-		htmlspecialchars_nc($_REQUEST['typcomment']), "</textarea></td>\n\t</tr>\n";
+			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
+			echo "\t\t<td><textarea name=\"typcomment\" rows=\"3\" cols=\"32\">",
+			htmlspecialchars_nc($_REQUEST['typcomment']), "</textarea></td>\n\t</tr>\n";
 
-		echo "</table>\n";
-		echo "<p><input type=\"hidden\" name=\"action\" value=\"create_enum\" />\n";
-		echo "<input type=\"hidden\" name=\"stage\" value=\"2\" />\n";
-		echo $misc->form;
-		echo "<input type=\"submit\" value=\"{$lang['strnext']}\" />\n";
-		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
-		echo "</form>\n";
-		break;
-	case 2:
-		// Check inputs
-		$values = trim($_REQUEST['values']);
-		if (trim($_REQUEST['name']) == '') {
-			$_REQUEST['stage'] = 1;
-			doCreateEnum($lang['strtypeneedsname']);
-			return;
-		} elseif ($values == '' || !is_numeric($values) || $values != (int)$values || $values < 1) {
-			$_REQUEST['stage'] = 1;
-			doCreateEnum($lang['strtypeneedsvals']);
-			return;
-		}
+			echo "</table>\n";
+			echo "<p><input type=\"hidden\" name=\"action\" value=\"create_enum\" />\n";
+			echo "<input type=\"hidden\" name=\"stage\" value=\"2\" />\n";
+			echo $misc->form;
+			echo "<input type=\"submit\" value=\"{$lang['strnext']}\" />\n";
+			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
+			echo "</form>\n";
+			break;
+		case 2:
+			// Check inputs
+			$values = trim($_REQUEST['values']);
+			if (trim($_REQUEST['name']) == '') {
+				$_REQUEST['stage'] = 1;
+				doCreateEnum($lang['strtypeneedsname']);
+				return;
+			} elseif ($values == '' || !is_numeric($values) || $values != (int)$values || $values < 1) {
+				$_REQUEST['stage'] = 1;
+				doCreateEnum($lang['strtypeneedsvals']);
+				return;
+			}
 
-		$misc->printTrail('schema');
-		$misc->printTitle($lang['strcreateenumtype'], 'pg.type.create');
-		$misc->printMsg($msg);
+			$misc->printTrail('schema');
+			$misc->printTitle($lang['strcreateenumtype'], 'pg.type.create');
+			$misc->printMsg($msg);
 
-		echo "<form action=\"types.php\" method=\"post\">\n";
+			echo "<form action=\"types.php\" method=\"post\">\n";
 
-		// Output table header
-		echo "<table>\n";
-		echo "\t<tr><th colspan=\"2\" class=\"data required\">{$lang['strvalue']}</th></tr>\n";
+			// Output table header
+			echo "<table>\n";
+			echo "\t<tr><th colspan=\"2\" class=\"data required\">{$lang['strvalue']}</th></tr>\n";
 
-		for ($i = 0; $i < $_REQUEST['values']; $i++) {
-			if (!isset($_REQUEST['value'][$i])) $_REQUEST['value'][$i] = '';
+			for ($i = 0; $i < $_REQUEST['values']; $i++) {
+				if (!isset($_REQUEST['value'][$i])) $_REQUEST['value'][$i] = '';
 
-			echo "\t<tr>\n\t\t<td>", $i + 1, ".&nbsp;</td>\n";
-			echo "\t\t<td><input name=\"value[{$i}]\" size=\"16\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-			htmlspecialchars_nc($_REQUEST['value'][$i]), "\" /></td>\n\t</tr>\n";
-		}
-		echo "</table>\n";
-		echo "<p><input type=\"hidden\" name=\"action\" value=\"create_enum\" />\n";
-		echo "<input type=\"hidden\" name=\"stage\" value=\"3\" />\n";
-		echo $misc->form;
-		echo "<input type=\"hidden\" name=\"name\" value=\"", htmlspecialchars_nc($_REQUEST['name']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"values\" value=\"", htmlspecialchars_nc($_REQUEST['values']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"typcomment\" value=\"", htmlspecialchars_nc($_REQUEST['typcomment']), "\" />\n";
-		echo "<input type=\"submit\" value=\"{$lang['strcreate']}\" />\n";
-		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
-		echo "</form>\n";
+				echo "\t<tr>\n\t\t<td>", $i + 1, ".&nbsp;</td>\n";
+				echo "\t\t<td><input name=\"value[{$i}]\" size=\"16\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
+				htmlspecialchars_nc($_REQUEST['value'][$i]), "\" /></td>\n\t</tr>\n";
+			}
+			echo "</table>\n";
+			echo "<p><input type=\"hidden\" name=\"action\" value=\"create_enum\" />\n";
+			echo "<input type=\"hidden\" name=\"stage\" value=\"3\" />\n";
+			echo $misc->form;
+			echo "<input type=\"hidden\" name=\"name\" value=\"", htmlspecialchars_nc($_REQUEST['name']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"values\" value=\"", htmlspecialchars_nc($_REQUEST['values']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"typcomment\" value=\"", htmlspecialchars_nc($_REQUEST['typcomment']), "\" />\n";
+			echo "<input type=\"submit\" value=\"{$lang['strcreate']}\" />\n";
+			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
+			echo "</form>\n";
 
-		break;
-	case 3:
-		// Check inputs
-		$values = trim($_REQUEST['values']);
-		if (trim($_REQUEST['name']) == '') {
-			$_REQUEST['stage'] = 1;
-			doCreateEnum($lang['strtypeneedsname']);
-			return;
-		} elseif ($values == '' || !is_numeric($values) || $values != (int)$values || $values <= 0) {
-			$_REQUEST['stage'] = 1;
-			doCreateEnum($lang['strtypeneedsvals']);
-			return;
-		}
+			break;
+		case 3:
+			// Check inputs
+			$values = trim($_REQUEST['values']);
+			if (trim($_REQUEST['name']) == '') {
+				$_REQUEST['stage'] = 1;
+				doCreateEnum($lang['strtypeneedsname']);
+				return;
+			} elseif ($values == '' || !is_numeric($values) || $values != (int)$values || $values <= 0) {
+				$_REQUEST['stage'] = 1;
+				doCreateEnum($lang['strtypeneedsvals']);
+				return;
+			}
 
-		$status = $typeActions->createEnumType($_REQUEST['name'], $_REQUEST['value'], $_REQUEST['typcomment']);
+			$status = $typeActions->createEnumType($_REQUEST['name'], $_REQUEST['value'], $_REQUEST['typcomment']);
 
-		if ($status == 0)
-			doDefault($lang['strtypecreated']);
-		elseif ($status == -1) {
-			$_REQUEST['stage'] = 2;
-			doCreateEnum($lang['strtypeneedsvalue']);
-			return;
-		} else {
-			$_REQUEST['stage'] = 2;
-			doCreateEnum($lang['strtypecreatedbad']);
-			return;
-		}
-		break;
-	default:
-		echo "<p>{$lang['strinvalidparam']}</p>\n";
+			if ($status == 0)
+				doDefault($lang['strtypecreated']);
+			elseif ($status == -1) {
+				$_REQUEST['stage'] = 2;
+				doCreateEnum($lang['strtypeneedsvalue']);
+				return;
+			} else {
+				$_REQUEST['stage'] = 2;
+				doCreateEnum($lang['strtypecreatedbad']);
+				return;
+			}
+			break;
+		default:
+			echo "<p>{$lang['strinvalidparam']}</p>\n";
 	}
 }
 
 /**
  * Displays a screen where they can enter a new type
  */
-function doCreate($msg = '') {
+function doCreate($msg = '')
+{
 	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
@@ -435,8 +675,7 @@ function doCreate($msg = '') {
 	echo "<td class=\"data1\"><select name=\"typin\">";
 	while (!$funcs->EOF) {
 		$proname = htmlspecialchars_nc($funcs->fields['proname']);
-		echo "<option value=\"{$proname}\"",
-		($proname == $_POST['typin']) ? ' selected="selected"' : '', ">{$proname}</option>\n";
+		echo "<option value=\"{$proname}\"", ($proname == $_POST['typin']) ? ' selected="selected"' : '', ">{$proname}</option>\n";
 		$funcs->moveNext();
 	}
 	echo "</select></td></tr>\n";
@@ -445,8 +684,7 @@ function doCreate($msg = '') {
 	$funcs->moveFirst();
 	while (!$funcs->EOF) {
 		$proname = htmlspecialchars_nc($funcs->fields['proname']);
-		echo "<option value=\"{$proname}\"",
-		($proname == $_POST['typout']) ? ' selected="selected"' : '', ">{$proname}</option>\n";
+		echo "<option value=\"{$proname}\"", ($proname == $_POST['typout']) ? ' selected="selected"' : '', ">{$proname}</option>\n";
 		$funcs->moveNext();
 	}
 	echo "</select></td></tr>\n";
@@ -461,8 +699,7 @@ function doCreate($msg = '') {
 	echo "<option value=\"\"></option>\n";
 	while (!$types->EOF) {
 		$currname = htmlspecialchars_nc($types->fields['typname']);
-		echo "<option value=\"{$currname}\"",
-		($currname == $_POST['typelem']) ? ' selected="selected"' : '', ">{$currname}</option>\n";
+		echo "<option value=\"{$currname}\"", ($currname == $_POST['typelem']) ? ' selected="selected"' : '', ">{$currname}</option>\n";
 		$types->moveNext();
 	}
 	echo "</select></td></tr>\n";
@@ -475,15 +712,13 @@ function doCreate($msg = '') {
 	echo "<tr><th class=\"data left\">{$lang['stralignment']}</th>\n";
 	echo "<td class=\"data1\"><select name=\"typalign\">";
 	foreach ($pg->typAligns as $v) {
-		echo "<option value=\"{$v}\"",
-		($v == $_POST['typalign']) ? ' selected="selected"' : '', ">{$v}</option>\n";
+		echo "<option value=\"{$v}\"", ($v == $_POST['typalign']) ? ' selected="selected"' : '', ">{$v}</option>\n";
 	}
 	echo "</select></td></tr>\n";
 	echo "<tr><th class=\"data left\">{$lang['strstorage']}</th>\n";
 	echo "<td class=\"data1\"><select name=\"typstorage\">";
 	foreach ($pg->typStorages as $v) {
-		echo "<option value=\"{$v}\"",
-		($v == $_POST['typstorage']) ? ' selected="selected"' : '', ">{$v}</option>\n";
+		echo "<option value=\"{$v}\"", ($v == $_POST['typstorage']) ? ' selected="selected"' : '', ">{$v}</option>\n";
 	}
 	echo "</select></td></tr>\n";
 	echo "</table>\n";
@@ -497,7 +732,8 @@ function doCreate($msg = '') {
 /**
  * Actually creates the new type in the database
  */
-function doSaveCreate() {
+function doSaveCreate()
+{
 	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
 	$typeActions = new TypeActions($pg);
@@ -530,7 +766,8 @@ function doSaveCreate() {
 /**
  * Show default list of types in the database
  */
-function doDefault($msg = '') {
+function doDefault($msg = '')
+{
 	$pg = AppContainer::getPostgres();
 	$conf = AppContainer::getConf();
 	$misc = AppContainer::getMisc();
@@ -543,106 +780,123 @@ function doDefault($msg = '') {
 
 	$types = $typeActions->getTypes();
 
-	$columns = array(
-		'type' => array(
+	$columns = [
+		'type' => [
 			'title' => $lang['strtype'],
 			'field' => field('typname'),
 			'url' => "types.php?action=properties&amp;{$misc->href}&amp;",
-			'vars' => array('type' => 'basename'),
-		),
-		'owner' => array(
+			'vars' => ['type' => 'basename'],
+		],
+		'owner' => [
 			'title' => $lang['strowner'],
 			'field' => field('typowner'),
-		),
-		'flavour' => array(
+		],
+		'flavour' => [
 			'title' => $lang['strflavor'],
 			'field' => field('typtype'),
 			'type' => 'verbatim',
-			'params' => array(
-				'map' => array(
+			'params' => [
+				'map' => [
 					'b' => $lang['strbasetype'],
 					'c' => $lang['strcompositetype'],
 					'd' => $lang['strdomain'],
 					'p' => $lang['strpseudotype'],
 					'e' => $lang['strenum'],
-				),
+				],
 				'align' => 'center',
-			),
-		),
-		'actions' => array(
+			],
+		],
+		'actions' => [
 			'title' => $lang['stractions'],
-		),
-		'comment' => array(
+		],
+		'comment' => [
 			'title' => $lang['strcomment'],
 			'field' => field('typcomment'),
-		),
-	);
+		],
+	];
 
 	if (!isset($types->fields['typtype'])) unset($columns['flavour']);
 
-	$actions = array(
-		'drop' => array(
-			'content' => $lang['strdrop'],
-			'attr' => array(
-				'href' => array(
+	$actions = [
+		'edit' => [
+			'icon' => $misc->icon('Edit'),
+			'content' => $lang['stredit'],
+			'attr' => [
+				'href' => [
 					'url' => 'types.php',
-					'urlvars' => array(
+					'urlvars' => [
+						'action' => 'alter',
+						'type' => field('basename')
+					]
+				]
+			]
+		],
+		'drop' => [
+			'icon' => $misc->icon('Delete'),
+			'content' => $lang['strdrop'],
+			'attr' => [
+				'href' => [
+					'url' => 'types.php',
+					'urlvars' => [
 						'action' => 'confirm_drop',
 						'type' => field('basename')
-					)
-				)
-			)
-		),
-	);
+					]
+				]
+			]
+		],
+	];
 
 	$misc->printTable($types, $columns, $actions, 'types-types', $lang['strnotypes']);
 
-	$navlinks = array(
-		'create' => array(
-			'attr' => array(
-				'href' => array(
+	$navlinks = [
+		'create' => [
+			'attr' => [
+				'href' => [
 					'url' => 'types.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'create',
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema']
-					)
-				)
-			),
+					]
+				]
+			],
+			'icon' => $misc->icon('CreateType'),
 			'content' => $lang['strcreatetype']
-		),
-		'createcomp' => array(
-			'attr' => array(
-				'href' => array(
+		],
+		'createcomp' => [
+			'attr' => [
+				'href' => [
 					'url' => 'types.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'create_comp',
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema']
-					)
-				)
-			),
+					]
+				]
+			],
+			'icon' => $misc->icon('CreateCompositeType'),
 			'content' => $lang['strcreatecomptype']
-		),
-		'createenum' => array(
-			'attr' => array(
-				'href' => array(
+		],
+		'createenum' => [
+			'attr' => [
+				'href' => [
 					'url' => 'types.php',
-					'urlvars' => array(
+					'urlvars' => [
 						'action' => 'create_enum',
 						'server' => $_REQUEST['server'],
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema']
-					)
-				)
-			),
+					]
+				]
+			],
+			'icon' => $misc->icon('CreateEnumType'),
 			'content' => $lang['strcreateenumtype']
-		)
-	);
+		]
+	];
 
-	if (!$pg->hasEnumTypes()) {
+	if (!$typeActions->hasEnumTypes()) {
 		unset($navlinks['enum']);
 	}
 
@@ -652,7 +906,8 @@ function doDefault($msg = '') {
 /**
  * Generate XML for the browser tree.
  */
-function doTree() {
+function doTree()
+{
 	$misc = AppContainer::getMisc();
 	$pg = AppContainer::getPostgres();
 	$typeActions = new TypeActions($pg);
@@ -661,18 +916,19 @@ function doTree() {
 
 	$reqvars = $misc->getRequestVars('type');
 
-	$attrs = array(
+	$attrs = [
 		'text' => field('typname'),
 		'icon' => 'Type',
 		'toolTip' => field('typcomment'),
-		'action' => url('types.php',
+		'action' => url(
+			'types.php',
 			$reqvars,
-			array(
+			[
 				'action' => 'properties',
 				'type' => field('basename')
-			)
+			]
 		)
-	);
+	];
 
 	$misc->printTree($types, $attrs, 'types');
 	exit;
@@ -692,36 +948,40 @@ $misc->printHeader($lang['strtypes']);
 $misc->printBody();
 
 switch ($action) {
-case 'create_comp':
-	if (isset($_POST['cancel'])) doDefault();
-	else doCreateComposite();
-	break;
-case 'create_enum':
-	if (isset($_POST['cancel'])) doDefault();
-	else doCreateEnum();
-	break;
-case 'save_create':
-	if (isset($_POST['cancel'])) doDefault();
-	else doSaveCreate();
-	break;
-case 'create':
-	doCreate();
-	break;
-case 'drop':
-	if (isset($_POST['cancel'])) doDefault();
-	else doDrop(false);
-	break;
-case 'confirm_drop':
-	doDrop(true);
-	break;
-case 'properties':
-	doProperties();
-	break;
-default:
-	doDefault();
-	break;
+	case 'create_comp':
+		if (isset($_POST['cancel'])) doDefault();
+		else doCreateComposite();
+		break;
+	case 'create_enum':
+		if (isset($_POST['cancel'])) doDefault();
+		else doCreateEnum();
+		break;
+	case 'save_create':
+		if (isset($_POST['cancel'])) doDefault();
+		else doSaveCreate();
+		break;
+	case 'create':
+		doCreate();
+		break;
+	case 'alter':
+		doAlter();
+		break;
+	case 'save_alter':
+		doSaveAlter();
+		break;
+	case 'drop':
+		if (isset($_POST['cancel'])) doDefault();
+		else doDrop(false);
+		break;
+	case 'confirm_drop':
+		doDrop(true);
+		break;
+	case 'properties':
+		doProperties();
+		break;
+	default:
+		doDefault();
+		break;
 }
 
 $misc->printFooter();
-
-

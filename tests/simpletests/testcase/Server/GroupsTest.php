@@ -52,12 +52,12 @@ class GroupsTest extends PreconditionSet
         global $lang, $SERVER;
 
         // Turn to create group page.
-		$this->assertTrue($this->get("$webUrl/groups.php", array('server' => $SERVER)));
+		$this->assertTrue($this->get("$webUrl/groups.php", ['server' => $SERVER]));
         $this->assertTrue($this->clickLink($lang['strcreategroup']));
 
         // Enter the information for creating group.
         $this->assertTrue($this->setField('name', $this->_groupName));
-        $this->assertTrue($this->setField('members[]', array($POWER_USER_NAME, $NORMAL_USER_NAME)));
+        $this->assertTrue($this->setField('members[]', [$POWER_USER_NAME, $NORMAL_USER_NAME]));
 
         // Then submit and verify it.
         $this->assertTrue($this->clickSubmit($lang['strcreate']));
@@ -81,11 +81,11 @@ class GroupsTest extends PreconditionSet
         global $lang, $SERVER;
         
         // Turn to the gruop's properties page.
-        $this->assertTrue($this->get("$webUrl/groups.php", array('server' => $SERVER)));
+        $this->assertTrue($this->get("$webUrl/groups.php", ['server' => $SERVER]));
 		$this->assertTrue($this->get("$webUrl/groups.php",
-			array('action' => 'properties',
+			['action' => 'properties',
 				'group' => $this->_groupName,
-				'server' => $SERVER))
+				'server' => $SERVER])
 		);
        
         // Select user and add it to the group.
@@ -116,11 +116,11 @@ class GroupsTest extends PreconditionSet
         global $lang, $SERVER;
         
         // Turn to the group properties page.
-        $this->assertTrue($this->get("$webUrl/groups.php", array('server' => $SERVER)));
+        $this->assertTrue($this->get("$webUrl/groups.php", ['server' => $SERVER]));
 		$this->assertTrue($this->get("$webUrl/groups.php",
-			array('action' => 'properties',
+			['action' => 'properties',
 				'group' => $this->_groupName,
-				'server' => $SERVER))
+				'server' => $SERVER])
 		);
        
         // Drop users from the group and verify it.
@@ -142,11 +142,11 @@ class GroupsTest extends PreconditionSet
         global $lang, $SERVER;
         
         // Turn to the drop group page..
-        $this->assertTrue($this->get("$webUrl/groups.php", array('server' => $SERVER)));
+        $this->assertTrue($this->get("$webUrl/groups.php", ['server' => $SERVER]));
 		$this->assertTrue($this->get("$webUrl/groups.php",
-			array('server' => $SERVER,
+			['server' => $SERVER,
 				'action' => 'confirm_drop',
-			   	'group' => $this->_groupName))
+			   	'group' => $this->_groupName])
 		);
        
         // Confirm to drop the group and verify it.

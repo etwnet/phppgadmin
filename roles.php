@@ -28,9 +28,9 @@ $misc = AppContainer::getMisc();
 		if (!isset($_POST['formConfirm'])) $_POST['formConfirm'] = '';
 		if (!isset($_POST['formConnLimit'])) $_POST['formConnLimit'] = '';
 		if (!isset($_POST['formExpires'])) $_POST['formExpires'] = '';
-		if (!isset($_POST['memberof'])) $_POST['memberof'] = array();
-		if (!isset($_POST['members'])) $_POST['members'] = array();
-		if (!isset($_POST['adminmembers'])) $_POST['adminmembers'] = array();
+		if (!isset($_POST['memberof'])) $_POST['memberof'] = [];
+		if (!isset($_POST['members'])) $_POST['members'] = [];
+		if (!isset($_POST['adminmembers'])) $_POST['adminmembers'] = [];
 	
 		$misc->printTrail('role');
 		$misc->printTitle($lang['strcreaterole'],'pg.role.create');
@@ -121,9 +121,9 @@ $misc = AppContainer::getMisc();
 		$data = AppContainer::getData();
 $lang = AppContainer::getLang();
 
-		if(!isset($_POST['memberof'])) $_POST['memberof'] = array();
-		if(!isset($_POST['members'])) $_POST['members'] = array();
-		if(!isset($_POST['adminmembers'])) $_POST['adminmembers'] = array();
+		if(!isset($_POST['memberof'])) $_POST['memberof'] = [];
+		if(!isset($_POST['members'])) $_POST['members'] = [];
+		if(!isset($_POST['adminmembers'])) $_POST['adminmembers'] = [];
 		
 		// Check data
 		if ($_POST['formRolename'] == '')
@@ -216,7 +216,7 @@ $misc = AppContainer::getMisc();
 					}
 				}
 				else
-					$_POST['memberof'] = array();
+					$_POST['memberof'] = [];
 				$memberofold = implode(',', $_POST['memberof']);
 			}
 			if (!isset($_POST['members']))
@@ -230,7 +230,7 @@ $misc = AppContainer::getMisc();
 					}
 				}
 				else
-					$_POST['members'] = array();
+					$_POST['members'] = [];
 				$membersold = implode(',', $_POST['members']);
 			}
 			if (!isset($_POST['adminmembers']))
@@ -244,7 +244,7 @@ $misc = AppContainer::getMisc();
 					}
 				}
 				else
-					$_POST['adminmembers'] = array();
+					$_POST['adminmembers'] = [];
 				$adminmembersold = implode(',', $_POST['adminmembers']);
 			}
 			
@@ -310,9 +310,9 @@ $misc = AppContainer::getMisc();
 		$data = AppContainer::getData();
 $lang = AppContainer::getLang();
 
-		if(!isset($_POST['memberof'])) $_POST['memberof'] = array();
-		if(!isset($_POST['members'])) $_POST['members'] = array();
-		if(!isset($_POST['adminmembers'])) $_POST['adminmembers'] = array();
+		if(!isset($_POST['memberof'])) $_POST['memberof'] = [];
+		if(!isset($_POST['members'])) $_POST['members'] = [];
+		if(!isset($_POST['adminmembers'])) $_POST['adminmembers'] = [];
 
 		// Check name and password
 		if (isset($_POST['formNewRoleName']) && $_POST['formNewRoleName'] == '')
@@ -435,45 +435,45 @@ $misc = AppContainer::getMisc();
 		}
 		else echo "<p>{$lang['strnodata']}</p>\n";
 
-		$navlinks = array (
-			'showall' => array (
-				'attr'=> array (
-					'href' => array (
+		$navlinks = [
+			'showall' => [
+				'attr'=> [
+					'href' => [
 						'url' => 'roles.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'server' => $_REQUEST['server']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['strshowallroles']
-			),
-			'alter' => array (
-				'attr'=> array (
-					'href' => array (
+			],
+			'alter' => [
+				'attr'=> [
+					'href' => [
 					'url' => 'roles.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'alter',
 							'server' => $_REQUEST['server'],
 							'rolename' => $_REQUEST['rolename']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['stralter']
-			),
-			'drop' => array (
-				'attr'=> array (
-					'href' => array (
+			],
+			'drop' => [
+				'attr'=> [
+					'href' => [
 					'url' => 'roles.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'confirm_drop',
 							'server' => $_REQUEST['server'],
 							'rolename' => $_REQUEST['rolename']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['strdrop']
-			)
-		);
+			]
+		];
 
 		$misc->printNavLinks($navlinks, 'roles-properties', get_defined_vars());
 	}
@@ -525,18 +525,18 @@ $misc = AppContainer::getMisc();
 		}
 		else echo "<p>{$lang['strnodata']}</p>\n";
 		
-		$misc->printNavLinks(array ('changepassword' =>  array (
-				'attr'=> array (
-					'href' => array (
+		$misc->printNavLinks(['changepassword' =>  [
+				'attr'=> [
+					'href' => [
 					'url' => 'roles.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'confchangepassword',
 							'server' => $_REQUEST['server']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['strchangepassword']
-			)), 'roles-account', get_defined_vars());
+		]], 'roles-account', get_defined_vars());
 	}
 	
 	/**
@@ -615,100 +615,100 @@ $misc = AppContainer::getMisc();
 		
 		$roles = $data->getRoles();
 		
-		$columns = array(
-			'role' => array(
+		$columns = [
+			'role' => [
 				'title' => $lang['strrole'],
 				'field' => field('rolname'),
 				'url'   => "redirect.php?subject=role&amp;action=properties&amp;{$misc->href}&amp;",
-				'vars'  => array('rolename' => 'rolname'),
-			),
-			'superuser' => array(
+				'vars'  => ['rolename' => 'rolname'],
+			],
+			'superuser' => [
 				'title' => $lang['strsuper'],
 				'field' => field('rolsuper'),
 				'type'  => 'yesno',
-			),
-			'createdb' => array(
+			],
+			'createdb' => [
 				'title' => $lang['strcreatedb'],
 				'field' => field('rolcreatedb'),
 				'type'  => 'yesno',
-			),
-			'createrole' => array(
+			],
+			'createrole' => [
 				'title' => $lang['strcancreaterole'],
 				'field' => field('rolcreaterole'),
 				'type'  => 'yesno',
-			),
-			'inherits' => array(
+			],
+			'inherits' => [
 				'title' => $lang['strinheritsprivs'],
 				'field' => field('rolinherit'),
 				'type'  => 'yesno',
-			),
-			'canloging' => array(
+			],
+			'canloging' => [
 				'title' => $lang['strcanlogin'],
 				'field' => field('rolcanlogin'),
 				'type'  => 'yesno',
-			),
-			'connlimit' => array(
+			],
+			'connlimit' => [
 				'title'	=> $lang['strconnlimit'],
 				'field'	=> field('rolconnlimit'),
 				'type'	=> 'callback',
-				'params'=> array('function' => 'renderRoleConnLimit')
-			),
-			'expires' => array(
+				'params'=> ['function' => 'renderRoleConnLimit']
+			],
+			'expires' => [
 				'title' => $lang['strexpires'],
 				'field' => field('rolvaliduntil'),
 				'type'  => 'callback',
-				'params'=> array('function' => 'renderRoleExpires', 'null' => $lang['strnever']),
-			),
-			'actions' => array(
+				'params'=> ['function' => 'renderRoleExpires', 'null' => $lang['strnever']],
+			],
+			'actions' => [
 				'title' => $lang['stractions'],
-			),
-		);
+			],
+		];
 		
-		$actions = array(
-			'alter' => array(
+		$actions = [
+			'alter' => [
 				'icon' => $misc->icon('Edit'),
 				'content' => $lang['stralter'],
-				'attr'=> array (
-					'href' => array (
+				'attr'=> [
+					'href' => [
 						'url' => 'roles.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'alter',
 							'rolename' => field('rolname')
-						)
-					)
-				)
-			),
-			'drop' => array(
+						]
+					]
+				]
+			],
+			'drop' => [
 				'icon' => $misc->icon('Delete'),
 				'content' => $lang['strdrop'],
-				'attr'=> array (
-					'href' => array (
+				'attr'=> [
+					'href' => [
 						'url' => 'roles.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'confirm_drop',
 							'rolename' => field('rolname')
-						)
-					)
-				)
-			),
-		);
+						]
+					]
+				]
+			],
+		];
 		
 		$misc->printTable($roles, $columns, $actions, 'roles-roles', $lang['strnoroles']);
 
-		$navlinks = array (
-			'create' => array (
-				'attr'=> array (
-					'href' => array (
+		$navlinks = [
+			'create' => [
+				'attr'=> [
+					'href' => [
 						'url' => 'roles.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'create',
 							'server' => $_REQUEST['server']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['strcreaterole']
-			)
-		);
+			]
+		];
 		$misc->printNavLinks($navlinks, 'roles-roles', get_defined_vars());
 	}
 

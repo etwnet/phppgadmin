@@ -103,7 +103,7 @@ class SecurityTest extends PreconditionSet
         $this->login($NORMAL_USER_NAME, $NORMAL_USER_PASSWORD, "$webUrl/login.php");
         
         // Turn to the account page and change the password page.
-        $this->assertTrue($this->get("$webUrl/users.php", array('server' => $SERVER, 'action' => 'account')));
+        $this->assertTrue($this->get("$webUrl/users.php", ['server' => $SERVER, 'action' => 'account']));
         $this->assertTrue($this->clickLink($lang['strchangepassword']));
        
         // Enter the new password and different confirm password.

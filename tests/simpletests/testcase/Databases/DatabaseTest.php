@@ -64,9 +64,9 @@ class DatabaseTest extends PreconditionSet
         $this->assertTrue($this->get("$webUrl/all_db.php"));
 
         // Click the hyperlink of "Create Database".
-		$this->assertTrue($this->get("$webUrl/all_db.php", array(
+		$this->assertTrue($this->get("$webUrl/all_db.php", [
 			            'server' => $SERVER,
-						'action' => 'create'))
+						'action' => 'create'])
 					);
 
         // Fill the form about creating database.
@@ -112,9 +112,9 @@ class DatabaseTest extends PreconditionSet
         $this->assertTrue($this->get("$webUrl/all_db.php"));
 
         // Click the hyperlink of "Create Database".
-		$this->assertTrue($this->get("$webUrl/all_db.php", array(
+		$this->assertTrue($this->get("$webUrl/all_db.php", [
 			            'server' => $SERVER,
-						'action' => 'create'))
+						'action' => 'create'])
 					);
 
         // Fill the form about creating database.
@@ -153,12 +153,12 @@ class DatabaseTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
 
         // Click the hyperlink of "Create Database".
-		$this->assertTrue($this->get("$webUrl/all_db.php", array(
+		$this->assertTrue($this->get("$webUrl/all_db.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_drop',
 						'subject' => 'database',
 						'database' => $DATABASE,
-						'dropdatabase' => $DATABASE ))
+						'dropdatabase' => $DATABASE])
 					);
 
         // Click the submit button "Drop" next page.

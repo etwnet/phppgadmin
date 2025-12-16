@@ -211,91 +211,91 @@ $misc = AppContainer::getMisc();
 			if ($data->hasDomainConstraints()) {
 				$domaincons = $data->getDomainConstraints($_REQUEST['domain']);
 
-				$columns = array (
-					'name' => array (
+				$columns = [
+					'name' => [
 						'title' => $lang['strname'],
 						'field' => field('conname')
-					),
-					'definition' => array (
+					],
+					'definition' => [
 						'title' => $lang['strdefinition'],
 						'field' => field('consrc'),
-					),
-					'actions' => array (
+					],
+					'actions' => [
 						'title' => $lang['stractions'],
-					)
-				);
+					]
+				];
 
-				$actions = array (
-					'drop' => array (
+				$actions = [
+					'drop' => [
 						'icon' => $misc->icon('Delete'),
 						'content' => $lang['strdrop'],
-						'attr'=> array (
-							'href' => array (
+						'attr'=> [
+							'href' => [
 								'url' => 'domains.php',
-								'urlvars' => array (
+								'urlvars' => [
 									'action' => 'confirm_drop_con',
 									'domain' => $_REQUEST['domain'],
 									'constraint' => field('conname'),
 									'type' => field('contype'),
-								)
-							)
-						)
-					)
-				);
+								]
+							]
+						]
+					]
+				];
 
 				$misc->printTable($domaincons, $columns, $actions, 'domains-properties', $lang['strnodata']);
 			}
 		}
 		else echo "<p>{$lang['strnodata']}</p>\n";
 		
-		$navlinks = array (
-			'drop' => array (
-				'attr'=> array (
-					'href' => array (
+		$navlinks = [
+			'drop' => [
+				'attr'=> [
+					'href' => [
 						'url' => 'domains.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'confirm_drop',
 							'server' => $_REQUEST['server'],
 							'database' => $_REQUEST['database'],
 							'schema' => $_REQUEST['schema'],
 							'domain' => $_REQUEST['domain']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['strdrop']
-			)
-		);
+			]
+		];
 		if ($data->hasAlterDomains()) {
-			$navlinks['addcheck'] = array (
-				'attr'=> array (
-					'href' => array (
+			$navlinks['addcheck'] = [
+				'attr'=> [
+					'href' => [
 						'url' => 'domains.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'add_check',
 							'server' => $_REQUEST['server'],
 							'database' => $_REQUEST['database'],
 							'schema' => $_REQUEST['schema'],
 							'domain' => $_REQUEST['domain']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['straddcheck']
-			);
-			$navlinks['alter'] = array (
-				'attr'=> array (
-					'href' => array (
+			];
+			$navlinks['alter'] = [
+				'attr'=> [
+					'href' => [
 						'url' => 'domains.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'alter',
 							'server' => $_REQUEST['server'],
 							'database' => $_REQUEST['database'],
 							'schema' => $_REQUEST['schema'],
 							'domain' => $_REQUEST['domain']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['stralter']
-			);
+			];
 		}
 		
 		$misc->printNavLinks($navlinks, 'domains-properties', get_defined_vars());
@@ -435,89 +435,89 @@ $misc = AppContainer::getMisc();
 		
 		$domains = $data->getDomains();
 		
-		$columns = array(
-			'domain' => array(
+		$columns = [
+			'domain' => [
 				'title' => $lang['strdomain'],
 				'field' => field('domname'),
 				'url' => "domains.php?action=properties&amp;{$misc->href}&amp;",
-				'vars'  => array('domain' => 'domname'),
-			),
-			'type' => array(
+				'vars'  => ['domain' => 'domname'],
+			],
+			'type' => [
 				'title' => $lang['strtype'],
 				'field' => field('domtype'),
-			),
-			'notnull' => array(
+			],
+			'notnull' => [
 				'title' => $lang['strnotnull'],
 				'field' => field('domnotnull'),
 				'type'  => 'bool',
-				'params'=> array('true' => 'NOT NULL', 'false' => ''),
-			),
-			'default' => array(
+				'params'=> ['true' => 'NOT NULL', 'false' => ''],
+			],
+			'default' => [
 				'title' => $lang['strdefault'],
 				'field' => field('domdef'),
-			),
-			'owner' => array(
+			],
+			'owner' => [
 				'title' => $lang['strowner'],
 				'field' => field('domowner'),
-			),
-			'actions' => array(
+			],
+			'actions' => [
 				'title' => $lang['stractions'],
-			),
-			'comment' => array(
+			],
+			'comment' => [
 				'title' => $lang['strcomment'],
 				'field' => field('domcomment'),
-			),
-		);
+			],
+		];
 		
-		$actions = array(
-			'alter' => array(
+		$actions = [
+			'alter' => [
 				'icon' => $misc->icon('Edit'),
 				'content' => $lang['stralter'],
-				'attr'=> array (
-					'href' => array (
+				'attr'=> [
+					'href' => [
 						'url' => 'domains.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'alter',
 							'domain' => field('domname')
-						)
-					)
-				)
-			),
-			'drop' => array(
+						]
+					]
+				]
+			],
+			'drop' => [
 				'icon' => $misc->icon('Delete'),
 				'content' => $lang['strdrop'],
-				'attr'=> array (
-					'href' => array (
+				'attr'=> [
+					'href' => [
 						'url' => 'domains.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'confirm_drop',
 							'domain' => field('domname')
-						)
-					)
-				)
-			),
-		);
+						]
+					]
+				]
+			],
+		];
 
 		if (!$data->hasAlterDomains()) unset($actions['alter']);
 		
 		$misc->printTable($domains, $columns, $actions, 'domains-domains', $lang['strnodomains']);
 
-		$navlinks = array (
-			'create' => array (
-				'attr'=> array (
-					'href' => array (
+		$navlinks = [
+			'create' => [
+				'attr'=> [
+					'href' => [
 						'url' => 'domains.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'create',
 							'server' => $_REQUEST['server'],
 							'database' => $_REQUEST['database'],
 							'schema' => $_REQUEST['schema'],
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['strcreatedomain']
-			)
-		);
+			]
+		];
 		$misc->printNavLinks($navlinks, 'domains-domains', get_defined_vars());
 	}
 	
@@ -532,18 +532,18 @@ $data = AppContainer::getData();
 		
 		$reqvars = $misc->getRequestVars('domain');
 		
-		$attrs = array(
+		$attrs = [
 			'text'   => field('domname'),
 			'icon'   => 'Domain',
 			'toolTip'=> field('domcomment'),
 			'action' => url('domains.php',
 							$reqvars,
-							array(
+							[
 								'action' => 'properties',
 								'domain' => field('domname')
-							)
+							]
 						)
-		);
+		];
 		
 		$misc->printTree($domains, $attrs, 'domains');
 		exit;

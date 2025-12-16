@@ -95,7 +95,7 @@ class SqlFunctionActions extends AbstractActions
      */
     public function getFunctionProperties($f)
     {
-        $temp = array();
+        $temp = [];
 
         // Volatility
         if ($f['provolatile'] == 'v') {

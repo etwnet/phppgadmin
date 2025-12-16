@@ -26,7 +26,7 @@ $misc = AppContainer::getMisc();
 		$misc->printMsg($msg);
 
 		// common params for printVal
-		$shownull = array('null' => true);
+		$shownull = ['null' => true];
 
 		// Fetch info
 		$referrers = $data->getReferrers($_REQUEST['table']);
@@ -49,43 +49,43 @@ $misc = AppContainer::getMisc();
 			if ($referrers !== -99 && $referrers->recordCount() > 0) {
 				echo "<h3>{$lang['strreferringtables']}</h3>\n";
 
-				$columns = array (
-					'schema' => array (
+				$columns = [
+					'schema' => [
 						'title' => $lang['strschema'],
 						'field' => field('nspname')
-					),
-					'table' => array (
+					],
+					'table' => [
 						'title' => $lang['strtable'],
 						'field' => field('relname'),
-					),
-					'name' => array (
+					],
+					'name' => [
 						'title' => $lang['strname'],
 						'field' => field('conname'),
-					),
-					'definition' => array (
+					],
+					'definition' => [
 						'title' => $lang['strdefinition'],
 						'field' => field('consrc'),
-					),
-					'actions' => array (
+					],
+					'actions' => [
 						'title' => $lang['stractions'],
-					)
-				);
+					]
+				];
 
-				$actions = array (
-					'properties' => array (
+				$actions = [
+					'properties' => [
 						'icon' => $misc->icon('Constrains'),
 						'content' => $lang['strproperties'],
-						'attr'=> array (
-							'href' => array (
+						'attr'=> [
+							'href' => [
 								'url' => 'constraints.php',
-								'urlvars' => array (
+								'urlvars' => [
 									'schema' => field('nspname'),
 									'table' => field('relname')
-								)
-							)
-						)
-					)
-				);
+								]
+							]
+						]
+					]
+				];
 
 				$misc->printTable($referrers, $columns, $actions, 'info-referrers', $lang['strnodata']);
 			}
@@ -94,35 +94,35 @@ $misc = AppContainer::getMisc();
 			if ($parents->recordCount() > 0) {
 				echo "<h3>{$lang['strparenttables']}</h3>\n";
 
-				$columns = array (
-					'schema' => array (
+				$columns = [
+					'schema' => [
 						'title' => $lang['strschema'],
 						'field' => field('nspname')
-					),
-					'table' => array (
+					],
+					'table' => [
 						'title' => $lang['strtable'],
 						'field' => field('relname'),
-					),
-						'actions' => array (
+					],
+						'actions' => [
 						'title' => $lang['stractions'],
-					)
-				);
+						]
+				];
 
-				$actions = array (
-					'properties' => array (
+				$actions = [
+					'properties' => [
 						'icon' => $misc->icon('Constrains'),
 						'content' => $lang['strproperties'],
-						'attr'=> array (
-							'href' => array (
+						'attr'=> [
+							'href' => [
 								'url' => 'tblproperties.php',
-								'urlvars' => array (
+								'urlvars' => [
 									'schema' => field('nspname'),
 									'table' => field('relname')
-								)
-							)
-						)
-					)
-				);
+								]
+							]
+						]
+					]
+				];
 
 				$misc->printTable($parents, $columns, $actions, 'info-parents', $lang['strnodata']);
 			}
@@ -131,35 +131,35 @@ $misc = AppContainer::getMisc();
 			if ($children->recordCount() > 0) {
 				echo "<h3>{$lang['strchildtables']}</h3>\n";
 
-				$columns = array (
-					'schema' => array (
+				$columns = [
+					'schema' => [
 						'title' => $lang['strschema'],
 						'field' => field('nspname')
-					),
-					'table' => array (
+					],
+					'table' => [
 						'title' => $lang['strtable'],
 						'field' => field('relname'),
-					),
-					'actions' => array (
+					],
+					'actions' => [
 						'title' => $lang['stractions'],
-					)
-				);
+					]
+				];
 				
-				$actions = array (
-					'properties' => array (
+				$actions = [
+					'properties' => [
 						'icon' => $misc->icon('Constrains'),
 						'content' => $lang['strproperties'],
-						'attr'=> array (
-							'href' => array (
+						'attr'=> [
+							'href' => [
 								'url' => 'tblproperties.php',
-								'urlvars' => array (
+								'urlvars' => [
 									'schema' => field('nspname'),
 									'table' => field('relname')
-								)
-							)
-						)
-					)
-				);
+								]
+							]
+						]
+					]
+				];
 				
 				$misc->printTable($children, $columns, $actions, 'info-children', $lang['strnodata']);
 

@@ -56,11 +56,11 @@ class TableTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the create table page to create a table.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			'server' => $SERVER,
 			'action' => 'create',
 			'database' => $DATABASE,
-			'schema' => 'public'))
+			'schema' => 'public'])
 		);
         
         // Enter the table name and field number.
@@ -106,11 +106,11 @@ class TableTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the create table page to create a table.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			'server' => $SERVER,
 			'action' => 'create',
 			'database' => $DATABASE,
-			'schema' => 'public'))
+			'schema' => 'public'])
 		);
         
         // Enter no name.
@@ -154,11 +154,11 @@ class TableTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the create table page to create a table.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			'server' => $SERVER,
 			'action' => 'create',
 			'database' => $DATABASE,
-			'schema' => 'public'))
+			'schema' => 'public'])
 		);
         
         // Enter the table name and field number.        
@@ -206,12 +206,12 @@ class TableTest extends PreconditionSet
         $this->createTable($DATABASE, 'public', 'viewtest', '3');
           
         // Turn to the "Insert row" interface.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			'server' => $SERVER,
 			'action' => 'confinsertrow',
 			'database' => $DATABASE,
 			'schema' => 'public',
-			'table' => 'viewtest'))
+			'table' => 'viewtest'])
 		);
           
         // Set the value of the fields.               
@@ -238,12 +238,12 @@ class TableTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the "Insert row" interface.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			            'server' => $SERVER,
 						'action' => 'confinsertrow',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'table' => 'viewtest'))
+						'table' => 'viewtest'])
 					);
           
         // Set the value of the fields.        
@@ -282,12 +282,12 @@ class TableTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the "Insert row" interface.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			            'server' => $SERVER,
 						'action' => 'confinsertrow',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'table' => 'viewtest'))
+						'table' => 'viewtest'])
 					);
 
         // Set the value of the fields.
@@ -320,10 +320,10 @@ class TableTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the "Tables" interface.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
-						'schema' => 'public'))
+						'schema' => 'public'])
 					);
         // Select the table "viewtest".
 		$this->assertTrue($this->clickLink('viewtest'));
@@ -357,10 +357,10 @@ class TableTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the "Tables" interface.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
-						'schema' => 'public'))
+						'schema' => 'public'])
 					);
         // Select the table "viewtest".
         $this->assertTrue($this->clickLink('viewtest'));
@@ -386,14 +386,14 @@ class TableTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the "Browse table" interface.
-		$this->assertTrue($this->get("$webUrl/display.php", array(
+		$this->assertTrue($this->get("$webUrl/display.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'subject' => 'table',
 						'return_url' => 'tables.php%3Fdatabase%3Dtest%26amp%3Bschema%3Dpublic',
 						'return_desc' => 'Back',
-						'table' => 'viewtest'))
+						'table' => 'viewtest'])
 					);
                                      
         // Verify whether the rows are displayed.         
@@ -421,11 +421,11 @@ class TableTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the "tables" page.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'subject' => 'schema'))
+						'subject' => 'schema'])
 					);
         $this->assertTrue($this->clickLink('viewtest'));
         
@@ -453,12 +453,12 @@ class TableTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the "tables" page.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			            'server' => $SERVER,
 						'action' => 'confselectrows',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'table' => 'viewtest'))
+						'table' => 'viewtest'])
 					);
 
         // Display all columns.
@@ -487,12 +487,12 @@ class TableTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the "tables" page.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			            'server' => $SERVER,
 						'action' => 'confselectrows',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'table' => 'viewtest'))
+						'table' => 'viewtest'])
 					);
 
         // Enter the query conditions.
@@ -519,12 +519,12 @@ class TableTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the "Vacuum" page.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_vacuum',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'table' => 'viewtest'))
+						'table' => 'viewtest'])
 					);
                 
         // Click the "Vacuum" button.        
@@ -546,12 +546,12 @@ class TableTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the "Vacuum" page.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_vacuum',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'table' => 'viewtest'))
+						'table' => 'viewtest'])
 					);
         
         // Make sure the check box "Full" and "Analyze" are checked     
@@ -577,20 +577,20 @@ class TableTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Turn to the "tables" page.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'subject' => 'schema'))
+						'subject' => 'schema'])
 					);
                 
         // Empty a table.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_empty',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'table' => 'viewtest'))
+						'table' => 'viewtest'])
 					);
         // Click the "Empty" button to clean the content of the table.
         $this->assertTrue($this->clickSubmit($lang['strempty']));
@@ -612,19 +612,19 @@ class TableTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Drop the table.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'subject' => 'schema'))
+						'subject' => 'schema'])
 					);
         // Select the table.
-		$this->assertTrue($this->get("$webUrl/tblproperties.php", array(
+		$this->assertTrue($this->get("$webUrl/tblproperties.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_alter',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'table' => 'viewtest'))
+						'table' => 'viewtest'])
 					);
                 
         $this->assertTrue($this->setField('name', 'testview'));
@@ -648,12 +648,12 @@ class TableTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
         
         // Drop the table.
-		$this->assertTrue($this->get("$webUrl/tables.php", array(
+		$this->assertTrue($this->get("$webUrl/tables.php", [
 			'server' => $SERVER,
 			'action' => 'confirm_drop',
 			'database' => $DATABASE,
 			'schema' => 'public',
-			'table' => 'testview'))
+			'table' => 'testview'])
 		);
 
         $this->assertTrue($this->setField('cascade', TRUE));        

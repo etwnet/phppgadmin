@@ -44,15 +44,15 @@ class Reports extends AbstractContext
 		if ($this->conf['owned_reports_only']) {
 			$server_info = $this->misc()->getServerInfo();
 			$filter['created_by'] = $server_info['username'];
-			$ops = array('created_by' => '=');
-		} else $filter = $ops = array();
+			$ops = ['created_by' => '='];
+		} else $filter = $ops = [];
 
 		$sql = $this->driver->getSelectSQL(
 			$this->conf['reports_table'],
-			array('report_id', 'report_name', 'db_name', 'date_created', 'created_by', 'descr', 'report_sql', 'paginate'),
+			['report_id', 'report_name', 'db_name', 'date_created', 'created_by', 'descr', 'report_sql', 'paginate'],
 			$filter,
 			$ops,
-			array('db_name' => 'asc', 'report_name' => 'asc')
+			['db_name' => 'asc', 'report_name' => 'asc']
 		);
 
 		return $this->driver->selectSet($sql);
@@ -67,10 +67,10 @@ class Reports extends AbstractContext
 	{
 		$sql = $this->driver->getSelectSQL(
 			$this->conf['reports_table'],
-			array('report_id', 'report_name', 'db_name', 'date_created', 'created_by', 'descr', 'report_sql', 'paginate'),
-			array('report_id' => $report_id),
-			array('report_id' => '='),
-			array()
+			['report_id', 'report_name', 'db_name', 'date_created', 'created_by', 'descr', 'report_sql', 'paginate'],
+			['report_id' => $report_id],
+			['report_id' => '='],
+			[]
 		);
 
 		return $this->driver->selectSet($sql);
@@ -88,13 +88,13 @@ class Reports extends AbstractContext
 	function createReport($report_name, $db_name, $descr, $report_sql, $paginate)
 	{
 		$server_info = $this->misc()->getServerInfo();
-		$temp = array(
+		$temp = [
 			'report_name' => $report_name,
 			'db_name' => $db_name,
 			'created_by' => $server_info['username'],
 			'report_sql' => $report_sql,
 			'paginate' => $paginate ? 'true' : 'false',
-		);
+		];
 		if ($descr != '') $temp['descr'] = $descr;
 
 		return $this->driver->insert($this->conf['reports_table'], $temp);
@@ -113,19 +113,19 @@ class Reports extends AbstractContext
 	function alterReport($report_id, $report_name, $db_name, $descr, $report_sql, $paginate)
 	{
 		$server_info = $this->misc()->getServerInfo();
-		$temp = array(
+		$temp = [
 			'report_name' => $report_name,
 			'db_name' => $db_name,
 			'created_by' => $server_info['username'],
 			'report_sql' => $report_sql,
 			'paginate' => $paginate ? 'true' : 'false',
 			'descr' => $descr
-		);
+		];
 
 		return $this->driver->update(
 			$this->conf['reports_table'],
 			$temp,
-			array('report_id' => $report_id)
+			['report_id' => $report_id]
 		);
 	}
 
@@ -136,6 +136,6 @@ class Reports extends AbstractContext
 	 */
 	function dropReport($report_id)
 	{
-		return $this->driver->delete($this->conf['reports_table'], array('report_id' => $report_id));
+		return $this->driver->delete($this->conf['reports_table'], ['report_id' => $report_id]);
 	}
 }

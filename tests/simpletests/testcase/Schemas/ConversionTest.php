@@ -55,11 +55,11 @@ class ConversionTest extends PreconditionSet
         global $lang, $SERVER;
 
         // Turn to schema "pg_catalog" page.
-		$this->assertTrue($this->get("$webUrl/redirect.php", array(
+		$this->assertTrue($this->get("$webUrl/redirect.php", [
 			            'server' => $SERVER,
 						'section' => 'schema',
 						'database' => 'template1',
-						'schema' => 'pg_catalog'))
+						'schema' => 'pg_catalog'])
 					);
         // Click the "Conversions" hyper link.
         $this->assertTrue($this->clickLink($lang['strconversions']));

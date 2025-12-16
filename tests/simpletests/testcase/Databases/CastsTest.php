@@ -57,10 +57,10 @@ class CastsTest extends PreconditionSet
         global $lang, $SERVER, $DATABASE;
 
         // Locate the list page of language.
-		$this->assertTrue($this->get("$webUrl/casts.php", array(
+		$this->assertTrue($this->get("$webUrl/casts.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
-						'subject' => 'database'))
+						'subject' => 'database'])
 					);
 
         $this->assertWantedText($lang['strsourcetype']);

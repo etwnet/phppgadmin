@@ -375,18 +375,18 @@ function doVariables()
 	$misc->printTrail('database');
 	$misc->printTabs('database', 'variables');
 
-	$columns = array(
-		'variable' => array(
+	$columns = [
+		'variable' => [
 			'title' => $lang['strname'],
 			'field' => field('name'),
-		),
-		'value' => array(
+		],
+		'value' => [
 			'title' => $lang['strsetting'],
 			'field' => field('setting'),
-		),
-	);
+		],
+	];
 
-	$actions = array();
+	$actions = [];
 
 	$misc->printTable($variables, $columns, $actions, 'database-variables', $lang['strnodata']);
 }
@@ -425,26 +425,26 @@ function currentProcesses($isAjax = false)
 		echo "<h3>{$lang['strpreparedxacts']}</h3>\n";
 		$prep_xacts = $data->getPreparedXacts($_REQUEST['database']);
 
-		$columns = array(
-			'transaction' => array(
+		$columns = [
+			'transaction' => [
 				'title' => $lang['strxactid'],
 				'field' => field('transaction'),
-			),
-			'gid' => array(
+			],
+			'gid' => [
 				'title' => $lang['strgid'],
 				'field' => field('gid'),
-			),
-			'prepared' => array(
+			],
+			'prepared' => [
 				'title' => $lang['strstarttime'],
 				'field' => field('prepared'),
-			),
-			'owner' => array(
+			],
+			'owner' => [
 				'title' => $lang['strowner'],
 				'field' => field('owner'),
-			),
-		);
+			],
+		];
 
-		$actions = array();
+		$actions = [];
 
 		$misc->printTable($prep_xacts, $columns, $actions, 'database-processes-preparedxacts', $lang['strnodata']);
 	}
@@ -453,64 +453,64 @@ function currentProcesses($isAjax = false)
 	echo "<h3>{$lang['strprocesses']}</h3>\n";
 	$processes = $data->getProcesses($_REQUEST['database']);
 
-	$columns = array(
-		'user' => array(
+	$columns = [
+		'user' => [
 			'title' => $lang['strusername'],
 			'field' => field('usename'),
-		),
-		'process' => array(
+		],
+		'process' => [
 			'title' => $lang['strprocess'],
 			'field' => field('pid'),
-		),
-		'blocked' => array(
+		],
+		'blocked' => [
 			'title' => $lang['strblocked'],
 			'field' => field('waiting'),
-		),
-		'query' => array(
+		],
+		'query' => [
 			'title' => $lang['strsql'],
 			'field' => field('query'),
-		),
-		'start_time' => array(
+		],
+		'start_time' => [
 			'title' => $lang['strstarttime'],
 			'field' => field('query_start'),
-		),
-	);
+		],
+	];
 
 	// Build possible actions for our process list
-	$columns['actions'] = array('title' => $lang['stractions']);
+	$columns['actions'] = ['title' => $lang['stractions']];
 
-	$actions = array();
+	$actions = [];
 	if ($data->hasUserSignals() || $data->isSuperUser()) {
-		$actions = array(
-			'cancel' => array(
+		$actions = [
+			'cancel' => [
 				'icon' => $misc->icon('Cancel'),
 				'content' => $lang['strcancel'],
-				'attr' => array(
-					'href' => array(
+				'attr' => [
+					'href' => [
 						'url' => 'database.php',
-						'urlvars' => array(
+						'urlvars' => [
 							'action' => 'signal',
 							'signal' => 'CANCEL',
 							'pid' => field('pid')
-						)
-					)
-				)
-			),
-			'kill' => array(
+						]
+					]
+				]
+			],
+			'kill' => [
 				'icon' => $misc->icon('Delete'),
 				'content' => $lang['strkill'],
-				'attr' => array(
-					'href' => array(
+				'attr' => [
+					'href' => [
 						'url' => 'database.php',
-						'urlvars' => array(
+						'urlvars' => [
 							'action' => 'signal',
 							'signal' => 'KILL',
 							'pid' => field('pid')
-						)
-					)
-				)
-			)
-		);
+						]
+					]
+				]
+			]
+		];
 
 		// Remove actions where not supported
 		if (!$data->hasQueryKill()) unset($actions['kill']);
@@ -533,41 +533,41 @@ function currentLocks($isAjax = false)
 	// Get the info from the pg_locks view
 	$variables = $data->getLocks();
 
-	$columns = array(
-		'namespace' => array(
+	$columns = [
+		'namespace' => [
 			'title' => $lang['strschema'],
 			'field' => field('nspname'),
-		),
-		'tablename' => array(
+		],
+		'tablename' => [
 			'title' => $lang['strtablename'],
 			'field' => field('tablename'),
-		),
-		'vxid' => array(
+		],
+		'vxid' => [
 			'title' => $lang['strvirtualtransaction'],
 			'field' => field('virtualtransaction'),
-		),
-		'transactionid' => array(
+		],
+		'transactionid' => [
 			'title' => $lang['strtransaction'],
 			'field' => field('transaction'),
-		),
-		'processid' => array(
+		],
+		'processid' => [
 			'title' => $lang['strprocessid'],
 			'field' => field('pid'),
-		),
-		'mode' => array(
+		],
+		'mode' => [
 			'title' => $lang['strmode'],
 			'field' => field('mode'),
-		),
-		'granted' => array(
+		],
+		'granted' => [
 			'title' => $lang['strislockheld'],
 			'field' => field('granted'),
 			'type'  => 'yesno',
-		),
-	);
+		],
+	];
 
 	if (!$data->hasVirtualTransactionId()) unset($columns['vxid']);
 
-	$actions = array();
+	$actions = [];
 	$misc->printTable($variables, $columns, $actions, 'database-locks', $lang['strnodata']);
 
 	if ($isAjax) exit;
@@ -646,21 +646,21 @@ function doTree()
 
 	$items = $misc->adjustTabsForTree($tabs);
 
-	$attrs = array(
+	$attrs = [
 		'text'   => field('title'),
 		'icon'   => field('icon'),
 		'action' => url(
 			field('url'),
 			$reqvars,
-			field('urlvars', array())
+			field('urlvars', [])
 		),
 		'branch' => url(
 			field('url'),
 			$reqvars,
 			field('urlvars'),
-			array('action' => 'tree')
+			['action' => 'tree']
 		),
-	);
+	];
 
 	$misc->printTree($items, $attrs, 'database');
 

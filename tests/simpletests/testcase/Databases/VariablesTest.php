@@ -55,11 +55,11 @@ class VariablesTest extends PreconditionSet
         global $webUrl;
         global $lang, $SERVER, $DATABASE;
 
-		$this->assertTrue($this->get("$webUrl/database.php", array(
+		$this->assertTrue($this->get("$webUrl/database.php", [
 			            'server' => $SERVER,
 						'database' => $DATABASE,
 						'subject' => 'database',
-						'action' => 'variables'))
+						'action' => 'variables'])
 					);
         
         $this->assertWantedText($lang['strname']);

@@ -52,13 +52,13 @@ class RulesTest extends PreconditionSet{
         global $lang, $SERVER, $DATABASE;
         
         // Go to the Rules page
-		$this->assertTrue($this->get("$webUrl/rules.php", array(
+		$this->assertTrue($this->get("$webUrl/rules.php", [
 			            'server' => $SERVER,
 						'action' => 'create_rule',
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'table' => 'student',
-						'subject' => 'table'))
+						'subject' => 'table'])
 					);
         
         // Set properties for the new rule    
@@ -85,13 +85,13 @@ class RulesTest extends PreconditionSet{
         global $lang, $SERVER, $DATABASE;
         
         // Go to the Rules page
-		$this->assertTrue($this->get("$webUrl/rules.php", array(
+		$this->assertTrue($this->get("$webUrl/rules.php", [
 			            'server' => $SERVER,
 						'action' => 'create_rule',
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'table' => 'student',
-						'subject' => 'table'))
+						'subject' => 'table'])
 					);
         
         // Set properties for the new rule    
@@ -115,7 +115,7 @@ class RulesTest extends PreconditionSet{
         global $lang, $SERVER, $DATABASE;
         
         // Drop the rule
-		$this->assertTrue($this->get("$webUrl/rules.php", array(
+		$this->assertTrue($this->get("$webUrl/rules.php", [
             'server' => $SERVER,
 			'action' => 'confirm_drop',
 			'database' => $DATABASE,
@@ -123,7 +123,7 @@ class RulesTest extends PreconditionSet{
 			'reltype' => 'table',
 			'table' => 'student',
 			'subject' => 'rule',
-			'rule' => 'insert_stu_rule'))
+			'rule' => 'insert_stu_rule'])
 		);
         $this->assertTrue($this->clickSubmit($lang['strno']));
         
@@ -140,7 +140,7 @@ class RulesTest extends PreconditionSet{
         global $lang, $SERVER, $DATABASE;
         
         // Drop the rule
-		$this->assertTrue($this->get("$webUrl/rules.php", array(
+		$this->assertTrue($this->get("$webUrl/rules.php", [
             'server' => $SERVER,
 			'action' => 'confirm_drop',
 			'database' => $DATABASE,
@@ -148,7 +148,7 @@ class RulesTest extends PreconditionSet{
 			'reltype' => 'table',
 			'table' => 'student',
 			'subject' => 'rule',
-			'rule' => 'insert_stu_rule'))
+			'rule' => 'insert_stu_rule'])
 		);
         $this->assertTrue($this->clickSubmit($lang['stryes']));
         // Verify if the rule is dropped correctly.
@@ -170,13 +170,13 @@ class RulesTest extends PreconditionSet{
         global $POWER_USER_PASSWORD;
         
         // Go to the Rules page
-		$this->assertTrue($this->get("$webUrl/rules.php", array(
+		$this->assertTrue($this->get("$webUrl/rules.php", [
 			            'server' => $SERVER,
 						'action' => 'create_rule',
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'table' => 'student',
-						'subject' => 'table'))
+						'subject' => 'table'])
 					);
         
         // Set properties for the new rule    
@@ -194,7 +194,7 @@ class RulesTest extends PreconditionSet{
                      "$webUrl/login.php");
         
         // Drop the rule
-		$this->assertTrue($this->get("$webUrl/rules.php", array(
+		$this->assertTrue($this->get("$webUrl/rules.php", [
             'server' => $SERVER,
 			'action' => 'confirm_drop',
 			'database' => $DATABASE,
@@ -202,7 +202,7 @@ class RulesTest extends PreconditionSet{
 			'reltype' => 'table',
 			'table' => 'student',
 			'subject' => 'rule',
-			'rule' => 'insert_stu_rule'))
+			'rule' => 'insert_stu_rule'])
 		);
         $this->assertTrue($this->setField('cascade', TRUE)); 
         $this->assertTrue($this->clickSubmit($lang['stryes']));

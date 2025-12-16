@@ -273,101 +273,101 @@ $lang = AppContainer::getLang();
 
 		$indexes = $data->getIndexes($_REQUEST['table']);
 		
-		$columns = array(
-			'index' => array(
+		$columns = [
+			'index' => [
 				'title' => $lang['strname'],
 				'field' => field('indname'),
 				//'class' => 'emphasize',
-			),
-			'definition' => array(
+			],
+			'definition' => [
 				'title' => $lang['strdefinition'],
 				'field' => field('inddef'),
 				'type'  => 'sql',
-			),
-			'constraints' => array(
+			],
+			'constraints' => [
 				'title' => $lang['strconstraints'],
 				'field' => field('+constraints'),
 				'type'  => 'verbatim',
-				'params'=> array('align' => 'center'),
-			),
-			'clustered' => array(
+				'params'=> ['align' => 'center'],
+			],
+			'clustered' => [
 				'title' => $lang['strclustered'],
 				'field' => field('indisclustered'),
 				'type'  => 'yesno',
-			),
-			'actions' => array(
+			],
+			'actions' => [
 				'title' => $lang['stractions'],
-			),
-			'comment' => array(
+			],
+			'comment' => [
 				'title' => $lang['strcomment'],
 				'field' => field('idxcomment'),
-			),
-		);
+			],
+		];
 
-		$actions = array(
-			'cluster' => array(
+		$actions = [
+			'cluster' => [
 				'icon' => $misc->icon('Cluster'),
 				'content' => $lang['strclusterindex'],
-				'attr'=> array (
-					'href' => array (
+				'attr'=> [
+					'href' => [
 						'url' => 'indexes.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'confirm_cluster_index',
 							'table' => $_REQUEST['table'],
 							'index' => field('indname')
-						)
-					)
-				)
-			),
-			'reindex' => array(
+						]
+					]
+				]
+			],
+			'reindex' => [
 				'icon' => $misc->icon('Index'),
 				'content' => $lang['strreindex'],
-				'attr'=> array (
-					'href' => array (
+				'attr'=> [
+					'href' => [
 						'url' => 'indexes.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'reindex',
 							'table' => $_REQUEST['table'],
 							'index' => field('indname')
-						)
-					)
-				)
-			),
-			'drop' => array(
+						]
+					]
+				]
+			],
+			'drop' => [
 				'icon' => $misc->icon('Delete'),
 				'content' => $lang['strdrop'],
-				'attr'=> array (
-					'href' => array (
+				'attr'=> [
+					'href' => [
 						'url' => 'indexes.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'confirm_drop_index',
 							'table' => $_REQUEST['table'],
 							'index' => field('indname')
-						)
-					)
-				)
-			)
-		);
+						]
+					]
+				]
+			]
+		];
 		
 		$misc->printTable($indexes, $columns, $actions, 'indexes-indexes', $lang['strnoindexes'], 'indPre');
 		
-		$misc->printNavLinks(array (
-			'create' => array (
-				'attr'=> array (
-					'href' => array (
+		$misc->printNavLinks([
+			'create' => [
+				'attr'=> [
+					'href' => [
 						'url' => 'indexes.php',
-						'urlvars' => array (
+						'urlvars' => [
 							'action' => 'create_index',
 							'server' => $_REQUEST['server'],
 							'database' => $_REQUEST['database'],
 							'schema' => $_REQUEST['schema'],
 							'table' => $_REQUEST['table']
-						)
-					)
-				),
+						]
+					]
+				],
 				'content' => $lang['strcreateindex']
-			)
-		), 'indexes-indexes', get_defined_vars());
+			]
+		], 'indexes-indexes', get_defined_vars());
 	}
 
 	function doTree() {
@@ -386,10 +386,10 @@ $data = AppContainer::getData();
 			return 'Index';
 		}
 
-		$attrs = array(
+		$attrs = [
 			'text'   => field('indname'),
 			'icon'   => callback('getIcon'),
-		);
+		];
 
 		$misc->printTree($indexes, $attrs, 'indexes');
 		exit;

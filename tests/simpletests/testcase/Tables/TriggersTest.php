@@ -53,12 +53,12 @@ class TriggersTest extends PreconditionSet{
         global $lang, $SERVER, $DATABASE;
         
         // Go to the Triggers page
-		$this->assertTrue($this->get("$webUrl/triggers.php", array(
+		$this->assertTrue($this->get("$webUrl/triggers.php", [
 			            'server' => $SERVER,
 						'action' => 'create',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'table' => 'student'))
+						'table' => 'student'])
 					);
         
         // Set properties for the new trigger    
@@ -88,12 +88,12 @@ class TriggersTest extends PreconditionSet{
         global $lang, $SERVER, $DATABASE;
         
         // Go to the Triggers page
-		$this->assertTrue($this->get("$webUrl/triggers.php", array(
+		$this->assertTrue($this->get("$webUrl/triggers.php", [
 			            'server' => $SERVER,
 						'action' => 'create',
 						'database' => $DATABASE,
 						'schema' => 'public',
-						'table' => 'student'))
+						'table' => 'student'])
 					);
         
         // Set properties for the new trigger    
@@ -120,13 +120,13 @@ class TriggersTest extends PreconditionSet{
         global $lang, $SERVER, $DATABASE;
         
         // Alter the trigger
-		$this->assertTrue($this->get("$webUrl/triggers.php" , array(
+		$this->assertTrue($this->get("$webUrl/triggers.php" , [
 			            'server' => $SERVER,
 						'action' => 'confirm_alter',
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'table' => 'student',
-						'trigger' => 'insert_stu_trigger'))
+						'trigger' => 'insert_stu_trigger'])
 					);
         $this->assertTrue($this->setField('name', 'changed_trigger'));
         $this->assertTrue($this->clickSubmit($lang['strok']));
@@ -147,13 +147,13 @@ class TriggersTest extends PreconditionSet{
         global $lang, $SERVER, $DATABASE;
         
         // Alter the trigger
-		$this->assertTrue($this->get("$webUrl/triggers.php", array(
+		$this->assertTrue($this->get("$webUrl/triggers.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_alter',
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'table' => 'student',
-						'trigger' => 'changed_trigger'))
+						'trigger' => 'changed_trigger'])
 					);
         $this->assertTrue($this->setField('name', 'changed_trigger_changed'));
         $this->assertTrue($this->clickSubmit($lang['strcancel']));
@@ -171,13 +171,13 @@ class TriggersTest extends PreconditionSet{
         global $lang, $SERVER, $DATABASE;
         
         // Drop the trigger
-		$this->assertTrue($this->get("$webUrl/triggers.php", array(
+		$this->assertTrue($this->get("$webUrl/triggers.php", [
 		               'server' => $SERVER,
 					   'action' => 'confirm_drop',
 					   'database' => $DATABASE,
 					   'schema' => 'public',
 					   'table' => 'student',
-					   'trigger' => 'changed_trigger'))
+					   'trigger' => 'changed_trigger'])
 				   );
         $this->assertTrue($this->clickSubmit($lang['strno']));
         
@@ -195,13 +195,13 @@ class TriggersTest extends PreconditionSet{
         global $lang, $SERVER, $DATABASE;
         
         // Drop the trigger
-		$this->assertTrue($this->get("$webUrl/triggers.php", array(
+		$this->assertTrue($this->get("$webUrl/triggers.php", [
 			            'server' => $SERVER,
 						'action' => 'confirm_drop',
 						'database' => $DATABASE,
 						'schema' => 'public',
 						'table' => 'student',
-						'trigger' => 'changed_trigger'))
+						'trigger' => 'changed_trigger'])
 					);
         $this->assertTrue($this->setField('cascade', TRUE));
         $this->assertTrue($this->clickSubmit($lang['stryes']));

@@ -46,7 +46,7 @@ class UsersTest extends PreconditionSet
         global $lang, $SERVER;
 
         // Turn to the "Create user" page.
-		$this->assertTrue($this->get("$webUrl/users.php", array('server' => $SERVER)));
+		$this->assertTrue($this->get("$webUrl/users.php", ['server' => $SERVER]));
 
 		$this->assertTrue($this->clickLink($lang['strcreateuser']));
 
@@ -74,7 +74,7 @@ class UsersTest extends PreconditionSet
         global $lang, $SERVER;
         
         // Turn to the "Create user" page.
-        $this->assertTrue($this->get("$webUrl/users.php", array('server' => $SERVER)));
+        $this->assertTrue($this->get("$webUrl/users.php", ['server' => $SERVER]));
         $this->assertTrue($this->clickLink($lang['strcreateuser']));
 
         // Enter information for creating a user.
@@ -103,7 +103,7 @@ class UsersTest extends PreconditionSet
         global $lang, $SERVER;
         
         // Get the users list page and verify it.
-        $this->assertTrue($this->get("$webUrl/users.php", array('server' => $SERVER)));
+        $this->assertTrue($this->get("$webUrl/users.php", ['server' => $SERVER]));
         $this->assertWantedText($SUPER_USER_NAME);
         $this->assertWantedText($POWER_USER_NAME);
         $this->assertWantedText($NORMAL_USER_NAME);
@@ -123,10 +123,10 @@ class UsersTest extends PreconditionSet
         
         // Turn to the "alter user" page.
         $this->assertTrue($this->get("$webUrl/users.php"));
-		$this->assertTrue($this->get("$webUrl/users.php", array(
+		$this->assertTrue($this->get("$webUrl/users.php", [
 					'action' => 'edit',
 					'username' => $this->_superUserName,
-					'server' => $SERVER))
+					'server' => $SERVER])
 		);
 
         // Enter the information for altering the user's properties.
@@ -153,11 +153,11 @@ class UsersTest extends PreconditionSet
         global $lang, $SERVER;
         
         // Turn to the drop user page..
-        $this->assertTrue($this->get("$webUrl/users.php", array('server' => $SERVER)));
-		$this->assertTrue($this->get("$webUrl/users.php", array(
+        $this->assertTrue($this->get("$webUrl/users.php", ['server' => $SERVER]));
+		$this->assertTrue($this->get("$webUrl/users.php", [
 				'action' => 'confirm_drop',
 				'username' => $this->_superUserName,
-				'server' => $SERVER))
+				'server' => $SERVER])
 		);
 
         // Confirm to drop the user and verify it.        
@@ -178,17 +178,17 @@ class UsersTest extends PreconditionSet
 
         // Create a new browser to login the power user which we want to drop.
         $newBrowser = $this->createBrowser();
-		$newBrowser->get("$webUrl/login.php", array('server' => $SERVER));
+		$newBrowser->get("$webUrl/login.php", ['server' => $SERVER]);
         $this->assertTrue($newBrowser->setField('loginUsername', $this->_powerUserName));
         $this->assertTrue($newBrowser->setFieldById('loginPassword', '123456'));
         $this->assertTrue($newBrowser->clickSubmit('Login'));
-        $this->assertTrue($newBrowser->get("$webUrl/all_db.php", array('server' => $SERVER)));
+        $this->assertTrue($newBrowser->get("$webUrl/all_db.php", ['server' => $SERVER]));
 
         // Turn to the old browser which we login with super user at very beginning.
-        $this->assertTrue($this->get("$webUrl/users.php", array('server' => $SERVER)));
-		$this->assertTrue($this->get("$webUrl/users.php", array('action' => 'confirm_drop',
+        $this->assertTrue($this->get("$webUrl/users.php", ['server' => $SERVER]));
+		$this->assertTrue($this->get("$webUrl/users.php", ['action' => 'confirm_drop',
 				'username' => $this->_powerUserName,
-				'server' => $SERVER))
+				'server' => $SERVER])
 		);
 
         // Confirm to drop the user and verify it.      
@@ -216,11 +216,11 @@ class UsersTest extends PreconditionSet
         global $lang, $SERVER;
         
         // Turn to the drop user page..
-        $this->assertTrue($this->get("$webUrl/users.php", array('server' => $SERVER)));
-		$this->assertTrue($this->get("$webUrl/users.php", array(
+        $this->assertTrue($this->get("$webUrl/users.php", ['server' => $SERVER]));
+		$this->assertTrue($this->get("$webUrl/users.php", [
 				'action' => 'confirm_drop',
 				'username' => $SUPER_USER_NAME,
-				'server' => $SERVER	))
+				'server' => $SERVER])
 		);
 
         // Confirm to drop the user and verify it.        
