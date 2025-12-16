@@ -174,7 +174,7 @@ class TableActions extends AbstractActions
 
     /**
      * Retrieve the attribute definition of a table.
-	 * @return ADORecordSet|int
+     * @return ADORecordSet|int
      */
     public function getTableAttributes($table, $field = '')
     {
@@ -326,8 +326,10 @@ class TableActions extends AbstractActions
         while (!$atts->EOF) {
             $this->connection->fieldClean($atts->fields['attname']);
             $sql .= "    \"{$atts->fields['attname']}\"";
-            if ($this->connection->phpBool($atts->fields['attisserial']) &&
-                ($atts->fields['type'] == 'integer' || $atts->fields['type'] == 'bigint')) {
+            if (
+                $this->connection->phpBool($atts->fields['attisserial']) &&
+                ($atts->fields['type'] == 'integer' || $atts->fields['type'] == 'bigint')
+            ) {
                 $sql .= ($atts->fields['type'] == 'integer') ? " SERIAL" : " BIGSERIAL";
             } else {
                 $sql .= " " . $this->connection->formatType($atts->fields['type'], $atts->fields['atttypmod']);
@@ -361,17 +363,17 @@ class TableActions extends AbstractActions
                 $sql .= $cons->fields['consrc'];
             } else {
                 switch ($cons->fields['contype']) {
-                case 'p':
-                    $keys = $this->getAttributeNames($table, explode(' ', $cons->fields['indkey']));
-                    $sql .= "PRIMARY KEY (" . join(',', $keys) . ")";
-                    break;
-                case 'u':
-                    $keys = $this->getAttributeNames($table, explode(' ', $cons->fields['indkey']));
-                    $sql .= "UNIQUE (" . join(',', $keys) . ")";
-                    break;
-                default:
-                    $this->connection->rollbackTransaction();
-                    return null;
+                    case 'p':
+                        $keys = $this->getAttributeNames($table, explode(' ', $cons->fields['indkey']));
+                        $sql .= "PRIMARY KEY (" . join(',', $keys) . ")";
+                        break;
+                    case 'u':
+                        $keys = $this->getAttributeNames($table, explode(' ', $cons->fields['indkey']));
+                        $sql .= "UNIQUE (" . join(',', $keys) . ")";
+                        break;
+                    default:
+                        $this->connection->rollbackTransaction();
+                        return null;
                 }
             }
 
@@ -387,7 +389,7 @@ class TableActions extends AbstractActions
 
         $sql .= ")";
 
-        if ($this->hasObjectID($table)) {
+        if ($this->connection->hasObjectID($table)) {
             $sql .= " WITH OIDS";
         } else {
             $sql .= " WITHOUT OIDS";
@@ -409,21 +411,21 @@ class TableActions extends AbstractActions
             if ($atts->fields['attstorage'] != $atts->fields['typstorage']) {
                 $storage = null;
                 switch ($atts->fields['attstorage']) {
-                case 'p':
-                    $storage = 'PLAIN';
-                    break;
-                case 'e':
-                    $storage = 'EXTERNAL';
-                    break;
-                case 'm':
-                    $storage = 'MAIN';
-                    break;
-                case 'x':
-                    $storage = 'EXTENDED';
-                    break;
-                default:
-                    $this->connection->rollbackTransaction();
-                    return null;
+                    case 'p':
+                        $storage = 'PLAIN';
+                        break;
+                    case 'e':
+                        $storage = 'EXTERNAL';
+                        break;
+                    case 'm':
+                        $storage = 'MAIN';
+                        break;
+                    case 'x':
+                        $storage = 'EXTENDED';
+                        break;
+                    default:
+                        $this->connection->rollbackTransaction();
+                        return null;
                 }
                 $sql .= "ALTER TABLE ONLY \"{$t->fields['nspname']}\".\"{$t->fields['relname']}\" ALTER COLUMN \"{$atts->fields['attname']}\" SET STORAGE {$storage};\n";
             }
@@ -460,20 +462,20 @@ class TableActions extends AbstractActions
                 }
                 $sql .= "GRANT " . join(', ', $nongrant) . " ON TABLE \"{$t->fields['relname']}\" TO ";
                 switch ($v[0]) {
-                case 'public':
-                    $sql .= "PUBLIC;\n";
-                    break;
-                case 'user':
-                    $this->connection->fieldClean($v[1]);
-                    $sql .= "\"{$v[1]}\";\n";
-                    break;
-                case 'group':
-                    $this->connection->fieldClean($v[1]);
-                    $sql .= "GROUP \"{$v[1]}\";\n";
-                    break;
-                default:
-                    $this->connection->rollbackTransaction();
-                    return null;
+                    case 'public':
+                        $sql .= "PUBLIC;\n";
+                        break;
+                    case 'user':
+                        $this->connection->fieldClean($v[1]);
+                        $sql .= "\"{$v[1]}\";\n";
+                        break;
+                    case 'group':
+                        $this->connection->fieldClean($v[1]);
+                        $sql .= "GROUP \"{$v[1]}\";\n";
+                        break;
+                    default:
+                        $this->connection->rollbackTransaction();
+                        return null;
                 }
 
                 if ($this->hasGrantOption() && $v[3] != $t->fields['relowner']) {
@@ -490,19 +492,19 @@ class TableActions extends AbstractActions
 
                 $sql .= "GRANT " . join(', ', $v[4]) . " ON \"{$t->fields['relname']}\" TO ";
                 switch ($v[0]) {
-                case 'public':
-                    $sql .= "PUBLIC";
-                    break;
-                case 'user':
-                    $this->connection->fieldClean($v[1]);
-                    $sql .= "\"{$v[1]}\"";
-                    break;
-                case 'group':
-                    $this->connection->fieldClean($v[1]);
-                    $sql .= "GROUP \"{$v[1]}\"";
-                    break;
-                default:
-                    return null;
+                    case 'public':
+                        $sql .= "PUBLIC";
+                        break;
+                    case 'user':
+                        $this->connection->fieldClean($v[1]);
+                        $sql .= "\"{$v[1]}\"";
+                        break;
+                    case 'group':
+                        $this->connection->fieldClean($v[1]);
+                        $sql .= "GROUP \"{$v[1]}\"";
+                        break;
+                    default:
+                        return null;
                 }
                 $sql .= " WITH GRANT OPTION;\n";
 
@@ -573,10 +575,22 @@ class TableActions extends AbstractActions
     /**
      * Creates a new table.
      */
-    public function createTable($name, $fields, $field, $type, $array, $length, $notnull,
-        $default, $withoutoids, $colcomment, $tblcomment, $tablespace,
-        $uniquekey, $primarykey)
-    {
+    public function createTable(
+        $name,
+        $fields,
+        $field,
+        $type,
+        $array,
+        $length,
+        $notnull,
+        $default,
+        $withoutoids,
+        $colcomment,
+        $tblcomment,
+        $tablespace,
+        $uniquekey,
+        $primarykey
+    ) {
         $f_schema = $this->connection->_schema;
         $this->connection->fieldClean($f_schema);
         $this->connection->fieldClean($name);
@@ -599,23 +613,23 @@ class TableActions extends AbstractActions
             else $first = false;
 
             switch ($type[$i]) {
-            case 'timestamp with time zone':
-            case 'timestamp without time zone':
-                $qual = substr($type[$i], 9);
-                $sql .= "\"{$field[$i]}\" timestamp";
-                if ($length[$i] != '') $sql .= "({$length[$i]})";
-                $sql .= $qual;
-                break;
-            case 'time with time zone':
-            case 'time without time zone':
-                $qual = substr($type[$i], 4);
-                $sql .= "\"{$field[$i]}\" time";
-                if ($length[$i] != '') $sql .= "({$length[$i]})";
-                $sql .= $qual;
-                break;
-            default:
-                $sql .= "\"{$field[$i]}\" {$type[$i]}";
-                if ($length[$i] != '') $sql .= "({$length[$i]})";
+                case 'timestamp with time zone':
+                case 'timestamp without time zone':
+                    $qual = substr($type[$i], 9);
+                    $sql .= "\"{$field[$i]}\" timestamp";
+                    if ($length[$i] != '') $sql .= "({$length[$i]})";
+                    $sql .= $qual;
+                    break;
+                case 'time with time zone':
+                case 'time without time zone':
+                    $qual = substr($type[$i], 4);
+                    $sql .= "\"{$field[$i]}\" time";
+                    if ($length[$i] != '') $sql .= "({$length[$i]})";
+                    $sql .= $qual;
+                    break;
+                default:
+                    $sql .= "\"{$field[$i]}\" {$type[$i]}";
+                    if ($length[$i] != '') $sql .= "({$length[$i]})";
             }
             if ($array[$i] == '[]') $sql .= '[]';
             if (!isset($primarykey[$i])) {
@@ -911,29 +925,29 @@ class TableActions extends AbstractActions
         $this->connection->clean($type);
         $this->connection->clean($length);
 
-		$sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ADD COLUMN \"{$column}\"";
+        $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ADD COLUMN \"{$column}\"";
         if ($length == '')
             $sql .= " {$type}";
         else {
             switch ($type) {
-            case 'timestamp with time zone':
-            case 'timestamp without time zone':
-                $qual = substr($type, 9);
-                $sql .= " timestamp({$length}){$qual}";
-                break;
-            case 'time with time zone':
-            case 'time without time zone':
-                $qual = substr($type, 4);
-                $sql .= " time({$length}){$qual}";
-                break;
-            default:
-                $sql .= " {$type}({$length})";
+                case 'timestamp with time zone':
+                case 'timestamp without time zone':
+                    $qual = substr($type, 9);
+                    $sql .= " timestamp({$length}){$qual}";
+                    break;
+                case 'time with time zone':
+                case 'time without time zone':
+                    $qual = substr($type, 4);
+                    $sql .= " time({$length}){$qual}";
+                    break;
+                default:
+                    $sql .= " {$type}({$length})";
             }
         }
 
         if ($array) $sql .= '[]';
-		if ($notnull) $sql .= ' NOT NULL';
-		if ($default != '') $sql .= ' DEFAULT ' . $default;
+        if ($notnull) $sql .= ' NOT NULL';
+        if ($default != '') $sql .= ' DEFAULT ' . $default;
 
         $status = $this->connection->execute($sql);
         if ($status == 0 && trim($comment) != '') {
@@ -1090,18 +1104,18 @@ class TableActions extends AbstractActions
             $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ALTER COLUMN \"{$column}\" TYPE {$type}";
         else {
             switch ($type) {
-            case 'timestamp with time zone':
-            case 'timestamp without time zone':
-                $qual = substr($type, 9);
-                $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ALTER COLUMN \"{$column}\" TYPE timestamp({$length}){$qual}";
-                break;
-            case 'time with time zone':
-            case 'time without time zone':
-                $qual = substr($type, 4);
-                $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ALTER COLUMN \"{$column}\" TYPE time({$length}){$qual}";
-                break;
-            default:
-                $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ALTER COLUMN \"{$column}\" TYPE {$type}({$length})";
+                case 'timestamp with time zone':
+                case 'timestamp without time zone':
+                    $qual = substr($type, 9);
+                    $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ALTER COLUMN \"{$column}\" TYPE timestamp({$length}){$qual}";
+                    break;
+                case 'time with time zone':
+                case 'time without time zone':
+                    $qual = substr($type, 4);
+                    $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ALTER COLUMN \"{$column}\" TYPE time({$length}){$qual}";
+                    break;
+                default:
+                    $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ALTER COLUMN \"{$column}\" TYPE {$type}({$length})";
             }
         }
 
