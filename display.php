@@ -1243,9 +1243,9 @@ if ($action == 'dobrowsefk') {
 	doBrowseFK();
 }
 
-
 switch ($action) {
 case 'editrow':
+case 'insertrow':
 	if (isset($_POST['save'])) doEditRow(false);
 	else doBrowse();
 	break;

@@ -246,7 +246,7 @@ function doCreate($msg = '')
 }
 
 /**
- * Dsiplay a screen where user can create a table from an existing one.
+ * Display a screen where user can create a table from an existing one.
  * We don't have to check if pg supports schema cause create table like
  * is available under pg 7.4+ which has schema.
  */

@@ -896,8 +896,14 @@ function doDefault($msg = '')
 		]
 	];
 
+	if (!$pg->isSuperUser()) {
+		// To create a new base type, you must be a superuser.
+		// (This restriction is made because an erroneous type definition
+		// could confuse or even crash the server.)
+		unset($navlinks['create']);
+	}
 	if (!$typeActions->hasEnumTypes()) {
-		unset($navlinks['enum']);
+		unset($navlinks['createenum']);
 	}
 
 	$misc->printNavLinks($navlinks, 'types-types', get_defined_vars());
