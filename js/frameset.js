@@ -233,5 +233,13 @@
 
 	});
 
+	document.addEventListener("DOMContentLoaded", (e) => {
+		// dispatch virtual frame event
+		const event = new CustomEvent("frameLoaded", {
+			detail: { url: window.location.href },
+			target: content,
+		});
+		document.dispatchEvent(event);
+	});
 
 })();

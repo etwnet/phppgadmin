@@ -10,16 +10,23 @@
 use PhpPgAdmin\Core\AppContainer;
 
 $_ENV["SKIP_DB_CONNECTION"] = '1';
-include_once './libraries/bootstrap.php';
-include_once './themes/themes.php';
+require_once './libraries/bootstrap.php';
 
+[$appLangFiles, $availableLanguages] = require __DIR__ . '/lang/translations.php';
+$appThemes = require __DIR__ . '/themes/themes.php';
+
+$appName = AppContainer::getAppName();
+$appVersion = AppContainer::getAppVersion();
+$lang = AppContainer::getLang();
 $misc = AppContainer::getMisc();
+$conf = AppContainer::getConf();
 
 $misc->printHeader();
 $misc->printBody();
 
 $misc->printTrail('root');
 $misc->printTabs('root', 'intro');
+
 ?>
 
 <h1><?php echo "$appName $appVersion (PHP " . phpversion() . ')' ?></h1>

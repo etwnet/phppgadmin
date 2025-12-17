@@ -684,7 +684,7 @@ class Misc extends AbstractContext
 	function adjustTabsForTree(&$tabs)
 	{
 		$adjustedTabs = [];
-		
+
 		foreach ($tabs as $tabKey => $tab) {
 			if ((isset($tab['hide']) && $tab['hide'] === true) || (isset($tab['tree']) && $tab['tree'] === false)) {
 				continue;
@@ -693,7 +693,7 @@ class Misc extends AbstractContext
 			$tab['tabkey'] = $tabKey;
 			$adjustedTabs[] = $tab;
 		}
-		
+
 		return new ArrayRecordSet($adjustedTabs);
 	}
 
@@ -1048,6 +1048,7 @@ class Misc extends AbstractContext
 	 * returns an array representing FKs definition for a table, sorted by fields
 	 * or by constraint.
 	 * @param string $table The table to retrieve FK constraints from
+	 * @param string $context Optional context ('insert' or 'search'); defaults to 'insert'
 	 * @returns array the array of FK definition:
 	 *   array(
 	 *     'byconstr' => array(
@@ -1066,7 +1067,7 @@ class Misc extends AbstractContext
 	 *     'code' => HTML/js code to include in the page for auto-completion
 	 *   )
 	 **/
-	function getAutocompleteFKProperties($table)
+	function getAutocompleteFKProperties($table, $context = 'insert')
 	{
 		$pg = $this->postgres();
 
@@ -1136,9 +1137,9 @@ class Misc extends AbstractContext
 			$fksprops['code'] .= "var database='" . addslashes(htmlentities($_REQUEST['database'], ENT_QUOTES, 'UTF-8')) . "';";
 			$fksprops['code'] .= "</script>\n";
 
-			$fksprops['code'] .= '<div id="fkbg"></div>';
-			$fksprops['code'] .= '<div id="fklist"></div>';
-			$fksprops['code'] .= '<script src="js/ac_insert_row.js" type="text/javascript"></script>';
+			$fksprops['code'] .= '<div class="fkbg" id="fkbg-' . htmlspecialchars($context) . '"></div>';
+			$fksprops['code'] .= '<div class="fklist" id="fklist-' . htmlspecialchars($context) . '"></div>';
+			$fksprops['code'] .= '<script>document.addEventListener("frameLoaded", () => AutocompleteFK.init(\'' . htmlspecialchars($context) . '\'));</script>';
 		} else /* we have no foreign keys on this table */
 			return false;
 

@@ -96,15 +96,6 @@ class DatabaseActions extends AbstractActions
     }
 
     /**
-     * Returns the current default_with_oids setting (legacy compatibility).
-     */
-    public function getDefaultWithOid()
-    {
-        // OID support was removed in PG12; retained for callers that check it
-        return false;
-    }
-
-    /**
      * Creates a database.
      */
     public function createDatabase($database, $encoding, $tablespace = '', $comment = '', $template = 'template1', $lc_collate = '', $lc_ctype = '')

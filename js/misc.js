@@ -310,12 +310,7 @@
 	// Initialization
 
 	flatpickr.localize(flatpickr.l10ns.default);
-	createSqlEditors(document.documentElement);
-	createDateAndTimePickers(document.documentElement);
-
-	const acForm = document.getElementById("ac_form");
-	if (acForm) {
-
-	}
+	//createSqlEditors(document.documentElement);
+	//createDateAndTimePickers(document.documentElement);
 
 })();

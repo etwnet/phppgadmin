@@ -5,7 +5,8 @@ use PhpPgAdmin\Database\Actions\ConstraintActions;
 use PhpPgAdmin\Database\Actions\RowActions;
 use PhpPgAdmin\Database\Actions\SchemaActions;
 use PhpPgAdmin\Database\Actions\TableActions;
-use PhpPgAdmin\Gui\FieldRenderer;
+use PhpPgAdmin\Gui\_FieldRenderer;
+use PhpPgAdmin\Gui\FormRenderer;
 use PHPSQLParser\PHPSQLParser;
 
 /**
@@ -64,7 +65,7 @@ function doEditRow($confirm, $msg = '') {
 
 	if ($confirm) {
 
-		$fieldRenderer = new FieldRenderer();
+		$formRenderer = new FormRenderer();
 
 		//var_dump($keyFields);
 		$initial = empty($_POST);
@@ -74,7 +75,7 @@ function doEditRow($confirm, $msg = '') {
 		$misc->printMsg($msg);
 
 		if (($conf['autocomplete'] != 'disable')) {
-			$fksprops = $misc->getAutocompleteFKProperties($_REQUEST['table']);
+			$fksprops = $misc->getAutocompleteFKProperties($_REQUEST['table'], 'insert');
 			if ($fksprops !== false)
 				echo $fksprops['code'];
 		} else $fksprops = false;
@@ -218,9 +219,11 @@ EOT;
 				if (($fksprops !== false) && isset($fksprops['byfield'][$attrs->fields['attnum']])) {
 					$extras['id'] = "attr_{$attrs->fields['attnum']}";
 					$extras['autocomplete'] = 'off';
+					$extras['data-fk-context'] = 'insert';
+					$extras['data-attnum'] = $attrs->fields['attnum'];
 				}
 
-				$fieldRenderer->printField(
+				$formRenderer->printField(
 					"values[{$attrs->fields['attname']}]",
 					$value,
 					$attrs->fields['type'],

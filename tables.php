@@ -1,6 +1,9 @@
 <?php
 
 use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\Actions\TableActions;
+use PhpPgAdmin\Database\Actions\TypeActions;
+use PhpPgAdmin\Gui\FormRenderer;
 
 /**
  * List tables in a database
@@ -16,13 +19,15 @@ include_once('./libraries/bootstrap.php');
  */
 function doCreate($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$tableActions = new TableActions($pg);
+	$typeActions = new TypeActions($pg);
 
 	if (!isset($_REQUEST['stage'])) {
 		$_REQUEST['stage'] = 1;
-		$default_with_oids = $data->getDefaultWithOid();
+		$default_with_oids = $tableActions->getDefaultWithOid();
 		if ($default_with_oids == 'off') $_REQUEST['withoutoids'] = 'on';
 	}
 
@@ -34,7 +39,7 @@ function doCreate($msg = '')
 	switch ($_REQUEST['stage']) {
 		case 1:
 			// Fetch all tablespaces from the database
-			if ($data->hasTablespaces()) $tablespaces = $data->getTablespaces();
+			if ($pg->hasTablespaces()) $tablespaces = $pg->getTablespaces();
 
 			$misc->printTrail('schema');
 			$misc->printTitle($lang['strcreatetable'], 'pg.table.create');
@@ -43,12 +48,12 @@ function doCreate($msg = '')
 			echo "<form action=\"tables.php\" method=\"post\">\n";
 			echo "<table>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
-			echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"",
+			echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
 			htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strnumcols']}</th>\n";
-			echo "\t\t<td class=\"data\"><input name=\"fields\" size=\"5\" maxlength=\"{$data->_maxNameLen}\" value=\"",
+			echo "\t\t<td class=\"data\"><input name=\"fields\" size=\"5\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
 			htmlspecialchars_nc($_REQUEST['fields']), "\" /></td>\n\t</tr>\n";
-			if ($data->hasServerOids()) {
+			if ($pg->hasServerOids()) {
 				echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['stroptions']}</th>\n";
 				echo "\t\t<td class=\"data\"><label for=\"withoutoids\"><input type=\"checkbox\" id=\"withoutoids\" name=\"withoutoids\"", isset($_REQUEST['withoutoids']) ? ' checked="checked"' : '', " />WITHOUT OIDS</label></td>\n\t</tr>\n";
 			} else {
@@ -56,7 +61,7 @@ function doCreate($msg = '')
 			}
 
 			// Tablespace (if there are any)
-			if ($data->hasTablespaces() && $tablespaces->recordCount() > 0) {
+			if ($pg->hasTablespaces() && $tablespaces->recordCount() > 0) {
 				echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strtablespace']}</th>\n";
 				echo "\t\t<td class=\"data1\">\n\t\t\t<select name=\"spcname\">\n";
 				// Always offer the default (empty) option
@@ -83,8 +88,6 @@ function doCreate($msg = '')
 			echo "</form>\n";
 			break;
 		case 2:
-			$lang = AppContainer::getLang();
-
 			// Check inputs
 			$fields = trim($_REQUEST['fields']);
 			if (trim($_REQUEST['name']) == '') {
@@ -97,7 +100,7 @@ function doCreate($msg = '')
 				return;
 			}
 
-			$types = $data->getTypes(true, false, true);
+			$types = $typeActions->getTypes(true, false, true);
 			$types_for_js = [];
 
 			$misc->printTrail('schema');
@@ -121,11 +124,11 @@ function doCreate($msg = '')
 				if (!isset($_REQUEST['colcomment'][$i])) $_REQUEST['colcomment'][$i] = '';
 
 				echo "\t<tr>\n\t\t<td>", $i + 1, ".&nbsp;</td>\n";
-				echo "\t\t<td><input name=\"field[{$i}]\" size=\"16\" maxlength=\"{$data->_maxNameLen}\" value=\"",
+				echo "\t\t<td><input name=\"field[{$i}]\" size=\"16\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
 				htmlspecialchars_nc($_REQUEST['field'][$i]), "\" /></td>\n";
 				echo "\t\t<td>\n\t\t\t<select name=\"type[{$i}]\" id=\"types{$i}\" onchange=\"checkLengths(this.options[this.selectedIndex].value,{$i});\">\n";
 				// Output any "magic" types
-				foreach ($data->extraTypes as $v) {
+				foreach ($pg->extraTypes as $v) {
 					$types_for_js[strtolower($v)] = 1;
 					echo "\t\t\t\t<option value=\"", htmlspecialchars_nc($v), "\"", (isset($_REQUEST['type'][$i]) && $v == $_REQUEST['type'][$i]) ? ' selected="selected"' : '', ">",
 					$misc->printVal($v), "</option>\n";
@@ -140,7 +143,7 @@ function doCreate($msg = '')
 				}
 				echo "\t\t\t</select>\n\t\t\n";
 				if ($i == 0) { // only define js types array once
-					$predefined_size_types = array_intersect($data->predefined_size_types, array_keys($types_for_js));
+					$predefined_size_types = array_intersect($pg->predefined_size_types, array_keys($types_for_js));
 					$escaped_predef_types = []; // the JS escaped array elements
 					foreach ($predefined_size_types as $value) {
 						$escaped_predef_types[] = "'{$value}'";
@@ -188,9 +191,6 @@ function doCreate($msg = '')
 
 			break;
 		case 3:
-			$data = AppContainer::getData();
-			$lang = AppContainer::getLang();
-
 			if (!isset($_REQUEST['notnull'])) $_REQUEST['notnull'] = [];
 			if (!isset($_REQUEST['uniquekey'])) $_REQUEST['uniquekey'] = [];
 			if (!isset($_REQUEST['primarykey'])) $_REQUEST['primarykey'] = [];
@@ -210,7 +210,7 @@ function doCreate($msg = '')
 				return;
 			}
 
-			$status = $data->createTable(
+			$status = $tableActions->createTable(
 				$_REQUEST['name'],
 				$_REQUEST['fields'],
 				$_REQUEST['field'],
@@ -252,9 +252,11 @@ function doCreate($msg = '')
  */
 function doCreateLike($confirm, $msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$tableActions = new TableActions($pg);
+	$formRenderer = new FormRenderer();
 
 	if (!$confirm) {
 
@@ -268,14 +270,14 @@ function doCreateLike($confirm, $msg = '')
 		$misc->printTitle($lang['strcreatetable'], 'pg.table.create');
 		$misc->printMsg($msg);
 
-		$tbltmp = $data->getTables(true);
+		$tbltmp = $tableActions->getTables(true);
 		$tbltmp = $tbltmp->getArray();
 
 		$tables = [];
 		$tblsel = '';
 		foreach ($tbltmp as $a) {
-			$data->fieldClean($a['nspname']);
-			$data->fieldClean($a['relname']);
+			$pg->fieldClean($a['nspname']);
+			$pg->fieldClean($a['relname']);
 			$tables["\"{$a['nspname']}\".\"{$a['relname']}\""] = serialize(['schema' => $a['nspname'], 'table' => $a['relname']]);
 			if ($_REQUEST['like'] == $tables["\"{$a['nspname']}\".\"{$a['relname']}\""])
 				$tblsel = htmlspecialchars_nc($tables["\"{$a['nspname']}\".\"{$a['relname']}\""]);
@@ -285,13 +287,13 @@ function doCreateLike($confirm, $msg = '')
 
 		echo "<form action=\"tables.php\" method=\"post\">\n";
 		echo "<table>\n\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
-		echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"", htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
+		echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"", htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strcreatetablelikeparent']}</th>\n";
 		echo "\t\t<td class=\"data\">";
 		echo \PhpPgAdmin\Gui::printCombo($tables, 'like', true, $tblsel, false);
 		echo "</td>\n\t</tr>\n";
-		if ($data->hasTablespaces()) {
-			$tblsp_ = $data->getTablespaces();
+		if ($pg->hasTablespaces()) {
+			$tblsp_ = $pg->getTablespaces();
 			if ($tblsp_->recordCount() > 0) {
 				$tblsp_ = $tblsp_->getArray();
 				$tblsp = [];
@@ -299,7 +301,7 @@ function doCreateLike($confirm, $msg = '')
 
 				echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strtablespace']}</th>\n";
 				echo "\t\t<td class=\"data\">";
-				echo \PhpPgAdmin\Gui::printCombo($tblsp, 'tablespace', true, $_REQUEST['tablespace'], false);
+				echo $formRenderer->printCombo($tblsp, 'tablespace', true, $_REQUEST['tablespace'], false);
 				echo "</td>\n\t</tr>\n";
 			}
 		}
@@ -307,12 +309,12 @@ function doCreateLike($confirm, $msg = '')
 		echo "<label for=\"withdefaults\"><input type=\"checkbox\" id=\"withdefaults\" name=\"withdefaults\"",
 		isset($_REQUEST['withdefaults']) ? ' checked="checked"' : '',
 		"/>{$lang['strcreatelikewithdefaults']}</label>";
-		if ($data->hasCreateTableLikeWithConstraints()) {
+		if ($pg->hasCreateTableLikeWithConstraints()) {
 			echo "<br /><label for=\"withconstraints\"><input type=\"checkbox\" id=\"withconstraints\" name=\"withconstraints\"",
 			isset($_REQUEST['withconstraints']) ? ' checked="checked"' : '',
 			"/>{$lang['strcreatelikewithconstraints']}</label>";
 		}
-		if ($data->hasCreateTableLikeWithIndexes()) {
+		if ($pg->hasCreateTableLikeWithIndexes()) {
 			echo "<br /><label for=\"withindexes\"><input type=\"checkbox\" id=\"withindexes\" name=\"withindexes\"",
 			isset($_REQUEST['withindexes']) ? ' checked="checked"' : '',
 			"/>{$lang['strcreatelikewithindexes']}</label>";
@@ -339,7 +341,7 @@ function doCreateLike($confirm, $msg = '')
 
 		if (!isset($_REQUEST['tablespace'])) $_REQUEST['tablespace'] = '';
 
-		$status = $data->createTableLike(
+		$status = $tableActions->createTableLike(
 			$_REQUEST['name'],
 			unserialize($_REQUEST['like']),
 			isset($_REQUEST['withdefaults']),
@@ -363,16 +365,26 @@ function doCreateLike($confirm, $msg = '')
  */
 function doSelectRows($confirm, $msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$tableActions = new TableActions($pg);
+	$formRenderer = new FormRenderer();
 
 	if ($confirm) {
 		$misc->printTrail('table');
 		$misc->printTabs('table', 'select');
 		$misc->printMsg($msg);
 
-		$attrs = $data->getTableAttributes($_REQUEST['table']);
+		$attrs = $tableActions->getTableAttributes($_REQUEST['table']);
+
+		// Get FK properties for search form if autocomplete is enabled
+		$conf = AppContainer::getConf();
+		if (($conf['autocomplete'] != 'disable')) {
+			$fksprops = $misc->getAutocompleteFKProperties($_REQUEST['table'], 'search');
+			if ($fksprops !== false)
+				echo $fksprops['code'];
+		} else $fksprops = false;
 
 		echo "<form action=\"tables.php\" method=\"get\" id=\"selectform\">\n";
 		if ($attrs->recordCount() > 0) {
@@ -395,7 +407,7 @@ function doSelectRows($confirm, $msg = '')
 
 			$i = 0;
 			while (!$attrs->EOF) {
-				$attrs->fields['attnotnull'] = $data->phpBool($attrs->fields['attnotnull']);
+				$attrs->fields['attnotnull'] = $pg->phpBool($attrs->fields['attnotnull']);
 				// Set up default value if there isn't one already
 				if (!isset($_REQUEST['values'][$attrs->fields['attname']]))
 					$_REQUEST['values'][$attrs->fields['attname']] = null;
@@ -408,19 +420,32 @@ function doSelectRows($confirm, $msg = '')
 				echo "<input type=\"checkbox\" name=\"show[", htmlspecialchars_nc($attrs->fields['attname']), "]\"",
 				isset($_REQUEST['show'][$attrs->fields['attname']]) ? ' checked="checked"' : '', " /></td>";
 				echo "<td style=\"white-space:nowrap;\">", $misc->printVal($attrs->fields['attname']), "</td>";
-				echo "<td style=\"white-space:nowrap;\">", $misc->printVal($data->formatType($attrs->fields['type'], $attrs->fields['atttypmod'])), "</td>";
+				echo "<td style=\"white-space:nowrap;\">", $misc->printVal($pg->formatType($attrs->fields['type'], $attrs->fields['atttypmod'])), "</td>";
 				echo "<td style=\"white-space:nowrap;\">";
 				echo "<select name=\"ops[{$attrs->fields['attname']}]\">\n";
-				foreach (array_keys($data->selectOps) as $v) {
+				foreach (array_keys($pg->selectOps) as $v) {
 					echo "<option value=\"", htmlspecialchars_nc($v), "\"", ($v == $_REQUEST['ops'][$attrs->fields['attname']]) ? ' selected="selected"' : '',
 					">", htmlspecialchars_nc($v), "</option>\n";
 				}
 				echo "</select>\n</td>\n";
-				echo "<td style=\"white-space:nowrap;\">", $data->printField(
+				echo "<td style=\"white-space:nowrap;\" id=\"row_att_search_{$attrs->fields['attnum']}\">";
+
+				// Build extras array for FK field detection
+				$extras = [];
+				if (($fksprops !== false) && isset($fksprops['byfield'][$attrs->fields['attnum']])) {
+					$extras['id'] = "attr_{$attrs->fields['attnum']}";
+					$extras['autocomplete'] = 'off';
+					$extras['data-fk-context'] = 'search';
+					$extras['data-attnum'] = $attrs->fields['attnum'];
+				}
+
+				$formRenderer->printField(
 					"values[{$attrs->fields['attname']}]",
 					$_REQUEST['values'][$attrs->fields['attname']],
-					$attrs->fields['type']
-				), "</td>";
+					$attrs->fields['type'],
+					$extras
+				);
+				echo "</td>";
 				echo "</tr>\n";
 				$i++;
 				$attrs->moveNext();
@@ -444,7 +469,7 @@ function doSelectRows($confirm, $msg = '')
 
 		// Verify that they haven't supplied a value for unary operators
 		foreach ($_REQUEST['ops'] as $k => $v) {
-			if ($data->selectOps[$v] == 'p' && $_REQUEST['values'][$k] != '') {
+			if ($pg->selectOps[$v] == 'p' && $_REQUEST['values'][$k] != '') {
 				doSelectRows(true, $lang['strselectunary']);
 				return;
 			}
@@ -458,7 +483,7 @@ function doSelectRows($confirm, $msg = '')
 			*/
 
 		// Generate query SQL
-		$query = $data->getSelectSQL(
+		$query = $pg->getSelectSQL(
 			$_REQUEST['table'],
 			array_keys($_REQUEST['show']),
 			$_REQUEST['values'],
@@ -470,19 +495,23 @@ function doSelectRows($confirm, $msg = '')
 
 		AppContainer::setSkipHtmlFrame(true);
 		include './display.php';
-		exit;
+		AppContainer::setSkipHtmlFrame(false);
+		return;
 	}
 }
 
 /**
  * Ask for insert parameters and then actually insert row
+ * @deprecated use display.php
  */
 function doInsertRow($confirm, $msg = '')
 {
 	AppContainer::setSkipHtmlFrame(true);
 	require __DIR__ . '/display.php';
+	AppContainer::setSkipHtmlFrame(false);
 	return;
 
+	/*
 	throw new Exception("Insert here is disabled, please use display.php instead");
 
 	$data = AppContainer::getData();
@@ -551,7 +580,7 @@ function doInsertRow($confirm, $msg = '')
 					$data->printField(
 						"values[{$attrs->fields['attnum']}]",
 						$_REQUEST['values'][$attrs->fields['attnum']],
-						'fktype'/*force FK*/,
+						'fktype', // force FK
 						[
 							'id' => "attr_{$attrs->fields['attnum']}",
 							'autocomplete' => 'off'
@@ -619,6 +648,7 @@ function doInsertRow($confirm, $msg = '')
 		} else
 			doInsertRow(true, $lang['strrowduplicate']);
 	}
+	*/
 }
 
 /**
@@ -626,13 +656,14 @@ function doInsertRow($confirm, $msg = '')
  */
 function doEmpty($confirm)
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$tableActions = new TableActions($pg);
 
 	if (empty($_REQUEST['table']) && empty($_REQUEST['ma'])) {
 		doDefault($lang['strspecifytabletoempty']);
-		exit();
+		return;
 	}
 
 	if ($confirm) {
@@ -666,7 +697,7 @@ function doEmpty($confirm)
 		if (is_array($_REQUEST['table'])) {
 			$msg = '';
 			foreach ($_REQUEST['table'] as $t) {
-				$status = $data->emptyTable($t);
+				$status = $tableActions->emptyTable($t);
 				if ($status == 0)
 					$msg .= sprintf('%s: %s<br />', htmlentities($t, ENT_QUOTES, 'UTF-8'), $lang['strtableemptied']);
 				else {
@@ -677,7 +708,7 @@ function doEmpty($confirm)
 			doDefault($msg);
 		} // END multi empty
 		else {
-			$status = $data->emptyTable($_POST['table']);
+			$status = $tableActions->emptyTable($_POST['table']);
 			if ($status == 0)
 				doDefault($lang['strtableemptied']);
 			else
@@ -691,9 +722,10 @@ function doEmpty($confirm)
  */
 function doDrop($confirm)
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$tableActions = new TableActions($pg);
 
 	if (empty($_REQUEST['table']) && empty($_REQUEST['ma'])) {
 		doDefault($lang['strspecifytabletodrop']);
@@ -735,26 +767,26 @@ function doDrop($confirm)
 		//If multi drop
 		if (is_array($_REQUEST['table'])) {
 			$msg = '';
-			$status = $data->beginTransaction();
+			$status = $pg->beginTransaction();
 			if ($status == 0) {
 				foreach ($_REQUEST['table'] as $t) {
-					$status = $data->dropTable($t, isset($_POST['cascade']));
+					$status = $tableActions->dropTable($t, isset($_POST['cascade']));
 					if ($status == 0)
 						$msg .= sprintf('%s: %s<br />', htmlentities($t, ENT_QUOTES, 'UTF-8'), $lang['strtabledropped']);
 					else {
-						$data->endTransaction();
+						$pg->endTransaction();
 						doDefault(sprintf('%s%s: %s<br />', $msg, htmlentities($t, ENT_QUOTES, 'UTF-8'), $lang['strtabledroppedbad']));
 						return;
 					}
 				}
 			}
-			if ($data->endTransaction() == 0) {
+			if ($pg->endTransaction() == 0) {
 				// Everything went fine, back to the Default page....
 				AppContainer::setShouldReloadTree(true);
 				doDefault($msg);
 			} else doDefault($lang['strtabledroppedbad']);
 		} else {
-			$status = $data->dropTable($_POST['table'], isset($_POST['cascade']));
+			$status = $tableActions->dropTable($_POST['table'], isset($_POST['cascade']));
 			if ($status == 0) {
 				AppContainer::setShouldReloadTree(true);
 				doDefault($lang['strtabledropped']);
@@ -769,17 +801,17 @@ function doDrop($confirm)
  */
 function doDefault($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$conf = AppContainer::getConf();
 	$misc = AppContainer::getMisc();
-	$data = AppContainer::getData();
 	$lang = AppContainer::getLang();
+	$tableActions = new TableActions($pg);
 
 	$misc->printTrail('schema');
 	$misc->printTabs('schema', 'tables');
 	$misc->printMsg($msg);
 
-	$tables = $data->getTables();
+	$tables = $tableActions->getTables();
 
 	$columns = [
 		'table' => [
@@ -942,7 +974,7 @@ function doDefault($msg = '')
 		//'cluster' TODO ?
 	];
 
-	if (!$data->hasTablespaces()) unset($columns['tablespace']);
+	if (!$pg->hasTablespaces()) unset($columns['tablespace']);
 
 	$misc->printTable($tables, $columns, $actions, 'tables-tables', $lang['strnotables']);
 
@@ -963,7 +995,7 @@ function doDefault($msg = '')
 		]
 	];
 
-	if (($tables->recordCount() > 0) && $data->hasCreateTableLike()) {
+	if (($tables->recordCount() > 0) && $pg->hasCreateTableLike()) {
 		$navlinks['createlike'] = [
 			'attr' => [
 				'href' => [
@@ -1027,7 +1059,6 @@ function doTree()
 function doSubTree()
 {
 	$misc = AppContainer::getMisc();
-	$data = AppContainer::getData();
 
 	$tabs = $misc->getNavTabs('table');
 	$items = $misc->adjustTabsForTree($tabs);

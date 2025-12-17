@@ -8,8 +8,10 @@
 // List of themes
 
 $appThemes = [
-	'default' => 'Default',
+	'default' => 'Legacy',
 	'cappuccino' => 'Cappuccino',
 	'gotar' => 'Blue/Green',
-	'bootstrap' => 'Bootstrap 5.2'
+	'bootstrap' => 'Bootstrap 5.3'
 ];
+
+return $appThemes;

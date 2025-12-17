@@ -81,6 +81,7 @@ class LayoutRenderer extends AbstractContext
 			<script src="libraries/ace/src-min-noconflict/mode-pgsql.js" defer type="text/javascript"></script>
 			<script src="js/frameset.js" defer type="text/javascript"></script>
 			<script src="js/misc.js" defer type="text/javascript"></script>
+			<script src="js/autocomplete-fk.js" defer type="text/javascript"></script>
 			<style>
 				.webfx-tree-children {
 					background-image: url("<?= $this->misc->icon('I') ?> ");

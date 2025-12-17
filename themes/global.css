@@ -28,7 +28,7 @@ html[dir="rtl"] #frameset {
 #resizer {
 	width: 5px;
 	cursor: col-resize;
-	background: #c4c4c4 linear-gradient(90deg,#fff 20%,#c4c4c4 50%,#fff 80%);
+	background: #c4c4c4 linear-gradient(90deg, #fff 20%, #c4c4c4 50%, #fff 80%);
 }
 
 #content-container {
@@ -47,19 +47,19 @@ img {
 }
 
 p.message {
-	color: blue
+	color: blue;
 }
 
 p.comment {
-	font-style: italic
+	font-style: italic;
 }
 
 .left {
-	text-align: left
+	text-align: left;
 }
 
 .pre {
-	white-space: pre
+	white-space: pre;
 }
 
 .arg_icon {
@@ -74,7 +74,7 @@ p.comment {
 }
 
 .webfx-tree-row {
-	white-space: nowrap
+	white-space: nowrap;
 }
 
 .webfx-tree-children {
@@ -83,23 +83,23 @@ p.comment {
 }
 
 .webfx-tree-row img {
-	vertical-align: middle
+	vertical-align: middle;
 }
 
 .webfx-tree-item-label {
-	margin-left: 0.5ex
+	margin-left: 0.5ex;
 }
 
 .webfx-tree-icon {
-	margin-left: 1px
+	margin-left: 1px;
 }
 
 .webfx-tree-hide-root {
-	display: none
+	display: none;
 }
 
 /** auto-complete on insert **/
-#fkbg {
+.fkbg {
 	display: none;
 	position: fixed;
 	top: 0;
@@ -109,42 +109,70 @@ p.comment {
 	z-index: 10;
 }
 
-#fklist {
+.fklist {
 	display: none;
-	position: absolute;
+	position: fixed;
 	background: #fff;
 	border: 1px solid #000;
-	overflow: auto;
 	z-index: 15;
+	max-height: 300px;
+	max-width: 600px;
+	overflow: auto;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-#fklist table {
+.fklist table {
 	border-collapse: collapse;
 	border: 1px solid #aaa;
 }
 
-#fklist th {
-	border: 1px solid #aaa
+.fklist th {
+	border: 1px solid #aaa;
 }
 
-#fklist td,
-#fklist th {
+.fklist td,
+.fklist th {
 	padding: 3px 10px;
 	border-right: 1px solid #aaa;
 	font-size: 12px;
 }
 
-#fklist td a {
+.fklist td a {
 	display: block;
 	color: #000;
 }
 
-#fklist td a.fkval, p.errmsg {
+.fklist td a.fkval,
+p.errmsg {
 	color: red;
 }
 
 .ac_values {
-	width: 100%
+	width: 100%;
+}
+
+.ac_header th {
+	white-space: nowrap;
+}
+
+.ac_header th img {
+	margin-right: 2px;
+}
+
+.ac-page-nav {
+	text-align: center;
+	margin-top: 10px;
+	margin-bottom: 15px;
+}
+
+.ac-page-nav a:first-child {
+	padding-right: 7px;
+	border-right: 1pt solid #ccc;
+}
+
+.ac-page-nav a:last-child {
+	padding-left: 7px;
+	border-left: 1pt solid #ccc;
 }
 
 /** bottom link back to top **/
@@ -154,7 +182,7 @@ p.comment {
 	right: 7px;
 	margin: 0;
 	text-decoration: none !important;
-	opacity: .5;
+	opacity: 0.5;
 }
 
 .bottom_link:hover {
@@ -183,23 +211,25 @@ div.fk_value {
 }
 
 .highlight {
-	background-color: #FFFF00;
+	background-color: #ffff00;
 }
 
 /** Syntax highlighting **/
 .comment {
-	color: #008080
+	color: #008080;
 }
 
 .keyword {
-	color: #FF8000
+	color: #ff8000;
 }
 
 .literal {
-	color: #808080
+	color: #808080;
 }
 
-img.icon, .icon img, .webfx-tree-icon {
+img.icon,
+.icon img,
+.webfx-tree-icon {
 	width: 16px;
 }
 
@@ -214,7 +244,7 @@ td[class^="opbutton"] img.icon {
 	text-align: center;
 }
 
-.pagenav-container >* {
+.pagenav-container > * {
 	display: inline-block;
 }
 
@@ -227,7 +257,6 @@ td[class^="opbutton"] img.icon {
 	margin-right: 2px;
 }
 
-
 .pagenav {
 	text-decoration: none !important;
 }
@@ -237,7 +266,7 @@ td[class^="opbutton"] img.icon {
 }
 
 .disabled {
-	opacity: .5;
+	opacity: 0.5;
 	pointer-events: none;
 }
 
@@ -383,7 +412,7 @@ a.orderby {
 	stroke-dasharray: 250;
 	stroke-dashoffset: 0;
 	transform-origin: center;
-	stroke: #4285F4;
+	stroke: #4285f4;
 	animation: loading-indicator-dash 2s ease-in-out infinite;
 }
 

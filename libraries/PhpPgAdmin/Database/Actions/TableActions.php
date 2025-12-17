@@ -1135,4 +1135,17 @@ class TableActions extends AbstractActions
 
         return $status;
     }
+
+	/**
+	 * Returns the current default_with_oids setting (legacy compatibility).
+	 */
+	public function getDefaultWithOid()
+	{
+		// OID support was removed in PG12; retained for callers that check it
+		if ($this->connection->major_version >= 12) {
+			return false;
+		}
+		$sql = "SHOW default_with_oids";
+		return $this->connection->selectField($sql, 'default_with_oids');
+	}
 }

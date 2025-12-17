@@ -10,6 +10,7 @@ use PhpPgAdmin\Core\AbstractContext;
  * Class to handle basic HTML GUI functions
  *
  * $Id: Gui.php,v 1.2 2004/06/07 20:03:22 soranzo Exp $
+ * @deprecated use FormRenderer
  */
 class Gui extends AbstractContext {
 
@@ -28,6 +29,7 @@ class Gui extends AbstractContext {
 	 * @param (optional) $bMultiple bool to specify whether or not we want a multi select combo box
 	 * @param (optional) $iSize int to specify the size IF a multi select combo
 	 * @return string with the generated HTML select box
+	 * @deprecated use FormRenderer->printCombo()
 	 */
 	static function printCombo(&$arrOptions, $szName, $bBlankEntry = true, $szDefault = '', $bMultiple = false, $iSize = 10) {
 		$htmlOut = '';
