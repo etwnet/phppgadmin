@@ -1,5 +1,6 @@
 <?php
 
+use PhpPgAdmin\Database\ArrayRecordSet;
 use PhpPgAdmin\Core\AppContainer;
 
 /**
@@ -9,15 +10,13 @@ use PhpPgAdmin\Core\AppContainer;
  */
 
 // Include application functions
-use PhpPgAdmin\Database\ArrayRecordSet;
 
 include_once('./libraries/bootstrap.php');
 
-$action = $_REQUEST['action'] ?? '';
 
 function doDefault() {
 	$misc = AppContainer::getMisc();
-$lang = AppContainer::getLang();
+	$lang = AppContainer::getLang();
 
 	$onchange = "onchange=\"location.href='history.php?server=' + encodeURI(server.options[server.selectedIndex].value) + '&amp;database=' + encodeURI(database.options[database.selectedIndex].value) + '&amp;'\"";
 
@@ -35,9 +34,10 @@ $lang = AppContainer::getLang();
 		return;
 	}
 
-	if (isset($_SESSION['history'][$_REQUEST['server']][$_REQUEST['database']])) {
+	$data = $_SESSION['history'][$_REQUEST['server']][$_REQUEST['database']] ?? null;
+	if (isset($data)) {
 
-		$history = new ArrayRecordSet($_SESSION['history'][$_REQUEST['server']][$_REQUEST['database']]);
+		$history = new ArrayRecordSet(array_reverse($data));
 
 		$columns = [
 			'query' => [
@@ -202,6 +202,10 @@ function doDownloadHistory() {
 	exit;
 }
 
+$misc = AppContainer::getMisc();
+
+$action = $_REQUEST['action'] ?? '';
+
 switch ($action) {
 case 'confdelhistory':
 	doDelHistory($_REQUEST['queryid'], true);
@@ -227,5 +231,3 @@ default:
 // Set the name of the window
 $misc->setWindowName('history');
 $misc->printFooter();
-	
-

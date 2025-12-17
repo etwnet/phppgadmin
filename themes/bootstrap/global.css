@@ -623,3 +623,31 @@ a.fk img {
 	width: 14px;
 	margin-right: 3px;
 }
+
+.fklist {
+	border: 1pt solid #ccc;
+	border-radius: 7px;
+}
+
+.fklist table {
+	border: none;
+}
+
+.fklist th {
+	border: none;
+	border-bottom: 1pt solid #ccc;
+}
+
+.fklist th:not(:last-child) {
+	/*border: 1px solid #aaa;*/
+}
+
+.fklist td,
+.fklist th {
+	border-right: 1pt solid #ccc;
+	font-size: .9em;
+}
+
+.ac-page-nav {
+	border-top: 1pt solid #ccc;
+}

@@ -160,19 +160,20 @@ p.errmsg {
 }
 
 .ac-page-nav {
+	border-top: 1px solid #aaa;
+	padding-top: 8px;
 	text-align: center;
-	margin-top: 10px;
 	margin-bottom: 15px;
 }
 
 .ac-page-nav a:first-child {
 	padding-right: 7px;
-	border-right: 1pt solid #ccc;
+	border-right: 1px solid #aaa;
 }
 
 .ac-page-nav a:last-child {
 	padding-left: 7px;
-	border-left: 1pt solid #ccc;
+	border-left: 1px solid #aaa;
 }
 
 /** bottom link back to top **/

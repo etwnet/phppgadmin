@@ -495,8 +495,7 @@ function doSelectRows($confirm, $msg = '')
 
 		AppContainer::setSkipHtmlFrame(true);
 		include './display.php';
-		AppContainer::setSkipHtmlFrame(false);
-		return;
+		exit;
 	}
 }
 
@@ -508,8 +507,7 @@ function doInsertRow($confirm, $msg = '')
 {
 	AppContainer::setSkipHtmlFrame(true);
 	require __DIR__ . '/display.php';
-	AppContainer::setSkipHtmlFrame(false);
-	return;
+	exit;
 
 	/*
 	throw new Exception("Insert here is disabled, please use display.php instead");

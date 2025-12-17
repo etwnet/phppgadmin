@@ -36,7 +36,7 @@ $pg->fieldClean($f_attname);
 $q = "SELECT *
 		FROM \"{$f_schema}\".\"{$f_table}\"
 		WHERE \"{$f_attname}\"::text LIKE '{$_POST['fvalue']}%'
-		ORDER BY \"{$f_attname}\" LIMIT 12 {$offset};";
+		ORDER BY \"{$f_attname}\" LIMIT 13 {$offset};";
 
 $res = $pg->selectSet($q);
 
@@ -55,7 +55,7 @@ if (!$res->EOF) {
 	}
 	echo "</tr>\n";
 	$i = 0;
-	while ((!$res->EOF) && ($i < 11)) {
+	while ((!$res->EOF) && ($i < 12)) {
 		$j = 0;
 		echo "<tr class=\"ac_line\">";
 		foreach ($res->fields as $n => $v) {
@@ -84,7 +84,7 @@ if (!$res->EOF) {
 }
 
 $hasPrev = !empty($_POST['offset']);
-$hasNext = $res->recordCount() == 12;
+$hasNext = $res->recordCount() == 13;
 
 echo "<div class=\"ac-page-nav\">\n";
 $class = "fkprev " . ($hasPrev ? "" : " disabled");

@@ -1020,19 +1020,38 @@ class Misc extends AbstractContext
 	}
 
 	/**
-	 * Save the given SQL script in the history of the database and server.
-	 * @param string $script the SQL script to save.
+	 * Save the given SQL statement in the history of the database and server.
+	 * @param string $sql the SQL statement to save.
 	 */
-	function saveScriptHistory($script)
+	function saveSqlHistory($sql)
 	{
+		$server   = $_REQUEST['server'];
+		$database = $_REQUEST['database'];
+
+		if (!isset($_SESSION['history'][$server][$database])) {
+			$_SESSION['history'][$server][$database] = [];
+		}
+
+		$history =& $_SESSION['history'][$server][$database];
+
+		if (!empty($history)) {
+			$lastEntry = end($history);
+
+			if (trim($lastEntry['query']) === trim($sql)) {
+				return;
+			}
+		}
+
 		list($usec, $sec) = explode(' ', microtime());
 		$time = ((float)$usec + (float)$sec);
-		$_SESSION['history'][$_REQUEST['server']][$_REQUEST['database']]["$time"] = [
-			'query' => $script,
+
+		$history["$time"] = [
+			'query'    => $sql,
 			'paginate' => (!isset($_REQUEST['paginate']) ? 'f' : 't'),
-			'queryid' => $time,
+			'queryid'  => $time,
 		];
 	}
+
 
 	/*
 	 * Output dropdown list to select server and

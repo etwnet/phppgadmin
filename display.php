@@ -850,8 +850,8 @@ function doBrowse($msg = '') {
 	$_gets['strings'] = $_REQUEST['strings'];
 	$_gets['max_rows'] = $_REQUEST['max_rows'];
 
-	if ($save_history && is_object($rs)) {
-		$misc->saveScriptHistory($query);
+	if ($save_history) {
+		$misc->saveSqlHistory($query);
 	}
 
 	$_sub_params = $_gets;

@@ -16,8 +16,8 @@
 
 class AutocompleteFK {
 	// Configuration
-	static RESULTS_PER_PAGE = 11;
-	static FETCH_LIMIT = 12;
+	static RESULTS_PER_PAGE = 12;
+	static FETCH_LIMIT = 13;
 
 	// State per context
 	static state = {};
@@ -129,7 +129,11 @@ class AutocompleteFK {
 		// Delegated click handler for pagination buttons
 		document.addEventListener("click", (e) => {
 			const buttonId = e.target.id;
-			if (!buttonId.startsWith("fkprev") && !buttonId.startsWith("fknext")) return;
+			if (
+				!buttonId.startsWith("fkprev") &&
+				!buttonId.startsWith("fknext")
+			)
+				return;
 
 			e.preventDefault();
 			e.stopPropagation();
