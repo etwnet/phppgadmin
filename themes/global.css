@@ -23,6 +23,7 @@ html[dir="rtl"] #frameset {
 	min-width: 0px;
 	max-width: 600px;
 	overflow: auto;
+	position: relative;
 }
 
 #resizer {
@@ -68,9 +69,18 @@ p.comment {
 }
 
 .refreshTree {
-	float: right;
-	text-align: right;
-	padding: 0 3px;
+	position: absolute;
+	right: 10px;
+	z-index: 10;
+}
+
+#wfxt-container {
+	overflow: auto;
+	bottom: 0;
+	position: absolute;
+	top: 55px;
+	width: 100%;
+	padding-bottom: 10px;
 }
 
 .webfx-tree-row {
