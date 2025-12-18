@@ -2,14 +2,14 @@
 @import url(./bootstrap.min.css);
 /*@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');*/
 
-
 :root {
 	--bs-font-sans-serif: sans-serif;
 	--bs-body-font-family: sans-serif;
 	--bs-body-font-weight: 400;
 }
 
-html, body {
+html,
+body {
 	scroll-behavior: smooth;
 }
 
@@ -73,7 +73,7 @@ input[type="reset"] {
 	/*border: 1px solid #aaa;*/
 	display: inline-block;
 	background: linear-gradient(0deg, #f5f5f5 0%, #fff 100%);
-	box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+	box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 
 	border: var(--button-border-width) solid var(--button-border-color);
 	border-radius: var(--button-border-radius);
@@ -90,7 +90,7 @@ input[type="submit"]:hover,
 input[type="reset"]:hover {
 	--button-border-color: #999;
 	background: linear-gradient(0deg, #f0f0f0 0%, #fff 100%);
-	box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+	box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
 	outline: 1px solid #ccc;
 }
 
@@ -102,7 +102,9 @@ input[type="reset"]:active {
 	transform: scale(0.97);
 }
 
-input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]),
+input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not(
+		[type="radio"]
+	),
 textarea,
 select {
 	--input-border-radius: var(--bs-border-radius-sm);
@@ -119,19 +121,22 @@ select {
 	padding: 3px 5px;
 }
 
-input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):hover,
+input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not(
+		[type="radio"]
+	):hover,
 textarea:hover,
 select:hover {
-	box-shadow: 0px 1px 3px rgba(0,0,0,0.2);
+	box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-input[type="checkbox"], input[type="radio"] {
+input[type="checkbox"],
+input[type="radio"] {
 	width: 15px;
 	height: 15px;
 }
 
 p {
-	margin-top: .75rem;
+	margin-top: 0.75rem;
 }
 
 p.message {
@@ -144,21 +149,21 @@ p.message {
 }
 
 table.error {
-	background-color: #f5f5f5
+	background-color: #f5f5f5;
 }
 
 table.error td {
-	background-color: #f5f5f5
+	background-color: #f5f5f5;
 }
 
 table.navbar {
-	background-color: #f5f5f5
+	background-color: #f5f5f5;
 }
 
 table.navbar td {
 	height: 25px;
 	color: #000000;
-	background-color: #FDFDFD;
+	background-color: #fdfdfd;
 	text-align: center;
 
 	/*font-size: smaller;*/ /* 0.9em */
@@ -166,10 +171,11 @@ table.navbar td {
 }
 
 table.navbar td.active {
-	background-color: #f5f5f5
+	background-color: #f5f5f5;
 }
 
-table#data, table.data {
+table#data,
+table.data {
 	min-width: 100%;
 }
 
@@ -186,7 +192,10 @@ th.data {
 	*/
 }
 
-th.data a:active, th.data a:link, th.data a:visited, th.data a:hover {
+th.data a:active,
+th.data a:link,
+th.data a:visited,
+th.data a:hover {
 	font-weight: bold;
 }
 
@@ -196,7 +205,7 @@ td.dat {
 }
 
 th.required {
-	text-decoration: underline
+	text-decoration: underline;
 }
 
 td.topbar {
@@ -212,7 +221,8 @@ td.data1 {
 	padding: 2px;
 }
 
-ul.toplink, ul.navlink {
+ul.toplink,
+ul.navlink {
 	list-style: none;
 	margin: 0;
 	padding: 0;
@@ -224,7 +234,8 @@ ul.navlink {
 	justify-content: center;
 }
 
-ul.toplink li, ul.navlink li {
+ul.toplink li,
+ul.navlink li {
 	display: inline;
 	border-left: 2px solid #ccc;
 	margin: 0;
@@ -238,12 +249,14 @@ ul.navlink li {
 	padding: 0 6px 0 8px;
 }
 
-ul.toplink li:first-child, ul.navlink li:first-child {
+ul.toplink li:first-child,
+ul.navlink li:first-child {
 	border-left: none;
 	padding-left: 0;
 }
 
-ul.toplink li:last-child, ul.navlink li:last-child {
+ul.toplink li:last-child,
+ul.navlink li:last-child {
 	padding-right: 0;
 }
 
@@ -261,7 +274,6 @@ tr[class^="data"] td {
 tr[class^="data"] td.emphasize {
 	font-weight: bold;
 }
-
 
 tr[class^="data"] td[class^="opbutton"] {
 	/*padding: 2px 4px;*/
@@ -306,31 +318,33 @@ tr[class^="data"] td.action-buttons a {
 	/*color: #fff !important;*/
 }
 
-
 tr[class^="data"]:hover {
-	background-color: #DDD;
+	background-color: #ddd;
 }
 
-.row1, .data1 {
-	background-color: #FFF;
+.row1,
+.data1 {
+	background-color: #fff;
 	text-align: left;
 }
 
-.row2, .data2 {
+.row2,
+.data2 {
 	background-color: #eee;
 	text-align: left;
 }
 
-.row3, .data3 {
-	background-color: #FDFDFD
+.row3,
+.data3 {
+	background-color: #fdfdfd;
 }
 
 td[class^="opbutton"] {
 	color: #000000;
-	border-top: 1px solid #FFFFFF;
-	border-right: 1px solid #706D41;
-	border-bottom: 1px solid #706D41;
-	border-left: 1px solid #FFFFFF;
+	border-top: 1px solid #ffffff;
+	border-right: 1px solid #706d41;
+	border-bottom: 1px solid #706d41;
+	border-left: 1px solid #ffffff;
 	cursor: pointer;
 
 	/*font-size: smaller;*/ /*0.8em;*/
@@ -346,22 +360,28 @@ td[class^="opbutton"] img.icon {
 }
 
 .topbar {
-	border: 2px solid #f9f9f9
+	border: 2px solid #f9f9f9;
 }
 
-.topbar, .topbar * {
+.topbar,
+.topbar * {
 	background-color: #f9f9f9;
 }
 
-.topbar .platform, .topbar .host, .topbar .username {
+.topbar .platform,
+.topbar .host,
+.topbar .username {
 	font-weight: bold;
 }
 
-.topbar, .trail {
+.topbar,
+.trail {
 	margin-bottom: 2px;
 }
 
-.topbar, .trail, .tab {
+.topbar,
+.trail,
+.tab {
 	padding: 2px 1ex;
 	/*font-size: smaller;*/
 }
@@ -377,7 +397,8 @@ td[class^="opbutton"] img.icon {
 	/*background-color: #FDFDFD*/
 }
 
-.crumb, .tab {
+.crumb,
+.tab {
 	vertical-align: top;
 }
 
@@ -402,35 +423,50 @@ table.tabs {
 }
 
 .tabs .active {
-	background: linear-gradient(0deg, #FFF 0%, #f3f3f3 100%);
+	background: linear-gradient(0deg, #fff 0%, #f3f3f3 100%);
 }
 
 .tab .icon {
-	display: block
+	display: block;
 }
 
-a, a:link, a:visited {
+a,
+a:link,
+a:visited {
 	color: #1a518c;
 
 	text-decoration: none;
 }
 
-a:active, a:hover {
+a:active,
+a:hover {
 	color: #cc0000;
 
 	text-decoration: underline;
 }
 
-a.navlink:link, a.toplink:link, ul.navlink li a, ul.toplink li a,
-a.navlink:visited, a.toplink:visited, ul.navlink li a:visited, ul.toplink li a:visited{
+a.navlink:link,
+a.toplink:link,
+ul.navlink li a,
+ul.toplink li a,
+a.navlink:visited,
+a.toplink:visited,
+ul.navlink li a:visited,
+ul.toplink li a:visited {
 	color: #245e9c;
 
 	font-weight: bold;
 	text-decoration: none;
 }
 
-a.navlink:hover, a.toplink:hover, ul.navlink li a:hover, ul.toplink li a:hover,
-a.navlink:active, a.toplink:active, ul.navlink li a:active, ul.toplink li a:active {
+a.navlink:hover,
+a.toplink:hover,
+ul.navlink li a:hover,
+ul.toplink li a:hover,
+a.navlink:active,
+a.toplink:active,
+ul.navlink li a:active,
+ul.toplink li a:active {
 	color: #cc0000;
 
 	font-weight: bold;
@@ -438,11 +474,11 @@ a.navlink:active, a.toplink:active, ul.navlink li a:active, ul.toplink li a:acti
 }
 
 .active a {
-	font-weight: bold
+	font-weight: bold;
 }
 
 a.help {
-	color: #E68800;
+	color: #e68800;
 	font-size: smaller;
 	vertical-align: super;
 	text-decoration: none;
@@ -472,22 +508,39 @@ pre.error {
 }
 
 .intro li {
-	font-weight: bold
+	font-weight: bold;
 }
 
 .ac_field {
-	border: 1px solid #D9D95F
+	border: 1px solid #d9d95f;
 }
 
 /** FK browsing **/
-div#root > div.fk {
-	border: 1px solid #000;
+/* Note: FK popup divs are positioned by Popper.js */
+
+div#root {
+	/* #root element no longer used, kept for backward compatibility */
+	display: none;
 }
 
 div.fk {
 	background: #fff;
-	border-left: 1px solid #000;
-	/*padding: 5px;*/
+	border: 1px solid #999;
+	padding: 8px;
+	border-radius: 6px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.33);
+	max-width: 600px;
+	max-height: 90vh;
+	overflow: auto;
+}
+
+div.fk table {
+	margin: 0;
+}
+
+a.fk_close img {
+	margin-bottom: 10px;
+	margin-right: 3px;
 }
 
 div.logo {
@@ -498,7 +551,7 @@ div.logo {
 	font-size: smaller; /* 1em; */
 	border: none;
 	margin: 0px 0px 2px;
-	background-image: url('../../images/themes/bootstrap/title.svg');
+	background-image: url("../../images/themes/bootstrap/title.svg");
 	background-repeat: no-repeat;
 	height: 50px;
 }
@@ -509,11 +562,12 @@ div.logo a {
 	opacity: 0;
 }
 
-.opbutton2, .opbutton1 {
+.opbutton2,
+.opbutton1 {
 	width: 50px;
 }
 
-.pagenav-container >a {
+.pagenav-container > a {
 	min-width: 26px;
 }
 
@@ -562,11 +616,11 @@ i.null {
 }
 
 .sql-editor.frame:hover {
-	box-shadow: 0px 1px 3px rgba(0,0,0,0.2);
+	box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .sql-editor.frame.ace_focus {
-	outline: 2px solid #0060DF;
+	outline: 2px solid #0060df;
 }
 
 .ace_editor .ace_constant.ace_numeric {
@@ -645,7 +699,7 @@ a.fk img {
 .fklist td,
 .fklist th {
 	border-right: 1pt solid #ccc;
-	font-size: .9em;
+	font-size: 0.9em;
 }
 
 .ac-page-nav {

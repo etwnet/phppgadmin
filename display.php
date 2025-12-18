@@ -564,7 +564,7 @@ function printTableRowCells($rs, $fkey_information, $withOid, $editable = false)
 					/* $fkey_information['common_url'] is already urlencoded */
 					$query_params .= '&amp;' . $fkey_information['common_url'];
 					echo "<div style=\"display:inline-block;\">";
-					echo "<a class=\"fk fk_" . htmlentities($conid, ENT_QUOTES, 'UTF-8') . "\" href=\"display.php?{$query_params}\">";
+					echo "<a class=\"fk fk_" . htmlentities($conid, ENT_QUOTES, 'UTF-8') . "\" href=\"#\" data-href=\"display.php?{$query_params}\">";
 					echo "<img src=\"" . $misc->icon('ForeignKey') . "\" style=\"vertical-align:middle;\" alt=\"[fk]\" title=\""
 						. htmlentities($fkey_information['byconstr'][$conid]['consrc'], ENT_QUOTES, 'UTF-8')
 						. "\" />";
@@ -608,7 +608,7 @@ function doBrowseFK()
 		$max_pages
 	);
 
-	echo "<a href=\"\" style=\"display:table-cell;\" class=\"fk_close\"><img alt=\"[close]\" src=\"" . $misc->icon('Close') . "\" /></a>\n";
+	echo "<a href=\"#\" style=\"display:table-cell;\" class=\"fk_close\"><img alt=\"[close]\" src=\"" . $misc->icon('Close') . "\" /></a>\n";
 	echo "<div style=\"display:table-cell;\">";
 
 	if (is_object($rs) && $rs->recordCount() > 0) {

@@ -1,39 +1,39 @@
-(function() {
-
-	const isRtl = document.documentElement.getAttribute('dir') === "rtl";
-	const tree = document.getElementById('tree');
-	const content = document.getElementById('content');
-	const contentContainer = document.getElementById('content-container');
+(function () {
+	const isRtl = document.documentElement.getAttribute("dir") === "rtl";
+	const tree = document.getElementById("tree");
+	const content = document.getElementById("content");
+	const contentContainer = document.getElementById("content-container");
 
 	// Frameset simulation
-	const resizer = document.getElementById('resizer');
+	const resizer = document.getElementById("resizer");
 
 	let isResizing = false;
 
-	resizer.addEventListener('mousedown', e => {
+	resizer.addEventListener("mousedown", (e) => {
 		e.preventDefault();
 		isResizing = true;
-		document.body.style.cursor = 'col-resize';
+		document.body.style.cursor = "col-resize";
 	});
 
-	document.addEventListener('mousemove', e => {
+	document.addEventListener("mousemove", (e) => {
 		if (isResizing) {
-			const newWidth = (isRtl ? window.innerWidth - e.clientX : e.clientX) - resizer.offsetWidth;
-			tree.style.width = newWidth + 'px';
+			const newWidth =
+				(isRtl ? window.innerWidth - e.clientX : e.clientX) - resizer.offsetWidth;
+			tree.style.width = newWidth + "px";
 			positionLoadingIndicator();
 		}
 	});
 
-	document.addEventListener('mouseup', e => {
+	document.addEventListener("mouseup", (e) => {
 		if (isResizing) {
 			isResizing = false;
-			document.body.style.cursor = 'default';
+			document.body.style.cursor = "default";
 		}
 	});
 
 	// Loading indicator
 
-	const loadingIndicator = document.getElementById('loading-indicator');
+	const loadingIndicator = document.getElementById("loading-indicator");
 
 	function positionLoadingIndicator() {
 		const rect = tree.getBoundingClientRect();
@@ -52,7 +52,7 @@
 	function setContent(html) {
 		content.innerHTML = html;
 		// Bringing scripts to life
-		content.querySelectorAll("script").forEach(oldScript => {
+		content.querySelectorAll("script").forEach((oldScript) => {
 			const newScript = document.createElement("script");
 			if (oldScript.src) {
 				newScript.src = oldScript.src;
@@ -65,9 +65,8 @@
 	}
 
 	async function loadContent(url, options = {}, addToHistory = true) {
-
-		url = url.replace(/[&?]$/, '');
-		url += (url.includes('?') ? '&' : '?') + 'target=content';
+		url = url.replace(/[&?]$/, "");
+		url += (url.includes("?") ? "&" : "?") + "target=content";
 		console.log("Fetching:", url, options);
 
 		let finalUrl = null;
@@ -76,7 +75,7 @@
 		}, 200);
 
 		try {
-			document.body.style.cursor = 'wait';
+			document.body.style.cursor = "wait";
 			const res = await fetch(url, options);
 
 			if (!res.ok) {
@@ -86,16 +85,21 @@
 
 			const html = await res.text();
 
+			const unloadEvent = new CustomEvent("beforeFrameUnload", {
+				target: content,
+			});
+			document.dispatchEvent(unloadEvent);
+
 			setContent(html);
 
 			const urlObj = new URL(res.url || url, window.location.href);
-			urlObj.searchParams.delete('target');
+			urlObj.searchParams.delete("target");
 			finalUrl = urlObj.toString();
 
 			if (addToHistory) {
 				const form = content.querySelector("form");
 				const data = {};
-				if (/post/i.test(options.method ?? '') || form) {
+				if (/post/i.test(options.method ?? "") || form) {
 					data.html = html;
 				}
 				history.pushState(data, document.title, finalUrl);
@@ -103,17 +107,16 @@
 				contentContainer.scrollTo(0, 0);
 			}
 
-			const event = new CustomEvent("frameLoaded", {
+			const loadedEvent = new CustomEvent("frameLoaded", {
 				detail: { url: finalUrl },
 				target: content,
 			});
-			document.dispatchEvent(event);
-
+			document.dispatchEvent(loadedEvent);
 		} catch (err) {
 			console.error("Error:", err);
 			window.alert(err);
 		} finally {
-			document.body.style.cursor = 'default';
+			document.body.style.cursor = "default";
 			loadingIndicator.classList.remove("show");
 			window.clearTimeout(indicatorTimeout);
 		}
@@ -121,15 +124,14 @@
 
 	let lastSubmitButton = null;
 
-	document.addEventListener("click", e => {
-
+	document.addEventListener("click", (e) => {
 		if (e.target.matches("input[type=submit], button[type=submit]")) {
 			lastSubmitButton = e.target;
 			return;
 		}
 		lastSubmitButton = null;
 
-		const target = e.target.closest('a');
+		const target = e.target.closest("a");
 		if (!target) {
 			return;
 		}
@@ -143,13 +145,13 @@
 		e.preventDefault();
 		e.stopPropagation();
 
-		if (target.href === window.location.href + '#') {
+		if (target.href === window.location.href + "#") {
 			// Emulate scroll top
 			if (target.classList.contains("bottom_link")) {
 				contentContainer.scrollTo({
 					top: 0,
 					left: 0,
-					behavior: "smooth"
+					behavior: "smooth",
 				});
 			}
 			return;
@@ -159,21 +161,21 @@
 			return;
 		}
 
-		console.log('Intercepted link:', target.href);
+		console.log("Intercepted link:", target.href);
 		return loadContent(target.href);
 	});
 
-	document.addEventListener('submit', e => {
+	document.addEventListener("submit", (e) => {
 		//console.log("Check:", e);
 
 		const form = e.target;
-		if (!form.matches('form')) return;
+		if (!form.matches("form")) return;
 
 		e.preventDefault();
 		console.log("Intercepted form:", form);
 
-		const action = form.getAttribute('action');
-		const method = form.getAttribute('method') || 'GET';
+		const action = form.getAttribute("action");
+		const method = form.getAttribute("method") || "GET";
 		const post = /post/i.test(method);
 
 		const formData = new FormData(form);
@@ -190,7 +192,7 @@
 		if (post) {
 			// add hidden input fields to search query
 			const hiddenInputs = form.querySelectorAll("input[type=hidden]");
-			hiddenInputs.forEach(input => {
+			hiddenInputs.forEach((input) => {
 				if (input.name) {
 					if (!/^(loginServer|action)$/.test(input.name)) {
 						params.append(input.name, input.value);
@@ -210,14 +212,14 @@
 		if (post) {
 			return loadContent(url.toString(), {
 				method: method,
-				body: formData
+				body: formData,
 			});
 		} else {
 			return loadContent(url.toString());
 		}
 	});
 
-	window.addEventListener('popstate', e => {
+	window.addEventListener("popstate", (e) => {
 		const url = window.location.href;
 
 		if (e.state?.html) {
@@ -230,7 +232,6 @@
 		} else {
 			loadContent(url, {}, false);
 		}
-
 	});
 
 	document.addEventListener("DOMContentLoaded", (e) => {
@@ -241,5 +242,4 @@
 		});
 		document.dispatchEvent(event);
 	});
-
 })();

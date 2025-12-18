@@ -1,111 +1,281 @@
-(function() {
-	
-	/* init some needed tags and values */
-	
-	$('table#data').wrap('<div id="fkcontainer" class="fk" />');
-	$('#fkcontainer').append('<div id="root" />');
-	
-	jQuery.ppa = { 
-		root: $('#root')
-	};
-	
-	$("a.fk").on('click', function (event) {
-		console.log("click", event);
-		/* make the cursor being a waiting cursor */
-		$('body').css('cursor','wait');
+(function () {
+	/* FK Popup Management */
 
-		query = $.ajax({
-			type: 'GET',
-			dataType: 'html',
-			data: {action:'dobrowsefk'},
-			url: $(this).attr('href'),
-			cache: false,
-			context: $(this),
-			contentType: 'application/x-www-form-urlencoded',
-			success: function(answer) {
-				pdiv = this.closest('div.fk');
-				divclass = this.attr('class').split(' ')[1];
+	const FKPopupManager = {
+		maxPopups: 5,
+		openPopups: [], // array of {element, triggerLink, constraintClass}
+		popperInstances: new Map(), // Map<element, Popper.Instance>
+		fkHandler: null,
+		closeHandler: null,
+		container: null,
 
-				/* if we are clicking on a FK from the original table
-				(level 0), we are using the #root div as parent-div */
-				if (pdiv[0].id == 'fkcontainer') {
-					/* computing top position, which is the topid as well */
-					var top = this.position().top + 2 + this.height();
-					/* if the requested top position is different than
-					 the previous topid position of #root, empty and position it */
-					if (top != jQuery.ppa.root.topid)
-						jQuery.ppa.root.empty()
-							.css({
-								left: (pdiv.position().left) +'px',
-								top: top +  'px'
-							})
-							/* this "topid" allows to track if we are 
-							opening a FK from the same line in the original table */
-							.topid = top;
+		/**
+		 * Initialize the FK popup system
+		 */
+		init() {
+			// Ensure #fk_container and structure exist
+			const dataTable = document.querySelector("table#data");
+			if (!dataTable) return;
 
-					pdiv = jQuery.ppa.root;
+			this.container = document.createElement("div");
+			this.container.id = "fk_container";
+			//this.container.className = "fk";
+			dataTable.parentElement.insertBefore(this.container, dataTable);
+			this.container.appendChild(dataTable);
 
-					/* Remove equal rows in the root div */
-					jQuery.ppa.root.children('.'+divclass).remove();
-				}
-				else {
-					/* Remove equal rows in the pdiv */
-					pdiv.children('div.'+divclass).remove();
-				}
+			/*
+			const rootDiv = document.createElement("div");
+			rootDiv.id = "fk_root";
+			wrapper.appendChild(rootDiv);
+			*/
 
-				/* creating the data div */
-				newdiv = $('<div class="fk '+divclass+'">').html(answer);
-				
-				/* highlight referencing fields */
-				newdiv.data('ref', this).data('refclass', $(this).attr('class').split(' ')[1])
-					.mouseenter(function (event) {
-						$(this).data('ref').closest('tr').find('a.'+$(this).data('refclass')).closest('div').addClass('highlight');
-					})
-					.mouseleave(function (event) {
-						$(this).data('ref').closest('tr').find('a.'+$(this).data('refclass')).closest('div').removeClass('highlight');
-					});
+			// Attach click handler to all FK links using event delegation
+			this.fkHandler = (e) => this.handleFKClick(e);
+			document.addEventListener("click", this.fkHandler);
 
-				/* appending it to the level-1 div */
-				pdiv.append(newdiv);
-			},
+			// Attach close button handler using event delegation
+			this.closeHandler = (e) => this.handleCloseClick(e);
+			document.addEventListener("click", this.closeHandler);
+		},
 
-			error: function() {
-				this.closest('div.fk').append('<p class="errmsg">'+Display.errmsg+'</p>');
-			},
-
-			complete: function () {
-				$('body').css('cursor','auto');
+		/**
+		 * Cleanup on unload
+		 */
+		unload() {
+			// Remove event listeners
+			if (this.fkHandler) {
+				document.removeEventListener("click", this.fkHandler);
+				this.fkHandler = null;
 			}
-		});
-		
-		return false; // do not refresh the page
-	});
+			if (this.closeHandler) {
+				document.removeEventListener("click", this.closeHandler);
+				this.closeHandler = null;
+			}
 
-	$(document).on('click', '.fk_delete', function (event) {
-		with($(this).closest('div')) {
-			data('ref').closest('tr').find('a.'+data('refclass')).closest('div').removeClass('highlight');
-			remove();
-		}
-		return false; // do not refresh the page
-	});
+			// Close all open popups
+			this.openPopups.forEach((popup) => {
+				this.closePopup(popup.element);
+			});
+			this.openPopups = [];
+		},
+
+		/**
+		 * Handle FK link click
+		 */
+		handleFKClick(event) {
+			const fkLink = event.target.closest("a.fk");
+			if (!fkLink) return;
+
+			console.log("FKPopupManager.handleFKClick");
+
+			event.preventDefault();
+			event.stopPropagation();
+
+			document.body.style.cursor = "wait";
+
+			const constraintClass = fkLink.className.split(" ")[1]; // e.g., 'fk_12345'
+
+			// Fetch FK data via AJAX
+			const url = new URL(fkLink.dataset.href, window.location.href);
+			url.searchParams.set("action", "dobrowsefk");
+			console.log("Fetching FK data from:", url.toString());
+
+			fetch(url.toString())
+				.then((response) => {
+					if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+					return response.text();
+				})
+				.then((htmlContent) => {
+					this.displayPopup(fkLink, constraintClass, htmlContent);
+				})
+				.catch((error) => {
+					const errorMsg = document.createElement("p");
+					errorMsg.className = "errmsg";
+					errorMsg.textContent = Display.errmsg || "Error loading foreign key data";
+					this.container.appendChild(errorMsg);
+				})
+				.finally(() => {
+					document.body.style.cursor = "auto";
+				});
+		},
+
+		/**
+		 * Display the FK popup with Popper.js positioning
+		 */
+		displayPopup(triggerLink, constraintClass, htmlContent) {
+			// Check popup cap and close oldest if necessary
+			if (this.openPopups.length >= this.maxPopups) {
+				const oldest = this.openPopups.shift();
+				this.closePopup(oldest.element);
+			}
+
+			// Create popup container
+			const popupDiv = document.createElement("div");
+			popupDiv.className = `fk ${constraintClass}`;
+			popupDiv.innerHTML = htmlContent;
+			popupDiv.style.position = "absolute";
+			popupDiv.style.zIndex = 1000 + this.openPopups.length;
+
+			// Store reference to trigger link on popup element
+			popupDiv._triggerLink = triggerLink;
+			popupDiv._constraintClass = constraintClass;
+
+			// Append to document body for Popper.js to position
+			this.container.appendChild(popupDiv);
+
+			// Initialize Popper.js for positioning
+			const popperInstance = Popper.createPopper(triggerLink, popupDiv, {
+				placement: "bottom-start",
+				modifiers: [
+					{
+						name: "offset",
+						options: {
+							offset: [0, 8],
+						},
+					},
+					{
+						name: "flip",
+						options: {
+							padding: 8,
+						},
+					},
+					{
+						name: "preventOverflow",
+						options: {
+							padding: 8,
+						},
+					},
+				],
+			});
+
+			this.popperInstances.set(popupDiv, popperInstance);
+
+			// Track open popup
+			this.openPopups.push({ element: popupDiv, triggerLink, constraintClass });
+
+			// Setup hover highlight effect
+			this.setupHighlightEffect(popupDiv, triggerLink, constraintClass);
+
+			// Re-attach close handlers to new close button
+			this.attachCloseHandlers(popupDiv);
+		},
+
+		/**
+		 * Setup highlight effect on hover
+		 */
+		setupHighlightEffect(popupDiv, triggerLink, constraintClass) {
+			popupDiv.addEventListener("mouseenter", () => {
+				const row = triggerLink.closest("tr");
+				if (row) {
+					const refLink = row.querySelector(`a.${constraintClass}`);
+					if (refLink) {
+						const div = refLink.closest("div");
+						if (div) div.classList.add("highlight");
+					}
+				}
+			});
+
+			popupDiv.addEventListener("mouseleave", () => {
+				const row = triggerLink.closest("tr");
+				if (row) {
+					const refLink = row.querySelector(`a.${constraintClass}`);
+					if (refLink) {
+						const div = refLink.closest("div");
+						if (div) div.classList.remove("highlight");
+					}
+				}
+			});
+		},
+
+		/**
+		 * Attach close button handlers to popup
+		 */
+		attachCloseHandlers(popupDiv) {
+			const closeBtn = popupDiv.querySelector("a.fk_close");
+			if (closeBtn) {
+				closeBtn.addEventListener("click", (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					this.closePopup(popupDiv);
+				});
+			}
+		},
+
+		/**
+		 * Handle close button click
+		 */
+		handleCloseClick(event) {
+			const closeBtn = event.target.closest("a.fk_close");
+			if (!closeBtn) return;
+
+			event.preventDefault();
+			event.stopPropagation();
+
+			const popupDiv = closeBtn.closest("div.fk");
+			if (popupDiv) {
+				this.closePopup(popupDiv);
+			}
+		},
+
+		/**
+		 * Close a popup
+		 */
+		closePopup(popupDiv) {
+			// Remove from tracking array
+			const index = this.openPopups.findIndex((p) => p.element === popupDiv);
+			if (index !== -1) {
+				this.openPopups.splice(index, 1);
+			}
+
+			// Destroy Popper instance
+			const popperInstance = this.popperInstances.get(popupDiv);
+			if (popperInstance) {
+				popperInstance.destroy();
+				this.popperInstances.delete(popupDiv);
+			}
+
+			// Remove highlight from referencing field
+			const triggerLink = popupDiv._triggerLink;
+			const constraintClass = popupDiv._constraintClass;
+			if (triggerLink) {
+				const row = triggerLink.closest("tr");
+				if (row) {
+					const refLink = row.querySelector(`a.${constraintClass}`);
+					if (refLink) {
+						const div = refLink.closest("div");
+						if (div) div.classList.remove("highlight");
+					}
+				}
+			}
+
+			// Remove from DOM
+			popupDiv.remove();
+		},
+	};
+
+	// Initialize FK popup system
+	FKPopupManager.init();
+
+	/* End FK Popup Management */
+
+	/* Column Sorting Management */
 
 	const reverseSortDir = {
-		'asc': 'desc',
-		'desc': 'asc',
-	}
+		asc: "desc",
+		desc: "asc",
+	};
 
 	let tooltipTimout = 0;
 
 	// Adjust orderby fields in links before sending them out
-	document.querySelectorAll('a.orderby').forEach(a => {
-
-		a.addEventListener('click', e => {
+	document.querySelectorAll("a.orderby").forEach((a) => {
+		a.addEventListener("click", (e) => {
 			//e.preventDefault();
 			//e.stopPropagation();
 			const col = a.dataset.col;
 			const url = new URL(a.href, window.location.origin);
 			const params = new URLSearchParams(url.search);
-			const initialDir = /date|timestamp/.test(a.dataset.type) ? 'desc' : 'asc';
+			const initialDir = /date|timestamp/.test(a.dataset.type) ? "desc" : "asc";
 
 			let orderby = {};
 			for (const [key, val] of params.entries()) {
@@ -132,8 +302,8 @@
 
 			//console.log(orderby);
 
-			[...params.keys()].forEach(k => {
-				if (k.startsWith('orderby[')) params.delete(k);
+			[...params.keys()].forEach((k) => {
+				if (k.startsWith("orderby[")) params.delete(k);
 			});
 			for (const [c, dir] of Object.entries(orderby)) {
 				params.set(`orderby[${c}]`, dir);
@@ -143,25 +313,25 @@
 			a.href = url.toString();
 
 			//console.log(url.toString());
-
 		});
 
-		a.addEventListener('mouseenter', () => {
+		a.addEventListener("mouseenter", () => {
 			tooltipTimout = window.setTimeout(() => {
-				window.showTooltip(a, a.closest('tr').dataset.orderbyDesc);
+				window.showTooltip(a, a.closest("tr").dataset.orderbyDesc);
 			}, 500);
 		});
 
-		a.addEventListener('mouseleave', () => {
+		a.addEventListener("mouseleave", () => {
 			window.clearTimeout(tooltipTimout);
 			window.hideTooltip();
 		});
 	});
 
 	// Virtual Frame Event
-	document.addEventListener("frameLoaded", function(e) {
+	document.addEventListener("frameLoaded", function (e) {
 		window.clearTimeout(tooltipTimout);
 		window.hideTooltip();
 	});
 
+	/* End Column Sorting Management */
 })();
