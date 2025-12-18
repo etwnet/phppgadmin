@@ -279,7 +279,8 @@ td[class^="opbutton"] img.icon {
 	background: #eee;
 }
 
-.sql-editor {
+.sql-editor,
+.sql-viewer {
 	font-size: 1em;
 }
 
@@ -295,9 +296,8 @@ td[class^="opbutton"] img.icon {
 	/*max-height: 600px;*/
 }
 
-.sql-viewer.ace_editor {
-	background-color: transparent !important;
-	min-width: 200px;
+.sql-editor.high {
+	height: 300px;
 }
 
 .sql-viewer.ace_editor .ace_content,

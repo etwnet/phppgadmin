@@ -1171,7 +1171,7 @@ function doBrowse($msg = '')
 						])
 					]
 				],
-				'icon' => $misc->icon('View'),
+				'icon' => $misc->icon('CreateView'),
 				'content' => $lang['strcreateview']
 			];
 		}

@@ -1,6 +1,11 @@
 <?php
 
 use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\Actions\ColumnActions;
+use PhpPgAdmin\Database\Actions\RoleActions;
+use PhpPgAdmin\Database\Actions\SchemaActions;
+use PhpPgAdmin\Database\Actions\TableActions;
+use PhpPgAdmin\Database\Actions\ViewActions;
 
 /**
  * List views in a database
@@ -11,17 +16,16 @@ use PhpPgAdmin\Core\AppContainer;
 // Include application functions
 include_once('./libraries/bootstrap.php');
 
-$action = $_REQUEST['action'] ?? '';
-
 /** 
  * Function to save after editing a view
  */
 function doSaveEdit()
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
+	$viewActions = new ViewActions($pg);
 
-	$status = $data->setView($_POST['view'], $_POST['formDefinition'], $_POST['formComment']);
+	$status = $viewActions->setView($_POST['view'], $_POST['formDefinition'], $_POST['formComment']);
 	if ($status == 0)
 		doDefinition($lang['strviewupdated']);
 	else
@@ -33,15 +37,16 @@ function doSaveEdit()
  */
 function doEdit($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$viewActions = new ViewActions($pg);
 
 	$misc->printTrail('view');
 	$misc->printTitle($lang['stredit'], 'pg.view.alter');
 	$misc->printMsg($msg);
 
-	$viewdata = $data->getView($_REQUEST['view']);
+	$viewdata = $viewActions->getView($_REQUEST['view']);
 
 	if ($viewdata->recordCount() > 0) {
 
@@ -53,7 +58,7 @@ function doEdit($msg = '')
 		echo "<form action=\"viewproperties.php\" method=\"post\">\n";
 		echo "<table style=\"width: 100%\">\n";
 		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strdefinition']}</th>\n";
-		echo "\t\t<td class=\"data1\"><textarea style=\"width: 100%;\" rows=\"20\" cols=\"50\" name=\"formDefinition\">",
+		echo "\t\t<td class=\"data1\"><textarea style=\"width: 100%;\" rows=\"20\" cols=\"50\" name=\"formDefinition\" class=\"sql-editor frame resizable high\">",
 		htmlspecialchars_nc($_POST['formDefinition']), "</textarea></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
 		echo "\t\t<td class=\"data1\"><textarea rows=\"3\" cols=\"32\" name=\"formComment\">",
@@ -77,7 +82,6 @@ function doEdit($msg = '')
  */
 function doExport($msg = '')
 {
-	$data = AppContainer::getData();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
 
@@ -136,12 +140,13 @@ function doExport($msg = '')
  */
 function doDefinition($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$viewActions = new ViewActions($pg);
 
 	// Get view
-	$vdata = $data->getView($_REQUEST['view']);
+	$vdata = $viewActions->getView($_REQUEST['view']);
 
 	$misc->printTrail('view');
 	$misc->printTabs('view', 'definition');
@@ -154,7 +159,7 @@ function doDefinition($msg = '')
 
 		echo "<table style=\"width: 100%\">\n";
 		echo "<tr><th class=\"data\">{$lang['strdefinition']}</th></tr>\n";
-		echo "<tr><td class=\"data1\">", $misc->printVal($vdata->fields['vwdefinition']), "</td></tr>\n";
+		echo "<tr><td class=\"data1\"><div class=\"sql-viewer\">", $misc->printVal($vdata->fields['vwdefinition']), "</div></td></tr>\n";
 		echo "</table>\n";
 	} else echo "<p>{$lang['strnodata']}</p>\n";
 
@@ -171,7 +176,8 @@ function doDefinition($msg = '')
 				]
 			]
 		],
-		'content' => $lang['stralter']
+		'icon' => $misc->icon('Edit'),
+		'content' => $lang['stredit']
 	]], 'viewproperties-definition', get_defined_vars());
 }
 
@@ -180,16 +186,16 @@ function doDefinition($msg = '')
  */
 function doProperties($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$tableActions = new TableActions($pg);
+	$columnActions = new ColumnActions($pg);
 
 	if (!isset($_REQUEST['stage'])) $_REQUEST['stage'] = 1;
 
 	switch ($_REQUEST['stage']) {
 		case 1:
-			$lang = AppContainer::getLang();
-
 			$misc->printTrail('column');
 			$misc->printTitle($lang['stralter'], 'pg.column.alter');
 			$misc->printMsg($msg);
@@ -201,7 +207,7 @@ function doProperties($msg = '')
 			echo "<tr><th class=\"data required\">{$lang['strname']}</th><th class=\"data required\">{$lang['strtype']}</th>";
 			echo "<th class=\"data\">{$lang['strdefault']}</th><th class=\"data\">{$lang['strcomment']}</th></tr>";
 
-			$column = $data->getTableAttributes($_REQUEST['view'], $_REQUEST['column']);
+			$column = $tableActions->getTableAttributes($_REQUEST['view'], $_REQUEST['column']);
 
 			if (!isset($_REQUEST['default'])) {
 				$_REQUEST['field'] = $column->fields['attname'];
@@ -212,7 +218,7 @@ function doProperties($msg = '')
 			echo "<tr><td><input name=\"field\" size=\"32\" value=\"",
 			htmlspecialchars_nc($_REQUEST['field']), "\" /></td>";
 
-			echo "<td>", $misc->printVal($data->formatType($column->fields['type'], $column->fields['atttypmod'])), "</td>";
+			echo "<td>", $misc->printVal($pg->formatType($column->fields['type'], $column->fields['atttypmod'])), "</td>";
 			echo "<td><input name=\"default\" size=\"20\" value=\"",
 			htmlspecialchars_nc($_REQUEST['default']), "\" /></td>";
 			echo "<td><input name=\"comment\" size=\"32\" value=\"",
@@ -231,9 +237,6 @@ function doProperties($msg = '')
 
 			break;
 		case 2:
-			$data = AppContainer::getData();
-			$lang = AppContainer::getLang();
-
 			// Check inputs
 			if (trim($_REQUEST['field']) == '') {
 				$_REQUEST['stage'] = 1;
@@ -242,7 +245,7 @@ function doProperties($msg = '')
 			}
 
 			// Alter the view column
-			$status = $data->alterColumn(
+			$status = $columnActions->alterColumn(
 				$_REQUEST['view'],
 				$_REQUEST['column'],
 				$_REQUEST['field'],
@@ -271,17 +274,21 @@ function doProperties($msg = '')
 
 function doAlter($confirm = false, $msg = '')
 {
+	$pg = AppContainer::getPostgres();
+	$lang = AppContainer::getLang();
+	$misc = AppContainer::getMisc();
+	$viewActions = new ViewActions($pg);
+	$roleActions = new RoleActions($pg);
+	$schemaActions = new SchemaActions($pg);
+
 	if ($confirm) {
-		$data = AppContainer::getData();
-		$misc = AppContainer::getMisc();
-		$lang = AppContainer::getLang();
 
 		$misc->printTrail('view');
 		$misc->printTitle($lang['stralter'], 'pg.view.alter');
 		$misc->printMsg($msg);
 
 		// Fetch view info
-		$view = $data->getView($_REQUEST['view']);
+		$view = $viewActions->getView($_REQUEST['view']);
 
 		if ($view->recordCount() > 0) {
 			if (!isset($_POST['name'])) $_POST['name'] = $view->fields['relname'];
@@ -293,13 +300,13 @@ function doAlter($confirm = false, $msg = '')
 			echo "<table>\n";
 			echo "<tr><th class=\"data left required\">{$lang['strname']}</th>\n";
 			echo "<td class=\"data1\">";
-			echo "<input name=\"name\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"",
+			echo "<input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
 			htmlspecialchars_nc($_POST['name']), "\" /></td></tr>\n";
 
-			if ($data->isSuperUser()) {
+			if ($pg->isSuperUser()) {
 
 				// Fetch all users
-				$users = $data->getUsers();
+				$users = $roleActions->getUsers();
 
 				echo "<tr><th class=\"data left required\">{$lang['strowner']}</th>\n";
 				echo "<td class=\"data1\"><select name=\"owner\">";
@@ -311,8 +318,8 @@ function doAlter($confirm = false, $msg = '')
 				echo "</select></td></tr>\n";
 			}
 
-			if ($data->hasAlterTableSchema()) {
-				$schemas = $data->getSchemas();
+			if ($pg->hasAlterTableSchema()) {
+				$schemas = $schemaActions->getSchemas();
 				echo "<tr><th class=\"data left required\">{$lang['strschema']}</th>\n";
 				echo "<td class=\"data1\"><select name=\"newschema\">";
 				while (!$schemas->EOF) {
@@ -337,15 +344,12 @@ function doAlter($confirm = false, $msg = '')
 		} else echo "<p>{$lang['strnodata']}</p>\n";
 	} else {
 		AppContainer::setShouldReloadTree(true);
-		$data = AppContainer::getData();
-		$lang = AppContainer::getLang();
-		$misc = AppContainer::getMisc();
 
 		// For databases that don't allow owner change
 		if (!isset($_POST['owner'])) $_POST['owner'] = '';
 		if (!isset($_POST['newschema'])) $_POST['newschema'] = null;
 
-		$status = $data->alterView($_POST['view'], $_POST['name'], $_POST['owner'], $_POST['newschema'], $_POST['comment']);
+		$status = $viewActions->alterView($_POST['view'], $_POST['name'], $_POST['owner'], $_POST['newschema'], $_POST['comment']);
 		if ($status == 0) {
 			// If view has been renamed, need to change to the new name and
 			// reload the browser frame.
@@ -356,7 +360,7 @@ function doAlter($confirm = false, $msg = '')
 				AppContainer::setShouldReloadTree(true);
 			}
 			// If schema has changed, need to change to the new schema and reload the browser
-			if (!empty($_POST['newschema']) && ($_POST['newschema'] != $data->_schema)) {
+			if (!empty($_POST['newschema']) && ($_POST['newschema'] != $pg->_schema)) {
 				// Jump them to the new sequence schema
 				$misc->setCurrentSchema($_POST['newschema']);
 				AppContainer::setShouldReloadTree(true);
@@ -369,10 +373,11 @@ function doAlter($confirm = false, $msg = '')
 function doTree()
 {
 	$misc = AppContainer::getMisc();
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
+	$tableActions = new TableActions($pg);
 
 	$reqvars = $misc->getRequestVars('column');
-	$columns = $data->getTableAttributes($_REQUEST['view']);
+	$columns = $tableActions->getTableAttributes($_REQUEST['view']);
 
 	$attrs = [
 		'text'   => field('attname'),
@@ -408,21 +413,21 @@ function doTree()
 	exit;
 }
 
-if ($action == 'tree') doTree();
-
 /**
  * Show view definition and virtual columns
  */
 function doDefault($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$tableActions = new TableActions($pg);
+	$viewActions = new ViewActions($pg);
 
-	function attPre(&$rowdata)
+	function attPre($rowdata)
 	{
-		$data = AppContainer::getData();
-		$rowdata->fields['+type'] = $data->formatType($rowdata->fields['type'], $rowdata->fields['atttypmod']);
+		$pg = AppContainer::getPostgres();
+		$rowdata->fields['+type'] = $pg->formatType($rowdata->fields['type'], $rowdata->fields['atttypmod']);
 	}
 
 	$misc->printTrail('view');
@@ -430,9 +435,9 @@ function doDefault($msg = '')
 	$misc->printMsg($msg);
 
 	// Get view
-	$vdata = $data->getView($_REQUEST['view']);
+	$vdata = $viewActions->getView($_REQUEST['view']);
 	// Get columns (using same method for getting a view)
-	$attrs = $data->getTableAttributes($_REQUEST['view']);
+	$attrs = $tableActions->getTableAttributes($_REQUEST['view']);
 
 	// Show comment if any
 	if ($vdata->fields['relcomment'] !== null)
@@ -498,6 +503,7 @@ function doDefault($msg = '')
 					]
 				]
 			],
+			'icon' => $misc->icon('Table'),
 			'content' => $lang['strbrowse']
 		],
 		'select' => [
@@ -513,6 +519,7 @@ function doDefault($msg = '')
 					]
 				]
 			],
+			'icon' => $misc->icon('Search'),
 			'content' => $lang['strselect']
 		],
 		'drop' => [
@@ -528,6 +535,7 @@ function doDefault($msg = '')
 					]
 				]
 			],
+			'icon' => $misc->icon('Delete'),
 			'content' => $lang['strdrop']
 		],
 		'alter' => [
@@ -543,12 +551,21 @@ function doDefault($msg = '')
 					]
 				]
 			],
+			'icon' => $misc->icon('Edit'),
 			'content' => $lang['stralter']
 		]
 	];
 
 	$misc->printNavLinks($navlinks, 'viewproperties-viewproperties', get_defined_vars());
 }
+
+// Main program
+
+$action = $_REQUEST['action'] ?? '';
+
+if ($action == 'tree') doTree();
+
+$misc = AppContainer::getMisc();
 
 $misc->printHeader($lang['strviews'] . ' - ' . $_REQUEST['view']);
 $misc->printBody();
@@ -572,7 +589,8 @@ switch ($action) {
 		else doProperties();
 		break;
 	case 'alter':
-		if (isset($_POST['alter'])) doAlter(false);
+		if (isset($_POST['cancel'])) doDefault();
+		elseif (isset($_POST['alter'])) doAlter(false);
 		else doDefault();
 		break;
 	case 'confirm_alter':

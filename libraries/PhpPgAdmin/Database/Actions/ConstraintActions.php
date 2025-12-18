@@ -234,11 +234,23 @@ class ConstraintActions extends AbstractActions
     /**
      * Adds a foreign key constraint to a table.
      */
-    public function addForeignKey($table, $targschema, $targtable, $sfields, $tfields, $upd_action, $del_action,
-                                  $match, $deferrable, $initially, $name = '')
-    {
-        if (!is_array($sfields) || sizeof($sfields) == 0 ||
-            !is_array($tfields) || sizeof($tfields) == 0) {
+    public function addForeignKey(
+        $table,
+        $targschema,
+        $targtable,
+        $sfields,
+        $tfields,
+        $upd_action,
+        $del_action,
+        $match,
+        $deferrable,
+        $initially,
+        $name = ''
+    ) {
+        if (
+            !is_array($sfields) || sizeof($sfields) == 0 ||
+            !is_array($tfields) || sizeof($tfields) == 0
+        ) {
             return -1;
         }
         $f_schema = $this->connection->_schema;
@@ -338,8 +350,8 @@ class ConstraintActions extends AbstractActions
         $rs = $this->connection->selectSet($sql);
         while (!$rs->EOF) {
             $arrData = explode(':', $rs->fields['arr_dim']);
-            $tmpDimension = intval(substr($arrData[1], 0, strlen($arrData[1] - 1)));
-            $maxDimension = $tmpDimension > $maxDimension ? $tmpDimension : $maxDimension;
+            $dimension = intval(substr($arrData[1], 0, -1));
+            $maxDimension = max($dimension, $maxDimension);
             $rs->MoveNext();
         }
 

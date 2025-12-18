@@ -1,6 +1,11 @@
 <?php
 
+use PhpPgAdmin\Gui\FormRenderer;
 use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\Actions\ViewActions;
+use PhpPgAdmin\Database\Actions\TableActions;
+use PhpPgAdmin\Database\Actions\SchemaActions;
+use PhpPgAdmin\Database\Actions\ConstraintActions;
 
 /**
  * Manage views in a database
@@ -10,28 +15,26 @@ use PhpPgAdmin\Core\AppContainer;
 
 // Include application functions
 include_once('./libraries/bootstrap.php');
-include_once('./classes/Gui.php');
-
-$action = $_REQUEST['action'] ?? '';
-if (!isset($msg)) $msg = '';
 
 /**
  * Ask for select parameters and perform select
  */
 function doSelectRows($confirm, $msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$tableActions = new TableActions($pg);
+	$formRenderer = new FormRenderer();
 
 	if ($confirm) {
 		$misc->printTrail('view');
 		$misc->printTabs('view', 'select');
 		$misc->printMsg($msg);
 
-		$attrs = $data->getTableAttributes($_REQUEST['view']);
+		$attrs = $tableActions->getTableAttributes($_REQUEST['view']);
 
-		echo "<form action=\"views.php\" method=\"post\" id=\"selectform\">\n";
+		echo "<form action=\"views.php\" method=\"get\" id=\"selectform\">\n";
 		if ($attrs->recordCount() > 0) {
 			// JavaScript for select all feature
 			echo "<script type=\"text/javascript\">\n";
@@ -54,7 +57,7 @@ function doSelectRows($confirm, $msg = '')
 
 			$i = 0;
 			while (!$attrs->EOF) {
-				$attrs->fields['attnotnull'] = $data->phpBool($attrs->fields['attnotnull']);
+				$attrs->fields['attnotnull'] = $pg->phpBool($attrs->fields['attnotnull']);
 				// Set up default value if there isn't one already
 				if (!isset($_REQUEST['values'][$attrs->fields['attname']]))
 					$_REQUEST['values'][$attrs->fields['attname']] = null;
@@ -67,15 +70,15 @@ function doSelectRows($confirm, $msg = '')
 				echo "<input type=\"checkbox\" name=\"show[", htmlspecialchars_nc($attrs->fields['attname']), "]\"",
 				isset($_REQUEST['show'][$attrs->fields['attname']]) ? ' checked="checked"' : '', " /></td>";
 				echo "<td style=\"white-space:nowrap;\">", $misc->printVal($attrs->fields['attname']), "</td>";
-				echo "<td style=\"white-space:nowrap;\">", $misc->printVal($data->formatType($attrs->fields['type'], $attrs->fields['atttypmod'])), "</td>";
+				echo "<td style=\"white-space:nowrap;\">", $misc->printVal($pg->formatType($attrs->fields['type'], $attrs->fields['atttypmod'])), "</td>";
 				echo "<td style=\"white-space:nowrap;\">";
 				echo "<select name=\"ops[{$attrs->fields['attname']}]\">\n";
-				foreach (array_keys($data->selectOps) as $v) {
+				foreach (array_keys($pg->selectOps) as $v) {
 					echo "<option value=\"", htmlspecialchars_nc($v), "\"", ($v == $_REQUEST['ops'][$attrs->fields['attname']]) ? ' selected="selected"' : '',
 					">", htmlspecialchars_nc($v), "</option>\n";
 				}
 				echo "</select></td>\n";
-				echo "<td style=\"white-space:nowrap;\">", $data->printField(
+				echo "<td style=\"white-space:nowrap;\">", $formRenderer->printField(
 					"values[{$attrs->fields['attname']}]",
 					$_REQUEST['values'][$attrs->fields['attname']],
 					$attrs->fields['type']
@@ -97,34 +100,30 @@ function doSelectRows($confirm, $msg = '')
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 		echo "</form>\n";
 	} else {
-		if (!isset($_POST['show'])) $_POST['show'] = [];
-		if (!isset($_POST['values'])) $_POST['values'] = [];
-		if (!isset($_POST['nulls'])) $_POST['nulls'] = [];
+		if (!isset($_REQUEST['show'])) $_REQUEST['show'] = [];
+		if (!isset($_REQUEST['values'])) $_REQUEST['values'] = [];
+		if (!isset($_REQUEST['nulls'])) $_REQUEST['nulls'] = [];
 
 		// Verify that they haven't supplied a value for unary operators
-		foreach ($_POST['ops'] as $k => $v) {
-			if ($data->selectOps[$v] == 'p' && $_POST['values'][$k] != '') {
+		foreach ($_REQUEST['ops'] as $k => $v) {
+			if ($pg->selectOps[$v] == 'p' && $_REQUEST['values'][$k] != '') {
 				doSelectRows(true, $lang['strselectunary']);
 				return;
 			}
 		}
 
-		if (sizeof($_POST['show']) == 0)
-			doSelectRows(true, $lang['strselectneedscol']);
-		else {
-			// Generate query SQL
-			$query = $data->getSelectSQL(
-				$_REQUEST['view'],
-				array_keys($_POST['show']),
-				$_POST['values'],
-				$_POST['ops']
-			);
-			$_REQUEST['query'] = $query;
-			$_REQUEST['return'] = "schema";
-			AppContainer::setSkipHtmlFrame(true);
-			include('./display.php');
-			exit;
-		}
+		// Generate query SQL
+		$query = $pg->getSelectSQL(
+			$_REQUEST['view'],
+			array_keys($_REQUEST['show']),
+			$_REQUEST['values'],
+			$_REQUEST['ops']
+		);
+		$_REQUEST['query'] = $query;
+		$_REQUEST['return'] = "schema";
+		AppContainer::setSkipHtmlFrame(true);
+		require __DIR__ . '/display.php';
+		exit;
 	}
 }
 
@@ -133,9 +132,10 @@ function doSelectRows($confirm, $msg = '')
  */
 function doDrop($confirm)
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$viewActions = new ViewActions($pg);
 
 	if (empty($_REQUEST['view']) && empty($_REQUEST['ma'])) {
 		doDefault($lang['strspecifyviewtodrop']);
@@ -170,26 +170,26 @@ function doDrop($confirm)
 	} else {
 		if (is_array($_POST['view'])) {
 			$msg = '';
-			$status = $data->beginTransaction();
+			$status = $pg->beginTransaction();
 			if ($status == 0) {
 				foreach ($_POST['view'] as $s) {
-					$status = $data->dropView($s, isset($_POST['cascade']));
+					$status = $viewActions->dropView($s, isset($_POST['cascade']));
 					if ($status == 0)
 						$msg .= sprintf('%s: %s<br />', htmlentities($s, ENT_QUOTES, 'UTF-8'), $lang['strviewdropped']);
 					else {
-						$data->endTransaction();
+						$pg->endTransaction();
 						doDefault(sprintf('%s%s: %s<br />', $msg, htmlentities($s, ENT_QUOTES, 'UTF-8'), $lang['strviewdroppedbad']));
 						return;
 					}
 				}
 			}
-			if ($data->endTransaction() == 0) {
+			if ($pg->endTransaction() == 0) {
 				// Everything went fine, back to the Default page....
 				AppContainer::setShouldReloadTree(true);
 				doDefault($msg);
 			} else doDefault($lang['strviewdroppedbad']);
 		} else {
-			$status = $data->dropView($_POST['view'], isset($_POST['cascade']));
+			$status = $viewActions->dropView($_POST['view'], isset($_POST['cascade']));
 			if ($status == 0) {
 				AppContainer::setShouldReloadTree(true);
 				doDefault($lang['strviewdropped']);
@@ -204,9 +204,13 @@ function doDrop($confirm)
  */
 function doSetParamsCreate($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$formRenderer = new FormRenderer();
+	$constraintActions = new ConstraintActions($pg);
+	$schemaActions = new SchemaActions($pg);
+	$tableActions = new TableActions($pg);
 
 	// Check that they've chosen tables for the view definition
 	if (!isset($_POST['formTables'])) doWizardCreate($lang['strviewneedsdef']);
@@ -228,20 +232,20 @@ function doSetParamsCreate($msg = '')
 		$linkCount = $tblCount;
 
 		//get linking keys
-		$rsLinkKeys = $data->getLinkingKeys($arrSelTables);
+		$rsLinkKeys = $constraintActions->getLinkingKeys($arrSelTables);
 		$linkCount = $rsLinkKeys->recordCount() > $tblCount ? $rsLinkKeys->recordCount() : $tblCount;
 
 		$arrFields = []; //array that will hold all our table/field names
 
 		//if we have schemas we need to specify the correct schema for each table we're retrieiving
 		//with getTableAttributes
-		$curSchema = $data->_schema;
+		$curSchema = $pg->_schema;
 		for ($i = 0; $i < $tblCount; $i++) {
-			if ($data->_schema != $arrSelTables[$i]['schemaname']) {
-				$data->setSchema($arrSelTables[$i]['schemaname']);
+			if ($pg->_schema != $arrSelTables[$i]['schemaname']) {
+				$schemaActions->setSchema($arrSelTables[$i]['schemaname']);
 			}
 
-			$attrs = $data->getTableAttributes($arrSelTables[$i]['tablename']);
+			$attrs = $tableActions->getTableAttributes($arrSelTables[$i]['tablename']);
 			while (!$attrs->EOF) {
 				$arrFields["{$arrSelTables[$i]['schemaname']}.{$arrSelTables[$i]['tablename']}.{$attrs->fields['attname']}"] = serialize(
 					[
@@ -253,7 +257,7 @@ function doSetParamsCreate($msg = '')
 				$attrs->moveNext();
 			}
 
-			$data->setSchema($curSchema);
+			$schemaActions->setSchema($curSchema);
 		}
 		asort($arrFields);
 
@@ -262,7 +266,7 @@ function doSetParamsCreate($msg = '')
 		echo "<tr><th class=\"data\">{$lang['strviewname']}</th></tr>";
 		echo "<tr>\n<td class=\"data1\">\n";
 		// View name
-		echo "<input name=\"formView\" value=\"", htmlspecialchars_nc($_REQUEST['formView']), "\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" />\n";
+		echo "<input name=\"formView\" value=\"", htmlspecialchars_nc($_REQUEST['formView']), "\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" />\n";
 		echo "</td>\n</tr>\n";
 		echo "<tr><th class=\"data\">{$lang['strcomment']}</th></tr>";
 		echo "<tr>\n<td class=\"data1\">\n";
@@ -276,11 +280,11 @@ function doSetParamsCreate($msg = '')
 		echo "<table>\n";
 		echo "<tr><th class=\"data\">{$lang['strcolumns']}</th></tr>";
 		echo "<tr>\n<td class=\"data1\">\n";
-		echo \PhpPgAdmin\Gui::printCombo($arrFields, 'formFields[]', false, '', true);
+		echo $formRenderer->printCombo($arrFields, 'formFields[]', false, '', true);
 		echo "</td>\n</tr>";
-		echo "<tr><td><input type=\"radio\" name=\"dblFldMeth\" id=\"dblFldMeth1\" value=\"rename\" /><label for=\"dblFldMeth1\">{$lang['strrenamedupfields']}</label>";
-		echo "<br /><input type=\"radio\" name=\"dblFldMeth\" id=\"dblFldMeth2\" value=\"drop\" /><label for=\"dblFldMeth2\">{$lang['strdropdupfields']}</label>";
-		echo "<br /><input type=\"radio\" name=\"dblFldMeth\" id=\"dblFldMeth3\" value=\"\" checked=\"checked\" /><label for=\"dblFldMeth3\">{$lang['strerrordupfields']}</label></td></tr></table><br />";
+		echo "<tr><td><input type=\"radio\" name=\"dblFldMeth\" id=\"dblFldMeth1\" value=\"rename\" />&nbsp;<label for=\"dblFldMeth1\">{$lang['strrenamedupfields']}</label>";
+		echo "<br /><input type=\"radio\" name=\"dblFldMeth\" id=\"dblFldMeth2\" value=\"drop\" />&nbsp;<label for=\"dblFldMeth2\">{$lang['strdropdupfields']}</label>";
+		echo "<br /><input type=\"radio\" name=\"dblFldMeth\" id=\"dblFldMeth3\" value=\"\" checked=\"checked\" />&nbsp;<label for=\"dblFldMeth3\">{$lang['strerrordupfields']}</label></td></tr></table><br />";
 
 		// Output the Linking keys combo boxes
 		echo "<table>\n";
@@ -300,9 +304,9 @@ function doSetParamsCreate($msg = '')
 				$curRightLink = '';
 			}
 
-			echo \PhpPgAdmin\Gui::printCombo($arrFields, "formLink[$i][leftlink]", true, $curLeftLink, false);
-			echo \PhpPgAdmin\Gui::printCombo($data->joinOps, "formLink[$i][operator]", true, $formLink[$i]['operator']);
-			echo \PhpPgAdmin\Gui::printCombo($arrFields, "formLink[$i][rightlink]", true, $curRightLink, false);
+			echo $formRenderer->printCombo($arrFields, "formLink[$i][leftlink]", true, $curLeftLink, false);
+			echo $formRenderer->printCombo($pg->joinOps, "formLink[$i][operator]", true, $formLink[$i]['operator']);
+			echo $formRenderer->printCombo($arrFields, "formLink[$i][rightlink]", true, $curRightLink, false);
 			echo "</td>\n</tr>\n";
 			$rowClass = $rowClass == 'data1' ? 'data2' : 'data1';
 		}
@@ -310,7 +314,7 @@ function doSetParamsCreate($msg = '')
 
 		// Build list of available operators (infix only)
 		$arrOperators = [];
-		foreach ($data->selectOps as $k => $v) {
+		foreach ($pg->selectOps as $k => $v) {
 			if ($v == 'i') $arrOperators[$k] = $k;
 		}
 
@@ -321,8 +325,8 @@ function doSetParamsCreate($msg = '')
 		$rowClass = 'data1';
 		for ($i = 0; $i < $linkCount; $i++) {
 			echo "<tr>\n<td class=\"$rowClass\">\n";
-			echo \PhpPgAdmin\Gui::printCombo($arrFields, "formCondition[$i][field]");
-			echo \PhpPgAdmin\Gui::printCombo($arrOperators, "formCondition[$i][operator]", false, false);
+			echo $formRenderer->printCombo($arrFields, "formCondition[$i][field]");
+			echo $formRenderer->printCombo($arrOperators, "formCondition[$i][operator]", false, false);
 			echo "<input type=\"text\" name=\"formCondition[$i][txt]\" />\n";
 			echo "</td>\n</tr>\n";
 			$rowClass = $rowClass == 'data1' ? 'data2' : 'data1';
@@ -346,11 +350,13 @@ function doSetParamsCreate($msg = '')
  */
 function doWizardCreate($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$tableActions = new TableActions($pg);
+	$formRenderer = new FormRenderer();
 
-	$tables = $data->getTables(true);
+	$tables = $tableActions->getTables(true);
 
 	$misc->printTrail('schema');
 	$misc->printTitle($lang['strcreateviewwiz'], 'pg.view.create');
@@ -369,7 +375,7 @@ function doWizardCreate($msg = '')
 		$arrTables[$tables->fields['nspname'] . '.' . $tables->fields['relname']] = serialize($arrTmp);
 		$tables->moveNext();
 	}
-	echo \PhpPgAdmin\Gui::printCombo($arrTables, 'formTables[]', false, '', true);
+	echo $formRenderer->printCombo($arrTables, 'formTables[]', false, '', true);
 
 	echo "</td>\n</tr>\n";
 	echo "</table>\n";
@@ -385,9 +391,8 @@ function doWizardCreate($msg = '')
  */
 function doCreate($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
-	$conf = AppContainer::getConf();
 	$lang = AppContainer::getLang();
 
 	if (!isset($_REQUEST['formView'])) $_REQUEST['formView'] = '';
@@ -405,7 +410,7 @@ function doCreate($msg = '')
 	echo "<form action=\"views.php\" method=\"post\">\n";
 	echo "<table style=\"width: 100%\">\n";
 	echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
-	echo "\t<td class=\"data1\"><input name=\"formView\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"",
+	echo "\t<td class=\"data1\"><input name=\"formView\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
 	htmlspecialchars_nc($_REQUEST['formView']), "\" /></td>\n\t</tr>\n";
 	echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strdefinition']}</th>\n";
 	echo "\t<td class=\"data1\"><textarea style=\"width:100%;\" rows=\"10\" cols=\"50\" name=\"formDefinition\">",
@@ -426,14 +431,15 @@ function doCreate($msg = '')
  */
 function doSaveCreate()
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
+	$viewActions = new ViewActions($pg);
 
 	// Check that they've given a name and a definition
 	if ($_POST['formView'] == '') doCreate($lang['strviewneedsname']);
 	elseif ($_POST['formDefinition'] == '') doCreate($lang['strviewneedsdef']);
 	else {
-		$status = $data->createView($_POST['formView'], $_POST['formDefinition'], false, $_POST['formComment']);
+		$status = $viewActions->createView($_POST['formView'], $_POST['formDefinition'], false, $_POST['formComment']);
 		if ($status == 0) {
 			AppContainer::setShouldReloadTree(true);
 			doDefault($lang['strviewcreated']);
@@ -447,8 +453,9 @@ function doSaveCreate()
  */
 function doSaveCreateWiz()
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
+	$viewActions = new ViewActions($pg);
 
 	// Check that they've given a name and fields they want to select		
 
@@ -462,7 +469,7 @@ function doSaveCreateWiz()
 
 		foreach ($_POST['formFields'] as $curField) {
 			$arrTmp = unserialize($curField);
-			$data->fieldArrayClean($arrTmp);
+			$pg->fieldArrayClean($arrTmp);
 			if (! empty($_POST['dblFldMeth'])) { // doublon control
 				if (empty($tmpHsh[$arrTmp['fieldname']])) { // field does not exist
 					$selFields .= "\"{$arrTmp['schemaname']}\".\"{$arrTmp['tablename']}\".\"{$arrTmp['fieldname']}\", ";
@@ -503,8 +510,8 @@ function doSaveCreateWiz()
 
 						$arrLeftLink = unserialize($curLink['leftlink']);
 						$arrRightLink = unserialize($curLink['rightlink']);
-						$data->fieldArrayClean($arrLeftLink);
-						$data->fieldArrayClean($arrRightLink);
+						$pg->fieldArrayClean($arrLeftLink);
+						$pg->fieldArrayClean($arrRightLink);
 
 						$tbl1 = "\"{$arrLeftLink['schemaname']}\".\"{$arrLeftLink['tablename']}\"";
 						$tbl2 = "\"{$arrRightLink['schemaname']}\".\"{$arrRightLink['tablename']}\"";
@@ -513,7 +520,7 @@ function doSaveCreateWiz()
 
 							// Make sure for multi-column foreign keys that we use a table alias tables joined to more than once
 							// This can (and should be) more optimized for multi-column foreign keys
-							$adj_tbl2 = in_array($tbl2, $arrUsedTbls) ? "$tbl2 AS alias_ppa_" . mktime() : $tbl2;
+							$adj_tbl2 = in_array($tbl2, $arrUsedTbls) ? "$tbl2 AS alias_ppa_" . time() : $tbl2;
 
 							$linkFields .= strlen($linkFields) ? "{$curLink['operator']} $adj_tbl2 ON (\"{$arrLeftLink['schemaname']}\".\"{$arrLeftLink['tablename']}\".\"{$arrLeftLink['fieldname']}\" = \"{$arrRightLink['schemaname']}\".\"{$arrRightLink['tablename']}\".\"{$arrRightLink['fieldname']}\") "
 								: "$tbl1 {$curLink['operator']} $adj_tbl2 ON (\"{$arrLeftLink['schemaname']}\".\"{$arrLeftLink['tablename']}\".\"{$arrLeftLink['fieldname']}\" = \"{$arrRightLink['schemaname']}\".\"{$arrRightLink['tablename']}\".\"{$arrRightLink['fieldname']}\") ";
@@ -533,7 +540,7 @@ function doSaveCreateWiz()
 		if (!strlen($linkFields)) {
 			foreach ($_POST['formTables'] as $curTable) {
 				$arrTmp = unserialize($curTable);
-				$data->fieldArrayClean($arrTmp);
+				$pg->fieldArrayClean($arrTmp);
 				$linkFields .= strlen($linkFields) ? ", \"{$arrTmp['schemaname']}\".\"{$arrTmp['tablename']}\"" : "\"{$arrTmp['schemaname']}\".\"{$arrTmp['tablename']}\"";
 			}
 		}
@@ -543,7 +550,7 @@ function doSaveCreateWiz()
 			foreach ($_POST['formCondition'] as $curCondition) {
 				if (strlen($curCondition['field']) && strlen($curCondition['txt'])) {
 					$arrTmp = unserialize($curCondition['field']);
-					$data->fieldArrayClean($arrTmp);
+					$pg->fieldArrayClean($arrTmp);
 					$addConditions .= strlen($addConditions) ? " AND \"{$arrTmp['schemaname']}\".\"{$arrTmp['tablename']}\".\"{$arrTmp['fieldname']}\" {$curCondition['operator']} '{$curCondition['txt']}' "
 						: " \"{$arrTmp['schemaname']}\".\"{$arrTmp['tablename']}\".\"{$arrTmp['fieldname']}\" {$curCondition['operator']} '{$curCondition['txt']}' ";
 				}
@@ -555,7 +562,7 @@ function doSaveCreateWiz()
 		//add where from additional conditions
 		if (strlen($addConditions)) $viewQuery .= ' WHERE ' . $addConditions;
 
-		$status = $data->createView($_POST['formView'], $viewQuery, false, $_POST['formComment']);
+		$status = $viewActions->createView($_POST['formView'], $viewQuery, false, $_POST['formComment']);
 		if ($status == 0) {
 			AppContainer::setShouldReloadTree(true);
 			doDefault($lang['strviewcreated']);
@@ -569,16 +576,17 @@ function doSaveCreateWiz()
  */
 function doDefault($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$conf = AppContainer::getConf();
 	$lang = AppContainer::getLang();
+	$viewActions = new ViewActions($pg);
 
 	$misc->printTrail('schema');
 	$misc->printTabs('schema', 'views');
 	$misc->printMsg($msg);
 
-	$views = $data->getViews();
+	$views = $viewActions->getViews();
 
 	$columns = [
 		'view' => [
@@ -685,6 +693,7 @@ function doDefault($msg = '')
 					]
 				]
 			],
+			'icon' => $misc->icon('CreateView'),
 			'content' => $lang['strcreateview']
 		],
 		'createwiz' => [
@@ -699,6 +708,7 @@ function doDefault($msg = '')
 					]
 				]
 			],
+			'icon' => $misc->icon('CreateViewWizard'),
 			'content' => $lang['strcreateviewwiz']
 		]
 	];
@@ -711,9 +721,10 @@ function doDefault($msg = '')
 function doTree()
 {
 	$misc = AppContainer::getMisc();
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
+	$viewActions = new ViewActions($pg);
 
-	$views = $data->getViews();
+	$views = $viewActions->getViews();
 
 	$reqvars = $misc->getRequestVars('view');
 
@@ -740,7 +751,6 @@ function doTree()
 function doSubTree()
 {
 	$misc = AppContainer::getMisc();
-	$data = AppContainer::getData();
 
 	$tabs = $misc->getNavTabs('view');
 	$items = $misc->adjustTabsForTree($tabs);
@@ -769,16 +779,22 @@ function doSubTree()
 	exit;
 }
 
+$action = $_REQUEST['action'] ?? '';
+if (!isset($msg)) $msg = '';
+
 if ($action == 'tree') doTree();
 if ($action == 'subtree') dosubTree();
+
+$misc = AppContainer::getMisc();
+$lang = AppContainer::getLang();
 
 $misc->printHeader($lang['strviews']);
 $misc->printBody();
 
 switch ($action) {
 	case 'selectrows':
-		if (!isset($_REQUEST['cancel'])) doSelectRows(false);
-		else doDefault();
+		if (isset($_REQUEST['cancel'])) doDefault();
+		else doSelectRows(false);
 		break;
 	case 'confselectrows':
 		doSelectRows(true);
@@ -791,7 +807,7 @@ switch ($action) {
 		doWizardCreate();
 		break;
 	case 'set_params_create':
-		if (isset($_POST['cancel'])) doDefault();
+		if (isset($_REQUEST['cancel'])) doDefault();
 		else doSetParamsCreate();
 		break;
 	case 'save_create':

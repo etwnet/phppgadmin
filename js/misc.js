@@ -1,17 +1,12 @@
-(function() {
-
+(function () {
 	window.toggleAllMf = function (bool) {
-
-		var inputs = document
-			.getElementById('multi_form')
-			.getElementsByTagName('input');
+		var inputs = document.getElementById("multi_form").getElementsByTagName("input");
 
 		for (var i = 0; i < inputs.length; i++) {
-			if (inputs[i].type == 'checkbox')
-				inputs[i].checked = bool;
+			if (inputs[i].type == "checkbox") inputs[i].checked = bool;
 		}
 		return false;
-	}
+	};
 
 	/**
 	 * @param {HTMLElement} element
@@ -27,11 +22,11 @@
 			defaultDate: element.value || null,
 
 			onChange: (selectedDates, dateStr, instance) => {
-				const cbExpr = document.getElementById('cb_expr_' + element.dataset.field);
+				const cbExpr = document.getElementById("cb_expr_" + element.dataset.field);
 				if (cbExpr) cbExpr.checked = false;
-				const cbNull = document.getElementById('cb_null_' + element.dataset.field);
+				const cbNull = document.getElementById("cb_null_" + element.dataset.field);
 				if (cbNull) cbNull.checked = false;
-				const selFnc = document.getElementById('sel_fnc_' + element.dataset.field);
+				const selFnc = document.getElementById("sel_fnc_" + element.dataset.field);
 				if (selFnc) selFnc.value = "";
 			},
 
@@ -82,8 +77,8 @@
 			parseDate: (datestr, format) => {
 				element.dataset.date = datestr;
 				const clean = datestr
-					.replace(/^[-+]\d{4}/, match => match.slice(1)) // strip sign from year
-					.replace(/\s?(BC|AD)$/i, "");                   // strip era
+					.replace(/^[-+]\d{4}/, (match) => match.slice(1)) // strip sign from year
+					.replace(/\s?(BC|AD)$/i, ""); // strip era
 				return flatpickr.parseDate(clean, format) ?? new Date();
 			},
 
@@ -106,14 +101,13 @@
 		};
 
 		createDateTimePickerInternal(element, options);
-	}
+	};
 
 	/**
 	 * Format: [+-]0001-12-11 19:35:00[+02][ BC]
 	 * @param {HTMLElement} element
 	 */
 	window.createDateTimePicker = function (element) {
-
 		const options = {
 			enableTime: true,
 			enableSeconds: true,
@@ -129,7 +123,7 @@
 
 				// Strip sign from year, timezone, and BC/AD suffix
 				const clean = datestr
-					.replace(/^([-+])(\d{4})/, "$2")          // remove leading +/-
+					.replace(/^([-+])(\d{4})/, "$2") // remove leading +/-
 					.replace(/([+-]\d{2}:?\d{2}|Z)?\s?(BC|AD)?$/i, ""); // remove tz + era
 
 				return flatpickr.parseDate(clean.trim(), format) ?? new Date();
@@ -161,7 +155,7 @@
 		};
 
 		createDateTimePickerInternal(element, options);
-	}
+	};
 
 	/**
 	 * @param {HTMLElement} element
@@ -188,11 +182,12 @@
 		editor.setShowPrintMargin(false);
 		editor.session.setUseWrapMode(true);
 		editor.session.setMode("ace/mode/pgsql");
+		//editor.setTheme("ace/theme/tomorrow");
 		editor.setHighlightActiveLine(false);
 		editor.renderer.$cursorLayer.element.style.display = "none";
 		editor.setValue(element.value || "", -1);
 
-		editor.session.on("change", function() {
+		editor.session.on("change", function () {
 			hidden.value = editor.getValue();
 		});
 
@@ -207,7 +202,7 @@
 		});
 
 		hidden.value = editor.getValue();
-	}
+	};
 
 	/**
 	 * @param {HTMLElement} element
@@ -220,6 +215,7 @@
 		const editor = ace.edit(element);
 		editor.session.setUseWrapMode(true);
 		editor.session.setMode("ace/mode/pgsql");
+		//editor.setTheme("ace/theme/tomorrow");
 		editor.setReadOnly(true);
 		editor.renderer.$cursorLayer.element.style.display = "none";
 		editor.renderer.setShowGutter(false);
@@ -231,22 +227,22 @@
 			showLineNumbers: true,
 		});
 
-		editor.on("blur", function() {
+		editor.on("blur", function () {
 			editor.clearSelection();
 		});
-	}
+	};
 
 	/**
 	 *
 	 * @param {HTMLElement} rootElement
 	 */
 	function createSqlEditors(rootElement) {
-		rootElement.querySelectorAll(".sql-editor").forEach(element => {
+		rootElement.querySelectorAll(".sql-editor").forEach((element) => {
 			//console.log(element);
 			createSqlEditor(element);
 		});
 
-		rootElement.querySelectorAll(".sql-viewer").forEach(element => {
+		rootElement.querySelectorAll(".sql-viewer").forEach((element) => {
 			createSqlViewer(element);
 		});
 	}
@@ -256,11 +252,11 @@
 	 * @param {HTMLElement} rootElement
 	 */
 	function createDateAndTimePickers(rootElement) {
-		rootElement.querySelectorAll("input[data-type^=timestamp]").forEach(element => {
+		rootElement.querySelectorAll("input[data-type^=timestamp]").forEach((element) => {
 			//console.log(element);
 			createDateTimePicker(element);
 		});
-		rootElement.querySelectorAll("input[data-type^=date]").forEach(element => {
+		rootElement.querySelectorAll("input[data-type^=date]").forEach((element) => {
 			//console.log(element);
 			createDatePicker(element);
 		});
@@ -268,40 +264,40 @@
 
 	// Tooltips
 
-	const tooltip = document.getElementById('tooltip');
-	const tooltipContent = document.getElementById('tooltip-content');
+	const tooltip = document.getElementById("tooltip");
+	const tooltipContent = document.getElementById("tooltip-content");
 	let popperInstance = null;
 
-	window.showTooltip = function(referenceEl, text) {
+	window.showTooltip = function (referenceEl, text) {
 		console.log("show tooltip", referenceEl);
 		text = text || referenceEl.dataset.desc || "Description missing!";
 		if (!/<\w+/.test(text)) {
 			// plain text, convert line endings into html breaks
-			text = text.replace(/\n/g, '<br>\n');
+			text = text.replace(/\n/g, "<br>\n");
 		}
 		tooltipContent.innerHTML = text;
-		tooltip.style.display = 'block';
+		tooltip.style.display = "block";
 
 		if (popperInstance) {
 			popperInstance.destroy();
 		}
 
 		popperInstance = Popper.createPopper(referenceEl, tooltip, {
-			placement: 'top',
+			placement: "top",
 		});
-	}
+	};
 
 	window.hideTooltip = function () {
-		tooltip.style.display = 'none';
+		tooltip.style.display = "none";
 		if (popperInstance) {
 			popperInstance.destroy();
 			popperInstance = null;
 		}
-	}
+	};
 
 	// Virtual Frame Event
 
-	document.addEventListener("frameLoaded", function(e) {
+	document.addEventListener("frameLoaded", function (e) {
 		console.log("Frame loaded:", e.detail.url);
 		createSqlEditors(e.target);
 		createDateAndTimePickers(e.target);
@@ -312,5 +308,4 @@
 	flatpickr.localize(flatpickr.l10ns.default);
 	//createSqlEditors(document.documentElement);
 	//createDateAndTimePickers(document.documentElement);
-
 })();

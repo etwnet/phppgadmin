@@ -4,7 +4,6 @@ namespace PhpPgAdmin\Database\Actions;
 
 use ADORecordSet;
 use PhpPgAdmin\Database\AbstractActions;
-use PhpPgAdmin\Database\AbstractConnection;
 use PhpPgAdmin\Database\Actions\AclActions;
 use PhpPgAdmin\Database\Actions\ConstraintActions;
 use PhpPgAdmin\Database\Actions\IndexActions;
@@ -25,11 +24,6 @@ class TableActions extends AbstractActions
 
     /** @var RuleActions */
     private $rule;
-
-    /**
-     * @var array
-     */
-    private $allowedStorage = ['p', 'e', 'm', 'x'];
 
     private function getAclAction()
     {
@@ -914,238 +908,15 @@ class TableActions extends AbstractActions
     }
 
     /**
-     * Add a new column to a table.
+     * Returns the current default_with_oids setting (legacy compatibility).
      */
-    public function addColumn($table, $column, $type, $array, $length, $notnull, $default, $comment)
+    public function getDefaultWithOid()
     {
-        $f_schema = $this->connection->_schema;
-        $this->connection->fieldClean($f_schema);
-        $this->connection->fieldClean($table);
-        $this->connection->fieldClean($column);
-        $this->connection->clean($type);
-        $this->connection->clean($length);
-
-        $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ADD COLUMN \"{$column}\"";
-        if ($length == '')
-            $sql .= " {$type}";
-        else {
-            switch ($type) {
-                case 'timestamp with time zone':
-                case 'timestamp without time zone':
-                    $qual = substr($type, 9);
-                    $sql .= " timestamp({$length}){$qual}";
-                    break;
-                case 'time with time zone':
-                case 'time without time zone':
-                    $qual = substr($type, 4);
-                    $sql .= " time({$length}){$qual}";
-                    break;
-                default:
-                    $sql .= " {$type}({$length})";
-            }
+        // OID support was removed in PG12; retained for callers that check it
+        if ($this->connection->major_version >= 12) {
+            return false;
         }
-
-        if ($array) $sql .= '[]';
-        if ($notnull) $sql .= ' NOT NULL';
-        if ($default != '') $sql .= ' DEFAULT ' . $default;
-
-        $status = $this->connection->execute($sql);
-        if ($status == 0 && trim($comment) != '') {
-            $this->connection->setComment('COLUMN', $column, $table, $comment, true);
-        }
-
-        return $status;
+        $sql = "SHOW default_with_oids";
+        return $this->connection->selectField($sql, 'default_with_oids');
     }
-
-    /**
-     * Rename a column.
-     */
-    public function renameColumn($table, $column, $newName)
-    {
-        $f_schema = $this->connection->_schema;
-        $this->connection->fieldClean($f_schema);
-        $this->connection->fieldClean($table);
-        $this->connection->fieldClean($column);
-        $this->connection->fieldClean($newName);
-
-        $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" RENAME COLUMN \"{$column}\" TO \"{$newName}\"";
-
-        return $this->connection->execute($sql);
-    }
-
-    /**
-     * Set a column's DEFAULT.
-     */
-    public function setColumnDefault($table, $column, $default)
-    {
-        $f_schema = $this->connection->_schema;
-        $this->connection->fieldClean($f_schema);
-        $this->connection->fieldClean($table);
-        $this->connection->fieldClean($column);
-        $this->connection->clean($default);
-
-        $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ALTER COLUMN \"{$column}\" SET DEFAULT {$default}";
-
-        return $this->connection->execute($sql);
-    }
-
-    /**
-     * Drop a column's DEFAULT.
-     */
-    public function dropColumnDefault($table, $column)
-    {
-        $f_schema = $this->connection->_schema;
-        $this->connection->fieldClean($f_schema);
-        $this->connection->fieldClean($table);
-        $this->connection->fieldClean($column);
-
-        $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ALTER COLUMN \"{$column}\" DROP DEFAULT";
-
-        return $this->connection->execute($sql);
-    }
-
-    /**
-     * Set column nullability.
-     */
-    public function setColumnNull($table, $column, $state)
-    {
-        $f_schema = $this->connection->_schema;
-        $this->connection->fieldClean($f_schema);
-        $this->connection->fieldClean($table);
-        $this->connection->fieldClean($column);
-        $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ALTER COLUMN \"{$column}\"";
-        $sql .= ($state) ? ' SET' : ' DROP';
-        $sql .= ' NOT NULL';
-
-        return $this->connection->execute($sql);
-    }
-
-    /**
-     * Drop a column.
-     */
-    public function dropColumn($table, $column, $cascade)
-    {
-        $f_schema = $this->connection->_schema;
-        $this->connection->fieldClean($f_schema);
-        $this->connection->fieldClean($table);
-        $this->connection->fieldClean($column);
-
-        $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" DROP COLUMN \"{$column}\"";
-        if ($cascade) $sql .= " CASCADE";
-
-        return $this->connection->execute($sql);
-    }
-
-    /**
-     * Set column statistics target.
-     */
-    public function setColumnStats($table, $column, $value)
-    {
-        $f_schema = $this->connection->_schema;
-        $this->connection->fieldClean($f_schema);
-        $this->connection->fieldClean($table);
-        $this->connection->fieldClean($column);
-        $this->connection->clean($value);
-
-        $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ALTER COLUMN \"{$column}\" SET STATISTICS {$value}";
-
-        return $this->connection->execute($sql);
-    }
-
-    /**
-     * Set column storage.
-     */
-    public function setColumnStorage($table, $column, $storage)
-    {
-        if (!in_array($storage, $this->allowedStorage)) {
-            return -1;
-        }
-
-        $f_schema = $this->connection->_schema;
-        $this->connection->fieldClean($f_schema);
-        $this->connection->fieldClean($table);
-        $this->connection->fieldClean($column);
-        $this->connection->clean($storage);
-
-        $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ALTER COLUMN \"{$column}\" SET STORAGE {$storage}";
-
-        return $this->connection->execute($sql);
-    }
-
-    /**
-     * Set column compression (Pg14+). Included for completeness.
-     */
-    public function setColumnCompression($table, $column, $compression)
-    {
-        $f_schema = $this->connection->_schema;
-        $this->connection->fieldClean($f_schema);
-        $this->connection->fieldClean($table);
-        $this->connection->fieldClean($column);
-        $this->connection->clean($compression);
-
-        $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ALTER COLUMN \"{$column}\" SET COMPRESSION {$compression}";
-
-        return $this->connection->execute($sql);
-    }
-
-    /**
-     * Set column type.
-     */
-    public function setColumnType($table, $column, $type, $length, $array, $default, $notnull)
-    {
-        $f_schema = $this->connection->_schema;
-        $this->connection->fieldClean($f_schema);
-        $this->connection->fieldClean($table);
-        $this->connection->fieldClean($column);
-        $this->connection->clean($type);
-        $this->connection->clean($length);
-
-        if ($length == '')
-            $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ALTER COLUMN \"{$column}\" TYPE {$type}";
-        else {
-            switch ($type) {
-                case 'timestamp with time zone':
-                case 'timestamp without time zone':
-                    $qual = substr($type, 9);
-                    $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ALTER COLUMN \"{$column}\" TYPE timestamp({$length}){$qual}";
-                    break;
-                case 'time with time zone':
-                case 'time without time zone':
-                    $qual = substr($type, 4);
-                    $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ALTER COLUMN \"{$column}\" TYPE time({$length}){$qual}";
-                    break;
-                default:
-                    $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ALTER COLUMN \"{$column}\" TYPE {$type}({$length})";
-            }
-        }
-
-        if ($array) $sql .= '[]';
-        if ($default != '') $sql .= " USING {$default}";
-        $status = $this->connection->execute($sql);
-
-        if ($status == 0) {
-            $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ALTER COLUMN \"{$column}\"";
-            if ($notnull) {
-                $sql .= ' SET NOT NULL';
-            } else {
-                $sql .= ' DROP NOT NULL';
-            }
-            $status = $this->connection->execute($sql);
-        }
-
-        return $status;
-    }
-
-	/**
-	 * Returns the current default_with_oids setting (legacy compatibility).
-	 */
-	public function getDefaultWithOid()
-	{
-		// OID support was removed in PG12; retained for callers that check it
-		if ($this->connection->major_version >= 12) {
-			return false;
-		}
-		$sql = "SHOW default_with_oids";
-		return $this->connection->selectField($sql, 'default_with_oids');
-	}
 }

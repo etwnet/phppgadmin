@@ -599,6 +599,7 @@ class Postgres extends AbstractConnection
 	 * built-in function, and hence we need to do it manually.
 	 * @param string $typname The name of the type
 	 * @param string $typmod The contents of the typmod field
+	 * @deprecated replace by SQL: format_type(atttypid, atttypmod)
 	 */
 	public function formatType($typname, $typmod)
 	{
@@ -846,5 +847,4 @@ class Postgres extends AbstractConnection
 		// Server OIDs are available only until PostgreSQL 11
 		return $this->major_version <= 11;
 	}
-
 }
