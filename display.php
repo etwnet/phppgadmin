@@ -5,7 +5,6 @@ use PhpPgAdmin\Database\Actions\ConstraintActions;
 use PhpPgAdmin\Database\Actions\RowActions;
 use PhpPgAdmin\Database\Actions\SchemaActions;
 use PhpPgAdmin\Database\Actions\TableActions;
-use PhpPgAdmin\Gui\_FieldRenderer;
 use PhpPgAdmin\Gui\FormRenderer;
 use PHPSQLParser\PHPSQLParser;
 
@@ -30,7 +29,8 @@ if (!ini_get('safe_mode')) set_time_limit(0);
 /**
  * Show confirmation of edit or insert and perform insert or update
  */
-function doEditRow($confirm, $msg = '') {
+function doEditRow($confirm, $msg = '')
+{
 
 	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
@@ -316,8 +316,13 @@ EOT;
 		if ($insert) {
 			if ($_SESSION['counter']++ == $_POST['protection_counter']) {
 				$status = $rowActions->insertRow(
-					$_POST['table'], $fields, $_POST['values'], $_POST['nulls'],
-					$_POST['format'], $_POST['expr'], $types
+					$_POST['table'],
+					$fields,
+					$_POST['values'],
+					$_POST['nulls'],
+					$_POST['format'],
+					$_POST['expr'],
+					$types
 				);
 				if ($status == 0) {
 					if (isset($_POST['insert_and_repeat'])) {
@@ -335,8 +340,13 @@ EOT;
 				doEditRow(true, $lang['strrowduplicate']);
 		} else {
 			$status = $rowActions->editRow(
-				$_POST['table'], $_POST['values'], $_POST['nulls'],
-				$_POST['format'], $_POST['expr'], $types, $keyFields
+				$_POST['table'],
+				$_POST['values'],
+				$_POST['nulls'],
+				$_POST['format'],
+				$_POST['expr'],
+				$types,
+				$keyFields
 			);
 			if ($status == 0)
 				doBrowse($lang['strrowupdated']);
@@ -346,13 +356,13 @@ EOT;
 				doEditRow(true, $lang['strrowupdatedbad']);
 		}
 	}
-
 }
 
 /**
  * Show confirmation of drop and perform actual drop
  */
-function doDelRow($confirm) {
+function doDelRow($confirm)
+{
 	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
@@ -420,12 +430,12 @@ function doDelRow($confirm) {
 		else
 			doBrowse($lang['strrowdeletedbad']);
 	}
-
 }
 
 /* build & return the FK information data structure
  * used when deciding if a field should have a FK link or not*/
-function getFKInfo() {
+function getFKInfo()
+{
 	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$constraintActions = new ConstraintActions($pg);
@@ -441,7 +451,7 @@ function getFKInfo() {
 
 			/* build the FK constraints data structure */
 			while (!$constraints->EOF) {
-				$constr =& $constraints->fields;
+				$constr = $constraints->fields;
 				if ($constr['contype'] == 'f') {
 
 					if (!isset($fkey_information['byconstr'][$constr['conid']])) {
@@ -470,7 +480,8 @@ function getFKInfo() {
 /* Print table header cells
  * @param $args - associative array for sort link parameters
  * */
-function printTableHeaderCells($rs, $args, $withOid) {
+function printTableHeaderCells($rs, $args, $withOid)
+{
 	$misc = AppContainer::getMisc();
 	$pg = AppContainer::getPostgres();
 	$conf = AppContainer::getConf();
@@ -517,7 +528,8 @@ function printTableHeaderCells($rs, $args, $withOid) {
  * @param bool $withOid
  * @param bool $editable
  */
-function printTableRowCells($rs, $fkey_information, $withOid, $editable = false) {
+function printTableRowCells($rs, $fkey_information, $withOid, $editable = false)
+{
 	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$conf = AppContainer::getConf();
@@ -536,6 +548,10 @@ function printTableRowCells($rs, $fkey_information, $withOid, $editable = false)
 
 			echo "<td class=\"$class\" data-type=\"$finfo->type\" data-name=\"" . htmlspecialchars($finfo->name) . "\">";
 
+			$valParams = [
+				'null' => true,
+				'clip' => ($_REQUEST['strings'] == 'collapsed')
+			];
 			if (($v !== null) && isset($fkey_information['byfield'][$k])) {
 				foreach ($fkey_information['byfield'][$k] as $conid) {
 
@@ -555,17 +571,17 @@ function printTableRowCells($rs, $fkey_information, $withOid, $editable = false)
 					echo "</a>";
 					echo "</div>";
 				}
-				echo $misc->printVal($v, $finfo->type, ['null' => true, 'clip' => ($_REQUEST['strings'] == 'collapsed'), 'class' => 'fk_value']);
-			} else {
-				echo $misc->printVal($v, $finfo->type, ['null' => true, 'clip' => ($_REQUEST['strings'] == 'collapsed')]);
+				$valParams['class'] = 'fk_value';
 			}
+			echo $misc->printVal($v, $finfo->type, $valParams);
 			echo "</td>";
 		}
 	}
 }
 
 /* Print the FK row, used in ajax requests */
-function doBrowseFK() {
+function doBrowseFK()
+{
 	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
@@ -582,8 +598,15 @@ function doBrowseFK() {
 
 	$max_pages = 1;
 	// Retrieve page from query.  $max_pages is returned by reference.
-	$rs = $rowActions->browseQuery('SELECT', $_REQUEST['table'], $_REQUEST['query'],
-		null, 1, 1, $max_pages);
+	$rs = $rowActions->browseQuery(
+		'SELECT',
+		$_REQUEST['table'],
+		$_REQUEST['query'],
+		null,
+		1,
+		1,
+		$max_pages
+	);
 
 	echo "<a href=\"\" style=\"display:table-cell;\" class=\"fk_close\"><img alt=\"[close]\" src=\"" . $misc->icon('Close') . "\" /></a>\n";
 	echo "<div style=\"display:table-cell;\">";
@@ -612,7 +635,8 @@ function doBrowseFK() {
 /**
  * Displays requested data
  */
-function doBrowse($msg = '') {
+function doBrowse($msg = '')
+{
 
 	$pg = AppContainer::getPostgres();
 	$conf = AppContainer::getConf();
@@ -729,8 +753,8 @@ function doBrowse($msg = '') {
 	// Set the schema search path
 	if (isset($_REQUEST['search_path'])) {
 		if ($schemaActions->setSearchPath(
-				array_map('trim', explode(',', $_REQUEST['search_path']))
-			) != 0) {
+			array_map('trim', explode(',', $_REQUEST['search_path']))
+		) != 0) {
 			return;
 		}
 	}
@@ -780,7 +804,6 @@ function doBrowse($msg = '') {
 					$query = str_replace($lastOrderBy, $newOrderBy, $query);
 					$orderBySet = true;
 				}
-
 			} elseif (!empty($newOrderBy)) {
 				$query = rtrim($query, " \t\n\r\0\x0B;");
 
@@ -803,17 +826,20 @@ function doBrowse($msg = '') {
 
 				$query .= ';';
 				$orderBySet = true;
-
 			}
 		}
 	}
 
 	// Retrieve page from query.  $max_pages is returned by reference.
-	$rs = $rowActions->browseQuery($type,
+	$rs = $rowActions->browseQuery(
+		$type,
 		$table_name ?? null,
 		$query,
-		$orderBySet ? [] : $_REQUEST['orderby'], $_REQUEST['page'],
-		$_REQUEST['max_rows'], $max_pages);
+		$orderBySet ? [] : $_REQUEST['orderby'],
+		$_REQUEST['page'],
+		$_REQUEST['max_rows'],
+		$max_pages
+	);
 	/*
 	var_dump($data->lastQueryTime);
 	var_dump($data->lastQueryOffset);
@@ -856,14 +882,14 @@ function doBrowse($msg = '') {
 
 	$_sub_params = $_gets;
 	unset($_sub_params['query']);
-	?>
+?>
 	<form method="get" action="display.php?<?= http_build_query($_sub_params) ?>">
 		<div>
 			<textarea name="query" class="sql-editor frame resizable" width="90%" rows="5" cols="100" resizable="true"><?= htmlspecialchars_nc($query) ?></textarea>
 		</div>
-		<div><input type="submit" value="<?= $lang['strquerysubmit'] ?>"/></div>
+		<div><input type="submit" value="<?= $lang['strquerysubmit'] ?>" /></div>
 	</form>
-	<?php
+<?php
 
 	echo '<div class="query-result-line">', htmlspecialchars($status_line), '</div>', "\n";
 
@@ -955,7 +981,8 @@ function doBrowse($msg = '') {
 							[
 								'strings' => $collapsed ? 'expanded' : 'collapsed',
 								'page' => $_REQUEST['page']
-							])
+							]
+						)
 					]
 				],
 				'icon' => $misc->icon($collapsed ? 'TextExpand' : 'TextShrink'),
@@ -1102,7 +1129,8 @@ function doBrowse($msg = '') {
 						[
 							'strings' => 'collapsed',
 							'page' => $_REQUEST['page']
-						])
+						]
+					)
 				]
 			],
 			'icon' => $misc->icon('TextShrink'),
@@ -1118,7 +1146,8 @@ function doBrowse($msg = '') {
 						[
 							'strings' => 'expanded',
 							'page' => $_REQUEST['page']
-						])
+						]
+					)
 				]
 			],
 			'icon' => $misc->icon('TextExpand'),
@@ -1188,7 +1217,8 @@ function doBrowse($msg = '') {
 					[
 						'strings' => $_REQUEST['strings'],
 						'page' => $_REQUEST['page']
-					])
+					]
+				)
 			]
 		],
 		'icon' => $misc->icon('Refresh'),
@@ -1200,7 +1230,8 @@ function doBrowse($msg = '') {
 
 
 // Put HTML header in a function to later adjust title if a custom query was send
-function beginHtml() {
+function beginHtml()
+{
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
 
@@ -1209,15 +1240,15 @@ function beginHtml() {
 	$subject_name = $_REQUEST[$subject_type] ?? '';
 	if (!empty($subject_name)) {
 		switch ($subject_type) {
-		case 'table':
-			$title = $lang['strtables'] . ': ' . $subject_name;
-			break;
-		case 'view':
-			$title = $lang['strviews'] . ': ' . $subject_name;
-			break;
-		case 'column':
-			$title = $lang['strcolumn'] . ': ' . $subject_name;
-			break;
+			case 'table':
+				$title = $lang['strtables'] . ': ' . $subject_name;
+				break;
+			case 'view':
+				$title = $lang['strviews'] . ': ' . $subject_name;
+				break;
+			case 'column':
+				$title = $lang['strcolumn'] . ': ' . $subject_name;
+				break;
 		}
 	} else {
 		$title = $lang['strqueryresults'];
@@ -1247,25 +1278,25 @@ if ($action == 'dobrowsefk') {
 }
 
 switch ($action) {
-case 'editrow':
-case 'insertrow':
-	if (isset($_POST['save'])) doEditRow(false);
-	else doBrowse();
-	break;
-case 'confeditrow':
-case 'confinsertrow':
-	doEditRow(true);
-	break;
-case 'delrow':
-	if (isset($_POST['yes'])) doDelRow(false);
-	else doBrowse();
-	break;
-case 'confdelrow':
-	doDelRow(true);
-	break;
-default:
-	doBrowse();
-	break;
+	case 'editrow':
+	case 'insertrow':
+		if (isset($_POST['save'])) doEditRow(false);
+		else doBrowse();
+		break;
+	case 'confeditrow':
+	case 'confinsertrow':
+		doEditRow(true);
+		break;
+	case 'delrow':
+		if (isset($_POST['yes'])) doDelRow(false);
+		else doBrowse();
+		break;
+	case 'confdelrow':
+		doDelRow(true);
+		break;
+	default:
+		doBrowse();
+		break;
 }
 
 $misc->printFooter();

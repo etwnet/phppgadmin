@@ -25,8 +25,7 @@ class ConnectionSelector extends AbstractContext
             if (empty($info['username'])) {
                 continue;
             }
-            echo "<option value=\"", htmlspecialchars($info['id']), "\"",
-            ((isset($_REQUEST['server']) && $info['id'] == $_REQUEST['server'])) ? ' selected="selected"' : '', ">",
+            echo "<option value=\"", htmlspecialchars($info['id']), "\"", ((isset($_REQUEST['server']) && $info['id'] == $_REQUEST['server'])) ? ' selected="selected"' : '', ">",
             htmlspecialchars("{$info['desc']} ({$info['id']})"), "</option>\n";
         }
         echo "</select>\n</td><td style=\"text-align: right\">\n";
@@ -44,8 +43,7 @@ class ConnectionSelector extends AbstractContext
 
             while (!$databases->EOF) {
                 $dbname = $databases->fields['datname'];
-                echo "<option value=\"", htmlspecialchars($dbname), "\"",
-                ((isset($_REQUEST['database']) && $dbname == $_REQUEST['database'])) ? ' selected="selected"' : '', ">",
+                echo "<option value=\"", htmlspecialchars($dbname), "\"", ((isset($_REQUEST['database']) && $dbname == $_REQUEST['database'])) ? ' selected="selected"' : '', ">",
                 htmlspecialchars($dbname), "</option>\n";
                 $databases->moveNext();
             }
