@@ -7,6 +7,13 @@ use PhpPgAdmin\Database\AbstractActions;
 class SqlFunctionActions extends AbstractActions
 {
 
+    // Function properties
+	public $funcprops = [
+		['', 'VOLATILE', 'IMMUTABLE', 'STABLE'],
+        ['', 'CALLED ON NULL INPUT', 'RETURNS NULL ON NULL INPUT'],
+		['', 'SECURITY INVOKER', 'SECURITY DEFINER']
+	];
+
     /**
      * Returns all details for a particular function.
      */
@@ -159,7 +166,7 @@ class SqlFunctionActions extends AbstractActions
             $funcname = $newname;
         }
 
-        if ($this->connection->hasFunctionAlterOwner()) {
+        if ($this->hasFunctionAlterOwner()) {
             $this->connection->fieldClean($newown);
             if ($funcown != $newown) {
                 $sql = "ALTER FUNCTION \"{$f_schema}\".\"{$funcname}\"({$args}) OWNER TO \"{$newown}\"";
@@ -172,7 +179,7 @@ class SqlFunctionActions extends AbstractActions
 
         }
 
-        if ($this->connection->hasFunctionAlterSchema()) {
+        if ($this->hasFunctionAlterSchema()) {
             $this->connection->fieldClean($newschema);
             if ($funcschema != $newschema) {
                 $sql = "ALTER FUNCTION \"{$f_schema}\".\"{$funcname}\"({$args}) SET SCHEMA \"{$newschema}\"";
@@ -284,4 +291,25 @@ class SqlFunctionActions extends AbstractActions
 
         return $this->connection->execute($sql);
     }
+
+	function hasFunctionAlterOwner()
+	{
+		return true;
+	}
+
+	function hasFunctionAlterSchema()
+	{
+		return true;
+	}
+
+	function hasFunctionCosting()
+	{
+		return true;
+	}
+
+	function hasFunctionGUC()
+	{
+		return true;
+	}
+
 }

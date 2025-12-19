@@ -342,18 +342,23 @@ abstract class AbstractConnection extends AbstractContext {
 	// Type conversion routines
 
 	/**
-	 * Change the value of a parameter to database representation depending on whether it evaluates to true or false
-	 * @param mixed $parameter the parameter
+	 * Change the value of a parameter to 't' or 'f' depending on whether it evaluates to true or false
+	 * @param $parameter the parameter
 	 */
 	function dbBool(&$parameter) {
+		if ($parameter) $parameter = 't';
+		else $parameter = 'f';
+
 		return $parameter;
 	}
 
 	/**
-	 * Change a parameter from database representation to a boolean, (others evaluate to false)
-	 * @param mixed $parameter the parameter
+	 * Change a parameter from 't' or 'f' to a boolean, (others evaluate to false)
+	 * @param string $parameter the parameter
+	 * @return bool
 	 */
 	function phpBool($parameter) {
+		$parameter = ($parameter == 't');
 		return $parameter;
 	}
 
@@ -363,6 +368,11 @@ abstract class AbstractConnection extends AbstractContext {
 	 * @return array A PHP array
 	 */
 	function phpArray($dbarr) {
+		
+		if (empty($dbarr)) {
+			return [];
+		}
+
 		// Take off the first and last characters (the braces)
 		$arr = substr($dbarr, 1, strlen($dbarr) - 2);
 

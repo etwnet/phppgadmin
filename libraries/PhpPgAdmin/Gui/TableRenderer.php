@@ -40,7 +40,7 @@ class TableRenderer extends AbstractContext
      *        or null to use default actions. Useful for disabling actions on certain rows.
      * @return bool true if rows were displayed, false otherwise
      */
-    public function printTable($tabledata, &$columns, &$actions, $place, $nodata = null, $pre_fn = null): bool
+    public function printTable($tabledata, $columns, $actions, $place, $nodata = null, $pre_fn = null): bool
     {
         $conf = $this->conf();
         $lang = $this->lang();

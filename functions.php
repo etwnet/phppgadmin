@@ -1,6 +1,11 @@
 <?php
 
 use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\Actions\LanguageActions;
+use PhpPgAdmin\Database\Actions\RoleActions;
+use PhpPgAdmin\Database\Actions\SchemaActions;
+use PhpPgAdmin\Database\Actions\SqlFunctionActions;
+use PhpPgAdmin\Database\Actions\TypeActions;
 
 /**
  * Manage functions in a database
@@ -11,17 +16,16 @@ use PhpPgAdmin\Core\AppContainer;
 // Include application functions
 include_once('./libraries/bootstrap.php');
 
-$action = $_REQUEST['action'] ?? '';
-if (!isset($msg)) $msg = '';
 
 /**
  * Function to save after editing a function
  */
 function doSaveEdit()
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
 	$misc = AppContainer::getMisc();
+	$functionActions = new SqlFunctionActions($pg);
 
 	$fnlang = strtolower($_POST['original_lang']);
 
@@ -32,9 +36,9 @@ function doSaveEdit()
 	} else {
 		$def = $_POST['formDefinition'];
 	}
-	if (!$data->hasFunctionAlterSchema()) $_POST['formFuncSchema'] = '';
+	if (!$functionActions->hasFunctionAlterSchema()) $_POST['formFuncSchema'] = '';
 
-	$status = $data->setFunction(
+	$status = $functionActions->setFunction(
 		$_POST['function_oid'],
 		$_POST['original_function'],
 		$_POST['formFunction'],
@@ -73,21 +77,25 @@ function doSaveEdit()
  */
 function doEdit($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$functionActions = new SqlFunctionActions($pg);
+	$schemaActions = new SchemaActions($pg);
+	$roleActions = new RoleActions($pg);
+	
 	$misc->printTrail('function');
 	$misc->printTitle($lang['stralter'], 'pg.function.alter');
 	$misc->printMsg($msg);
 
-	$fndata = $data->getFunction($_REQUEST['function_oid']);
+	$fndata = $functionActions->getFunction($_REQUEST['function_oid']);
 
 	if ($fndata->recordCount() > 0) {
-		$fndata->fields['proretset'] = $data->phpBool($fndata->fields['proretset']);
+		$fndata->fields['proretset'] = $pg->phpBool($fndata->fields['proretset']);
 
 		// Initialise variables
 		if (!isset($_POST['formDefinition'])) $_POST['formDefinition'] = $fndata->fields['prosrc'];
-		if (!isset($_POST['formProperties'])) $_POST['formProperties'] = $data->getFunctionProperties($fndata->fields);
+		if (!isset($_POST['formProperties'])) $_POST['formProperties'] = $functionActions->getFunctionProperties($fndata->fields);
 		if (!isset($_POST['formFunction'])) $_POST['formFunction'] = $fndata->fields['proname'];
 		if (!isset($_POST['formComment'])) $_POST['formComment'] = $fndata->fields['procomment'];
 		if (!isset($_POST['formObjectFile'])) $_POST['formObjectFile'] = $fndata->fields['probin'];
@@ -95,20 +103,20 @@ function doEdit($msg = '')
 		if (!isset($_POST['formFuncOwn'])) $_POST['formFuncOwn'] = $fndata->fields['proowner'];
 		if (!isset($_POST['formFuncSchema'])) $_POST['formFuncSchema'] = $fndata->fields['proschema'];
 
-		if ($data->hasFunctionCosting()) {
+		if ($functionActions->hasFunctionCosting()) {
 			if (!isset($_POST['formCost'])) $_POST['formCost'] = $fndata->fields['procost'];
 			if (!isset($_POST['formRows'])) $_POST['formRows'] = $fndata->fields['prorows'];
 		}
 
 		// Deal with named parameters
-		if ($data->hasNamedParams()) {
+		if ($pg->hasNamedParams()) {
 			if (isset($fndata->fields['proallarguments'])) {
-				$args_arr = $data->phpArray($fndata->fields['proallarguments']);
+				$args_arr = $pg->phpArray($fndata->fields['proallarguments']);
 			} else {
 				$args_arr = explode(', ', $fndata->fields['proarguments']);
 			}
-			$names_arr = $data->phpArray($fndata->fields['proargnames']);
-			$modes_arr = $data->phpArray($fndata->fields['proargmodes']);
+			$names_arr = $pg->phpArray($fndata->fields['proargnames']);
+			$modes_arr = $pg->phpArray($fndata->fields['proargmodes']);
 			$args = '';
 			$i = 0;
 			for ($i = 0; $i < sizeof($args_arr); $i++) {
@@ -133,7 +141,7 @@ function doEdit($msg = '')
 					}
 				}
 				if (isset($names_arr[$i]) && $names_arr[$i] != '') {
-					$data->fieldClean($names_arr[$i]);
+					$pg->fieldClean($names_arr[$i]);
 					$args .= '"' . $names_arr[$i] . '" ';
 				}
 				$args .= $args_arr[$i];
@@ -155,21 +163,21 @@ function doEdit($msg = '')
 
 		echo "<tr>\n";
 		echo "<td class=\"data1\">";
-		echo "<input type=\"hidden\" name=\"original_schema\" value=\"", htmlspecialchars_nc($fndata->fields['proschema']), "\" />\n";
-		if ($data->hasFunctionAlterSchema()) {
-			$schemas = $data->getSchemas();
+		echo "<input type=\"hidden\" name=\"original_schema\" value=\"", htmlspecialchars($fndata->fields['proschema']), "\" />\n";
+		if ($functionActions->hasFunctionAlterSchema()) {
+			$schemas = $schemaActions->getSchemas();
 			echo "<select name=\"formFuncSchema\">";
 			while (!$schemas->EOF) {
 				$schema = $schemas->fields['nspname'];
-				echo "<option value=\"", htmlspecialchars_nc($schema), "\"", ($schema == $_POST['formFuncSchema']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($schema), "</option>\n";
+				echo "<option value=\"", htmlspecialchars($schema), "\"", ($schema == $_POST['formFuncSchema']) ? ' selected="selected"' : '', ">", htmlspecialchars($schema), "</option>\n";
 				$schemas->moveNext();
 			}
 			echo "</select>\n";
 		} else echo $fndata->fields['proschema'];
 		echo "</td>\n";
 		echo "<td class=\"data1\">";
-		echo "<input type=\"hidden\" name=\"original_function\" value=\"", htmlspecialchars_nc($fndata->fields['proname']), "\" />\n";
-		echo "<input name=\"formFunction\" style=\"width: 100%\" maxlength=\"{$data->_maxNameLen}\" value=\"", htmlspecialchars_nc($_POST['formFunction']), "\" />";
+		echo "<input type=\"hidden\" name=\"original_function\" value=\"", htmlspecialchars($fndata->fields['proname']), "\" />\n";
+		echo "<input name=\"formFunction\" style=\"width: 100%\" maxlength=\"{$pg->_maxNameLen}\" value=\"", htmlspecialchars_nc($_POST['formFunction']), "\" />";
 		echo "</td>\n";
 
 		echo "<td class=\"data1\">", $misc->printVal($args), "\n";
@@ -185,7 +193,7 @@ function doEdit($msg = '')
 		echo "</td>\n";
 
 		echo "<td class=\"data1\">", $misc->printVal($fndata->fields['prolanguage']), "\n";
-		echo "<input type=\"hidden\" name=\"original_lang\" value=\"", htmlspecialchars_nc($fndata->fields['prolanguage']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"original_lang\" value=\"", htmlspecialchars($fndata->fields['prolanguage']), "\" />\n";
 		echo "</td>\n";
 		echo "</tr>\n";
 
@@ -202,8 +210,9 @@ function doEdit($msg = '')
 			echo "<tr><td class=\"data1\" colspan=\"5\"><input type=\"text\" name=\"formLinkSymbol\" style=\"width:100%\" value=\"",
 			htmlspecialchars_nc($_POST['formLinkSymbol']), "\" /></td></tr>\n";
 		} else {
+			$mode = htmlspecialchars($fndata->fields['prolanguage']);
 			echo "<tr><th class=\"data required\" colspan=\"5\">{$lang['strdefinition']}</th></tr>\n";
-			echo "<tr><td class=\"data1\" colspan=\"5\"><textarea style=\"width:100%;\" rows=\"20\" cols=\"50\" name=\"formDefinition\">",
+			echo "<tr><td class=\"data1\" colspan=\"5\"><textarea style=\"width:100%;\" rows=\"20\" cols=\"50\" name=\"formDefinition\" class=\"sql-editor frame resizable big\" data-mode=\"$mode\">",
 			htmlspecialchars_nc($_POST['formDefinition']), "</textarea></td></tr>\n";
 		}
 
@@ -213,7 +222,7 @@ function doEdit($msg = '')
 		htmlspecialchars_nc($_POST['formComment']), "</textarea></td></tr>\n";
 
 		// Display function cost options
-		if ($data->hasFunctionCosting()) {
+		if ($functionActions->hasFunctionCosting()) {
 			echo "<tr><th class=\"data required\" colspan=\"5\">{$lang['strfunctioncosting']}</th></tr>\n";
 			echo "<td class=\"data1\" colspan=\"2\">{$lang['strexecutioncost']}: <input name=\"formCost\" size=\"16\" value=\"" .
 				htmlspecialchars_nc($_POST['formCost']) . "\" /></td>";
@@ -222,14 +231,14 @@ function doEdit($msg = '')
 		}
 
 		// Display function properties
-		if (is_array($data->funcprops) && sizeof($data->funcprops) > 0) {
+		if (is_array($functionActions->funcprops) && sizeof($functionActions->funcprops) > 0) {
 			echo "<tr><th class=\"data\" colspan=\"5\">{$lang['strproperties']}</th></tr>\n";
 			echo "<tr><td class=\"data1\" colspan=\"5\">\n";
 			$i = 0;
-			foreach ($data->funcprops as $k => $v) {
+			foreach ($functionActions->funcprops as $k => $v) {
 				echo "<select name=\"formProperties[{$i}]\">\n";
 				foreach ($v as $p) {
-					echo "<option value=\"", htmlspecialchars_nc($p), "\"", ($p == $_POST['formProperties'][$i]) ? ' selected="selected"' : '',
+					echo "<option value=\"", htmlspecialchars($p), "\"", ($p == $_POST['formProperties'][$i]) ? ' selected="selected"' : '',
 					">", $misc->printVal($p), "</option>\n";
 				}
 				echo "</select><br />\n";
@@ -239,8 +248,8 @@ function doEdit($msg = '')
 		}
 
 		// function owner
-		if ($data->hasFunctionAlterOwner()) {
-			$users = $data->getUsers();
+		if ($functionActions->hasFunctionAlterOwner()) {
+			$users = $roleActions->getUsers();
 			echo "<tr><td class=\"data1\" colspan=\"5\">{$lang['strowner']}: <select name=\"formFuncOwn\">";
 			while (!$users->EOF) {
 				$uname = $users->fields['usename'];
@@ -259,7 +268,7 @@ function doEdit($msg = '')
 		echo "<input type=\"submit\" value=\"{$lang['stralter']}\" />\n";
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 		echo "</form>\n";
-	} else echo "<p>{$lang['strnodata']}</p>\n";
+	} else echo "<p class=\"empty\">{$lang['strnodata']}</p>\n";
 }
 
 /**
@@ -267,26 +276,28 @@ function doEdit($msg = '')
  */
 function doProperties($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$functionActions = new SqlFunctionActions($pg);
 
 	$misc->printTrail('function');
 	$misc->printTitle($lang['strproperties'], 'pg.function');
 	$misc->printMsg($msg);
 
-	$funcdata = $data->getFunction($_REQUEST['function_oid']);
+	$funcdata = $functionActions->getFunction($_REQUEST['function_oid']);
 
 	if ($funcdata->recordCount() > 0) {
 		// Deal with named parameters
-		if ($data->hasNamedParams()) {
+		//var_dump($funcdata);
+		if ($pg->hasNamedParams()) {
 			if (isset($funcdata->fields['proallarguments'])) {
-				$args_arr = $data->phpArray($funcdata->fields['proallarguments']);
+				$args_arr = $pg->phpArray($funcdata->fields['proallarguments']);
 			} else {
 				$args_arr = explode(', ', $funcdata->fields['proarguments']);
 			}
-			$names_arr = $data->phpArray($funcdata->fields['proargnames']);
-			$modes_arr = $data->phpArray($funcdata->fields['proargmodes']);
+			$names_arr = $pg->phpArray($funcdata->fields['proargnames']);
+			$modes_arr = $pg->phpArray($funcdata->fields['proargmodes']);
 			$args = '';
 			$i = 0;
 			for ($i = 0; $i < sizeof($args_arr); $i++) {
@@ -311,7 +322,7 @@ function doProperties($msg = '')
 					}
 				}
 				if (isset($names_arr[$i]) && $names_arr[$i] != '') {
-					$data->fieldClean($names_arr[$i]);
+					$pg->fieldClean($names_arr[$i]);
 					$args .= '"' . $names_arr[$i] . '" ';
 				}
 				$args .= $args_arr[$i];
@@ -324,7 +335,7 @@ function doProperties($msg = '')
 		if ($funcdata->fields['procomment'] !== null)
 			echo "<p class=\"comment\">", $misc->printVal($funcdata->fields['procomment']), "</p>\n";
 
-		$funcdata->fields['proretset'] = $data->phpBool($funcdata->fields['proretset']);
+		$funcdata->fields['proretset'] = $pg->phpBool($funcdata->fields['proretset']);
 		$func_full = $funcdata->fields['proname'] . "(" . $funcdata->fields['proarguments'] . ")";
 		echo "<table style=\"width: 90%\">\n";
 		echo "<tr><th class=\"data\">{$lang['strfunction']}</th>\n";
@@ -348,30 +359,22 @@ function doProperties($msg = '')
 			echo "<tr><th class=\"data\" colspan=\"4\">{$lang['strlinksymbol']}</th></tr>\n";
 			echo "<tr><td class=\"data1\" colspan=\"4\">", $misc->printVal($funcdata->fields['prosrc']), "</td></tr>\n";
 		} else {
-			include_once('./libraries/highlight.php');
 			echo "<tr><th class=\"data\" colspan=\"4\">{$lang['strdefinition']}</th></tr>\n";
 			// Check to see if we have syntax highlighting for this language
-			if (false && isset($data->langmap[$funcdata->fields['prolanguage']])) {
-				$temp = syntax_highlight(htmlspecialchars_nc($funcdata->fields['prosrc']), $data->langmap[$funcdata->fields['prolanguage']]);
-				$tag = 'prenoescape';
-			} else {
-				$temp = $funcdata->fields['prosrc'];
-				$tag = 'pre';
-			}
-			echo "<tr><td class=\"data1\" colspan=\"4\">", $misc->printVal($temp, $tag, ['class' => 'data1']), "</td></tr>\n";
+			echo "<tr><td class=\"data1\" colspan=\"4\">", $misc->printVal($funcdata->fields['prosrc'], $funcdata->fields['prolanguage']), "</td></tr>\n";
 		}
 
 		// Display function cost options
-		if ($data->hasFunctionCosting()) {
+		if ($functionActions->hasFunctionCosting()) {
 			echo "<tr><th class=\"data required\" colspan=\"4\">{$lang['strfunctioncosting']}</th></tr>\n";
 			echo "<td class=\"data1\" colspan=\"2\">{$lang['strexecutioncost']}: ", $misc->printVal($funcdata->fields['procost']), " </td>";
 			echo "<td class=\"data1\" colspan=\"2\">{$lang['strresultrows']}: ", $misc->printVal($funcdata->fields['prorows']), " </td>";
 		}
 
 		// Show flags
-		if (is_array($data->funcprops) && sizeof($data->funcprops) > 0) {
+		if (is_array($functionActions->funcprops) && sizeof($functionActions->funcprops) > 0) {
 			// Fetch an array of the function properties
-			$funcprops = $data->getFunctionProperties($funcdata->fields);
+			$funcprops = $functionActions->getFunctionProperties($funcdata->fields);
 			echo "<tr><th class=\"data\" colspan=\"4\">{$lang['strproperties']}</th></tr>\n";
 			echo "<tr><td class=\"data1\" colspan=\"4\">\n";
 			foreach ($funcprops as $v) {
@@ -380,8 +383,8 @@ function doProperties($msg = '')
 			echo "</td></tr>\n";
 		}
 
-		echo "<tr><td class=\"data1\" colspan=\"5\">{$lang['strowner']}: ", htmlspecialchars_nc($funcdata->fields['proowner']), "\n";
-		echo "</td></tr>\n";
+		echo "<tr><th class=\"data\" colspan=\"4\">{$lang['strowner']}</th></tr>\n";
+		echo "<tr><td class=\"data1\" colspan=\"4\">", htmlspecialchars_nc($funcdata->fields['proowner']), "</td></tr>\n";
 		echo "</table>\n";
 	} else echo "<p>{$lang['strnodata']}</p>\n";
 
@@ -397,6 +400,7 @@ function doProperties($msg = '')
 					]
 				]
 			],
+			'icon' => $misc->icon('Functions'),
 			'content' => $lang['strshowallfunctions']
 		],
 		'alter' => [
@@ -413,7 +417,8 @@ function doProperties($msg = '')
 					]
 				]
 			],
-			'content' => $lang['stralter']
+			'icon' => $misc->icon('Edit'),
+			'content' => $lang['stredit']
 		],
 		'drop' => [
 			'attr' => [
@@ -429,6 +434,7 @@ function doProperties($msg = '')
 					]
 				]
 			],
+			'icon' => $misc->icon('Delete'),
 			'content' => $lang['strdrop']
 		]
 	];
@@ -441,9 +447,10 @@ function doProperties($msg = '')
  */
 function doDrop($confirm)
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$functionActions = new SqlFunctionActions($pg);
 
 	if (empty($_REQUEST['function']) && empty($_REQUEST['ma'])) {
 		doDefault($lang['strspecifyfunctiontodrop']);
@@ -480,26 +487,26 @@ function doDrop($confirm)
 	} else {
 		if (is_array($_POST['function_oid'])) {
 			$msg = '';
-			$status = $data->beginTransaction();
+			$status = $pg->beginTransaction();
 			if ($status == 0) {
 				foreach ($_POST['function_oid'] as $k => $s) {
-					$status = $data->dropFunction($s, isset($_POST['cascade']));
+					$status = $functionActions->dropFunction($s, isset($_POST['cascade']));
 					if ($status == 0)
 						$msg .= sprintf('%s: %s<br />', htmlentities($_POST['function'][$k], ENT_QUOTES, 'UTF-8'), $lang['strfunctiondropped']);
 					else {
-						$data->endTransaction();
+						$pg->endTransaction();
 						doDefault(sprintf('%s%s: %s<br />', $msg, htmlentities($_POST['function'][$k], ENT_QUOTES, 'UTF-8'), $lang['strfunctiondroppedbad']));
 						return;
 					}
 				}
 			}
-			if ($data->endTransaction() == 0) {
+			if ($pg->endTransaction() == 0) {
 				// Everything went fine, back to the Default page....
 				AppContainer::setShouldReloadTree(true);
 				doDefault($msg);
 			} else doDefault($lang['strfunctiondroppedbad']);
 		} else {
-			$status = $data->dropFunction($_POST['function_oid'], isset($_POST['cascade']));
+			$status = $functionActions->dropFunction($_POST['function_oid'], isset($_POST['cascade']));
 			if ($status == 0) {
 				AppContainer::setShouldReloadTree(true);
 				doDefault($lang['strfunctiondropped']);
@@ -511,13 +518,17 @@ function doDrop($confirm)
 }
 
 /**
- * Displays a screen where they can enter a new function
+ * Displays a screen to enter a new function
  */
 function doCreate($msg = '', $szJS = "")
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$conf = AppContainer::getConf();
+	$typeActions = new TypeActions($pg);
+	$functionActions = new SqlFunctionActions($pg);
+	$languageActions = new LanguageActions($pg);
 
 	$misc->printTrail('schema');
 	if (!isset($_POST['formFunction'])) $_POST['formFunction'] = '';
@@ -527,15 +538,15 @@ function doCreate($msg = '', $szJS = "")
 	if (!isset($_POST['formDefinition'])) $_POST['formDefinition'] = '';
 	if (!isset($_POST['formObjectFile'])) $_POST['formObjectFile'] = '';
 	if (!isset($_POST['formLinkSymbol'])) $_POST['formLinkSymbol'] = '';
-	if (!isset($_POST['formProperties'])) $_POST['formProperties'] = $data->defaultprops;
+	if (!isset($_POST['formProperties'])) $_POST['formProperties'] = $pg->defaultprops;
 	if (!isset($_POST['formSetOf'])) $_POST['formSetOf'] = '';
 	if (!isset($_POST['formArray'])) $_POST['formArray'] = '';
 	if (!isset($_POST['formCost'])) $_POST['formCost'] = '';
 	if (!isset($_POST['formRows'])) $_POST['formRows'] = '';
 	if (!isset($_POST['formComment'])) $_POST['formComment'] = '';
 
-	$types = $data->getTypes(true, true, true);
-	$langs = $data->getLanguages(true);
+	$types = $typeActions->getTypes(true, true, true);
+	$langs = $languageActions->getLanguages(true);
 	$fnlang = strtolower($_POST['formLanguage']);
 
 	switch ($fnlang) {
@@ -564,7 +575,7 @@ function doCreate($msg = '', $szJS = "")
 		$types->moveNext();
 	}
 
-	$szFunctionName = "<td class=\"data1\"><input name=\"formFunction\" size=\"16\" maxlength=\"{$data->_maxNameLen}\" value=\"" .
+	$szFunctionName = "<td class=\"data1\"><input name=\"formFunction\" size=\"16\" maxlength=\"{$pg->_maxNameLen}\" value=\"" .
 		htmlspecialchars_nc($_POST['formFunction']) . "\" /></td>";
 
 	$szArguments = "<td class=\"data1\"><input name=\"formArguments\" style=\"width:100%;\" size=\"16\" value=\"" .
@@ -644,9 +655,8 @@ function doCreate($msg = '', $szJS = "")
 	}
 	$szJSAddTR = "<tr id=\"parent_add_tr\" onclick=\"addArg();\" onmouseover=\"this.style.cursor='pointer'\">\n<td style=\"text-align: right\" colspan=\"6\" class=\"data3\"><table><tr><td class=\"data3\"><img src=\"{$szImgPath}/AddArguments.png\" alt=\"Add Argument\" /></td><td class=\"data3\"><span style=\"font-size: 8pt\">{$lang['strargadd']}</span></td></tr></table></td>\n</tr>\n";
 
-	echo "<script src=\"functions.js\" type=\"text/javascript\"></script>
+	echo "<script src=\"js/functions.js\" type=\"text/javascript\"></script>
 		<script type=\"text/javascript\">
-			//<![CDATA[
 			var g_types_select = '<select name=\"formArgType[]\">{$szTypes}</select>{$szArgReturns}';
 			var g_modes_select = '{$szModes}';
 			var g_name = '';
@@ -658,7 +668,6 @@ function doCreate($msg = '', $szJS = "")
 			var g_lang_strargremoveconfirm = '", htmlspecialchars_nc($lang["strargremoveconfirm"], ENT_QUOTES), "';
 			var g_lang_strargraise = '", htmlspecialchars_nc($lang["strargraise"], ENT_QUOTES), "';
 			var g_lang_strarglower = '", htmlspecialchars_nc($lang["strarglower"], ENT_QUOTES), "';
-			//]]>
 		</script>
 		";
 	echo "<form action=\"functions.php\" method=\"post\">\n";
@@ -692,7 +701,7 @@ function doCreate($msg = '', $szJS = "")
 		htmlspecialchars_nc($_POST['formLinkSymbol']), "\" /></td></tr>\n";
 	} else {
 		echo "<tr><th class=\"data required\" colspan=\"4\">{$lang['strdefinition']}</th></tr>\n";
-		echo "<tr><td class=\"data1\" colspan=\"4\"><textarea style=\"width:100%;\" rows=\"20\" cols=\"50\" name=\"formDefinition\">",
+		echo "<tr><td class=\"data1\" colspan=\"4\"><textarea style=\"width:100%;\" rows=\"20\" cols=\"50\" name=\"formDefinition\" class=\"sql-editor frame resizable big\" data-mode=\"plpgsql\">",
 		htmlspecialchars_nc($_POST['formDefinition']), "</textarea></td></tr>\n";
 	}
 
@@ -702,7 +711,7 @@ function doCreate($msg = '', $szJS = "")
 	htmlspecialchars_nc($_POST['formComment']), "</textarea></td></tr>\n";
 
 	// Display function cost options
-	if ($data->hasFunctionCosting()) {
+	if ($functionActions->hasFunctionCosting()) {
 		echo "<tr><th class=\"data required\" colspan=\"4\">{$lang['strfunctioncosting']}</th></tr>\n";
 		echo "<td class=\"data1\" colspan=\"2\">{$lang['strexecutioncost']}: <input name=\"formCost\" size=\"16\" value=\"" .
 			htmlspecialchars_nc($_POST['formCost']) . "\" /></td>";
@@ -711,11 +720,11 @@ function doCreate($msg = '', $szJS = "")
 	}
 
 	// Display function properties
-	if (is_array($data->funcprops) && sizeof($data->funcprops) > 0) {
+	if (is_array($functionActions->funcprops) && sizeof($functionActions->funcprops) > 0) {
 		echo "<tr><th class=\"data required\" colspan=\"4\">{$lang['strproperties']}</th></tr>\n";
 		echo "<tr><td class=\"data1\" colspan=\"4\">\n";
 		$i = 0;
-		foreach ($data->funcprops as $k => $v) {
+		foreach ($functionActions->funcprops as $k => $v) {
 			echo "<select name=\"formProperties[{$i}]\">\n";
 			foreach ($v as $p) {
 				echo "<option value=\"", htmlspecialchars_nc($p), "\"", ($p == $_POST['formProperties'][$i]) ? ' selected="selected"' : '',
@@ -741,8 +750,9 @@ function doCreate($msg = '', $szJS = "")
  */
 function doSaveCreate()
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
+	$functionActions = new SqlFunctionActions($pg);
 
 	$fnlang = strtolower($_POST['formLanguage']);
 
@@ -756,12 +766,12 @@ function doSaveCreate()
 
 	$szJS = '';
 
-	echo "<script src=\"functions.js\" type=\"text/javascript\"></script>";
+	echo "<script src=\"js/functions.js\" type=\"text/javascript\"></script>";
 	echo "<script type=\"text/javascript\">" . buildJSData() . '</script>';
 	if (!empty($_POST['formArgName'])) {
 		$szJS = buildJSRows(buildFunctionArguments($_POST));
 	} else {
-		$szJS = "<script type=\"text/javascript\" src=\"functions.js\">noArgsRebuild(addArg());</script>";
+		$szJS = "<script type=\"text/javascript\">noArgsRebuild(addArg());</script>";
 	}
 
 	$cost = (isset($_POST['formCost'])) ? $_POST['formCost'] : null;
@@ -779,7 +789,7 @@ function doSaveCreate()
 	elseif ($fnlang != 'internal' && !$def) doCreate($lang['strfunctionneedsdef'], $szJS);
 	else {
 		// Append array symbol to type if chosen
-		$status = $data->createFunction(
+		$status = $functionActions->createFunction(
 			$_POST['formFunction'],
 			empty($_POST['nojs']) ? buildFunctionArguments($_POST) : $_POST['formArguments'],
 			$_POST['formReturns'] . $_POST['formArray'],
@@ -822,7 +832,7 @@ function buildJSRows($szArgs)
 {
 	$arrayModes = ['IN', 'OUT', 'INOUT'];
 	$arrayArgs = explode(',', $szArgs);
-	$arrayProperArgs = [];
+	//$arrayProperArgs = [];
 	$nC = 0;
 	$szReturn = '';
 	foreach ($arrayArgs as $pV) {
@@ -839,7 +849,7 @@ function buildJSRows($szArgs)
 			$szArgType = str_replace('[]', '', implode(' ', $arrayWords));
 			$bArgIsArray = "true";
 		}
-		$arrayProperArgs[] = [$szMode, $szArgName, $szArgType, $bArgIsArray];
+		//$arrayProperArgs[] = [$szMode, $szArgName, $szArgType, $bArgIsArray];
 		$szReturn .= "<script type=\"text/javascript\">RebuildArgTR('{$szMode}','{$szArgName}','{$szArgType}',new Boolean({$bArgIsArray}));</script>";
 		$nC++;
 	}
@@ -849,9 +859,11 @@ function buildJSRows($szArgs)
 
 function buildJSData()
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
+	$typeActions = new TypeActions($pg);
+
 	$arrayModes = ['IN', 'OUT', 'INOUT'];
-	$arrayTypes = $data->getTypes(true, true, true);
+	$arrayTypes = $typeActions->getTypes(true, true, true);
 	$arrayPTypes = [];
 	$arrayPModes = [];
 	$szTypes = '';
@@ -875,17 +887,18 @@ function buildJSData()
  */
 function doDefault($msg = '')
 {
-	global $func;
-	$data = AppContainer::getData();
-	$conf = AppContainer::getConf();
+	//global $func;
+	$pg = AppContainer::getPostgres();
+	//$conf = AppContainer::getConf();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$functionActions = new SqlFunctionActions($pg);
 
 	$misc->printTrail('schema');
 	$misc->printTabs('schema', 'functions');
 	$misc->printMsg($msg);
 
-	$funcs = $data->getFunctions();
+	$funcs = $functionActions->getFunctions();
 
 	$columns = [
 		'function' => [
@@ -922,7 +935,7 @@ function doDefault($msg = '')
 		],
 		'alter' => [
 			'icon' => $misc->icon('Edit'),
-			'content' => $lang['stralter'],
+			'content' => $lang['stredit'],
 			'attr' => [
 				'href' => [
 					'url' => 'functions.php',
@@ -980,6 +993,7 @@ function doDefault($msg = '')
 					]
 				]
 			],
+			'icon' => $misc->icon('CreateFunction'),
 			'content' => $lang['strcreateplfunction']
 		],
 		'createinternal' => [
@@ -995,6 +1009,7 @@ function doDefault($msg = '')
 					]
 				]
 			],
+			'icon' => $misc->icon('CreateFunction'),
 			'content' => $lang['strcreateinternalfunction']
 		],
 		'createc' => [
@@ -1010,6 +1025,7 @@ function doDefault($msg = '')
 					]
 				]
 			],
+			'icon' => $misc->icon('CreateFunction'),
 			'content' => $lang['strcreatecfunction']
 		]
 	];
@@ -1023,9 +1039,10 @@ function doDefault($msg = '')
 function doTree()
 {
 	$misc = AppContainer::getMisc();
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
+	$functionActions = new SqlFunctionActions($pg);
 
-	$funcs = $data->getFunctions();
+	$funcs = $functionActions->getFunctions();
 
 	$proto = concat(field('proname'), ' (', field('proarguments'), ')');
 
@@ -1050,7 +1067,15 @@ function doTree()
 	exit;
 }
 
+// Main program
+
+$action = $_REQUEST['action'] ?? '';
+//if (!isset($msg)) $msg = '';
+
 if ($action == 'tree') doTree();
+
+$misc = AppContainer::getMisc();
+$lang = AppContainer::getLang();
 
 $misc->printHeader($lang['strfunctions']);
 $misc->printBody();

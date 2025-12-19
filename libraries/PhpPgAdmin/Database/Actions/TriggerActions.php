@@ -7,12 +7,23 @@ use PhpPgAdmin\Database\Actions\SqlFunctionActions;
 
 class TriggerActions extends AbstractActions
 {
-    // Base constructor inherited from Actions
+	public $triggerEvents = [
+		'INSERT',
+		'UPDATE',
+		'DELETE',
+		'INSERT OR UPDATE',
+		'INSERT OR DELETE',
+		'DELETE OR UPDATE',
+		'INSERT OR DELETE OR UPDATE'
+	];
+
+	public $triggerExecTimes = ['BEFORE', 'AFTER'];
+	public $triggerFrequency = ['ROW', 'STATEMENT'];
+
 
     /** @var SqlFunctionActions */
     private $functionAction;
 
-    //
 
     private function getFunctionAction()
     {

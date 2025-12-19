@@ -181,7 +181,9 @@
 		const editor = ace.edit(editorDiv);
 		editor.setShowPrintMargin(false);
 		editor.session.setUseWrapMode(true);
-		editor.session.setMode("ace/mode/pgsql");
+		//editor.session.setMode("ace/mode/pgsql");
+		const mode = element.dataset.mode || "pgsql";
+		editor.session.setMode("ace/mode/" + mode);
 		//editor.setTheme("ace/theme/tomorrow");
 		editor.setHighlightActiveLine(false);
 		editor.renderer.$cursorLayer.element.style.display = "none";
@@ -214,7 +216,9 @@
 		}
 		const editor = ace.edit(element);
 		editor.session.setUseWrapMode(true);
-		editor.session.setMode("ace/mode/pgsql");
+		//editor.session.setMode("ace/mode/pgsql");
+		const mode = element.dataset.mode || "pgsql";
+		editor.session.setMode("ace/mode/" + mode);
 		//editor.setTheme("ace/theme/tomorrow");
 		editor.setReadOnly(true);
 		editor.renderer.$cursorLayer.element.style.display = "none";

@@ -29,11 +29,6 @@ class Postgres extends AbstractConnection
 	public $fkinitial = ['INITIALLY IMMEDIATE', 'INITIALLY DEFERRED'];
 	public $fkmatches = ['MATCH SIMPLE', 'MATCH FULL'];
 
-	// Function properties
-	public $funcprops = [
-		['', 'VOLATILE', 'IMMUTABLE', 'STABLE'],
-		['', 'SECURITY INVOKER', 'SECURITY DEFINER']
-	];
 
 	public $id = 'oid';
 	public $joinOps = [
@@ -84,19 +79,6 @@ class Postgres extends AbstractConnection
 		'void',
 		'xid'
 	];
-
-	public $triggerEvents = [
-		'INSERT',
-		'UPDATE',
-		'DELETE',
-		'INSERT OR UPDATE',
-		'INSERT OR DELETE',
-		'DELETE OR UPDATE',
-		'INSERT OR DELETE OR UPDATE'
-	];
-
-	public $triggerExecTimes = ['BEFORE', 'AFTER'];
-	public $triggerFrequency = ['ROW', 'STATEMENT'];
 
 	public $typAligns = ['char', 'int2', 'int4', 'double'];
 	public $typAlignDef = 'int4';
@@ -712,26 +694,6 @@ class Postgres extends AbstractConnection
 	*/
 
 	function hasFTS()
-	{
-		return true;
-	}
-
-	function hasFunctionAlterOwner()
-	{
-		return true;
-	}
-
-	function hasFunctionAlterSchema()
-	{
-		return true;
-	}
-
-	function hasFunctionCosting()
-	{
-		return true;
-	}
-
-	function hasFunctionGUC()
 	{
 		return true;
 	}

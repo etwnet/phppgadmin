@@ -69,19 +69,20 @@ class LayoutRenderer extends AbstractContext
 			<link rel="stylesheet" href="js/flatpickr/flatpickr.css" type="text/css">
 			<link rel="stylesheet" href="themes/<?= $conf['theme'] ?>/global.css" type="text/css" id="csstheme">
 			<link rel="icon" type="image/png" href="images/themes/<?= $conf['theme'] ?>/pgadmin.png" />
-			<script src="js/jquery.js" type="text/javascript"></script>
-			<script src="js/xtree2.js" type="text/javascript"></script>
-			<script src="js/xloadtree2.js" type="text/javascript"></script>
-			<script src="js/popper.js" defer type="text/javascript"></script>
+			<script src="js/core/jquery.js" type="text/javascript"></script>
+			<script src="js/core/xtree2.js" type="text/javascript"></script>
+			<script src="js/core/xloadtree2.js" type="text/javascript"></script>
+			<script src="js/core/popper.js" defer type="text/javascript"></script>
 			<script src="js/flatpickr/flatpickr.js" defer type="text/javascript"></script>
 			<?php if ($langIso2 != 'en') : ?>
 				<script src="js/flatpickr/l10n/<?= $langIso2 ?>.js" defer type="text/javascript"></script>
 			<?php endif ?>
 			<script src="libraries/ace/src-min-noconflict/ace.js" defer type="text/javascript"></script>
 			<script src="libraries/ace/src-min-noconflict/mode-pgsql.js" defer type="text/javascript"></script>
-			<script src="js/frameset.js" defer type="text/javascript"></script>
-			<script src="js/misc.js" defer type="text/javascript"></script>
-			<script src="js/autocomplete-fk.js" defer type="text/javascript"></script>
+			<script src="libraries/ace/src-min-noconflict/mode-plpgsql.js" defer type="text/javascript"></script>
+			<script src="js/core/frameset.js" defer type="text/javascript"></script>
+			<script src="js/core/misc.js" defer type="text/javascript"></script>
+			<script src="js/core/autocomplete-fk.js" defer type="text/javascript"></script>
 			<style>
 				.webfx-tree-children {
 					background-image: url("<?= $this->misc->icon('I') ?> ");
@@ -448,7 +449,7 @@ EOT;
 	 *         lineno   - prefix each line with a line number.
 	 *         map      - an associative array.
 	 *
-	 * @return The HTML rendered value
+	 * @return string The HTML rendered value
 	 */
 	function printVal($str, $type = null, $params = [])
 	{
@@ -532,6 +533,12 @@ EOT;
 				$class = 'sql-viewer';
 				$out = htmlspecialchars($str);
 				break;
+			case 'plpgsql':
+				$tag = 'pre';
+				$class = 'sql-viewer';
+				$attr = 'data-mode="plpgsql"';
+				$out = htmlspecialchars($str);
+				break;
 			case 'nbsp':
 				$out = nl2br(str_replace(' ', '&nbsp;', htmlspecialchars($str)));
 				break;
@@ -593,9 +600,10 @@ EOT;
 		if (!isset($tag) && (isset($class) || isset($align))) $tag = 'div';
 
 		if (isset($tag)) {
+			$attr = isset($attr) ? " $attr" : '';
 			$alignattr = isset($align) ? " style=\"text-align: {$align}\"" : '';
 			$classattr = isset($class) ? " class=\"{$class}\"" : '';
-			$out = "<{$tag}{$alignattr}{$classattr}>{$out}</{$tag}>";
+			$out = "<{$tag}{$alignattr}{$classattr}{$attr}>{$out}</{$tag}>";
 		}
 
 		// Add line numbers if 'lineno' param is true

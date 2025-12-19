@@ -623,15 +623,6 @@ i.null {
 	outline: 2px solid #0060df;
 }
 
-.ace_editor .ace_constant.ace_numeric {
-	color: #c11a87 !important;
-}
-
-.ace_editor .ace_selection {
-	background: rgba(0, 123, 255, 0.3) !important;
-	color: #fff !important;
-}
-
 a img.icon {
 	padding-right: 2px;
 	padding-bottom: 2px;

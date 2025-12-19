@@ -193,6 +193,9 @@ class TrailRenderer extends AbstractContext
                     case 'operator':
                         $icon = 'Operator';
                         break;
+                    case 'trigger':
+                        $icon = 'Trigger';
+                        break;
                     default:
                         $icon = null;
                         break;

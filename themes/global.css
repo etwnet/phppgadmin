@@ -227,7 +227,8 @@ div.fk_value {
 }
 
 /** Syntax highlighting **/
-.comment {
+.comment,
+.comment_cell {
 	color: #008080;
 }
 
@@ -306,13 +307,27 @@ td[class^="opbutton"] img.icon {
 	/*max-height: 600px;*/
 }
 
-.sql-editor.high {
+.sql-editor.high,
+.sql-editor.big {
 	height: 300px;
 }
 
 .sql-viewer.ace_editor .ace_content,
 .sql-viewer.ace_editor .ace_scroller {
 	background-color: transparent !important;
+}
+
+.ace_editor .ace_constant.ace_numeric {
+	color: #c1571a;
+}
+
+.ace_editor .ace_string {
+	color: #c11a87;
+}
+
+.ace_editor .ace_selection {
+	background: rgba(0, 123, 255, 0.3) !important;
+	color: #fff !important;
 }
 
 a.orderby {
