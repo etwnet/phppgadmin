@@ -3,6 +3,7 @@
 use PhpPgAdmin\Core\AppContainer;
 use PhpPgAdmin\Database\Actions\SchemaActions;
 use PhpPgAdmin\Database\Actions\ScriptActions;
+use PhpPgAdmin\Database\QueryResult;
 
 /**
  * Process an arbitrary SQL query - tricky!  The main problem is that
@@ -21,64 +22,75 @@ if (!ini_get('safe_mode'))
 include_once('./libraries/bootstrap.php');
 
 /**
- * This is a callback function to display the result of each separate query
+ * Render query results to HTML
+ * @param QueryResult $result The wrapped query result
  * @param string $query The SQL query that was executed
- * @param \PgSql\Result $rs The recordset returned by the script execetor
- * @param int $lineno The line number in the script file
  */
-function sqlCallback($query, $rs, $lineno)
+function renderQueryResult($result, $query)
 {
-	//global $_connection;
-	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
 
-	// Check if $rs is false, if so then there was a fatal error
-	if ($rs === false) {
-		echo htmlspecialchars_nc($_FILES['script']['name']), ':', $lineno, ': ', nl2br(htmlspecialchars_nc($pg->getLastError())), "<br/>\n";
-	} else {
-		// Print query results
-		switch (pg_result_status($rs)) {
-			case PGSQL_TUPLES_OK:
-				// If rows returned, then display the results
-				$num_fields = pg_num_fields($rs);
-				echo "<p><table>\n<tr>";
-				for ($k = 0; $k < $num_fields; $k++) {
-					echo "<th class=\"data\">", $misc->printVal(pg_field_name($rs, $k)), "</th>";
-				}
+	if (!$result->isSuccess) {
+		echo nl2br(htmlspecialchars_nc($result->errorMsg)), "<br/>\n";
+		return;
+	}
 
-				$i = 0;
-				$row = pg_fetch_row($rs);
-				while ($row !== false) {
-					$id = (($i % 2) == 0 ? '1' : '2');
-					echo "<tr class=\"data{$id}\">\n";
-					foreach ($row as $k => $v) {
-						echo "<td style=\"white-space:nowrap;\">", $misc->printVal($v, pg_field_type($rs, $k), array('null' => true)), "</td>";
-					}
-					echo "</tr>\n";
-					$row = pg_fetch_row($rs);
-					$i++;
-				}
-				;
-				echo "</table><br/>\n";
-				echo $i, " {$lang['strrows']}</p>\n";
-				break;
-			case PGSQL_COMMAND_OK:
-				// If we have the command completion tag
-				if (version_compare(phpversion(), '4.3', '>=')) {
-					echo htmlspecialchars_nc(pg_result_status($rs, PGSQL_STATUS_STRING)), "<br/>\n";
-				}
-				// Otherwise if any rows have been affected
-				elseif ($pg->conn->Affected_Rows() > 0) {
-					echo $pg->conn->Affected_Rows(), " {$lang['strrowsaff']}<br/>\n";
-				}
-				// Otherwise output nothing...
-				break;
-			case PGSQL_EMPTY_QUERY:
-				break;
-			default:
-				break;
+	// Get ADODB-compatible adapter (handles both ADODB and pg_* results)
+	$rs = $result->getAdapterForResults();
+
+	if ($rs === null) {
+		return;
+	}
+
+	if ($result->recordCount() > 0) {
+		echo "<p><table>\n<tr>";
+		foreach ($rs->fields as $k => $v) {
+			$finfo = $rs->fetchField($k);
+			echo "<th class=\"data\">", $misc->printVal($finfo->name), "</th>";
 		}
+		echo "</tr>\n";
+		$i = 0;
+		while (!$rs->EOF) {
+			$id = (($i % 2) == 0 ? '1' : '2');
+			echo "<tr class=\"data{$id}\">\n";
+			foreach ($rs->fields as $k => $v) {
+				$finfo = $rs->fetchField($k);
+				echo "<td style=\"white-space:nowrap;\">", $misc->printVal($v, $finfo->type, array('null' => true)), "</td>";
+			}
+			echo "</tr>\n";
+			$rs->moveNext();
+			$i++;
+		}
+		echo "</table></p>\n";
+		echo "<p>", $i, " {$lang['strrows']}</p>\n";
+	} elseif ($result->affectedRows() > 0) {
+		echo "<p>", $result->affectedRows(), " {$lang['strrowsaff']}</p>\n";
+	} else {
+		echo '<p>', $lang['strnodata'], "</p>\n";
+	}
+}
+
+/**
+ * This is a callback function to display the result of each separate query
+ * @param string $query The SQL query that was executed
+ * @param QueryResult $result The wrapped query result from script executor
+ * @param int $lineno The line number in the script file
+ */
+function sqlCallback($query, $result, $lineno)
+{
+	//global $_connection;
+	$pg = AppContainer::getPostgres();
+	$lang = AppContainer::getLang();
+
+	// Display query info header
+	echo "Line {$lineno}: ";
+
+	if (!$result->isSuccess) {
+		echo htmlspecialchars_nc($_FILES['script']['name']), ':', $lineno, ': ', nl2br(htmlspecialchars_nc($result->errorMsg)), "<br/>\n";
+	} else {
+		// Render the result
+		renderQueryResult($result, $query);
 	}
 }
 
@@ -158,46 +170,21 @@ if (isset($_FILES['script']) && $_FILES['script']['size'] > 0) {
 	// Set fetch mode to NUM so that duplicate field names are properly returned
 	$pg->conn->setFetchMode(ADODB_FETCH_NUM);
 	$rs = $pg->conn->Execute($_SESSION['sqlquery']);
+	$errorMsg = '';
 
-	// $rs will only be an object if there is no error
-	if (is_object($rs)) {
-		// Request was run, saving it in history
-		if (!isset($_REQUEST['nohistory']))
-			$misc->saveSqlHistory($_SESSION['sqlquery']);
-
-		// Now, depending on what happened do various things
-
-		// First, if rows returned, then display the results
-		if ($rs->recordCount() > 0) {
-			echo "<table>\n<tr>";
-			foreach ($rs->fields as $k => $v) {
-				$finfo = $rs->fetchField($k);
-				echo "<th class=\"data\">", $misc->printVal($finfo->name), "</th>";
-			}
-			echo "</tr>\n";
-			$i = 0;
-			while (!$rs->EOF) {
-				$id = (($i % 2) == 0 ? '1' : '2');
-				echo "<tr class=\"data{$id}\">\n";
-				foreach ($rs->fields as $k => $v) {
-					$finfo = $rs->fetchField($k);
-					echo "<td style=\"white-space:nowrap;\">", $misc->printVal($v, $finfo->type, array('null' => true)), "</td>";
-				}
-				echo "</tr>\n";
-				$rs->moveNext();
-				$i++;
-			}
-			echo "</table>\n";
-			echo "<p>", $rs->recordCount(), " {$lang['strrows']}</p>\n";
-		}
-		// Otherwise if any rows have been affected
-		elseif ($pg->conn->Affected_Rows() > 0) {
-			echo "<p>", $pg->conn->Affected_Rows(), " {$lang['strrowsaff']}</p>\n";
-		}
-		// Otherwise nodata to print
-		else
-			echo '<p>', $lang['strnodata'], "</p>\n";
+	if ($rs === false) {
+		$errorMsg = $pg->conn->ErrorMsg();
 	}
+
+	// Wrap result for consistent handling
+	$result = QueryResult::fromADORecordSet($rs, $errorMsg);
+
+	// Request was run, saving it in history
+	if ($rs !== false && !isset($_REQUEST['nohistory']))
+		$misc->saveSqlHistory($_SESSION['sqlquery']);
+
+	// Render the result
+	renderQueryResult($result, $_SESSION['sqlquery']);
 }
 
 // May as well try to time the query

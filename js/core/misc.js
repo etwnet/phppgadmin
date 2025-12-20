@@ -204,6 +204,18 @@
 		});
 
 		hidden.value = editor.getValue();
+
+		if (element.classList.contains("auto-expand")) {
+			// We resize the editor height according to content but not below
+			// the height that is defined in CSS
+			const lineHeight = editor.renderer.lineHeight;
+			const lineCount = editor.session.getLength();
+			const cssHeight = parseInt(getComputedStyle(editor.container).height, 10);
+			const padding = 4;
+			const newHeight = Math.max(cssHeight, lineCount * lineHeight + padding);
+			editor.container.style.height = newHeight + "px";
+			editor.resize();
+		}
 	};
 
 	/**

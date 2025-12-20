@@ -118,6 +118,34 @@ class TableActions extends AbstractActions
     }
 
     /**
+     * Finds schema of table/view.
+     */
+    public function findTableSchema($table)
+    {
+        $this->connection->clean($table);
+        $sql = "
+            SELECT n.nspname
+            FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE c.relname = '$table'
+            AND n.nspname IN (
+                    SELECT sp
+                    FROM unnest(
+                        string_to_array(
+                            replace(current_setting('search_path'), ' ', ''),
+                            ','
+                        )
+                    ) AS sp
+                    WHERE sp <> '\$user'
+                )
+            LIMIT 1
+            ";
+
+        $schema = $this->connection->selectField($sql, 'nspname');
+        return is_int($schema) ? null : $schema;
+    }
+
+    /**
      * Get type of table/view.
      */
     public function getTableType($schema, $table)
@@ -310,7 +338,8 @@ class TableActions extends AbstractActions
         $sql = $this->getChangeUserSQL($t->fields['relowner']) . "\n\n";
         $sql .= "SET search_path = \"{$t->fields['nspname']}\", pg_catalog;\n\n";
         $sql .= "-- Definition\n\n";
-        if (!$clean) $sql .= "-- ";
+        if (!$clean)
+            $sql .= "-- ";
         $sql .= "DROP TABLE \"{$t->fields['nspname']}\".\"{$t->fields['relname']}\";\n";
         $sql .= "CREATE TABLE \"{$t->fields['nspname']}\".\"{$t->fields['relname']}\" (\n";
 
@@ -448,7 +477,8 @@ class TableActions extends AbstractActions
             $sql .= "REVOKE ALL ON TABLE \"{$t->fields['nspname']}\".\"{$t->fields['relname']}\" FROM PUBLIC;\n";
             foreach ($privs as $v) {
                 $nongrant = array_diff($v[2], $v[4]);
-                if (sizeof($v[2]) == 0 || ($v[0] == 'user' && $v[1] == $t->fields['relowner'])) continue;
+                if (sizeof($v[2]) == 0 || ($v[0] == 'user' && $v[1] == $t->fields['relowner']))
+                    continue;
                 if ($this->hasGrantOption() && $v[3] != $t->fields['relowner']) {
                     $grantor = $v[3];
                     $this->connection->clean($grantor);
@@ -476,7 +506,8 @@ class TableActions extends AbstractActions
                     $sql .= "RESET SESSION AUTHORIZATION;\n";
                 }
 
-                if (!$this->hasGrantOption() || sizeof($v[4]) == 0) continue;
+                if (!$this->hasGrantOption() || sizeof($v[4]) == 0)
+                    continue;
 
                 if ($this->hasGrantOption() && $v[3] != $t->fields['relowner']) {
                     $grantor = $v[3];
@@ -590,7 +621,8 @@ class TableActions extends AbstractActions
         $this->connection->fieldClean($name);
 
         $status = $this->connection->beginTransaction();
-        if ($status != 0) return -1;
+        if ($status != 0)
+            return -1;
 
         $found = false;
         $first = true;
@@ -602,42 +634,54 @@ class TableActions extends AbstractActions
             $this->connection->clean($length[$i]);
             $this->connection->clean($colcomment[$i]);
 
-            if ($field[$i] == '' || $type[$i] == '') continue;
-            if (!$first) $sql .= ", ";
-            else $first = false;
+            if ($field[$i] == '' || $type[$i] == '')
+                continue;
+            if (!$first)
+                $sql .= ", ";
+            else
+                $first = false;
 
             switch ($type[$i]) {
                 case 'timestamp with time zone':
                 case 'timestamp without time zone':
                     $qual = substr($type[$i], 9);
                     $sql .= "\"{$field[$i]}\" timestamp";
-                    if ($length[$i] != '') $sql .= "({$length[$i]})";
+                    if ($length[$i] != '')
+                        $sql .= "({$length[$i]})";
                     $sql .= $qual;
                     break;
                 case 'time with time zone':
                 case 'time without time zone':
                     $qual = substr($type[$i], 4);
                     $sql .= "\"{$field[$i]}\" time";
-                    if ($length[$i] != '') $sql .= "({$length[$i]})";
+                    if ($length[$i] != '')
+                        $sql .= "({$length[$i]})";
                     $sql .= $qual;
                     break;
                 default:
                     $sql .= "\"{$field[$i]}\" {$type[$i]}";
-                    if ($length[$i] != '') $sql .= "({$length[$i]})";
+                    if ($length[$i] != '')
+                        $sql .= "({$length[$i]})";
             }
-            if ($array[$i] == '[]') $sql .= '[]';
+            if ($array[$i] == '[]')
+                $sql .= '[]';
             if (!isset($primarykey[$i])) {
-                if (isset($uniquekey[$i])) $sql .= " UNIQUE";
-                if (isset($notnull[$i])) $sql .= " NOT NULL";
+                if (isset($uniquekey[$i]))
+                    $sql .= " UNIQUE";
+                if (isset($notnull[$i]))
+                    $sql .= " NOT NULL";
             }
-            if ($default[$i] != '') $sql .= " DEFAULT {$default[$i]}";
+            if ($default[$i] != '')
+                $sql .= " DEFAULT {$default[$i]}";
 
-            if ($colcomment[$i] != '') $comment_sql .= "COMMENT ON COLUMN \"{$name}\".\"{$field[$i]}\" IS '{$colcomment[$i]}';\n";
+            if ($colcomment[$i] != '')
+                $comment_sql .= "COMMENT ON COLUMN \"{$name}\".\"{$field[$i]}\" IS '{$colcomment[$i]}';\n";
 
             $found = true;
         }
 
-        if (!$found) return -1;
+        if (!$found)
+            return -1;
 
         $primarykeycolumns = [];
         for ($i = 0; $i < $fields; $i++) {
@@ -698,13 +742,17 @@ class TableActions extends AbstractActions
         $likeStr = "\"{$like['schema']}\".\"{$like['table']}\"";
 
         $status = $this->connection->beginTransaction();
-        if ($status != 0) return -1;
+        if ($status != 0)
+            return -1;
 
         $sql = "CREATE TABLE \"{$f_schema}\".\"{$name}\" (LIKE {$likeStr}";
 
-        if ($defaults) $sql .= " INCLUDING DEFAULTS";
-        if ($constraints) $sql .= " INCLUDING CONSTRAINTS";
-        if ($idx) $sql .= " INCLUDING INDEXES";
+        if ($defaults)
+            $sql .= " INCLUDING DEFAULTS";
+        if ($constraints)
+            $sql .= " INCLUDING CONSTRAINTS";
+        if ($idx)
+            $sql .= " INCLUDING INDEXES";
 
         $sql .= ")";
 
@@ -791,23 +839,28 @@ class TableActions extends AbstractActions
         $this->connection->fieldArrayClean($tblrs->fields);
 
         $status = $this->connection->setComment('TABLE', '', $tblrs->fields['relname'], $comment);
-        if ($status != 0) return -4;
+        if ($status != 0)
+            return -4;
 
         $this->connection->fieldClean($owner);
         $status = $this->alterTableOwner($tblrs, $owner);
-        if ($status != 0) return -5;
+        if ($status != 0)
+            return -5;
 
         $this->connection->fieldClean($tablespace);
         $status = $this->alterTableTablespace($tblrs, $tablespace);
-        if ($status != 0) return -6;
+        if ($status != 0)
+            return -6;
 
         $this->connection->fieldClean($name);
         $status = $this->alterTableName($tblrs, $name);
-        if ($status != 0) return -3;
+        if ($status != 0)
+            return -3;
 
         $this->connection->fieldClean($schema);
         $status = $this->alterTableSchema($tblrs, $schema);
-        if ($status != 0) return -7;
+        if ($status != 0)
+            return -7;
 
         return 0;
     }
@@ -857,8 +910,10 @@ class TableActions extends AbstractActions
         $this->connection->clean($table);
         $this->connection->arrayClean($atts);
 
-        if (!is_array($atts)) return -1;
-        if (sizeof($atts) == 0) return [];
+        if (!is_array($atts))
+            return -1;
+        if (sizeof($atts) == 0)
+            return [];
 
         $sql = "SELECT attnum, attname FROM pg_catalog.pg_attribute WHERE
             attrelid=(SELECT oid FROM pg_catalog.pg_class WHERE relname='{$table}' AND
@@ -902,7 +957,8 @@ class TableActions extends AbstractActions
         $this->connection->fieldClean($table);
 
         $sql = "DROP TABLE \"{$f_schema}\".\"{$table}\"";
-        if ($cascade) $sql .= " CASCADE";
+        if ($cascade)
+            $sql .= " CASCADE";
 
         return $this->connection->execute($sql);
     }

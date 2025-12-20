@@ -23,7 +23,8 @@ use PHPSQLParser\PHPSQLParser;
 include_once('./libraries/bootstrap.php');
 
 // Prevent timeouts on large exports (non-safe mode only)
-if (!ini_get('safe_mode')) set_time_limit(0);
+if (!ini_get('safe_mode'))
+	set_time_limit(0);
 
 
 /**
@@ -78,7 +79,8 @@ function doEditRow($confirm, $msg = '')
 			$fksprops = $misc->getAutocompleteFKProperties($_REQUEST['table'], 'insert');
 			if ($fksprops !== false)
 				echo $fksprops['code'];
-		} else $fksprops = false;
+		} else
+			$fksprops = false;
 
 		$function_def = <<<EOT
 Date/Time
@@ -194,7 +196,7 @@ EOT;
 					}
 					$null_cb_id = "cb_null_" . htmlspecialchars($attrs->fields['attname']);
 					echo "<label><span><input type=\"checkbox\" name=\"nulls[{$attrs->fields['attname']}]\" id=\"$null_cb_id\"",
-					isset($_REQUEST['nulls'][$attrs->fields['attname']]) ? ' checked="checked"' : '', " /></span></label>\n";
+						isset($_REQUEST['nulls'][$attrs->fields['attname']]) ? ' checked="checked"' : '', " /></span></label>\n";
 				} else {
 					echo "&nbsp;";
 					$null_cb_id = "";
@@ -234,7 +236,7 @@ EOT;
 				echo "<td class=\"text-center\">\n";
 				$expr_cb_id = "cb_expr_" . htmlspecialchars($attrs->fields['attname']);
 				echo "<label><span><input type=\"checkbox\" id=\"$expr_cb_id\" name=\"expr[{$attrs->fields['attname']}]\"",
-				!empty($_REQUEST['expr'][$attrs->fields['attname']]) ? ' checked="checked"' : '', " /></span></label>\n";
+					!empty($_REQUEST['expr'][$attrs->fields['attname']]) ? ' checked="checked"' : '', " /></span></label>\n";
 				echo "</td>";
 				echo "</tr>\n";
 				$i++;
@@ -252,7 +254,8 @@ EOT;
 		echo "<input type=\"hidden\" name=\"action\" value=\"editrow\" />\n";
 		echo $misc->form;
 		if ($insert) {
-			if (!isset($_SESSION['counter'])) $_SESSION['counter'] = 0;
+			if (!isset($_SESSION['counter']))
+				$_SESSION['counter'] = 0;
 			echo "<input type=\"hidden\" name=\"protection_counter\" value=\"" . $_SESSION['counter'] . "\" />\n";
 		} else {
 			foreach ($keyFields as $field => $val) {
@@ -285,7 +288,8 @@ EOT;
 			echo "<input type=\"submit\" name=\"insert\" value=\"{$lang['strinsert']}\" />\n";
 			echo "<input type=\"submit\" name=\"insert_and_repeat\" accesskey=\"r\" value=\"{$lang['strinsertandrepeat']}\" />\n";
 		} else {
-			if (!$error) echo "<input type=\"submit\" name=\"save\" accesskey=\"r\" value=\"{$lang['strsave']}\" />\n";
+			if (!$error)
+				echo "<input type=\"submit\" name=\"save\" accesskey=\"r\" value=\"{$lang['strsave']}\" />\n";
 		}
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" />\n";
 
@@ -301,9 +305,12 @@ EOT;
 		echo "</form>\n";
 	} else {
 
-		if (!isset($_POST['values'])) $_POST['values'] = [];
-		if (!isset($_POST['nulls'])) $_POST['nulls'] = [];
-		if (!isset($_POST['expr'])) $_POST['expr'] = [];
+		if (!isset($_POST['values']))
+			$_POST['values'] = [];
+		if (!isset($_POST['nulls']))
+			$_POST['nulls'] = [];
+		if (!isset($_POST['expr']))
+			$_POST['expr'] = [];
 
 		$fields = [];
 		$types = [];
@@ -535,15 +542,18 @@ function printTableRowCells($rs, $fkey_information, $withOid, $editable = false)
 	$conf = AppContainer::getConf();
 	$j = 0;
 
-	if (!isset($_REQUEST['strings'])) $_REQUEST['strings'] = 'collapsed';
+	if (!isset($_REQUEST['strings']))
+		$_REQUEST['strings'] = 'collapsed';
 
 	$class = $editable ? "editable" : "";
 
 	foreach ($rs->fields as $k => $v) {
 		$finfo = $rs->fetchField($j++);
 
-		if (($k === $pg->id) && (!($withOid && $conf['show_oids']))) continue;
-		elseif ($v !== null && $v == '') echo "<td>&nbsp;</td>";
+		if (($k === $pg->id) && (!($withOid && $conf['show_oids'])))
+			continue;
+		elseif ($v !== null && $v == '')
+			echo "<td>&nbsp;</td>";
 		else {
 
 			echo "<td class=\"$class\" data-type=\"$finfo->type\" data-name=\"" . htmlspecialchars($finfo->name) . "\">";
@@ -659,6 +669,17 @@ function doBrowse($msg = '')
 		$_REQUEST['query'] = $query;
 	}
 
+	// Set the schema search path
+	if (isset($_REQUEST['search_path'])) {
+		if (
+			$schemaActions->setSearchPath(
+				array_map('trim', explode(',', $_REQUEST['search_path']))
+			) != 0
+		) {
+			return;
+		}
+	}
+
 	// read table/view name from url parameters
 	$subject = $_REQUEST['subject'] ?? '';
 	$table_name = $_REQUEST[$subject] ?? null;
@@ -672,9 +693,11 @@ function doBrowse($msg = '')
 			$type = 'TABLE';
 		}
 	} else {
-		$_REQUEST['query'] = $_SESSION['sqlquery'];
+		if (!isset($_REQUEST['query'])) {
+			// we come from sql.php, $_SESSION['sqlquery'] has been set there
+			$_REQUEST['query'] = $_SESSION['sqlquery'];
+		}
 		//$misc->printTitle($lang['strqueryresults']);
-		// we come from sql.php, $_SESSION['sqlquery'] has been set there
 		$type = 'QUERY';
 	}
 
@@ -704,25 +727,40 @@ function doBrowse($msg = '')
 		if (!empty($parsed['SELECT']) && ($parsed['FROM'][0]['expr_type'] ?? '') == 'table') {
 			$parts = $parsed['FROM'][0]['no_quotes']['parts'] ?? [];
 			$changed = false;
+			//var_dump($parts);
 			if (count($parts) === 2) {
 				[$schema, $table] = $parts;
 				$changed = $_REQUEST['schema'] != $schema || $table_name != $table;
 			} else {
 				[$table] = $parts;
-				$changed = $table_name != $table;
 				$schema = $_REQUEST['schema'] ?? $pg->_schema;
+				if (empty($schema)) {
+					$schema = $tableActions->findTableSchema($table) ?? '';
+					if (!empty($schema)) {
+						$misc->setCurrentSchema($schema);
+					}
+					//var_dump($schema);
+				}
+				$changed = $table_name != $table && !empty($schema);
 			}
 			if ($changed) {
+				//var_dump($schema, $table);
 				$misc->setCurrentSchema($schema);
 				$table_name = $table;
 				unset($_REQUEST[$subject]);
 				$subject = $tableActions->getTableType($schema, $table) ?? '';
+				//var_dump($subject);
 				if (!empty($subject)) {
 					$_REQUEST['subject'] = $subject;
 					$_REQUEST[$subject] = $table;
 				}
 			}
 		}
+	}
+
+	// Change type to handle primary key information
+	if ($type == 'QUERY' && !empty($table) && !empty($schema)) {
+		$type = 'SELECT';
 	}
 
 	beginHtml();
@@ -733,31 +771,26 @@ function doBrowse($msg = '')
 	$misc->printMsg($msg);
 
 	// If current page is not set, default to first page
-	if (!isset($_REQUEST['page'])) $_REQUEST['page'] = 1;
+	if (!isset($_REQUEST['page']))
+		$_REQUEST['page'] = 1;
 
 	// If 'orderby' is not set, default to []
-	if (!isset($_REQUEST['orderby'])) $_REQUEST['orderby'] = [];
+	if (!isset($_REQUEST['orderby']))
+		$_REQUEST['orderby'] = [];
 
 	// If 'strings' is not set, default to collapsed
-	if (!isset($_REQUEST['strings'])) $_REQUEST['strings'] = 'collapsed';
+	if (!isset($_REQUEST['strings']))
+		$_REQUEST['strings'] = 'collapsed';
 
 	// Default max_rows to $conf['max_rows'] if not set
-	if (!isset($_REQUEST['max_rows'])) $_REQUEST['max_rows'] = $conf['max_rows'];
+	if (!isset($_REQUEST['max_rows']))
+		$_REQUEST['max_rows'] = $conf['max_rows'];
 
 	// Fetch unique row identifier, if this is a table browse request.
 	if (isset($table_name))
 		$key_fields = $rowActions->getRowIdentifier($table_name);
 	else
 		$key_fields = [];
-
-	// Set the schema search path
-	if (isset($_REQUEST['search_path'])) {
-		if ($schemaActions->setSearchPath(
-			array_map('trim', explode(',', $_REQUEST['search_path']))
-		) != 0) {
-			return;
-		}
-	}
 
 	$orderBySet = false;
 	if (!empty($_POST['query'])) {
@@ -840,6 +873,8 @@ function doBrowse($msg = '')
 		$_REQUEST['max_rows'],
 		$max_pages
 	);
+
+	$pg->conn->setFetchMode(ADODB_FETCH_ASSOC);
 	/*
 	var_dump($data->lastQueryTime);
 	var_dump($data->lastQueryOffset);
@@ -863,16 +898,26 @@ function doBrowse($msg = '')
 		'database' => $_REQUEST['database']
 	];
 
-	if (isset($_REQUEST['schema'])) $_gets['schema'] = $_REQUEST['schema'];
-	if (isset($table_name)) $_gets[$subject] = $table_name;
-	if (isset($subject)) $_gets['subject'] = $subject;
-	if (isset($_REQUEST['query'])) $_gets['query'] = $_REQUEST['query'];
-	if (isset($_REQUEST['count'])) $_gets['count'] = $_REQUEST['count'];
-	if (isset($_REQUEST['return'])) $_gets['return'] = $_REQUEST['return'];
-	if (isset($_REQUEST['search_path'])) $_gets['search_path'] = $_REQUEST['search_path'];
-	if (isset($_REQUEST['table'])) $_gets['table'] = $_REQUEST['table'];
-	if (isset($_REQUEST['orderby'])) $_gets['orderby'] = $_REQUEST['orderby'];
-	if (isset($_REQUEST['nohistory'])) $_gets['nohistory'] = $_REQUEST['nohistory'];
+	if (isset($_REQUEST['schema']))
+		$_gets['schema'] = $_REQUEST['schema'];
+	if (isset($table_name))
+		$_gets[$subject] = $table_name;
+	if (isset($subject))
+		$_gets['subject'] = $subject;
+	if (isset($_REQUEST['query']))
+		$_gets['query'] = $_REQUEST['query'];
+	if (isset($_REQUEST['count']))
+		$_gets['count'] = $_REQUEST['count'];
+	if (isset($_REQUEST['return']))
+		$_gets['return'] = $_REQUEST['return'];
+	if (isset($_REQUEST['search_path']))
+		$_gets['search_path'] = $_REQUEST['search_path'];
+	if (isset($_REQUEST['table']))
+		$_gets['table'] = $_REQUEST['table'];
+	if (isset($_REQUEST['orderby']))
+		$_gets['orderby'] = $_REQUEST['orderby'];
+	if (isset($_REQUEST['nohistory']))
+		$_gets['nohistory'] = $_REQUEST['nohistory'];
 	$_gets['strings'] = $_REQUEST['strings'];
 	$_gets['max_rows'] = $_REQUEST['max_rows'];
 
@@ -882,14 +927,15 @@ function doBrowse($msg = '')
 
 	$_sub_params = $_gets;
 	unset($_sub_params['query']);
-?>
+	?>
 	<form method="get" action="display.php?<?= http_build_query($_sub_params) ?>">
 		<div>
-			<textarea name="query" class="sql-editor frame resizable" width="90%" rows="5" cols="100" resizable="true"><?= htmlspecialchars_nc($query) ?></textarea>
+			<textarea name="query" class="sql-editor frame resizable auto-expand" width="90%" rows="5" cols="100"
+				resizable="true"><?= htmlspecialchars_nc($query) ?></textarea>
 		</div>
 		<div><input type="submit" value="<?= $lang['strquerysubmit'] ?>" /></div>
 	</form>
-<?php
+	<?php
 
 	echo '<div class="query-result-line">', htmlspecialchars($status_line), '</div>', "\n";
 
@@ -1280,16 +1326,20 @@ if ($action == 'dobrowsefk') {
 switch ($action) {
 	case 'editrow':
 	case 'insertrow':
-		if (isset($_POST['save'])) doEditRow(false);
-		else doBrowse();
+		if (isset($_POST['save']))
+			doEditRow(false);
+		else
+			doBrowse();
 		break;
 	case 'confeditrow':
 	case 'confinsertrow':
 		doEditRow(true);
 		break;
 	case 'delrow':
-		if (isset($_POST['yes'])) doDelRow(false);
-		else doBrowse();
+		if (isset($_POST['yes']))
+			doDelRow(false);
+		else
+			doBrowse();
 		break;
 	case 'confdelrow':
 		doDelRow(true);
