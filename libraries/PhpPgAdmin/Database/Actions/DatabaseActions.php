@@ -25,10 +25,11 @@ class DatabaseActions extends AbstractActions
     {
         $conf = $this->conf();
         $misc = $this->misc();
+        $roleActions = new RoleActions($this->connection);
 
         $server_info = $misc->getServerInfo();
 
-        if (isset($conf['owned_only']) && $conf['owned_only'] && !$this->connection->isSuperUser()) {
+        if (isset($conf['owned_only']) && $conf['owned_only'] && !$roleActions->isSuperUser()) {
             $username = $server_info['username'];
             $this->connection->clean($username);
             $clause = " AND pg_has_role('{$username}'::name,pr.rolname,'USAGE')";

@@ -152,7 +152,7 @@ function doEdit($msg = '')
 
 		$func_full = $fndata->fields['proname'] . "(" . $fndata->fields['proarguments'] . ")";
 		echo "<form action=\"functions.php\" method=\"post\">\n";
-		echo "<table style=\"width: 90%\">\n";
+		echo "<table class=\"sql-function edit\">\n";
 		echo "<tr>\n";
 		echo "<th class=\"data required\">{$lang['strschema']}</th>\n";
 		echo "<th class=\"data required\">{$lang['strfunction']}</th>\n";
@@ -337,7 +337,7 @@ function doProperties($msg = '')
 
 		$funcdata->fields['proretset'] = $pg->phpBool($funcdata->fields['proretset']);
 		$func_full = $funcdata->fields['proname'] . "(" . $funcdata->fields['proarguments'] . ")";
-		echo "<table style=\"width: 90%\">\n";
+		echo "<table class=\"sql-function properties\">\n";
 		echo "<tr><th class=\"data\">{$lang['strfunction']}</th>\n";
 		echo "<th class=\"data\">{$lang['strarguments']}</th>\n";
 		echo "<th class=\"data\">{$lang['strreturns']}</th>\n";

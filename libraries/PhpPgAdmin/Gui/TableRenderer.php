@@ -83,23 +83,25 @@ class TableRenderer extends AbstractContext
             echo "<tr>\n";
 
             // Display column headings
-            if ($has_ma) echo "<th></th>";
+            if ($has_ma)
+                echo "<th></th>";
             foreach ($columns as $column_id => $column) {
 
                 $class = $column['class'] ?? '';
 
                 switch ($column_id) {
-                case 'actions':
-                    if (sizeof($actions) > 0) echo "<th class=\"data\" colspan=\"", count($actions), "\">{$column['title']}</th>\n";
-                    break;
-                default:
-                    echo "<th class=\"data {$class}\">";
-                    if (isset($column['help']))
-                        $this->misc()->printHelp($column['title'], $column['help']);
-                    else
-                        echo $column['title'];
-                    echo "</th>\n";
-                    break;
+                    case 'actions':
+                        if (sizeof($actions) > 0)
+                            echo "<th class=\"data\" colspan=\"", count($actions), "\">{$column['title']}</th>\n";
+                        break;
+                    default:
+                        echo "<th class=\"data {$class}\">";
+                        if (isset($column['help']))
+                            $this->misc()->printHelp($column['title'], $column['help']);
+                        else
+                            echo $column['title'];
+                        echo "</th>\n";
+                        break;
                 }
             }
             echo "</tr>\n";
@@ -110,8 +112,10 @@ class TableRenderer extends AbstractContext
                 $id = ($i % 2) + 1;
 
                 unset($alt_actions);
-                if (!is_null($pre_fn)) $alt_actions = $pre_fn($tabledata, $actions);
-                if (!isset($alt_actions)) $alt_actions = $actions;
+                if (!is_null($pre_fn))
+                    $alt_actions = $pre_fn($tabledata, $actions);
+                if (!isset($alt_actions))
+                    $alt_actions = $actions;
 
                 echo "<tr class=\"data{$id}\">\n";
                 if ($has_ma) {
@@ -128,46 +132,53 @@ class TableRenderer extends AbstractContext
                     $classAttr = empty($class) ? '' : " class='$class'";
 
                     // Apply default values for missing parameters
-                    if (isset($column['url']) && !isset($column['vars'])) $column['vars'] = [];
+                    if (isset($column['url']) && !isset($column['vars']))
+                        $column['vars'] = [];
 
                     switch ($column_id) {
-                    case 'actions':
-                        foreach ($alt_actions as $action) {
-                            if (isset($action['disable']) && $action['disable'] === true) {
-                                echo "<td></td>\n";
-                            } else {
-                                echo "<td class=\"opbutton{$id} {$class}\">";
-                                $action['fields'] = $tabledata->fields;
-                                $this->misc()->printLink($action);
-                                echo "</td>\n";
+                        case 'actions':
+                            foreach ($alt_actions as $action) {
+                                if (isset($action['disable']) && $action['disable'] === true) {
+                                    echo "<td></td>\n";
+                                } else {
+                                    echo "<td class=\"opbutton{$id} {$class}\">";
+                                    $action['fields'] = $tabledata->fields;
+                                    $this->misc()->printLink($action);
+                                    echo "</td>\n";
+                                }
                             }
-                        }
-                        break;
-                    case 'comment':
-                        echo "<td class='comment_cell'>";
-                        $val = value($column['field'], $tabledata->fields);
-                        if (!is_null($val)) {
-                            echo htmlentities($val);
-                        }
-                        echo "</td>";
-                        break;
-                    default:
-                        echo "<td$classAttr>";
-                        $val = value($column['field'], $tabledata->fields);
-                        if (!is_null($val)) {
-                            if (isset($column['url'])) {
-                                echo "<a href=\"{$column['url']}";
-                                $this->misc()->printUrlVars($column['vars'], $tabledata->fields);
-                                echo "\">";
+                            break;
+                        case 'comment':
+                            echo "<td class='comment_cell'>";
+                            $val = value($column['field'], $tabledata->fields);
+                            if (!is_null($val)) {
+                                echo htmlentities($val);
                             }
-                            $type = $column['type'] ?? null;
-                            $params = $column['params'] ?? [];
-                            echo $this->misc()->printVal($val, $type, $params);
-                            if (isset($column['url'])) echo "</a>";
-                        }
+                            echo "</td>";
+                            break;
+                        default:
+                            echo "<td$classAttr>";
+                            $val = value($column['field'], $tabledata->fields);
+                            if (!is_null($val)) {
+                                if (isset($column['url'])) {
+                                    echo "<a href=\"{$column['url']}";
+                                    $this->misc()->printUrlVars($column['vars'], $tabledata->fields);
+                                    echo "\">";
+                                }
+                                // Render icon if specified in column config
+                                if (isset($column['icon'])) {
+                                    echo '<img src="' . htmlspecialchars($column['icon']) . '" class="icon" alt="" />';
+                                }
+                                $type = $column['type'] ?? null;
+                                $params = $column['params'] ?? [];
+                                echo $this->misc()->printVal($val, $type, $params);
+                                if (isset($column['url'])) {
+                                    echo "</a>";
+                                }
+                            }
 
-                        echo "</td>\n";
-                        break;
+                            echo "</td>\n";
+                            break;
                     }
                 }
                 echo "</tr>\n";
@@ -184,7 +195,7 @@ class TableRenderer extends AbstractContext
                     $ma['default'] = null;
                 }
                 ?>
-                <br/>
+                <br />
                 <table>
                     <tr>
                         <th class="data" style="text-align: left" colspan="4">
@@ -193,9 +204,8 @@ class TableRenderer extends AbstractContext
                     </tr>
                     <tr class="row1">
                         <td>
-                            <input type="checkbox" onchange="toggleAllMf(this.checked);"/>
-                            <a href="#"
-                               onclick="this.previousElementSibling.click(); return false;">
+                            <input type="checkbox" onchange="toggleAllMf(this.checked);" />
+                            <a href="#" onclick="this.previousElementSibling.click(); return false;">
                                 <?= $lang['strselectall'] ?>
                             </a>
                         </td>
@@ -208,8 +218,7 @@ class TableRenderer extends AbstractContext
 
                                 <?php foreach ($actions as $k => $a): ?>
                                     <?php if (isset($a['multiaction'])): ?>
-                                        <option value="<?= $a['multiaction'] ?>"
-                                            <?= ($ma['default'] == $k ? ' selected="selected"' : '') ?>>
+                                        <option value="<?= $a['multiaction'] ?>" <?= ($ma['default'] == $k ? ' selected="selected"' : '') ?>>
                                             <?= $a['content'] ?>
                                         </option>
                                     <?php endif; ?>
@@ -217,7 +226,7 @@ class TableRenderer extends AbstractContext
                             </select>
                         </td>
                         <td>
-                            <input type="submit" value="<?= $lang['strexecute'] ?>"/>
+                            <input type="submit" value="<?= $lang['strexecute'] ?>" />
                             <?= $this->misc()->form ?>
                         </td>
                     </tr>

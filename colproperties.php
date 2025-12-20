@@ -29,7 +29,8 @@ function doAlter($msg = '')
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
 
-	if (!isset($_REQUEST['stage'])) $_REQUEST['stage'] = 1;
+	if (!isset($_REQUEST['stage']))
+		$_REQUEST['stage'] = 1;
 
 	switch ($_REQUEST['stage']) {
 		case 1:
@@ -37,7 +38,7 @@ function doAlter($msg = '')
 			$misc->printTitle($lang['stralter'], 'pg.column.alter');
 			$misc->printMsg($msg);
 
-			echo "<script src=\"tables.js\" type=\"text/javascript\"></script>";
+			echo "<script src=\"js/tables.js\" type=\"text/javascript\"></script>";
 			echo "<form action=\"colproperties.php\" method=\"post\">\n";
 
 			// Output table header
@@ -75,13 +76,14 @@ function doAlter($msg = '')
 				} else
 					$_REQUEST['length'] = '';
 				$_REQUEST['default'] = $_REQUEST['olddefault'] = $column->fields['adsrc'];
-				if ($column->fields['attnotnull']) $_REQUEST['notnull'] = 'YES';
+				if ($column->fields['attnotnull'])
+					$_REQUEST['notnull'] = 'YES';
 				$_REQUEST['comment'] = $column->fields['comment'];
 			}
 
 			// Column name
 			echo "<tr><td><input name=\"field\" size=\"16\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-			htmlspecialchars_nc($_REQUEST['field']), "\" /></td>\n";
+				htmlspecialchars_nc($_REQUEST['field']), "\" /></td>\n";
 
 			// Column type
 			$escaped_predef_types = []; // the JS escaped array elements
@@ -95,7 +97,7 @@ function doAlter($msg = '')
 					$typname = $types->fields['typname'];
 					$types_for_js[] = $typname;
 					echo "\t<option value=\"", htmlspecialchars_nc($typname), "\"", ($typname == $_REQUEST['type']) ? ' selected="selected"' : '', ">",
-					$misc->printVal($typname), "</option>\n";
+						$misc->printVal($typname), "</option>\n";
 					$types->moveNext();
 				}
 				echo "</select></td>\n";
@@ -111,7 +113,7 @@ function doAlter($msg = '')
 				}
 
 				echo "<td><input name=\"length\" id=\"lengths\" size=\"8\" value=\"",
-				htmlspecialchars_nc($_REQUEST['length']), "\" /></td>\n";
+					htmlspecialchars_nc($_REQUEST['length']), "\" /></td>\n";
 			} else {
 				// Otherwise draw the read-only type name
 				echo "<td>", $misc->printVal($data->formatType($column->fields['type'], $column->fields['atttypmod'])), "</td>\n";
@@ -119,9 +121,9 @@ function doAlter($msg = '')
 
 			echo "<td><input type=\"checkbox\" name=\"notnull\"", (isset($_REQUEST['notnull'])) ? ' checked="checked"' : '', " /></td>\n";
 			echo "<td><input name=\"default\" size=\"20\" value=\"",
-			htmlspecialchars_nc($_REQUEST['default']), "\" /></td>\n";
+				htmlspecialchars_nc($_REQUEST['default']), "\" /></td>\n";
 			echo "<td><input name=\"comment\" size=\"40\" value=\"",
-			htmlspecialchars_nc($_REQUEST['comment']), "\" /></td></tr>\n";
+				htmlspecialchars_nc($_REQUEST['comment']), "\" /></td></tr>\n";
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"properties\" />\n";
 			echo "<input type=\"hidden\" name=\"stage\" value=\"2\" />\n";
@@ -129,7 +131,8 @@ function doAlter($msg = '')
 			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
 			echo "<input type=\"hidden\" name=\"column\" value=\"", htmlspecialchars_nc($_REQUEST['column']), "\" />\n";
 			echo "<input type=\"hidden\" name=\"olddefault\" value=\"", htmlspecialchars_nc($_REQUEST['olddefault']), "\" />\n";
-			if ($column->fields['attnotnull']) echo "<input type=\"hidden\" name=\"oldnotnull\" value=\"on\" />\n";
+			if ($column->fields['attnotnull'])
+				echo "<input type=\"hidden\" name=\"oldnotnull\" value=\"on\" />\n";
 			echo "<input type=\"hidden\" name=\"oldtype\" value=\"", htmlspecialchars_nc($data->formatType($column->fields['type'], $column->fields['atttypmod'])), "\" />\n";
 			// Add hidden variables to suppress error notices if we don't support altering column type
 			if (!$data->hasAlterColumnType()) {
@@ -149,7 +152,8 @@ function doAlter($msg = '')
 				doAlter($lang['strcolneedsname']);
 				return;
 			}
-			if (!isset($_REQUEST['length'])) $_REQUEST['length'] = '';
+			if (!isset($_REQUEST['length']))
+				$_REQUEST['length'] = '';
 			$status = $data->alterColumn(
 				$_REQUEST['table'],
 				$_REQUEST['column'],
@@ -206,7 +210,7 @@ function doDefault($msg = '', $isTable = true)
 	$misc->printTabs('column', 'properties');
 	$misc->printMsg($msg);
 
-	if (! empty($_REQUEST['column'])) {
+	if (!empty($_REQUEST['column'])) {
 		// Get table
 		$tdata = $data->getTable($tableName);
 		// Get columns
@@ -231,7 +235,7 @@ function doDefault($msg = '', $isTable = true)
 			$column['notnull'] = [
 				'title' => $lang['strnotnull'],
 				'field' => field('attnotnull'),
-				'type'  => 'bool',
+				'type' => 'bool',
 				'params' => ['true' => 'NOT NULL', 'false' => '']
 			];
 			$column['default'] = [
@@ -257,7 +261,7 @@ function doDefault($msg = '', $isTable = true)
 
 			/* Browse link */
 			/* FIXME browsing a col should somehow be a action so we don't
-				 * send an ugly SQL in the URL */
+			 * send an ugly SQL in the URL */
 
 			$navlinks = [
 				'browse' => [
@@ -347,8 +351,10 @@ if (isset($_REQUEST['view']))
 else
 	switch ($action) {
 		case 'properties':
-			if (isset($_POST['cancel'])) doDefault();
-			else doAlter();
+			if (isset($_POST['cancel']))
+				doDefault();
+			else
+				doAlter();
 			break;
 		default:
 			doDefault();

@@ -1,6 +1,8 @@
 <?php
 
 use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\Actions\SchemaActions;
+use PhpPgAdmin\Database\Actions\ScriptActions;
 
 /**
  * Process an arbitrary SQL query - tricky!  The main problem is that
@@ -11,36 +13,38 @@ use PhpPgAdmin\Core\AppContainer;
  * $Id: sql.php,v 1.43 2008/01/10 20:19:27 xzilla Exp $
  */
 
-$lang = AppContainer::getLang();
-
 // Prevent timeouts on large exports (non-safe mode only)
-if (!ini_get('safe_mode')) set_time_limit(0);
+if (!ini_get('safe_mode'))
+	set_time_limit(0);
 
 // Include application functions
 include_once('./libraries/bootstrap.php');
 
 /**
  * This is a callback function to display the result of each separate query
- * @param ADORecordSet $rs The recordset returned by the script execetor
+ * @param string $query The SQL query that was executed
+ * @param \PgSql\Result $rs The recordset returned by the script execetor
+ * @param int $lineno The line number in the script file
  */
 function sqlCallback($query, $rs, $lineno)
 {
-	global $_connection;
-	$data = AppContainer::getData();
+	//global $_connection;
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+
 	// Check if $rs is false, if so then there was a fatal error
 	if ($rs === false) {
-		echo htmlspecialchars_nc($_FILES['script']['name']), ':', $lineno, ': ', nl2br(htmlspecialchars_nc($_connection->getLastError())), "<br/>\n";
+		echo htmlspecialchars_nc($_FILES['script']['name']), ':', $lineno, ': ', nl2br(htmlspecialchars_nc($pg->getLastError())), "<br/>\n";
 	} else {
 		// Print query results
 		switch (pg_result_status($rs)) {
 			case PGSQL_TUPLES_OK:
 				// If rows returned, then display the results
-				$num_fields = pg_numfields($rs);
+				$num_fields = pg_num_fields($rs);
 				echo "<p><table>\n<tr>";
 				for ($k = 0; $k < $num_fields; $k++) {
-					echo "<th class=\"data\">", $misc->printVal(pg_fieldname($rs, $k)), "</th>";
+					echo "<th class=\"data\">", $misc->printVal(pg_field_name($rs, $k)), "</th>";
 				}
 
 				$i = 0;
@@ -49,12 +53,13 @@ function sqlCallback($query, $rs, $lineno)
 					$id = (($i % 2) == 0 ? '1' : '2');
 					echo "<tr class=\"data{$id}\">\n";
 					foreach ($row as $k => $v) {
-						echo "<td style=\"white-space:nowrap;\">", $misc->printVal($v, pg_fieldtype($rs, $k), array('null' => true)), "</td>";
+						echo "<td style=\"white-space:nowrap;\">", $misc->printVal($v, pg_field_type($rs, $k), array('null' => true)), "</td>";
 					}
 					echo "</tr>\n";
 					$row = pg_fetch_row($rs);
 					$i++;
-				};
+				}
+				;
 				echo "</table><br/>\n";
 				echo $i, " {$lang['strrows']}</p>\n";
 				break;
@@ -64,8 +69,8 @@ function sqlCallback($query, $rs, $lineno)
 					echo htmlspecialchars_nc(pg_result_status($rs, PGSQL_STATUS_STRING)), "<br/>\n";
 				}
 				// Otherwise if any rows have been affected
-				elseif ($data->conn->Affected_Rows() > 0) {
-					echo $data->conn->Affected_Rows(), " {$lang['strrowsaff']}<br/>\n";
+				elseif ($pg->conn->Affected_Rows() > 0) {
+					echo $pg->conn->Affected_Rows(), " {$lang['strrowsaff']}<br/>\n";
 				}
 				// Otherwise output nothing...
 				break;
@@ -77,9 +82,26 @@ function sqlCallback($query, $rs, $lineno)
 	}
 }
 
+$lang = AppContainer::getLang();
+$misc = AppContainer::getMisc();
+$pg = AppContainer::getPostgres();
+$schemaActions = new SchemaActions($pg);
+
+/*
+sample $_REQUEST contents:
+  'query' => string 'SELECT * FROM "public"."actor_info"' (length=35)
+  'MAX_FILE_SIZE' => string '2097152' (length=7)
+  'target' => string 'content' (length=7)
+  'server' => string '127.0.0.1:5432:allow' (length=20)
+  'database' => string '' (length=0)
+  'search_path' => string 'public' (length=6)
+*/
+
+$subject = $_REQUEST['subject'] ?? '';
+
 // We need to store the query in a session for editing purposes
 // We avoid GPC vars to avoid truncating long queries
-if (isset($_REQUEST['subject']) && $_REQUEST['subject'] == 'history') {
+if ($subject == 'history') {
 	// Or maybe we came from the history popup
 	$_SESSION['sqlquery'] = $_SESSION['history'][$_REQUEST['server']][$_REQUEST['database']][$_GET['queryid']]['query'];
 } elseif (isset($_POST['query'])) {
@@ -108,7 +130,6 @@ if (
 	exit;
 }
 
-$subject = $_REQUEST['subject'] ?? '';
 $misc->printHeader($lang['strqueryresults']);
 $misc->printBody();
 $misc->printTrail('database');
@@ -116,7 +137,7 @@ $misc->printTitle($lang['strqueryresults']);
 
 // Set the schema search path
 if (isset($_REQUEST['search_path'])) {
-	if ($data->setSearchPath(array_map('trim', explode(',', $_REQUEST['search_path']))) != 0) {
+	if ($schemaActions->setSearchPath(array_map('trim', explode(',', $_REQUEST['search_path']))) != 0) {
 		$misc->printFooter();
 		exit;
 	}
@@ -125,21 +146,24 @@ if (isset($_REQUEST['search_path'])) {
 // May as well try to time the query
 if (function_exists('microtime')) {
 	list($usec, $sec) = explode(' ', microtime());
-	$start_time = ((float)$usec + (float)$sec);
-} else $start_time = null;
+	$start_time = ((float) $usec + (float) $sec);
+} else
+	$start_time = null;
 // Execute the query.  If it's a script upload, special handling is necessary
-if (isset($_FILES['script']) && $_FILES['script']['size'] > 0)
-	$data->executeScript('script', 'sqlCallback');
-else {
+if (isset($_FILES['script']) && $_FILES['script']['size'] > 0) {
+	// Execute the script via our ScriptActions class
+	$scriptActions = new ScriptActions($pg);
+	$scriptActions->executeScript('script', 'sqlCallback');
+} else {
 	// Set fetch mode to NUM so that duplicate field names are properly returned
-	$data->conn->setFetchMode(ADODB_FETCH_NUM);
-	$rs = $data->conn->Execute($_SESSION['sqlquery']);
+	$pg->conn->setFetchMode(ADODB_FETCH_NUM);
+	$rs = $pg->conn->Execute($_SESSION['sqlquery']);
 
 	// $rs will only be an object if there is no error
 	if (is_object($rs)) {
 		// Request was run, saving it in history
 		if (!isset($_REQUEST['nohistory']))
-			$misc->saveScriptHistory($_SESSION['sqlquery']);
+			$misc->saveSqlHistory($_SESSION['sqlquery']);
 
 		// Now, depending on what happened do various things
 
@@ -167,21 +191,23 @@ else {
 			echo "<p>", $rs->recordCount(), " {$lang['strrows']}</p>\n";
 		}
 		// Otherwise if any rows have been affected
-		elseif ($data->conn->Affected_Rows() > 0) {
-			echo "<p>", $data->conn->Affected_Rows(), " {$lang['strrowsaff']}</p>\n";
+		elseif ($pg->conn->Affected_Rows() > 0) {
+			echo "<p>", $pg->conn->Affected_Rows(), " {$lang['strrowsaff']}</p>\n";
 		}
 		// Otherwise nodata to print
-		else echo '<p>', $lang['strnodata'], "</p>\n";
+		else
+			echo '<p>', $lang['strnodata'], "</p>\n";
 	}
 }
 
 // May as well try to time the query
 if ($start_time !== null) {
 	list($usec, $sec) = explode(' ', microtime());
-	$end_time = ((float)$usec + (float)$sec);
+	$end_time = ((float) $usec + (float) $sec);
 	// Get duration in milliseconds, round to 3dp's	
 	$duration = number_format(($end_time - $start_time) * 1000, 3);
-} else $duration = null;
+} else
+	$duration = null;
 
 // Reload the tree as we may have made schema changes
 AppContainer::setShouldReloadTree(true);

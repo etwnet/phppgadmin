@@ -12,25 +12,29 @@ use PhpPgAdmin\Database\AbstractActions;
 /**
  * Tablespace action class - handles tablespace management
  */
-class TablespaceActions extends AbstractActions {
+class TablespaceActions extends AbstractActions
+{
 	// Base constructor inherited from Actions
 
 	/**
-	 * Retrieves information for all tablespaces
+	 * Retrieves all tablespace information.
 	 * @param bool $all Include all tablespaces (necessary when moving objects back to the default space)
 	 * @return \ADORecordSet A recordset
 	 */
-	public function getTablespaces($all = false) {
+	function getTablespaces($all = false)
+	{
 		$conf = $this->conf();
 
-		$sql = "SELECT spcname, pg_catalog.pg_get_userbyid(spcowner) AS spcowner, 
-				        pg_catalog.pg_tablespace_location(oid) as spclocation,
-				        (SELECT description FROM pg_catalog.pg_shdescription pd 
-				         WHERE pg_tablespace.oid=pd.objoid AND pd.classoid='pg_tablespace'::regclass) AS spccomment
+		if ($this->connection->major_version >= 9.2) {
+			$spclocation = "pg_tablespace_location(oid) AS spclocation";
+		} else {
+			$spclocation = "spclocation";
+		}
+		$sql = "SELECT spcname, pg_catalog.pg_get_userbyid(spcowner) AS spcowner, $spclocation,
+                    (SELECT description FROM pg_catalog.pg_shdescription pd WHERE pg_tablespace.oid=pd.objoid AND pd.classoid='pg_tablespace'::regclass) AS spccomment
 				FROM pg_catalog.pg_tablespace";
 
 		if (!$conf['show_system'] && !$all) {
-			// Use single quotes to avoid PHP variable interpolation of $pg
 			$sql .= ' WHERE spcname NOT LIKE $$pg\_%$$';
 		}
 
@@ -40,17 +44,21 @@ class TablespaceActions extends AbstractActions {
 	}
 
 	/**
-	 * Retrieves a tablespace's information
-	 * @param string $spcname The tablespace name
-	 * @return A recordset
+	 * Retrieves a specific tablespace's information.
+	 * @param string $spcname Tablespace name
+	 * @return \ADORecordSet A recordset
 	 */
-	public function getTablespace($spcname) {
+	function getTablespace($spcname)
+	{
 		$this->connection->clean($spcname);
 
-		$sql = "SELECT spcname, pg_catalog.pg_get_userbyid(spcowner) AS spcowner, 
-				        pg_catalog.pg_tablespace_location(oid) as spclocation,
-				        (SELECT description FROM pg_catalog.pg_shdescription pd 
-				         WHERE pg_tablespace.oid=pd.objoid AND pd.classoid='pg_tablespace'::regclass) AS spccomment
+		if ($this->connection->major_version >= 9.2) {
+			$spclocation = "pg_tablespace_location(oid) AS spclocation";
+		} else {
+			$spclocation = "spclocation";
+		}
+		$sql = "SELECT spcname, pg_catalog.pg_get_userbyid(spcowner) AS spcowner, $spclocation,
+                    (SELECT description FROM pg_catalog.pg_shdescription pd WHERE pg_tablespace.oid=pd.objoid AND pd.classoid='pg_tablespace'::regclass) AS spccomment
 				FROM pg_catalog.pg_tablespace WHERE spcname='{$spcname}'";
 
 		return $this->connection->selectSet($sql);
@@ -66,7 +74,8 @@ class TablespaceActions extends AbstractActions {
 	 * @return -1 creation error
 	 * @return -2 comment error
 	 */
-	public function createTablespace($spcname, $spcowner, $spcloc, $comment = '') {
+	public function createTablespace($spcname, $spcowner, $spcloc, $comment = '')
+	{
 		$this->connection->fieldClean($spcname);
 		$this->connection->clean($spcloc);
 
@@ -80,11 +89,13 @@ class TablespaceActions extends AbstractActions {
 		$sql .= " LOCATION '{$spcloc}'";
 
 		$status = $this->connection->execute($sql);
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		if ($comment != '' && $this->connection->hasSharedComments()) {
 			$status = $this->connection->setComment('TABLESPACE', $spcname, '', $comment);
-			if ($status != 0) return -2;
+			if ($status != 0)
+				return -2;
 		}
 
 		return 0;
@@ -102,14 +113,16 @@ class TablespaceActions extends AbstractActions {
 	 * @return -3 rename error
 	 * @return -4 comment error
 	 */
-	public function alterTablespace($spcname, $name, $owner, $comment = '') {
+	public function alterTablespace($spcname, $name, $owner, $comment = '')
+	{
 		$this->connection->fieldClean($spcname);
 		$this->connection->fieldClean($name);
 		$this->connection->fieldClean($owner);
 
 		// Begin transaction
 		$status = $this->connection->beginTransaction();
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		// Owner
 		$sql = "ALTER TABLESPACE \"{$spcname}\" OWNER TO \"{$owner}\"";
@@ -148,7 +161,8 @@ class TablespaceActions extends AbstractActions {
 	 * @param string $spcname The name of the tablespace to drop
 	 * @return 0 success
 	 */
-	public function dropTablespace($spcname) {
+	public function dropTablespace($spcname)
+	{
 		$this->connection->fieldClean($spcname);
 
 		$sql = "DROP TABLESPACE \"{$spcname}\"";

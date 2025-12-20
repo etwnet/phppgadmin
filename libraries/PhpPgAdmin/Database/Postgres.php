@@ -358,7 +358,7 @@ class Postgres extends AbstractConnection
 	function getProcesses($database = null)
 	{
 		// Different query for PostgreSQL versions < 9.5
-		if ((float)$this->major_version < 9.5) {
+		if ($this->major_version < 9.5) {
 			// PostgreSQL 9.1-9.4 format with procpid and current_query
 			if ($database === null)
 				$sql = "SELECT datname, usename, procpid AS pid, waiting, current_query AS query, query_start
@@ -393,66 +393,6 @@ class Postgres extends AbstractConnection
 		}
 
 		return $this->selectSet($sql);
-	}
-
-	/**
-	 * Retrieves all tablespace information.
-	 * @param bool $all Include all tablespaces (necessary when moving objects back to the default space)
-	 * @return \ADORecordSet A recordset
-	 */
-	function getTablespaces($all = false)
-	{
-		$conf = $this->conf();
-
-		$sql = "SELECT spcname, pg_catalog.pg_get_userbyid(spcowner) AS spcowner, spclocation,
-                    (SELECT description FROM pg_catalog.pg_shdescription pd WHERE pg_tablespace.oid=pd.objoid AND pd.classoid='pg_tablespace'::regclass) AS spccomment
-				FROM pg_catalog.pg_tablespace";
-
-		if (!$conf['show_system'] && !$all) {
-			$sql .= ' WHERE spcname NOT LIKE $$pg\_%$$';
-		}
-
-		$sql .= " ORDER BY spcname";
-
-		return $this->selectSet($sql);
-	}
-
-	/**
-	 * Retrieves a specific tablespace's information.
-	 * @param string $spcname Tablespace name
-	 * @return \ADORecordSet A recordset
-	 */
-	function getTablespace($spcname)
-	{
-		$this->clean($spcname);
-
-		$sql = "SELECT spcname, pg_catalog.pg_get_userbyid(spcowner) AS spcowner, spclocation,
-                    (SELECT description FROM pg_catalog.pg_shdescription pd WHERE pg_tablespace.oid=pd.objoid AND pd.classoid='pg_tablespace'::regclass) AS spccomment
-				FROM pg_catalog.pg_tablespace WHERE spcname='{$spcname}'";
-
-		return $this->selectSet($sql);
-	}
-
-	/**
-	 * Determines whether or not a user/role is a super user
-	 * @param string $username The username/rolename
-	 * @return bool True if is a super user, false otherwise
-	 */
-	public function isSuperUser($username = '')
-	{
-		$this->clean($username);
-
-		if (empty($username)) {
-			// Try to get from connection parameter
-			$val = pg_parameter_status($this->conn->_connectionID, 'is_superuser');
-			if ($val !== false) return $val == 'on';
-		}
-
-		$sql = "SELECT rolsuper FROM pg_catalog.pg_roles WHERE rolname='{$username}'";
-
-		$rolsuper = $this->selectField($sql, 'rolsuper');
-		if ($rolsuper == -1) return false;
-		else return $rolsuper == 't';
 	}
 
 	/**
@@ -525,7 +465,7 @@ class Postgres extends AbstractConnection
 							$sql .= "\"{$k}\" {$ops[$k]}('{$v}')";
 							break;
 						default:
-							// Shouldn't happen
+						// Shouldn't happen
 					}
 				}
 			}
@@ -543,7 +483,8 @@ class Postgres extends AbstractConnection
 				} else {
 					$sql .= '"' . $this->fieldClean($k) . '"';
 				}
-				if (strtoupper($v) == 'DESC') $sql .= " DESC";
+				if (strtoupper($v) == 'DESC')
+					$sql .= " DESC";
 			}
 		}
 
@@ -569,7 +510,8 @@ class Postgres extends AbstractConnection
 			AND relnamespace = (SELECT oid FROM pg_catalog.pg_namespace WHERE nspname='{$c_schema}')";
 
 		$rs = $this->selectSet($sql);
-		if ($rs->recordCount() != 1) return null;
+		if ($rs->recordCount() != 1)
+			return null;
 		else {
 			$rs->fields['relhasoids'] = $this->phpBool($rs->fields['relhasoids']);
 			return $rs->fields['relhasoids'];
@@ -618,12 +560,23 @@ class Postgres extends AbstractConnection
 				$scale = $tmp_typmod & 0xffff;
 				$temp .= "({$precision}, {$scale})";
 			}
-		} else $temp = $typname;
+		} else
+			$temp = $typname;
 
 		// Add array qualifier if it's an array
-		if ($is_array) $temp .= '[]';
+		if ($is_array)
+			$temp .= '[]';
 
 		return $temp;
+	}
+
+	/**
+	 * Get the last error in the connection
+	 * @return string Error string
+	 */
+	function getLastError()
+	{
+		return pg_last_error($this->conn->_connectionID);
 	}
 
 

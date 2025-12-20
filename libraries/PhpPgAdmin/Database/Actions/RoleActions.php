@@ -13,14 +13,16 @@ use PhpPgAdmin\Database\AbstractActions;
 /**
  * Role action class - handles role, user, and group management
  */
-class RoleActions extends AbstractActions {
+class RoleActions extends AbstractActions
+{
 
 	/**
 	 * Returns all roles, excluding the given role if specified
 	 * @param string $rolename (optional) Exclude this role
-	 * @return A recordset
+	 * @return ADORecordSet A recordset
 	 */
-	public function getRoles($rolename = '') {
+	public function getRoles($rolename = '')
+	{
 		$this->connection->clean($rolename);
 
 		if (!empty($rolename)) {
@@ -44,9 +46,10 @@ class RoleActions extends AbstractActions {
 	/**
 	 * Returns information for a specific role
 	 * @param string $rolename The role name
-	 * @return A recordset
+	 * @return ADORecordSet A recordset
 	 */
-	public function getRole($rolename) {
+	public function getRole($rolename)
+	{
 		$this->connection->clean($rolename);
 
 		$sql = "
@@ -63,9 +66,10 @@ class RoleActions extends AbstractActions {
 	 * @param string $role The role to grant
 	 * @param string $rolename The role/user to grant to
 	 * @param int $admin (optional) ADMIN OPTION flag (0 or 1)
-	 * @return 0 success
+	 * @return int 0 success
 	 */
-	public function grantRole($role, $rolename, $admin = 0) {
+	public function grantRole($role, $rolename, $admin = 0)
+	{
 		$this->connection->fieldClean($role);
 		$this->connection->fieldClean($rolename);
 
@@ -86,7 +90,8 @@ class RoleActions extends AbstractActions {
 	 * @param string $type (optional) RESTRICT or CASCADE
 	 * @return int 0 success
 	 */
-	public function revokeRole($role, $rolename, $admin = 0, $type = 'RESTRICT') {
+	public function revokeRole($role, $rolename, $admin = 0, $type = 'RESTRICT')
+	{
 		$this->connection->fieldClean($role);
 		$this->connection->fieldClean($rolename);
 
@@ -111,7 +116,8 @@ class RoleActions extends AbstractActions {
 	 * Returns all users (legacy API - users are now roles)
 	 * @return ADORecordSet A recordset
 	 */
-	public function getUsers() {
+	public function getUsers()
+	{
 		$sql = "
 			SELECT usename, usesuper, usecreatedb, valuntil, useconfig
 			FROM pg_catalog.pg_user
@@ -125,7 +131,8 @@ class RoleActions extends AbstractActions {
 	 * @param string $username The user name
 	 * @return ADORecordSet A recordset
 	 */
-	public function getUser($username) {
+	public function getUser($username)
+	{
 		$this->connection->clean($username);
 
 		$sql = "
@@ -152,35 +159,55 @@ class RoleActions extends AbstractActions {
 	 * @param array $adminmembers Array of roles/users to add as admin members (optional)
 	 * @return int 0 success
 	 */
-	public function createRole($rolename, $password = '', $superuser = 0, $createdb = 0,
-							   $createrole = 0, $inherits = 1, $login = 1, $connlimit = -1,
-							   $expiry = '', $memberof = [], $members = [], $adminmembers = []) {
+	public function createRole(
+		$rolename,
+		$password = '',
+		$superuser = 0,
+		$createdb = 0,
+		$createrole = 0,
+		$inherits = 1,
+		$login = 1,
+		$connlimit = -1,
+		$expiry = '',
+		$memberof = [],
+		$members = [],
+		$adminmembers = []
+	) {
 		$this->connection->fieldClean($rolename);
 
 		$sql = "CREATE ROLE \"{$rolename}\"";
 
 		// Set password if provided
 		if ($password != '') {
-			$enc = $this->_encryptPassword($rolename, $password);
-			$this->connection->clean($enc);
-			$sql .= " WITH ENCRYPTED PASSWORD '{$enc}'";
+			$this->connection->clean($password);
+			$sql .= " WITH PASSWORD '{$password}'";
 		}
 
 		// Set role attributes
-		if ($superuser) $sql .= " SUPERUSER";
-		else $sql .= " NOSUPERUSER";
+		if ($superuser)
+			$sql .= " SUPERUSER";
+		else
+			$sql .= " NOSUPERUSER";
 
-		if ($createdb) $sql .= " CREATEDB";
-		else $sql .= " NOCREATEDB";
+		if ($createdb)
+			$sql .= " CREATEDB";
+		else
+			$sql .= " NOCREATEDB";
 
-		if ($createrole) $sql .= " CREATEROLE";
-		else $sql .= " NOCREATEROLE";
+		if ($createrole)
+			$sql .= " CREATEROLE";
+		else
+			$sql .= " NOCREATEROLE";
 
-		if ($inherits) $sql .= " INHERIT";
-		else $sql .= " NOINHERIT";
+		if ($inherits)
+			$sql .= " INHERIT";
+		else
+			$sql .= " NOINHERIT";
 
-		if ($login) $sql .= " LOGIN";
-		else $sql .= " NOLOGIN";
+		if ($login)
+			$sql .= " LOGIN";
+		else
+			$sql .= " NOLOGIN";
 
 		if ($connlimit != -1) {
 			$sql .= " CONNECTION LIMIT {$connlimit}";
@@ -229,36 +256,58 @@ class RoleActions extends AbstractActions {
 	 * @param array $adminmembersold Old adminmembers array for change detection (optional)
 	 * @return 0 success
 	 */
-	public function setRole($rolename, $password = '', $superuser = 0, $createdb = 0,
-							$createrole = 0, $inherits = 1, $login = 1, $connlimit = -1,
-							$expiry = '', $memberof = [], $members = [], $adminmembers = [],
-							$memberofold = [], $membersold = [], $adminmembersold = []) {
+	public function setRole(
+		$rolename,
+		$password = '',
+		$superuser = 0,
+		$createdb = 0,
+		$createrole = 0,
+		$inherits = 1,
+		$login = 1,
+		$connlimit = -1,
+		$expiry = '',
+		$memberof = [],
+		$members = [],
+		$adminmembers = [],
+		$memberofold = [],
+		$membersold = [],
+		$adminmembersold = []
+	) {
 		$this->connection->fieldClean($rolename);
 
 		$sql = "ALTER ROLE \"{$rolename}\"";
 
 		// Set password if provided
 		if ($password != '') {
-			$enc = $this->_encryptPassword($rolename, $password);
-			$this->connection->clean($enc);
-			$sql .= " WITH ENCRYPTED PASSWORD '{$enc}'";
+			$this->connection->clean($password);
+			$sql .= " WITH PASSWORD '{$password}'";
 		}
 
 		// Set role attributes
-		if ($superuser) $sql .= " SUPERUSER";
-		else $sql .= " NOSUPERUSER";
+		if ($superuser)
+			$sql .= " SUPERUSER";
+		else
+			$sql .= " NOSUPERUSER";
 
-		if ($createdb) $sql .= " CREATEDB";
-		else $sql .= " NOCREATEDB";
+		if ($createdb)
+			$sql .= " CREATEDB";
+		else
+			$sql .= " NOCREATEDB";
 
-		if ($createrole) $sql .= " CREATEROLE";
-		else $sql .= " NOCREATEROLE";
+		if ($createrole)
+			$sql .= " CREATEROLE";
+		else
+			$sql .= " NOCREATEROLE";
 
-		if ($inherits) $sql .= " INHERIT";
-		else $sql .= " NOINHERIT";
+		if ($inherits)
+			$sql .= " INHERIT";
+		else
+			$sql .= " NOINHERIT";
 
-		if ($login) $sql .= " LOGIN";
-		else $sql .= " NOLOGIN";
+		if ($login)
+			$sql .= " LOGIN";
+		else
+			$sql .= " NOLOGIN";
 
 		if ($connlimit != -1) {
 			$sql .= " CONNECTION LIMIT {$connlimit}";
@@ -270,7 +319,8 @@ class RoleActions extends AbstractActions {
 		}
 
 		$status = $this->connection->execute($sql);
-		if ($status != 0) return $status;
+		if ($status != 0)
+			return $status;
 
 		// Handle memberof changes
 		if (is_array($memberofold) && is_array($memberof)) {
@@ -279,12 +329,14 @@ class RoleActions extends AbstractActions {
 
 			foreach ($revoke as $role) {
 				$status = $this->revokeRole($role, $rolename);
-				if ($status != 0) return $status;
+				if ($status != 0)
+					return $status;
 			}
 
 			foreach ($grant as $role) {
 				$status = $this->grantRole($role, $rolename);
-				if ($status != 0) return $status;
+				if ($status != 0)
+					return $status;
 			}
 		}
 
@@ -295,12 +347,14 @@ class RoleActions extends AbstractActions {
 
 			foreach ($revoke as $member) {
 				$status = $this->revokeRole($rolename, $member);
-				if ($status != 0) return $status;
+				if ($status != 0)
+					return $status;
 			}
 
 			foreach ($grant as $member) {
 				$status = $this->grantRole($rolename, $member);
-				if ($status != 0) return $status;
+				if ($status != 0)
+					return $status;
 			}
 		}
 
@@ -311,12 +365,14 @@ class RoleActions extends AbstractActions {
 
 			foreach ($revoke as $member) {
 				$status = $this->revokeRole($rolename, $member, 1);
-				if ($status != 0) return $status;
+				if ($status != 0)
+					return $status;
 			}
 
 			foreach ($grant as $member) {
 				$status = $this->grantRole($rolename, $member, 1);
-				if ($status != 0) return $status;
+				if ($status != 0)
+					return $status;
 			}
 		}
 
@@ -329,7 +385,8 @@ class RoleActions extends AbstractActions {
 	 * @param string $newrolename The new role name
 	 * @return 0 success
 	 */
-	public function renameRole($rolename, $newrolename) {
+	public function renameRole($rolename, $newrolename)
+	{
 		$this->connection->fieldClean($rolename);
 		$this->connection->fieldClean($newrolename);
 
@@ -361,13 +418,27 @@ class RoleActions extends AbstractActions {
 	 * @return -2 set role attributes error
 	 * @return -3 rename error
 	 */
-	public function setRenameRole($rolename, $newrolename, $password = '', $superuser = 0,
-								  $createdb = 0, $createrole = 0, $inherits = 1, $login = 1,
-								  $connlimit = -1, $expiry = '', $memberof = [], $members = [],
-								  $adminmembers = [], $memberofold = [], $membersold = [],
-								  $adminmembersold = []) {
+	public function setRenameRole(
+		$rolename,
+		$newrolename,
+		$password = '',
+		$superuser = 0,
+		$createdb = 0,
+		$createrole = 0,
+		$inherits = 1,
+		$login = 1,
+		$connlimit = -1,
+		$expiry = '',
+		$memberof = [],
+		$members = [],
+		$adminmembers = [],
+		$memberofold = [],
+		$membersold = [],
+		$adminmembersold = []
+	) {
 		$status = $this->connection->beginTransaction();
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		if ($rolename != $newrolename) {
 			$status = $this->renameRole($rolename, $newrolename);
@@ -378,9 +449,23 @@ class RoleActions extends AbstractActions {
 			$rolename = $newrolename;
 		}
 
-		$status = $this->setRole($rolename, $password, $superuser, $createdb, $createrole,
-								 $inherits, $login, $connlimit, $expiry, $memberof, $members,
-								 $adminmembers, $memberofold, $membersold, $adminmembersold);
+		$status = $this->setRole(
+			$rolename,
+			$password,
+			$superuser,
+			$createdb,
+			$createrole,
+			$inherits,
+			$login,
+			$connlimit,
+			$expiry,
+			$memberof,
+			$members,
+			$adminmembers,
+			$memberofold,
+			$membersold,
+			$adminmembersold
+		);
 		if ($status != 0) {
 			$this->connection->rollbackTransaction();
 			return -2;
@@ -394,7 +479,8 @@ class RoleActions extends AbstractActions {
 	 * @param string $rolename The role name
 	 * @return 0 success
 	 */
-	public function dropRole($rolename) {
+	public function dropRole($rolename)
+	{
 		$this->connection->fieldClean($rolename);
 
 		$sql = "DROP ROLE \"{$rolename}\"";
@@ -412,8 +498,14 @@ class RoleActions extends AbstractActions {
 	 * @param array $groups Array of groups to add user to (optional)
 	 * @return 0 success
 	 */
-	public function createUser($username, $password = '', $createdb = 0, $createuser = 0,
-							   $expiry = '', $groups = []) {
+	public function createUser(
+		$username,
+		$password = '',
+		$createdb = 0,
+		$createuser = 0,
+		$expiry = '',
+		$groups = []
+	) {
 		// Legacy user creation maps to createRole
 		$superuser = 0;
 		$createrole = $createuser;
@@ -424,8 +516,20 @@ class RoleActions extends AbstractActions {
 		$members = [];
 		$adminmembers = [];
 
-		return $this->createRole($username, $password, $superuser, $createdb, $createrole,
-								 $inherits, $login, $connlimit, $expiry, $memberof, $members, $adminmembers);
+		return $this->createRole(
+			$username,
+			$password,
+			$superuser,
+			$createdb,
+			$createrole,
+			$inherits,
+			$login,
+			$connlimit,
+			$expiry,
+			$memberof,
+			$members,
+			$adminmembers
+		);
 	}
 
 	/**
@@ -434,7 +538,8 @@ class RoleActions extends AbstractActions {
 	 * @param string $newname The new username
 	 * @return 0 success
 	 */
-	public function renameUser($username, $newname) {
+	public function renameUser($username, $newname)
+	{
 		return $this->renameRole($username, $newname);
 	}
 
@@ -447,7 +552,8 @@ class RoleActions extends AbstractActions {
 	 * @param string $expiry User expiry date (optional)
 	 * @return 0 success
 	 */
-	public function setUser($username, $password = '', $createdb = 0, $createuser = 0, $expiry = '') {
+	public function setUser($username, $password = '', $createdb = 0, $createuser = 0, $expiry = '')
+	{
 		// Legacy user update maps to setRole
 		$superuser = 0;
 		$createrole = $createuser;
@@ -455,8 +561,17 @@ class RoleActions extends AbstractActions {
 		$login = 1;
 		$connlimit = -1;
 
-		return $this->setRole($username, $password, $superuser, $createdb, $createrole,
-							  $inherits, $login, $connlimit, $expiry);
+		return $this->setRole(
+			$username,
+			$password,
+			$superuser,
+			$createdb,
+			$createrole,
+			$inherits,
+			$login,
+			$connlimit,
+			$expiry
+		);
 	}
 
 	/**
@@ -472,10 +587,17 @@ class RoleActions extends AbstractActions {
 	 * @return -2 set user attributes error
 	 * @return -3 rename error
 	 */
-	public function setRenameUser($username, $password = '', $createdb = 0, $createuser = 0,
-								  $expiry = '', $newname = '') {
+	public function setRenameUser(
+		$username,
+		$password = '',
+		$createdb = 0,
+		$createuser = 0,
+		$expiry = '',
+		$newname = ''
+	) {
 		$status = $this->connection->beginTransaction();
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		if ($username != $newname) {
 			$status = $this->renameUser($username, $newname);
@@ -498,9 +620,10 @@ class RoleActions extends AbstractActions {
 	/**
 	 * Removes a user (legacy API - users are now roles)
 	 * @param string $username The username
-	 * @return 0 success
+	 * @return int 0 success
 	 */
-	public function dropUser($username) {
+	public function dropUser($username)
+	{
 		return $this->dropRole($username);
 	}
 
@@ -508,14 +631,14 @@ class RoleActions extends AbstractActions {
 	 * Changes a role's password
 	 * @param string $rolename The role name
 	 * @param string $password The new password
-	 * @return 0 success
+	 * @return int 0 success
 	 */
-	public function changePassword($rolename, $password) {
-		$enc = $this->_encryptPassword($rolename, $password);
+	public function changePassword($rolename, $password)
+	{
 		$this->connection->fieldClean($rolename);
-		$this->connection->clean($enc);
+		$this->connection->clean($password);
 
-		$sql = "ALTER ROLE \"{$rolename}\" WITH ENCRYPTED PASSWORD '{$enc}'";
+		$sql = "ALTER ROLE \"{$rolename}\" WITH PASSWORD '{$password}'";
 
 		return $this->connection->execute($sql);
 	}
@@ -524,9 +647,10 @@ class RoleActions extends AbstractActions {
 	 * Adds a user to a group
 	 * @param string $groname The name of the group
 	 * @param string $user The name of the user to add to the group
-	 * @return 0 success
+	 * @return int 0 success
 	 */
-	public function addGroupMember($groname, $user) {
+	public function addGroupMember($groname, $user)
+	{
 		$this->connection->fieldClean($groname);
 		$this->connection->fieldClean($user);
 
@@ -538,9 +662,10 @@ class RoleActions extends AbstractActions {
 	/**
 	 * Returns all role names which the specified role belongs to
 	 * @param string $rolename The role name
-	 * @return A recordset
+	 * @return ADORecordSet A recordset
 	 */
-	public function getMemberOf($rolename) {
+	public function getMemberOf($rolename)
+	{
 		$this->connection->clean($rolename);
 
 		$sql = "
@@ -558,9 +683,10 @@ class RoleActions extends AbstractActions {
 	 * Returns all role names that are members of a role
 	 * @param string $rolename The role name
 	 * @param string $admin (optional) Find only admin members
-	 * @return A recordset
+	 * @return ADORecordSet A recordset
 	 */
-	public function getMembers($rolename, $admin = 'f') {
+	public function getMembers($rolename, $admin = 'f')
+	{
 		$this->connection->clean($rolename);
 
 		$sql = "
@@ -577,9 +703,10 @@ class RoleActions extends AbstractActions {
 	 * Removes a user from a group
 	 * @param string $groname The name of the group
 	 * @param string $user The name of the user to remove from the group
-	 * @return 0 success
+	 * @return int 0 success
 	 */
-	public function dropGroupMember($groname, $user) {
+	public function dropGroupMember($groname, $user)
+	{
 		$this->connection->fieldClean($groname);
 		$this->connection->fieldClean($user);
 
@@ -591,9 +718,10 @@ class RoleActions extends AbstractActions {
 	/**
 	 * Return users in a specific group
 	 * @param string $groname The name of the group
-	 * @return A recordset
+	 * @return ADORecordSet A recordset
 	 */
-	public function getGroup($groname) {
+	public function getGroup($groname)
+	{
 		$this->connection->clean($groname);
 
 		$sql = "
@@ -606,9 +734,10 @@ class RoleActions extends AbstractActions {
 
 	/**
 	 * Returns all groups in the database cluster
-	 * @return A recordset
+	 * @return ADORecordSet A recordset
 	 */
-	public function getGroups() {
+	public function getGroups()
+	{
 		$sql = "SELECT groname FROM pg_group ORDER BY groname";
 
 		return $this->connection->selectSet($sql);
@@ -618,9 +747,10 @@ class RoleActions extends AbstractActions {
 	 * Creates a new group
 	 * @param string $groname The name of the group
 	 * @param array $users An array of users to add to the group
-	 * @return 0 success
+	 * @return int 0 success
 	 */
-	public function createGroup($groname, $users) {
+	public function createGroup($groname, $users)
+	{
 		$this->connection->fieldClean($groname);
 
 		$sql = "CREATE GROUP \"{$groname}\"";
@@ -636,9 +766,10 @@ class RoleActions extends AbstractActions {
 	/**
 	 * Removes a group
 	 * @param string $groname The name of the group to drop
-	 * @return 0 success
+	 * @return int 0 success
 	 */
-	public function dropGroup($groname) {
+	public function dropGroup($groname)
+	{
 		$this->connection->fieldClean($groname);
 
 		$sql = "DROP GROUP \"{$groname}\"";
@@ -647,13 +778,25 @@ class RoleActions extends AbstractActions {
 	}
 
 	/**
-	 * Helper function that computes encrypted PostgreSQL passwords
-	 * @param string $username The username
-	 * @param string $password The password
-	 * @return string The encrypted password
-     * @decprecated do not use this function anymore, it will not work with scram-sha-256
+	 * Determines whether or not a user/role is a super user
+	 * @param string $username The username/rolename
+	 * @return bool True if is a super user, false otherwise
 	 */
-	private function _encryptPassword($username, $password) {
-		return 'md5' . md5($password . $username);
+	public function isSuperUser($username = '')
+	{
+		$this->connection->clean($username);
+
+		if (empty($username)) {
+			// Try to get from connection parameter
+			$val = pg_parameter_status($this->connection->conn->_connectionID, 'is_superuser');
+			if ($val !== false)
+				return $val == 'on';
+		}
+
+		$sql = "SELECT rolsuper FROM pg_catalog.pg_roles WHERE rolname='{$username}'";
+
+		$rolsuper = $this->connection->selectField($sql, 'rolsuper');
+		return $this->connection->phpBool($rolsuper);
 	}
+
 }

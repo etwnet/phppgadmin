@@ -156,11 +156,16 @@ function doAlter($msg = '')
 	//var_dump($typedata->fields);
 
 	// Initialize POST variables if not set
-	if (!isset($_POST['name'])) $_POST['name'] = $typname;
-	if (!isset($_POST['owner'])) $_POST['owner'] = $typowner;
-	if (!isset($_POST['newEnumValues'])) $_POST['newEnumValues'] = [];
-	if (!isset($_POST['renameEnumOld'])) $_POST['renameEnumOld'] = [];
-	if (!isset($_POST['renameEnumNew'])) $_POST['renameEnumNew'] = [];
+	if (!isset($_POST['name']))
+		$_POST['name'] = $typname;
+	if (!isset($_POST['owner']))
+		$_POST['owner'] = $typowner;
+	if (!isset($_POST['newEnumValues']))
+		$_POST['newEnumValues'] = [];
+	if (!isset($_POST['renameEnumOld']))
+		$_POST['renameEnumOld'] = [];
+	if (!isset($_POST['renameEnumNew']))
+		$_POST['renameEnumNew'] = [];
 
 	$misc->printTrail('type');
 	$misc->printTitle($lang['stredit'] . ' - ' . $misc->printVal($typname), 'pg.type.alter');
@@ -170,17 +175,17 @@ function doAlter($msg = '')
 	echo "<table>\n";
 	echo "<tr><th class=\"data left required\">{$lang['strname']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-	htmlspecialchars_nc($_POST['name']), "\" /></td></tr>\n";
+		htmlspecialchars_nc($_POST['name']), "\" /></td></tr>\n";
 
 	// Owner change (superusers only)
-	if ($pg->isSuperUser()) {
+	if ($roleActions->isSuperUser()) {
 		$users = $roleActions->getUsers();
 		echo "<tr><th class=\"data left required\">{$lang['strowner']}</th>\n";
 		echo "<td class=\"data1\"><select name=\"owner\">\n";
 		foreach ($users as $user) {
 			$uname = $user['usename'];
 			echo "<option value=\"", htmlspecialchars($uname), "\"", ($uname == $_POST['owner']) ? ' selected="selected"' : '', ">",
-			htmlspecialchars($uname), "</option>\n";
+				htmlspecialchars($uname), "</option>\n";
 		}
 		echo "</select></td></tr>\n";
 	}
@@ -208,7 +213,7 @@ function doAlter($msg = '')
 				if ($typeActions->hasTypeRenameValue()) {
 					$newValue = htmlspecialchars($_POST['renameEnumNew'][$i] ?? '');
 					echo "<td class=\"data\">\n";
-					echo "<input type=\"hidden\" name=\"renameEnumOld[$i]\" value=\"",	htmlspecialchars($enumValues[$i]['enumval']), "\" />\n";
+					echo "<input type=\"hidden\" name=\"renameEnumOld[$i]\" value=\"", htmlspecialchars($enumValues[$i]['enumval']), "\" />\n";
 					echo "<input name=\"renameEnumNew[$i]\" size=\"24\" value=\"$newValue\" placeholder=\"{$lang['strnewname']}\" />\n";
 					echo "</td>";
 				}
@@ -246,6 +251,7 @@ function doSaveAlter()
 {
 	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
+	$roleActions = new RoleActions($pg);
 	$typeActions = new TypeActions($pg);
 
 	if (isset($_POST['cancel']) || !isset($_POST['type'])) {
@@ -276,7 +282,7 @@ function doSaveAlter()
 	}
 
 	// Change owner if superuser selected one
-	if ($pg->isSuperUser() && $newOwner) {
+	if ($roleActions->isSuperUser() && $newOwner) {
 		$status = $typeActions->changeTypeOwner($newName, $newOwner);
 		if ($status != 0) {
 			$pg->rollbackTransaction();
@@ -381,10 +387,14 @@ function doCreateComposite($msg = '')
 	$lang = AppContainer::getLang();
 	$typeActions = new TypeActions($pg);
 
-	if (!isset($_REQUEST['stage'])) $_REQUEST['stage'] = 1;
-	if (!isset($_REQUEST['name'])) $_REQUEST['name'] = '';
-	if (!isset($_REQUEST['fields'])) $_REQUEST['fields'] = '';
-	if (!isset($_REQUEST['typcomment'])) $_REQUEST['typcomment'] = '';
+	if (!isset($_REQUEST['stage']))
+		$_REQUEST['stage'] = 1;
+	if (!isset($_REQUEST['name']))
+		$_REQUEST['name'] = '';
+	if (!isset($_REQUEST['fields']))
+		$_REQUEST['fields'] = '';
+	if (!isset($_REQUEST['typcomment']))
+		$_REQUEST['typcomment'] = '';
 
 	switch ($_REQUEST['stage']) {
 		case 1:
@@ -396,14 +406,14 @@ function doCreateComposite($msg = '')
 			echo "<table>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
 			echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-			htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
+				htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strnumfields']}</th>\n";
 			echo "\t\t<td class=\"data\"><input name=\"fields\" size=\"5\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-			htmlspecialchars_nc($_REQUEST['fields']), "\" /></td>\n\t</tr>\n";
+				htmlspecialchars_nc($_REQUEST['fields']), "\" /></td>\n\t</tr>\n";
 
 			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
 			echo "\t\t<td><textarea name=\"typcomment\" rows=\"3\" cols=\"32\">",
-			htmlspecialchars_nc($_REQUEST['typcomment']), "</textarea></td>\n\t</tr>\n";
+				htmlspecialchars_nc($_REQUEST['typcomment']), "</textarea></td>\n\t</tr>\n";
 
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"create_comp\" />\n";
@@ -420,7 +430,7 @@ function doCreateComposite($msg = '')
 				$_REQUEST['stage'] = 1;
 				doCreateComposite($lang['strtypeneedsname']);
 				return;
-			} elseif ($fields == '' || !is_numeric($fields) || $fields != (int)$fields || $fields < 1) {
+			} elseif ($fields == '' || !is_numeric($fields) || $fields != (int) $fields || $fields < 1) {
 				$_REQUEST['stage'] = 1;
 				doCreateComposite($lang['strtypeneedscols']);
 				return;
@@ -440,19 +450,22 @@ function doCreateComposite($msg = '')
 			echo "<th class=\"data\">{$lang['strlength']}</th><th class=\"data\">{$lang['strcomment']}</th></tr>\n";
 
 			for ($i = 0; $i < $_REQUEST['fields']; $i++) {
-				if (!isset($_REQUEST['field'][$i])) $_REQUEST['field'][$i] = '';
-				if (!isset($_REQUEST['length'][$i])) $_REQUEST['length'][$i] = '';
-				if (!isset($_REQUEST['colcomment'][$i])) $_REQUEST['colcomment'][$i] = '';
+				if (!isset($_REQUEST['field'][$i]))
+					$_REQUEST['field'][$i] = '';
+				if (!isset($_REQUEST['length'][$i]))
+					$_REQUEST['length'][$i] = '';
+				if (!isset($_REQUEST['colcomment'][$i]))
+					$_REQUEST['colcomment'][$i] = '';
 
 				echo "\t<tr>\n\t\t<td>", $i + 1, ".&nbsp;</td>\n";
 				echo "\t\t<td><input name=\"field[{$i}]\" size=\"16\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-				htmlspecialchars_nc($_REQUEST['field'][$i]), "\" /></td>\n";
+					htmlspecialchars_nc($_REQUEST['field'][$i]), "\" /></td>\n";
 				echo "\t\t<td>\n\t\t\t<select name=\"type[{$i}]\">\n";
 				$types->moveFirst();
 				while (!$types->EOF) {
 					$typname = $types->fields['typname'];
 					echo "\t\t\t\t<option value=\"", htmlspecialchars_nc($typname), "\"", (isset($_REQUEST['type'][$i]) && $typname == $_REQUEST['type'][$i]) ? ' selected="selected"' : '', ">",
-					$misc->printVal($typname), "</option>\n";
+						$misc->printVal($typname), "</option>\n";
 					$types->moveNext();
 				}
 				echo "\t\t\t</select>\n\t\t</td>\n";
@@ -464,9 +477,9 @@ function doCreateComposite($msg = '')
 				echo "\t\t\t</select>\n\t\t</td>\n";
 
 				echo "\t\t<td><input name=\"length[{$i}]\" size=\"10\" value=\"",
-				htmlspecialchars_nc($_REQUEST['length'][$i]), "\" /></td>\n";
+					htmlspecialchars_nc($_REQUEST['length'][$i]), "\" /></td>\n";
 				echo "\t\t<td><input name=\"colcomment[{$i}]\" size=\"40\" value=\"",
-				htmlspecialchars_nc($_REQUEST['colcomment'][$i]), "\" /></td>\n\t</tr>\n";
+					htmlspecialchars_nc($_REQUEST['colcomment'][$i]), "\" /></td>\n\t</tr>\n";
 			}
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"create_comp\" />\n";
@@ -487,7 +500,7 @@ function doCreateComposite($msg = '')
 				$_REQUEST['stage'] = 1;
 				doCreateComposite($lang['strtypeneedsname']);
 				return;
-			} elseif ($fields == '' || !is_numeric($fields) || $fields != (int)$fields || $fields <= 0) {
+			} elseif ($fields == '' || !is_numeric($fields) || $fields != (int) $fields || $fields <= 0) {
 				$_REQUEST['stage'] = 1;
 				doCreateComposite($lang['strtypeneedscols']);
 				return;
@@ -531,10 +544,14 @@ function doCreateEnum($msg = '')
 	$lang = AppContainer::getLang();
 	$typeActions = new TypeActions($pg);
 
-	if (!isset($_REQUEST['stage'])) $_REQUEST['stage'] = 1;
-	if (!isset($_REQUEST['name'])) $_REQUEST['name'] = '';
-	if (!isset($_REQUEST['values'])) $_REQUEST['values'] = '';
-	if (!isset($_REQUEST['typcomment'])) $_REQUEST['typcomment'] = '';
+	if (!isset($_REQUEST['stage']))
+		$_REQUEST['stage'] = 1;
+	if (!isset($_REQUEST['name']))
+		$_REQUEST['name'] = '';
+	if (!isset($_REQUEST['values']))
+		$_REQUEST['values'] = '';
+	if (!isset($_REQUEST['typcomment']))
+		$_REQUEST['typcomment'] = '';
 
 	switch ($_REQUEST['stage']) {
 		case 1:
@@ -546,14 +563,14 @@ function doCreateEnum($msg = '')
 			echo "<table>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
 			echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-			htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
+				htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strnumvalues']}</th>\n";
 			echo "\t\t<td class=\"data\"><input name=\"values\" size=\"5\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-			htmlspecialchars_nc($_REQUEST['values']), "\" /></td>\n\t</tr>\n";
+				htmlspecialchars_nc($_REQUEST['values']), "\" /></td>\n\t</tr>\n";
 
 			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
 			echo "\t\t<td><textarea name=\"typcomment\" rows=\"3\" cols=\"32\">",
-			htmlspecialchars_nc($_REQUEST['typcomment']), "</textarea></td>\n\t</tr>\n";
+				htmlspecialchars_nc($_REQUEST['typcomment']), "</textarea></td>\n\t</tr>\n";
 
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"create_enum\" />\n";
@@ -570,7 +587,7 @@ function doCreateEnum($msg = '')
 				$_REQUEST['stage'] = 1;
 				doCreateEnum($lang['strtypeneedsname']);
 				return;
-			} elseif ($values == '' || !is_numeric($values) || $values != (int)$values || $values < 1) {
+			} elseif ($values == '' || !is_numeric($values) || $values != (int) $values || $values < 1) {
 				$_REQUEST['stage'] = 1;
 				doCreateEnum($lang['strtypeneedsvals']);
 				return;
@@ -587,11 +604,12 @@ function doCreateEnum($msg = '')
 			echo "\t<tr><th colspan=\"2\" class=\"data required\">{$lang['strvalue']}</th></tr>\n";
 
 			for ($i = 0; $i < $_REQUEST['values']; $i++) {
-				if (!isset($_REQUEST['value'][$i])) $_REQUEST['value'][$i] = '';
+				if (!isset($_REQUEST['value'][$i]))
+					$_REQUEST['value'][$i] = '';
 
 				echo "\t<tr>\n\t\t<td>", $i + 1, ".&nbsp;</td>\n";
 				echo "\t\t<td><input name=\"value[{$i}]\" size=\"16\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-				htmlspecialchars_nc($_REQUEST['value'][$i]), "\" /></td>\n\t</tr>\n";
+					htmlspecialchars_nc($_REQUEST['value'][$i]), "\" /></td>\n\t</tr>\n";
 			}
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"create_enum\" />\n";
@@ -612,7 +630,7 @@ function doCreateEnum($msg = '')
 				$_REQUEST['stage'] = 1;
 				doCreateEnum($lang['strtypeneedsname']);
 				return;
-			} elseif ($values == '' || !is_numeric($values) || $values != (int)$values || $values <= 0) {
+			} elseif ($values == '' || !is_numeric($values) || $values != (int) $values || $values <= 0) {
 				$_REQUEST['stage'] = 1;
 				doCreateEnum($lang['strtypeneedsvals']);
 				return;
@@ -648,15 +666,24 @@ function doCreate($msg = '')
 	$typeActions = new TypeActions($pg);
 	$fncActions = new SqlFunctionActions($pg);
 
-	if (!isset($_POST['typname'])) $_POST['typname'] = '';
-	if (!isset($_POST['typin'])) $_POST['typin'] = '';
-	if (!isset($_POST['typout'])) $_POST['typout'] = '';
-	if (!isset($_POST['typlen'])) $_POST['typlen'] = '';
-	if (!isset($_POST['typdef'])) $_POST['typdef'] = '';
-	if (!isset($_POST['typelem'])) $_POST['typelem'] = '';
-	if (!isset($_POST['typdelim'])) $_POST['typdelim'] = '';
-	if (!isset($_POST['typalign'])) $_POST['typalign'] = $pg->typAlignDef;
-	if (!isset($_POST['typstorage'])) $_POST['typstorage'] = $pg->typStorageDef;
+	if (!isset($_POST['typname']))
+		$_POST['typname'] = '';
+	if (!isset($_POST['typin']))
+		$_POST['typin'] = '';
+	if (!isset($_POST['typout']))
+		$_POST['typout'] = '';
+	if (!isset($_POST['typlen']))
+		$_POST['typlen'] = '';
+	if (!isset($_POST['typdef']))
+		$_POST['typdef'] = '';
+	if (!isset($_POST['typelem']))
+		$_POST['typelem'] = '';
+	if (!isset($_POST['typdelim']))
+		$_POST['typdelim'] = '';
+	if (!isset($_POST['typalign']))
+		$_POST['typalign'] = $pg->typAlignDef;
+	if (!isset($_POST['typstorage']))
+		$_POST['typstorage'] = $pg->typStorageDef;
 
 	// Retrieve all functions and types in the database
 	$funcs = $fncActions->getFunctions(true);
@@ -670,7 +697,7 @@ function doCreate($msg = '')
 	echo "<table>\n";
 	echo "<tr><th class=\"data left required\">{$lang['strname']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"typname\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-	htmlspecialchars_nc($_POST['typname']), "\" /></td></tr>\n";
+		htmlspecialchars_nc($_POST['typname']), "\" /></td></tr>\n";
 	echo "<tr><th class=\"data left required\">{$lang['strinputfn']}</th>\n";
 	echo "<td class=\"data1\"><select name=\"typin\">";
 	while (!$funcs->EOF) {
@@ -690,10 +717,10 @@ function doCreate($msg = '')
 	echo "</select></td></tr>\n";
 	echo "<tr><th class=\"data left" . (version_compare($pg->major_version, '7.4', '<') ? ' required' : '') . "\">{$lang['strlength']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"typlen\" size=\"8\" value=\"",
-	htmlspecialchars_nc($_POST['typlen']), "\" /></td></tr>";
+		htmlspecialchars_nc($_POST['typlen']), "\" /></td></tr>";
 	echo "<tr><th class=\"data left\">{$lang['strdefault']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"typdef\" size=\"8\" value=\"",
-	htmlspecialchars_nc($_POST['typdef']), "\" /></td></tr>";
+		htmlspecialchars_nc($_POST['typdef']), "\" /></td></tr>";
 	echo "<tr><th class=\"data left\">{$lang['strelement']}</th>\n";
 	echo "<td class=\"data1\"><select name=\"typelem\">";
 	echo "<option value=\"\"></option>\n";
@@ -705,10 +732,10 @@ function doCreate($msg = '')
 	echo "</select></td></tr>\n";
 	echo "<tr><th class=\"data left\">{$lang['strdelimiter']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"typdelim\" size=\"1\" maxlength=\"1\" value=\"",
-	htmlspecialchars_nc($_POST['typdelim']), "\" /></td></tr>";
+		htmlspecialchars_nc($_POST['typdelim']), "\" /></td></tr>";
 	echo "<tr><th class=\"data left\"><label for=\"typbyval\">{$lang['strpassbyval']}</label></th>\n";
 	echo "<td class=\"data1\"><input type=\"checkbox\" id=\"typbyval\" name=\"typbyval\"",
-	isset($_POST['typbyval']) ? ' checked="checked"' : '', " /></td></tr>";
+		isset($_POST['typbyval']) ? ' checked="checked"' : '', " /></td></tr>";
 	echo "<tr><th class=\"data left\">{$lang['stralignment']}</th>\n";
 	echo "<td class=\"data1\"><select name=\"typalign\">";
 	foreach ($pg->typAligns as $v) {
@@ -741,8 +768,10 @@ function doSaveCreate()
 	// Check that they've given a name and a length.
 	// Note: We're assuming they've given in and out functions here
 	// which might be unwise...
-	if ($_POST['typname'] == '') doCreate($lang['strtypeneedsname']);
-	elseif ($_POST['typlen'] == '') doCreate($lang['strtypeneedslen']);
+	if ($_POST['typname'] == '')
+		doCreate($lang['strtypeneedsname']);
+	elseif ($_POST['typlen'] == '')
+		doCreate($lang['strtypeneedslen']);
 	else {
 		$status = $typeActions->createType(
 			$_POST['typname'],
@@ -769,10 +798,11 @@ function doSaveCreate()
 function doDefault($msg = '')
 {
 	$pg = AppContainer::getPostgres();
-	$conf = AppContainer::getConf();
+	//$conf = AppContainer::getConf();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
 	$typeActions = new TypeActions($pg);
+	$roleActions = new RoleActions($pg);
 
 	$misc->printTrail('schema');
 	$misc->printTabs('schema', 'types');
@@ -815,7 +845,8 @@ function doDefault($msg = '')
 		],
 	];
 
-	if (!isset($types->fields['typtype'])) unset($columns['flavour']);
+	if (!isset($types->fields['typtype']))
+		unset($columns['flavour']);
 
 	$actions = [
 		'edit' => [
@@ -896,7 +927,7 @@ function doDefault($msg = '')
 		]
 	];
 
-	if (!$pg->isSuperUser()) {
+	if (!$roleActions->isSuperUser()) {
 		// To create a new base type, you must be a superuser.
 		// (This restriction is made because an erroneous type definition
 		// could confuse or even crash the server.)
@@ -948,23 +979,30 @@ $lang = AppContainer::getLang();
 $misc = AppContainer::getMisc();
 
 
-if ($action == 'tree') doTree();
+if ($action == 'tree')
+	doTree();
 
 $misc->printHeader($lang['strtypes']);
 $misc->printBody();
 
 switch ($action) {
 	case 'create_comp':
-		if (isset($_POST['cancel'])) doDefault();
-		else doCreateComposite();
+		if (isset($_POST['cancel']))
+			doDefault();
+		else
+			doCreateComposite();
 		break;
 	case 'create_enum':
-		if (isset($_POST['cancel'])) doDefault();
-		else doCreateEnum();
+		if (isset($_POST['cancel']))
+			doDefault();
+		else
+			doCreateEnum();
 		break;
 	case 'save_create':
-		if (isset($_POST['cancel'])) doDefault();
-		else doSaveCreate();
+		if (isset($_POST['cancel']))
+			doDefault();
+		else
+			doSaveCreate();
 		break;
 	case 'create':
 		doCreate();
@@ -976,8 +1014,10 @@ switch ($action) {
 		doSaveAlter();
 		break;
 	case 'drop':
-		if (isset($_POST['cancel'])) doDefault();
-		else doDrop(false);
+		if (isset($_POST['cancel']))
+			doDefault();
+		else
+			doDrop(false);
 		break;
 	case 'confirm_drop':
 		doDrop(true);

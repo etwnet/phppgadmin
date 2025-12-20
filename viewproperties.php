@@ -59,10 +59,10 @@ function doEdit($msg = '')
 		echo "<table style=\"width: 100%\">\n";
 		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strdefinition']}</th>\n";
 		echo "\t\t<td class=\"data1\"><textarea style=\"width: 100%;\" rows=\"20\" cols=\"50\" name=\"formDefinition\" class=\"sql-editor frame resizable high\">",
-		htmlspecialchars_nc($_POST['formDefinition']), "</textarea></td>\n\t</tr>\n";
+			htmlspecialchars_nc($_POST['formDefinition']), "</textarea></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
 		echo "\t\t<td class=\"data1\"><textarea rows=\"3\" cols=\"32\" name=\"formComment\">",
-		htmlspecialchars_nc($_POST['formComment']), "</textarea></td>\n\t</tr>\n";
+			htmlspecialchars_nc($_POST['formComment']), "</textarea></td>\n\t</tr>\n";
 		echo "</table>\n";
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"save_edit\" />\n";
 		echo "<input type=\"hidden\" name=\"view\" value=\"", htmlspecialchars_nc($_REQUEST['view']), "\" />\n";
@@ -70,7 +70,8 @@ function doEdit($msg = '')
 		echo "<input type=\"submit\" value=\"{$lang['stralter']}\" />\n";
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 		echo "</form>\n";
-	} else echo "<p>{$lang['strnodata']}</p>\n";
+	} else
+		echo "<p>{$lang['strnodata']}</p>\n";
 }
 
 /** 
@@ -161,24 +162,27 @@ function doDefinition($msg = '')
 		echo "<tr><th class=\"data\">{$lang['strdefinition']}</th></tr>\n";
 		echo "<tr><td class=\"data1\"><div class=\"sql-viewer\">", $misc->printVal($vdata->fields['vwdefinition']), "</div></td></tr>\n";
 		echo "</table>\n";
-	} else echo "<p>{$lang['strnodata']}</p>\n";
+	} else
+		echo "<p>{$lang['strnodata']}</p>\n";
 
-	$misc->printNavLinks(['alter' => [
-		'attr' => [
-			'href' => [
-				'url' => 'viewproperties.php',
-				'urlvars' => [
-					'action' => 'edit',
-					'server' => $_REQUEST['server'],
-					'database' => $_REQUEST['database'],
-					'schema' => $_REQUEST['schema'],
-					'view' => $_REQUEST['view']
+	$misc->printNavLinks([
+		'alter' => [
+			'attr' => [
+				'href' => [
+					'url' => 'viewproperties.php',
+					'urlvars' => [
+						'action' => 'edit',
+						'server' => $_REQUEST['server'],
+						'database' => $_REQUEST['database'],
+						'schema' => $_REQUEST['schema'],
+						'view' => $_REQUEST['view']
+					]
 				]
-			]
-		],
-		'icon' => $misc->icon('Edit'),
-		'content' => $lang['stredit']
-	]], 'viewproperties-definition', get_defined_vars());
+			],
+			'icon' => $misc->icon('Edit'),
+			'content' => $lang['stredit']
+		]
+	], 'viewproperties-definition', get_defined_vars());
 }
 
 /**
@@ -192,7 +196,8 @@ function doProperties($msg = '')
 	$tableActions = new TableActions($pg);
 	$columnActions = new ColumnActions($pg);
 
-	if (!isset($_REQUEST['stage'])) $_REQUEST['stage'] = 1;
+	if (!isset($_REQUEST['stage']))
+		$_REQUEST['stage'] = 1;
 
 	switch ($_REQUEST['stage']) {
 		case 1:
@@ -216,13 +221,13 @@ function doProperties($msg = '')
 			}
 
 			echo "<tr><td><input name=\"field\" size=\"32\" value=\"",
-			htmlspecialchars_nc($_REQUEST['field']), "\" /></td>";
+				htmlspecialchars_nc($_REQUEST['field']), "\" /></td>";
 
 			echo "<td>", $misc->printVal($pg->formatType($column->fields['type'], $column->fields['atttypmod'])), "</td>";
 			echo "<td><input name=\"default\" size=\"20\" value=\"",
-			htmlspecialchars_nc($_REQUEST['default']), "\" /></td>";
+				htmlspecialchars_nc($_REQUEST['default']), "\" /></td>";
 			echo "<td><input name=\"comment\" size=\"32\" value=\"",
-			htmlspecialchars_nc($_REQUEST['comment']), "\" /></td>";
+				htmlspecialchars_nc($_REQUEST['comment']), "\" /></td>";
 
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"properties\" />\n";
@@ -291,19 +296,23 @@ function doAlter($confirm = false, $msg = '')
 		$view = $viewActions->getView($_REQUEST['view']);
 
 		if ($view->recordCount() > 0) {
-			if (!isset($_POST['name'])) $_POST['name'] = $view->fields['relname'];
-			if (!isset($_POST['owner'])) $_POST['owner'] = $view->fields['relowner'];
-			if (!isset($_POST['newschema'])) $_POST['newschema'] = $view->fields['nspname'];
-			if (!isset($_POST['comment'])) $_POST['comment'] = $view->fields['relcomment'];
+			if (!isset($_POST['name']))
+				$_POST['name'] = $view->fields['relname'];
+			if (!isset($_POST['owner']))
+				$_POST['owner'] = $view->fields['relowner'];
+			if (!isset($_POST['newschema']))
+				$_POST['newschema'] = $view->fields['nspname'];
+			if (!isset($_POST['comment']))
+				$_POST['comment'] = $view->fields['relcomment'];
 
 			echo "<form action=\"viewproperties.php\" method=\"post\">\n";
 			echo "<table>\n";
 			echo "<tr><th class=\"data left required\">{$lang['strname']}</th>\n";
 			echo "<td class=\"data1\">";
 			echo "<input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-			htmlspecialchars_nc($_POST['name']), "\" /></td></tr>\n";
+				htmlspecialchars_nc($_POST['name']), "\" /></td></tr>\n";
 
-			if ($pg->isSuperUser()) {
+			if ($roleActions->isSuperUser()) {
 
 				// Fetch all users
 				$users = $roleActions->getUsers();
@@ -333,7 +342,7 @@ function doAlter($confirm = false, $msg = '')
 			echo "<tr><th class=\"data left\">{$lang['strcomment']}</th>\n";
 			echo "<td class=\"data1\">";
 			echo "<textarea rows=\"3\" cols=\"32\" name=\"comment\">",
-			htmlspecialchars_nc($_POST['comment']), "</textarea></td></tr>\n";
+				htmlspecialchars_nc($_POST['comment']), "</textarea></td></tr>\n";
 			echo "</table>\n";
 			echo "<input type=\"hidden\" name=\"action\" value=\"alter\" />\n";
 			echo "<input type=\"hidden\" name=\"view\" value=\"", htmlspecialchars_nc($_REQUEST['view']), "\" />\n";
@@ -341,13 +350,16 @@ function doAlter($confirm = false, $msg = '')
 			echo "<p><input type=\"submit\" name=\"alter\" value=\"{$lang['stralter']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 			echo "</form>\n";
-		} else echo "<p>{$lang['strnodata']}</p>\n";
+		} else
+			echo "<p>{$lang['strnodata']}</p>\n";
 	} else {
 		AppContainer::setShouldReloadTree(true);
 
 		// For databases that don't allow owner change
-		if (!isset($_POST['owner'])) $_POST['owner'] = '';
-		if (!isset($_POST['newschema'])) $_POST['newschema'] = null;
+		if (!isset($_POST['owner']))
+			$_POST['owner'] = '';
+		if (!isset($_POST['newschema']))
+			$_POST['newschema'] = null;
 
 		$status = $viewActions->alterView($_POST['view'], $_POST['name'], $_POST['owner'], $_POST['newschema'], $_POST['comment']);
 		if ($status == 0) {
@@ -366,7 +378,8 @@ function doAlter($confirm = false, $msg = '')
 				AppContainer::setShouldReloadTree(true);
 			}
 			doDefault($lang['strviewaltered']);
-		} else doAlter(true, $lang['strviewalteredbad']);
+		} else
+			doAlter(true, $lang['strviewalteredbad']);
 	}
 }
 
@@ -380,23 +393,23 @@ function doTree()
 	$columns = $tableActions->getTableAttributes($_REQUEST['view']);
 
 	$attrs = [
-		'text'   => field('attname'),
+		'text' => field('attname'),
 		'action' => url(
 			'colproperties.php',
 			$reqvars,
 			[
-				'view'     => $_REQUEST['view'],
-				'column'    => field('attname')
+				'view' => $_REQUEST['view'],
+				'column' => field('attname')
 			]
 		),
-		'icon'   => 'Column',
+		'icon' => 'Column',
 		'iconAction' => url(
 			'display.php',
 			$reqvars,
 			[
-				'view'     => $_REQUEST['view'],
-				'column'    => field('attname'),
-				'query'     => replace(
+				'view' => $_REQUEST['view'],
+				'column' => field('attname'),
+				'query' => replace(
 					'SELECT "%column%", count(*) AS "count" FROM %view% GROUP BY "%column%" ORDER BY "%column%"',
 					[
 						'%column%' => field('attname'),
@@ -447,8 +460,8 @@ function doDefault($msg = '')
 		'column' => [
 			'title' => $lang['strcolumn'],
 			'field' => field('attname'),
-			'url'   => "colproperties.php?subject=column&amp;{$misc->href}&amp;view=" . urlencode($_REQUEST['view']) . "&amp;",
-			'vars'  => ['column' => 'attname'],
+			'url' => "colproperties.php?subject=column&amp;{$misc->href}&amp;view=" . urlencode($_REQUEST['view']) . "&amp;",
+			'vars' => ['column' => 'attname'],
 		],
 		'type' => [
 			'title' => $lang['strtype'],
@@ -563,7 +576,8 @@ function doDefault($msg = '')
 
 $action = $_REQUEST['action'] ?? '';
 
-if ($action == 'tree') doTree();
+if ($action == 'tree')
+	doTree();
 
 $misc = AppContainer::getMisc();
 
@@ -572,8 +586,10 @@ $misc->printBody();
 
 switch ($action) {
 	case 'save_edit':
-		if (isset($_POST['cancel'])) doDefinition();
-		else doSaveEdit();
+		if (isset($_POST['cancel']))
+			doDefinition();
+		else
+			doSaveEdit();
 		break;
 	case 'edit':
 		doEdit();
@@ -585,20 +601,27 @@ switch ($action) {
 		doDefinition();
 		break;
 	case 'properties':
-		if (isset($_POST['cancel'])) doDefault();
-		else doProperties();
+		if (isset($_POST['cancel']))
+			doDefault();
+		else
+			doProperties();
 		break;
 	case 'alter':
-		if (isset($_POST['cancel'])) doDefault();
-		elseif (isset($_POST['alter'])) doAlter(false);
-		else doDefault();
+		if (isset($_POST['cancel']))
+			doDefault();
+		elseif (isset($_POST['alter']))
+			doAlter(false);
+		else
+			doDefault();
 		break;
 	case 'confirm_alter':
 		doAlter(true);
 		break;
 	case 'drop':
-		if (isset($_POST['drop'])) doDrop(false);
-		else doDefault();
+		if (isset($_POST['drop']))
+			doDrop(false);
+		else
+			doDefault();
 		break;
 	case 'confirm_drop':
 		doDrop(true);

@@ -1,4 +1,6 @@
-(function () {
+/** Frameset handler simulating frameset behavior */
+
+function frameSetHandler() {
 	const isRtl = document.documentElement.getAttribute("dir") === "rtl";
 	const tree = document.getElementById("tree");
 	const content = document.getElementById("content");
@@ -6,6 +8,10 @@
 
 	// Frameset simulation
 	const resizer = document.getElementById("resizer");
+	if (!resizer) {
+		console.warn("No resizer element found!");
+		return false;
+	}
 
 	let isResizing = false;
 
@@ -233,6 +239,94 @@
 			loadContent(url, {}, false);
 		}
 	});
+
+	window.addEventListener("message", (event) => {
+		console.log("Received message:", event.data);
+		if (event.origin !== window.location.origin) {
+			console.warn("Origin mismatch:", event.origin, window.location.origin);
+			return;
+		}
+		const { type, payload } = event.data;
+		if (type === "formSubmission") {
+			//loadContent(payload.url);
+			if (payload.post) {
+				const formData = new FormData();
+				for (const [key, value] of Object.entries(payload.data)) {
+					formData.append(key, value);
+				}
+				return loadContent(payload.url, {
+					method: payload.method,
+					body: formData,
+				});
+			} else {
+				return loadContent(payload.url);
+			}
+		}
+	});
+
+	return true;
+}
+
+/** Popup handler intecepting form submissions */
+
+function popupHandler() {
+	document.addEventListener("submit", (e) => {
+		const form = e.target;
+		if (!form.matches("form")) return;
+
+		e.preventDefault();
+		console.log("Intercepted form:", form);
+
+		const action = form.getAttribute("action");
+		const method = form.getAttribute("method") || "GET";
+		const post = /post/i.test(method);
+
+		const formData = new FormData(form);
+
+		const url = new URL(action, window.location.href);
+		const params = new URLSearchParams(url.search);
+
+		if (post) {
+			// add hidden input fields to search query
+			const hiddenInputs = form.querySelectorAll("input[type=hidden]");
+			hiddenInputs.forEach((input) => {
+				if (input.name) {
+					if (!/^(loginServer|action)$/.test(input.name)) {
+						params.append(input.name, input.value);
+					}
+				}
+			});
+		} else {
+			// add complete form to search query
+			for (const [key, value] of formData.entries()) {
+				params.append(key, value);
+			}
+		}
+
+		url.search = params.toString();
+
+		window.opener?.postMessage(
+			{
+				type: "formSubmission",
+				payload: {
+					method: method,
+					post: post,
+					url: url.toString(),
+					data: Object.fromEntries(formData.entries()),
+				},
+			},
+			window.opener?.location.origin
+		);
+	});
+
+	return true;
+}
+
+(function () {
+	// Try to initialize frameset handler, if not possible, fallback to popup handler
+	frameSetHandler() || popupHandler();
+
+	const content = document.getElementById("content");
 
 	document.addEventListener("DOMContentLoaded", (e) => {
 		// dispatch virtual frame event

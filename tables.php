@@ -2,6 +2,7 @@
 
 use PhpPgAdmin\Core\AppContainer;
 use PhpPgAdmin\Database\Actions\TableActions;
+use PhpPgAdmin\Database\Actions\TablespaceActions;
 use PhpPgAdmin\Database\Actions\TypeActions;
 use PhpPgAdmin\Gui\FormRenderer;
 
@@ -23,23 +24,30 @@ function doCreate($msg = '')
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
 	$tableActions = new TableActions($pg);
+	$tablespaceActions = new TablespaceActions($pg);
 	$typeActions = new TypeActions($pg);
 
 	if (!isset($_REQUEST['stage'])) {
 		$_REQUEST['stage'] = 1;
 		$default_with_oids = $tableActions->getDefaultWithOid();
-		if ($default_with_oids == 'off') $_REQUEST['withoutoids'] = 'on';
+		if ($default_with_oids == 'off')
+			$_REQUEST['withoutoids'] = 'on';
 	}
 
-	if (!isset($_REQUEST['name'])) $_REQUEST['name'] = '';
-	if (!isset($_REQUEST['fields'])) $_REQUEST['fields'] = '';
-	if (!isset($_REQUEST['tblcomment'])) $_REQUEST['tblcomment'] = '';
-	if (!isset($_REQUEST['spcname'])) $_REQUEST['spcname'] = '';
+	if (!isset($_REQUEST['name']))
+		$_REQUEST['name'] = '';
+	if (!isset($_REQUEST['fields']))
+		$_REQUEST['fields'] = '';
+	if (!isset($_REQUEST['tblcomment']))
+		$_REQUEST['tblcomment'] = '';
+	if (!isset($_REQUEST['spcname']))
+		$_REQUEST['spcname'] = '';
 
 	switch ($_REQUEST['stage']) {
 		case 1:
 			// Fetch all tablespaces from the database
-			if ($pg->hasTablespaces()) $tablespaces = $pg->getTablespaces();
+			if ($pg->hasTablespaces())
+				$tablespaces = $tablespaceActions->getTablespaces();
 
 			$misc->printTrail('schema');
 			$misc->printTitle($lang['strcreatetable'], 'pg.table.create');
@@ -49,10 +57,10 @@ function doCreate($msg = '')
 			echo "<table>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
 			echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-			htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
+				htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strnumcols']}</th>\n";
 			echo "\t\t<td class=\"data\"><input name=\"fields\" size=\"5\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-			htmlspecialchars_nc($_REQUEST['fields']), "\" /></td>\n\t</tr>\n";
+				htmlspecialchars_nc($_REQUEST['fields']), "\" /></td>\n\t</tr>\n";
 			if ($pg->hasServerOids()) {
 				echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['stroptions']}</th>\n";
 				echo "\t\t<td class=\"data\"><label for=\"withoutoids\"><input type=\"checkbox\" id=\"withoutoids\" name=\"withoutoids\"", isset($_REQUEST['withoutoids']) ? ' checked="checked"' : '', " />WITHOUT OIDS</label></td>\n\t</tr>\n";
@@ -77,7 +85,7 @@ function doCreate($msg = '')
 
 			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
 			echo "\t\t<td><textarea name=\"tblcomment\" rows=\"3\" cols=\"32\">",
-			htmlspecialchars_nc($_REQUEST['tblcomment']), "</textarea></td>\n\t</tr>\n";
+				htmlspecialchars_nc($_REQUEST['tblcomment']), "</textarea></td>\n\t</tr>\n";
 
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"create\" />\n";
@@ -94,7 +102,7 @@ function doCreate($msg = '')
 				$_REQUEST['stage'] = 1;
 				doCreate($lang['strtableneedsname']);
 				return;
-			} elseif ($fields == '' || !is_numeric($fields) || $fields != (int)$fields || $fields < 1) {
+			} elseif ($fields == '' || !is_numeric($fields) || $fields != (int) $fields || $fields < 1) {
 				$_REQUEST['stage'] = 1;
 				doCreate($lang['strtableneedscols']);
 				return;
@@ -107,7 +115,7 @@ function doCreate($msg = '')
 			$misc->printTitle($lang['strcreatetable'], 'pg.table.create');
 			$misc->printMsg($msg);
 
-			echo "<script src=\"tables.js\" type=\"text/javascript\"></script>";
+			echo "<script src=\"js/tables.js\" type=\"text/javascript\"></script>";
 			echo "<form action=\"tables.php\" method=\"post\">\n";
 
 			// Output table header
@@ -118,27 +126,31 @@ function doCreate($msg = '')
 			echo "<th class=\"data\">{$lang['strdefault']}</th><th class=\"data\">{$lang['strcomment']}</th></tr>\n";
 
 			for ($i = 0; $i < $_REQUEST['fields']; $i++) {
-				if (!isset($_REQUEST['field'][$i])) $_REQUEST['field'][$i] = '';
-				if (!isset($_REQUEST['length'][$i])) $_REQUEST['length'][$i] = '';
-				if (!isset($_REQUEST['default'][$i])) $_REQUEST['default'][$i] = '';
-				if (!isset($_REQUEST['colcomment'][$i])) $_REQUEST['colcomment'][$i] = '';
+				if (!isset($_REQUEST['field'][$i]))
+					$_REQUEST['field'][$i] = '';
+				if (!isset($_REQUEST['length'][$i]))
+					$_REQUEST['length'][$i] = '';
+				if (!isset($_REQUEST['default'][$i]))
+					$_REQUEST['default'][$i] = '';
+				if (!isset($_REQUEST['colcomment'][$i]))
+					$_REQUEST['colcomment'][$i] = '';
 
 				echo "\t<tr>\n\t\t<td>", $i + 1, ".&nbsp;</td>\n";
 				echo "\t\t<td><input name=\"field[{$i}]\" size=\"16\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-				htmlspecialchars_nc($_REQUEST['field'][$i]), "\" /></td>\n";
+					htmlspecialchars_nc($_REQUEST['field'][$i]), "\" /></td>\n";
 				echo "\t\t<td>\n\t\t\t<select name=\"type[{$i}]\" id=\"types{$i}\" onchange=\"checkLengths(this.options[this.selectedIndex].value,{$i});\">\n";
 				// Output any "magic" types
 				foreach ($pg->extraTypes as $v) {
 					$types_for_js[strtolower($v)] = 1;
 					echo "\t\t\t\t<option value=\"", htmlspecialchars_nc($v), "\"", (isset($_REQUEST['type'][$i]) && $v == $_REQUEST['type'][$i]) ? ' selected="selected"' : '', ">",
-					$misc->printVal($v), "</option>\n";
+						$misc->printVal($v), "</option>\n";
 				}
 				$types->moveFirst();
 				while (!$types->EOF) {
 					$typname = $types->fields['typname'];
 					$types_for_js[$typname] = 1;
 					echo "\t\t\t\t<option value=\"", htmlspecialchars_nc($typname), "\"", (isset($_REQUEST['type'][$i]) && $typname == $_REQUEST['type'][$i]) ? ' selected="selected"' : '', ">",
-					$misc->printVal($typname), "</option>\n";
+						$misc->printVal($typname), "</option>\n";
 					$types->moveNext();
 				}
 				echo "\t\t\t</select>\n\t\t\n";
@@ -158,7 +170,7 @@ function doCreate($msg = '')
 				echo "\t\t\t</select>\n\t\t</td>\n";
 
 				echo "\t\t<td><input name=\"length[{$i}]\" id=\"lengths{$i}\" size=\"10\" value=\"",
-				htmlspecialchars_nc($_REQUEST['length'][$i]), "\" /></td>\n";
+					htmlspecialchars_nc($_REQUEST['length'][$i]), "\" /></td>\n";
 				echo "\t\t<td><input type=\"checkbox\" name=\"notnull[{$i}]\"", (isset($_REQUEST['notnull'][$i])) ? ' checked="checked"' : '', " /></td>\n";
 				echo "\t\t<td style=\"text-align: center\"><input type=\"checkbox\" name=\"uniquekey[{$i}]\""
 					. (isset($_REQUEST['uniquekey'][$i]) ? ' checked="checked"' : '') . " /></td>\n";
@@ -166,9 +178,9 @@ function doCreate($msg = '')
 					. (isset($_REQUEST['primarykey'][$i]) ? ' checked="checked"' : '')
 					. " /></td>\n";
 				echo "\t\t<td><input name=\"default[{$i}]\" size=\"20\" value=\"",
-				htmlspecialchars_nc($_REQUEST['default'][$i]), "\" /></td>\n";
+					htmlspecialchars_nc($_REQUEST['default'][$i]), "\" /></td>\n";
 				echo "\t\t<td><input name=\"colcomment[{$i}]\" size=\"40\" value=\"",
-				htmlspecialchars_nc($_REQUEST['colcomment'][$i]), "\" />
+					htmlspecialchars_nc($_REQUEST['colcomment'][$i]), "\" />
 						<script type=\"text/javascript\">checkLengths(document.getElementById('types{$i}').value,{$i});</script>
 						</td>\n\t</tr>\n";
 			}
@@ -191,12 +203,17 @@ function doCreate($msg = '')
 
 			break;
 		case 3:
-			if (!isset($_REQUEST['notnull'])) $_REQUEST['notnull'] = [];
-			if (!isset($_REQUEST['uniquekey'])) $_REQUEST['uniquekey'] = [];
-			if (!isset($_REQUEST['primarykey'])) $_REQUEST['primarykey'] = [];
-			if (!isset($_REQUEST['length'])) $_REQUEST['length'] = [];
+			if (!isset($_REQUEST['notnull']))
+				$_REQUEST['notnull'] = [];
+			if (!isset($_REQUEST['uniquekey']))
+				$_REQUEST['uniquekey'] = [];
+			if (!isset($_REQUEST['primarykey']))
+				$_REQUEST['primarykey'] = [];
+			if (!isset($_REQUEST['length']))
+				$_REQUEST['length'] = [];
 			// Default tablespace to null if it isn't set
-			if (!isset($_REQUEST['spcname'])) $_REQUEST['spcname'] = null;
+			if (!isset($_REQUEST['spcname']))
+				$_REQUEST['spcname'] = null;
 
 			// Check inputs
 			$fields = trim($_REQUEST['fields']);
@@ -204,7 +221,7 @@ function doCreate($msg = '')
 				$_REQUEST['stage'] = 1;
 				doCreate($lang['strtableneedsname']);
 				return;
-			} elseif ($fields == '' || !is_numeric($fields) || $fields != (int)$fields || $fields <= 0) {
+			} elseif ($fields == '' || !is_numeric($fields) || $fields != (int) $fields || $fields <= 0) {
 				$_REQUEST['stage'] = 1;
 				doCreate($lang['strtableneedscols']);
 				return;
@@ -256,15 +273,17 @@ function doCreateLike($confirm, $msg = '')
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
 	$tableActions = new TableActions($pg);
+	$tablespaceActions = new TablespaceActions($pg);
 	$formRenderer = new FormRenderer();
 
 	if (!$confirm) {
 
-		include_once('./classes/Gui.php');
-
-		if (!isset($_REQUEST['name'])) $_REQUEST['name'] = '';
-		if (!isset($_REQUEST['like'])) $_REQUEST['like'] = '';
-		if (!isset($_REQUEST['tablespace'])) $_REQUEST['tablespace'] = '';
+		if (!isset($_REQUEST['name']))
+			$_REQUEST['name'] = '';
+		if (!isset($_REQUEST['like']))
+			$_REQUEST['like'] = '';
+		if (!isset($_REQUEST['tablespace']))
+			$_REQUEST['tablespace'] = '';
 
 		$misc->printTrail('schema');
 		$misc->printTitle($lang['strcreatetable'], 'pg.table.create');
@@ -290,14 +309,15 @@ function doCreateLike($confirm, $msg = '')
 		echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"", htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strcreatetablelikeparent']}</th>\n";
 		echo "\t\t<td class=\"data\">";
-		echo \PhpPgAdmin\Gui::printCombo($tables, 'like', true, $tblsel, false);
+		echo $formRenderer->printCombo($tables, 'like', true, $tblsel, false);
 		echo "</td>\n\t</tr>\n";
 		if ($pg->hasTablespaces()) {
-			$tblsp_ = $pg->getTablespaces();
+			$tblsp_ = $tablespaceActions->getTablespaces();
 			if ($tblsp_->recordCount() > 0) {
 				$tblsp_ = $tblsp_->getArray();
 				$tblsp = [];
-				foreach ($tblsp_ as $a) $tblsp[$a['spcname']] = $a['spcname'];
+				foreach ($tblsp_ as $a)
+					$tblsp[$a['spcname']] = $a['spcname'];
 
 				echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strtablespace']}</th>\n";
 				echo "\t\t<td class=\"data\">";
@@ -307,17 +327,17 @@ function doCreateLike($confirm, $msg = '')
 		}
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['stroptions']}</th>\n\t\t<td class=\"data\">";
 		echo "<label for=\"withdefaults\"><input type=\"checkbox\" id=\"withdefaults\" name=\"withdefaults\"",
-		isset($_REQUEST['withdefaults']) ? ' checked="checked"' : '',
-		"/>{$lang['strcreatelikewithdefaults']}</label>";
+			isset($_REQUEST['withdefaults']) ? ' checked="checked"' : '',
+			"/>{$lang['strcreatelikewithdefaults']}</label>";
 		if ($pg->hasCreateTableLikeWithConstraints()) {
 			echo "<br /><label for=\"withconstraints\"><input type=\"checkbox\" id=\"withconstraints\" name=\"withconstraints\"",
-			isset($_REQUEST['withconstraints']) ? ' checked="checked"' : '',
-			"/>{$lang['strcreatelikewithconstraints']}</label>";
+				isset($_REQUEST['withconstraints']) ? ' checked="checked"' : '',
+				"/>{$lang['strcreatelikewithconstraints']}</label>";
 		}
 		if ($pg->hasCreateTableLikeWithIndexes()) {
 			echo "<br /><label for=\"withindexes\"><input type=\"checkbox\" id=\"withindexes\" name=\"withindexes\"",
-			isset($_REQUEST['withindexes']) ? ' checked="checked"' : '',
-			"/>{$lang['strcreatelikewithindexes']}</label>";
+				isset($_REQUEST['withindexes']) ? ' checked="checked"' : '',
+				"/>{$lang['strcreatelikewithindexes']}</label>";
 		}
 		echo "</td>\n\t</tr>\n";
 		echo "</table>";
@@ -327,8 +347,8 @@ function doCreateLike($confirm, $msg = '')
 		echo "<p><input type=\"submit\" value=\"{$lang['strcreate']}\" />\n";
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 		echo "</form>\n";
-	} else {
 
+	} else {
 
 		if (trim($_REQUEST['name']) == '') {
 			doCreateLike(false, $lang['strtableneedsname']);
@@ -339,7 +359,8 @@ function doCreateLike($confirm, $msg = '')
 			return;
 		}
 
-		if (!isset($_REQUEST['tablespace'])) $_REQUEST['tablespace'] = '';
+		if (!isset($_REQUEST['tablespace']))
+			$_REQUEST['tablespace'] = '';
 
 		$status = $tableActions->createTableLike(
 			$_REQUEST['name'],
@@ -384,7 +405,8 @@ function doSelectRows($confirm, $msg = '')
 			$fksprops = $misc->getAutocompleteFKProperties($_REQUEST['table'], 'search');
 			if ($fksprops !== false)
 				echo $fksprops['code'];
-		} else $fksprops = false;
+		} else
+			$fksprops = false;
 
 		echo "<form action=\"tables.php\" method=\"get\" id=\"selectform\">\n";
 		if ($attrs->recordCount() > 0) {
@@ -418,14 +440,14 @@ function doSelectRows($confirm, $msg = '')
 				echo "<tr class=\"data{$id}\">\n";
 				echo "<td style=\"white-space:nowrap;\">";
 				echo "<input type=\"checkbox\" name=\"show[", htmlspecialchars_nc($attrs->fields['attname']), "]\"",
-				isset($_REQUEST['show'][$attrs->fields['attname']]) ? ' checked="checked"' : '', " /></td>";
+					isset($_REQUEST['show'][$attrs->fields['attname']]) ? ' checked="checked"' : '', " /></td>";
 				echo "<td style=\"white-space:nowrap;\">", $misc->printVal($attrs->fields['attname']), "</td>";
 				echo "<td style=\"white-space:nowrap;\">", $misc->printVal($pg->formatType($attrs->fields['type'], $attrs->fields['atttypmod'])), "</td>";
 				echo "<td style=\"white-space:nowrap;\">";
 				echo "<select name=\"ops[{$attrs->fields['attname']}]\">\n";
 				foreach (array_keys($pg->selectOps) as $v) {
 					echo "<option value=\"", htmlspecialchars_nc($v), "\"", ($v == $_REQUEST['ops'][$attrs->fields['attname']]) ? ' selected="selected"' : '',
-					">", htmlspecialchars_nc($v), "</option>\n";
+						">", htmlspecialchars_nc($v), "</option>\n";
 				}
 				echo "</select>\n</td>\n";
 				echo "<td style=\"white-space:nowrap;\" id=\"row_att_search_{$attrs->fields['attnum']}\">";
@@ -453,7 +475,8 @@ function doSelectRows($confirm, $msg = '')
 			// Select all checkbox
 			echo "<tr><td colspan=\"5\"><input type=\"checkbox\" id=\"selectall\" name=\"selectall\" accesskey=\"a\" onclick=\"javascript:selectAll()\" /> <label for=\"selectall\">{$lang['strselectallfields']}</label></td>";
 			echo "</tr></table>\n";
-		} else echo "<p>{$lang['strinvalidparam']}</p>\n";
+		} else
+			echo "<p>{$lang['strinvalidparam']}</p>\n";
 
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"selectrows\" />\n";
 		echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
@@ -463,9 +486,12 @@ function doSelectRows($confirm, $msg = '')
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 		echo "</form>\n";
 	} else {
-		if (!isset($_REQUEST['show'])) $_REQUEST['show'] = [];
-		if (!isset($_REQUEST['values'])) $_REQUEST['values'] = [];
-		if (!isset($_REQUEST['nulls'])) $_REQUEST['nulls'] = [];
+		if (!isset($_REQUEST['show']))
+			$_REQUEST['show'] = [];
+		if (!isset($_REQUEST['values']))
+			$_REQUEST['values'] = [];
+		if (!isset($_REQUEST['nulls']))
+			$_REQUEST['nulls'] = [];
 
 		// Verify that they haven't supplied a value for unary operators
 		foreach ($_REQUEST['ops'] as $k => $v) {
@@ -782,7 +808,8 @@ function doDrop($confirm)
 				// Everything went fine, back to the Default page....
 				AppContainer::setShouldReloadTree(true);
 				doDefault($msg);
-			} else doDefault($lang['strtabledroppedbad']);
+			} else
+				doDefault($lang['strtabledroppedbad']);
 		} else {
 			$status = $tableActions->dropTable($_POST['table'], isset($_POST['cascade']));
 			if ($status == 0) {
@@ -815,8 +842,8 @@ function doDefault($msg = '')
 		'table' => [
 			'title' => $lang['strtable'],
 			'field' => field('relname'),
-			'url'	=> "redirect.php?subject=table&amp;{$misc->href}&amp;",
-			'vars'  => ['table' => 'relname'],
+			'url' => "redirect.php?subject=table&amp;{$misc->href}&amp;",
+			'vars' => ['table' => 'relname'],
 		],
 		'owner' => [
 			'title' => $lang['strowner'],
@@ -829,7 +856,7 @@ function doDefault($msg = '')
 		'tuples' => [
 			'title' => $lang['strestimatedrowcount'],
 			'field' => field('reltuples'),
-			'type'  => 'numeric'
+			'type' => 'numeric'
 		],
 		'actions' => [
 			'title' => $lang['stractions'],
@@ -972,7 +999,8 @@ function doDefault($msg = '')
 		//'cluster' TODO ?
 	];
 
-	if (!$pg->hasTablespaces()) unset($columns['tablespace']);
+	if (!$pg->hasTablespaces())
+		unset($columns['tablespace']);
 
 	$misc->printTable($tables, $columns, $actions, 'tables-tables', $lang['strnotables']);
 
@@ -1027,8 +1055,8 @@ function doTree()
 	$reqvars = $misc->getRequestVars('table');
 
 	$attrs = [
-		'text'   => field('relname'),
-		'icon'   => 'Table',
+		'text' => field('relname'),
+		'icon' => 'Table',
 		'iconAction' => url(
 			'display.php',
 			$reqvars,
@@ -1063,8 +1091,8 @@ function doSubTree()
 	$reqvars = $misc->getRequestVars('table');
 
 	$attrs = [
-		'text'   => field('title'),
-		'icon'   => field('icon'),
+		'text' => field('title'),
+		'icon' => field('icon'),
 		'action' => url(
 			field('url'),
 			$reqvars,
@@ -1096,54 +1124,69 @@ $misc = AppContainer::getMisc();
 
 $action = $_REQUEST['action'] ?? '';
 
-if ($action == 'tree') doTree();
-if ($action == 'subtree') dosubTree();
+if ($action == 'tree')
+	doTree();
+if ($action == 'subtree')
+	dosubTree();
 
 $misc->printHeader($lang['strtables']);
 $misc->printBody();
 
 switch ($action) {
 	case 'create':
-		if (isset($_POST['cancel'])) doDefault();
-		else doCreate();
+		if (isset($_POST['cancel']))
+			doDefault();
+		else
+			doCreate();
 		break;
 	case 'createlike':
 		doCreateLike(false);
 		break;
 	case 'confcreatelike':
-		if (isset($_POST['cancel'])) doDefault();
-		else doCreateLike(true);
+		if (isset($_POST['cancel']))
+			doDefault();
+		else
+			doCreateLike(true);
 		break;
 	case 'selectrows':
-		if (!isset($_POST['cancel'])) doSelectRows(false);
-		else doDefault();
+		if (!isset($_POST['cancel']))
+			doSelectRows(false);
+		else
+			doDefault();
 		break;
 	case 'confselectrows':
 		doSelectRows(true);
 		break;
 	case 'insertrow':
-		if (!isset($_POST['cancel'])) doInsertRow(false);
-		else doDefault();
+		if (!isset($_POST['cancel']))
+			doInsertRow(false);
+		else
+			doDefault();
 		break;
 	case 'confinsertrow':
 		doInsertRow(true);
 		break;
 	case 'empty':
-		if (isset($_POST['empty'])) doEmpty(false);
-		else doDefault();
+		if (isset($_POST['empty']))
+			doEmpty(false);
+		else
+			doDefault();
 		break;
 	case 'confirm_empty':
 		doEmpty(true);
 		break;
 	case 'drop':
-		if (isset($_POST['drop'])) doDrop(false);
-		else doDefault();
+		if (isset($_POST['drop']))
+			doDrop(false);
+		else
+			doDefault();
 		break;
 	case 'confirm_drop':
 		doDrop(true);
 		break;
 	default:
-		if (adminActions($action, 'table') === false) doDefault();
+		if (adminActions($action, 'table') === false)
+			doDefault();
 		break;
 }
 

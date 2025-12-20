@@ -3,6 +3,7 @@
 namespace PhpPgAdmin\Gui;
 
 use PhpPgAdmin\Core\AbstractContext;
+use PhpPgAdmin\Database\Actions\RoleActions;
 
 class TabsRenderer extends AbstractContext
 {
@@ -19,7 +20,7 @@ class TabsRenderer extends AbstractContext
         }
 
         if (count($tabs) > 0) {
-            $width = (int)(100 / count($tabs)) . '%';
+            $width = (int) (100 / count($tabs)) . '%';
         } else {
             $width = '1';
         }
@@ -58,6 +59,7 @@ class TabsRenderer extends AbstractContext
         $lang = $this->lang();
         $conf = $this->conf();
         $pluginManager = $this->pluginManager();
+        $roleActions = new RoleActions($pg);
 
         $hideAdvanced = ($conf['show_advanced'] === false);
         $tabs = [];
@@ -79,7 +81,7 @@ class TabsRenderer extends AbstractContext
                 break;
 
             case 'server':
-                $hideUsers = !$pg->isSuperUser();
+                $hideUsers = !$roleActions->isSuperUser();
                 $tabs = [
                     'databases' => [
                         'title' => $lang['strdatabases'],
@@ -89,42 +91,21 @@ class TabsRenderer extends AbstractContext
                         'icon' => 'Databases',
                     ]
                 ];
-                if ($pg->hasRoles()) {
-                    $tabs = array_merge($tabs, [
-                        'roles' => [
-                            'title' => $lang['strroles'],
-                            'url' => 'roles.php',
-                            'urlvars' => ['subject' => 'server'],
-                            'hide' => $hideUsers,
-                            'help' => 'pg.role',
-                            'icon' => 'Roles',
-                        ]
-                    ]);
-                } else {
-                    $tabs = array_merge($tabs, [
-                        'users' => [
-                            'title' => $lang['strusers'],
-                            'url' => 'users.php',
-                            'urlvars' => ['subject' => 'server'],
-                            'hide' => $hideUsers,
-                            'help' => 'pg.user',
-                            'icon' => 'Users',
-                        ],
-                        'groups' => [
-                            'title' => $lang['strgroups'],
-                            'url' => 'groups.php',
-                            'urlvars' => ['subject' => 'server'],
-                            'hide' => $hideUsers,
-                            'help' => 'pg.group',
-                            'icon' => 'UserGroups',
-                        ]
-                    ]);
-                }
+                $tabs = array_merge($tabs, [
+                    'roles' => [
+                        'title' => $lang['strroles'],
+                        'url' => 'roles.php',
+                        'urlvars' => ['subject' => 'server'],
+                        'hide' => $hideUsers,
+                        'help' => 'pg.role',
+                        'icon' => 'Roles',
+                    ]
+                ]);
 
                 $tabs = array_merge($tabs, [
                     'account' => [
                         'title' => $lang['straccount'],
-                        'url' => $pg->hasRoles() ? 'roles.php' : 'users.php',
+                        'url' => 'roles.php',
                         'urlvars' => ['subject' => 'server', 'action' => 'account'],
                         'hide' => !$hideUsers,
                         'help' => 'pg.role',
