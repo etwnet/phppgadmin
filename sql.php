@@ -232,6 +232,7 @@ $navlinks['alter'] = array(
 			))
 		)
 	),
+	'icon' => $misc->icon('SqlEditor'),
 	'content' => $lang['streditsql']
 );
 
@@ -262,6 +263,7 @@ if (isset($_SESSION['sqlquery']) && isset($rs) && is_object($rs) && $rs->recordC
 				'urlvars' => $fields
 			)
 		),
+		'icon' => $misc->icon('Download'),
 		'content' => $lang['strdownload']
 	);
 }

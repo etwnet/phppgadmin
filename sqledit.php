@@ -115,10 +115,15 @@ function doDefault()
 <script type="text/javascript">
 	// Adjust form method based on whether the query is read-only
 	function adjustPopupSqlFormMethod(form) {
-		if (!form.script.value && isSqlReadQuery(form.query.value)) {
+		const isValidReadQuery =
+			!form.script.value
+			&& isSqlReadQuery(form.query.value)
+			&& form.query.value.length < 5000;
+		if (isValidReadQuery) {
 			form.method = 'get';
 		} else {
 			form.method = 'post';
+			form.paginate.checked = false;
 		}
 	}
 </script>

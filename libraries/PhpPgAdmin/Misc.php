@@ -376,10 +376,11 @@ class Misc extends AbstractContext
 	 * @param int $page Current page number
 	 * @param int $pages Total number of pages
 	 * @param array $gets Associative array of URL variables to include in links
+	 * @param string $script (optional) The script to link to (default current script)
 	 */
-	function printPageNavigation($page, $pages, $gets)
+	function printPageNavigation($page, $pages, $gets, $script = '')
 	{
-		$this->getLayoutRenderer()->printPageNavigation($page, $pages, $gets);
+		$this->getLayoutRenderer()->printPageNavigation($page, $pages, $gets, $script);
 	}
 
 	/**

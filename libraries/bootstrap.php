@@ -28,6 +28,10 @@ AppContainer::setAppVersion($appVersion = '8.0.rc1');
 // PostgreSQL minimum version
 AppContainer::setPgServerMinVersion($postgresqlMinVer = '9.0');
 
+// Set internal encoding for multibyte string functions
+mb_internal_encoding('UTF-8');
+
+
 /*
 // Check the version of PHP
 if (version_compare(phpversion(), $phpMinVer, '<'))
@@ -78,7 +82,7 @@ if (!empty($conf['session_path'])) {
 
 // Set session timeout duration
 if (!empty($conf['session_timeout'])) {
-	$sessionLifetime = (int)$conf['session_timeout'];
+	$sessionLifetime = (int) $conf['session_timeout'];
 	ini_set('session.cookie_lifetime', $sessionLifetime);
 	ini_set('session.gc_maxlifetime', $sessionLifetime);
 }
@@ -91,7 +95,8 @@ if (!ini_get('session.auto_start')) {
 }
 
 // Always include english.php, since it's the master language file
-if (!isset($conf['default_lang'])) $conf['default_lang'] = 'english';
+if (!isset($conf['default_lang']))
+	$conf['default_lang'] = 'english';
 $lang = [];
 require_once __DIR__ . '/../lang/english.php';
 
@@ -120,7 +125,8 @@ if (!isset($_language) && $conf['default_lang'] == 'auto' && isset($_SERVER['HTT
 	// (http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.4)
 	preg_match_all('/\s*([a-z]{1,8}(?:-[a-z]{1,8})*)(?:;q=([01](?:.[0-9]{0,3})?))?\s*(?:,|$)/', strtolower($_SERVER['HTTP_ACCEPT_LANGUAGE']), $_m, PREG_SET_ORDER);
 	foreach ($_m as $_l) {  // $_l[1] = language tag, [2] = quality
-		if (!isset($_l[2])) $_l[2] = 1;  // Default quality to 1
+		if (!isset($_l[2]))
+			$_l[2] = 1;  // Default quality to 1
 		if ($_l[2] > 0 && $_l[2] <= 1 && isset($availableLanguages[$_l[1]])) {
 			// Build up array of (quality => language_file)
 			$_acceptLang[$_l[2]] = $availableLanguages[$_l[1]];
@@ -243,7 +249,8 @@ $info = $misc->getServerInfo();
 if (!empty($info)) {
 	$_theme = '';
 
-	if ((isset($info['theme']['default']))
+	if (
+		(isset($info['theme']['default']))
 		and is_file("./themes/{$info['theme']['default']}/global.css")
 	)
 		$_theme = $info['theme']['default'];

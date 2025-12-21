@@ -11,18 +11,6 @@ class ScriptActions extends AbstractActions
 {
 
     /**
-     * A private helper method for executeScript that advances the
-     * character position by 1. Works with multibyte UTF-8 characters.
-     * Since we track character position (not byte position), this simply
-     * increments the position by 1.
-     * @param int &$charpos The current character position in the line
-     */
-    private function advance_1(&$charpos)
-    {
-        $charpos++;
-    }
-
-    /**
      * Private helper method to detect a valid $foo$ quote delimiter at
      * the start of the parameter dquote. UTF-8 compatible.
      * @return bool True if valid, false otherwise
@@ -60,7 +48,7 @@ class ScriptActions extends AbstractActions
 
     /**
      * Executes an SQL script as a series of SQL statements.  Returns
-     * the result of the final step.  This is a very complicated lexer
+     * the result of the final step.  This is a lexer method
      * based on the REL7_4_STABLE src/bin/psql/mainloop.c lexer in
      * the PostgreSQL source code. UTF-8 and multibyte language aware.
      * @param string $name Entry in $_FILES to use
@@ -85,6 +73,7 @@ class ScriptActions extends AbstractActions
             return false;
 
         try {
+
             // Build up each SQL statement, they can be multiline
             $query_buf = null;
             $query_start = 0;
@@ -106,7 +95,7 @@ class ScriptActions extends AbstractActions
                 if (trim($line) == '')
                     continue;
 
-                $len = mb_strlen($line, 'UTF-8');
+                $len = mb_strlen($line);
                 $query_start = 0;
 
                 /*
@@ -114,10 +103,10 @@ class ScriptActions extends AbstractActions
                  * Character position tracking (UTF-8 multibyte aware).
                  */
 
-                for ($charpos = 0; $charpos < $len; $this->advance_1($charpos)) {
+                for ($charpos = 0; $charpos < $len; $charpos++) {
 
                     /* was the previous character a backslash? */
-                    if ($i > 0 && substr($line, $i - $prevlen, 1) == '\\')
+                    if ($charpos > 0 && mb_substr($line, $charpos - 1, 1) == '\\')
                         $bslash_count++;
                     else
                         $bslash_count = 0;
@@ -135,46 +124,46 @@ class ScriptActions extends AbstractActions
                          * backslashes don't count for double quotes, though.
                          */
                         if (
-                            mb_substr($line, $charpos, 1, 'UTF-8') == $in_quote &&
+                            mb_substr($line, $charpos, 1) == $in_quote &&
                             ($bslash_count % 2 == 0 || $in_quote == '"')
                         )
                             $in_quote = 0;
                     } /* in or end of $foo$ type quote? */ else if ($dol_quote) {
-                        if (mb_strpos(mb_substr($line, $charpos, null, 'UTF-8'), $dol_quote, 0, 'UTF-8') === 0) {
-                            $this->advance_1($charpos);
-                            while (mb_substr($line, $charpos, 1, 'UTF-8') != '$')
-                                $this->advance_1($charpos);
+                        if (mb_strpos(mb_substr($line, $charpos, null), $dol_quote, 0) === 0) {
+                            $charpos++;
+                            while (mb_substr($line, $charpos, 1) != '$')
+                                $charpos++;
                             $dol_quote = null;
                         }
-                    } /* start of extended comment? */ else if (mb_substr($line, $charpos, 2, 'UTF-8') == '/*') {
+                    } /* start of extended comment? */ else if (mb_substr($line, $charpos, 2) == '/*') {
                         $in_xcomment++;
                         if ($in_xcomment == 1)
-                            $this->advance_1($charpos);
+                            $charpos++;
                     } /* in or end of extended comment? */ else if ($in_xcomment) {
-                        if (mb_substr($line, $charpos, 2, 'UTF-8') == '*/' && !--$in_xcomment)
-                            $this->advance_1($charpos);
-                    } /* start of quote? */ else if (mb_substr($line, $charpos, 1, 'UTF-8') == '\'' || mb_substr($line, $charpos, 1, 'UTF-8') == '"') {
-                        $in_quote = mb_substr($line, $charpos, 1, 'UTF-8');
+                        if (mb_substr($line, $charpos, 2) == '*/' && !--$in_xcomment)
+                            $charpos++;
+                    } /* start of quote? */ else if (mb_substr($line, $charpos, 1) == '\'' || mb_substr($line, $charpos, 1) == '"') {
+                        $in_quote = mb_substr($line, $charpos, 1);
                     } /*
                       * start of $foo$ type quote?
-                      */ else if (!$dol_quote && $this->valid_dolquote(mb_substr($line, $charpos, null, 'UTF-8'))) {
-                        $dol_end = mb_strpos(mb_substr($line, $charpos + 1, null, 'UTF-8'), '$', 0, 'UTF-8');
-                        $dol_quote = mb_substr($line, $charpos, $dol_end + 2, 'UTF-8');
-                        $this->advance_1($charpos);
-                        while (mb_substr($line, $charpos, 1, 'UTF-8') != '$') {
-                            $this->advance_1($charpos);
+                      */ else if (!$dol_quote && $this->valid_dolquote(mb_substr($line, $charpos, null))) {
+                        $dol_end = mb_strpos(mb_substr($line, $charpos + 1, null), '$', 0);
+                        $dol_quote = mb_substr($line, $charpos, $dol_end + 2);
+                        $charpos++;
+                        while (mb_substr($line, $charpos, 1) != '$') {
+                            $charpos++;
                         }
 
-                    } /* single-line comment? truncate line */ else if (mb_substr($line, $charpos, 2, 'UTF-8') == '--') {
-                        $line = mb_substr($line, 0, $charpos, 'UTF-8'); /* remove comment */
-                        $len = mb_strlen($line, 'UTF-8');
+                    } /* single-line comment? truncate line */ else if (mb_substr($line, $charpos, 2) == '--') {
+                        $line = mb_substr($line, 0, $charpos); /* remove comment */
+                        $len = mb_strlen($line);
                         break;
-                    } /* count nested parentheses */ else if (mb_substr($line, $charpos, 1, 'UTF-8') == '(') {
+                    } /* count nested parentheses */ else if (mb_substr($line, $charpos, 1) == '(') {
                         $paren_level++;
-                    } else if (mb_substr($line, $charpos, 1, 'UTF-8') == ')' && $paren_level > 0) {
+                    } else if (mb_substr($line, $charpos, 1) == ')' && $paren_level > 0) {
                         $paren_level--;
-                    } /* semicolon? then send query */ else if (mb_substr($line, $charpos, 1, 'UTF-8') == ';' && !$bslash_count && !$paren_level) {
-                        $subline = mb_substr($line, $query_start, $charpos - $query_start, 'UTF-8');
+                    } /* semicolon? then send query */ else if (mb_substr($line, $charpos, 1) == ';' && !$bslash_count && !$paren_level) {
+                        $subline = mb_substr($line, $query_start, $charpos - $query_start);
                         /* is there anything else on the line? */
                         if (strspn($subline, " \t\n\r") != strlen($subline)) {
                             /*
@@ -217,14 +206,13 @@ class ScriptActions extends AbstractActions
                      * We grab the whole string so that we don't
                      * mistakenly see $foo$ inside an identifier as the start
                      * of a dollar quote.
-                     */
-                    else if (preg_match('/^[_\p{L}]$/u', mb_substr($line, $charpos, 1, 'UTF-8'))) {
-                        $sub = mb_substr($line, $charpos, 1, 'UTF-8');
-                        while (preg_match('/^[\$_\p{L}\p{N}]$/u', $sub)) {
+                     */ else if (preg_match('/^[_\\p{L}]$/u', mb_substr($line, $charpos, 1))) {
+                        $sub = mb_substr($line, $charpos, 1);
+                        while (preg_match('/^[\\$_\\p{L}\\p{N}]$/u', $sub)) {
                             /* keep going while we still have identifier chars */
-                            $this->advance_1($charpos);
+                            $charpos++;
                             if ($charpos < $len)
-                                $sub = mb_substr($line, $charpos, 1, 'UTF-8');
+                                $sub = mb_substr($line, $charpos, 1);
                             else
                                 break;
                         }
@@ -235,9 +223,9 @@ class ScriptActions extends AbstractActions
                 } // end for
 
                 /* Put the rest of the line in the query buffer. */
-                $subline = mb_substr($line, $query_start, null, 'UTF-8');
-                if ($in_quote || $dol_quote || strspn($subline, " \t\n\r") != mb_strlen($subline, 'UTF-8')) {
-                    if (strlen($query_buf ?? '') > 0)
+                $subline = mb_substr($line, $query_start, null);
+                if ($in_quote || $dol_quote || strspn($subline, " \t\n\r") != mb_strlen($subline)) {
+                    if (mb_strlen($query_buf ?? '') > 0)
                         $query_buf .= "\n";
                     $query_buf .= $subline;
                 }
@@ -250,7 +238,7 @@ class ScriptActions extends AbstractActions
              * Process query at the end of file without a semicolon, so long as
              * it's non-empty.
              */
-            if (mb_strlen($query_buf ?? '', 'UTF-8') > 0 && strspn($query_buf, " \t\n\r") != mb_strlen($query_buf, 'UTF-8')) {
+            if (mb_strlen($query_buf ?? '') > 0 && strspn($query_buf, " \t\n\r") != mb_strlen($query_buf)) {
                 // Execute the query using raw pg_*
                 $rs = @pg_query($conn, $query_buf);
                 $errorMsg = '';

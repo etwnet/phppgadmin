@@ -930,8 +930,10 @@ function doBrowse($msg = '')
 
 	$_sub_params = $_gets;
 	unset($_sub_params['query']);
+	// Since we use the SQL query as url parameter for pagination and sorting,
+	// we can use GET method for the form.
 	?>
-	<form method="post" action="display.php?<?= http_build_query($_sub_params) ?>">
+	<form method="get" action="display.php?<?= http_build_query($_sub_params) ?>">
 		<div>
 			<textarea name="query" class="sql-editor frame resizable auto-expand" width="90%" rows="5" cols="100"
 				resizable="true"><?= htmlspecialchars_nc($query) ?></textarea>
@@ -944,7 +946,7 @@ function doBrowse($msg = '')
 
 	if (is_object($rs) && $rs->recordCount() > 0) {
 		// Show page navigation
-		$misc->printPageNavigation($_REQUEST['page'], $max_pages, $_gets);
+		$misc->printPageNavigation($_REQUEST['page'], $max_pages, $_gets, 'display.php');
 
 		// Check that the key is actually in the result set.  This can occur for select
 		// operations where the key fields aren't part of the select.  XXX:  We should
@@ -1119,7 +1121,7 @@ function doBrowse($msg = '')
 
 		//echo "<p>", $rs->recordCount(), " {$lang['strrows']}</p>\n";
 		// Show page navigation
-		$misc->printPageNavigation($_REQUEST['page'], $max_pages, $_gets);
+		$misc->printPageNavigation($_REQUEST['page'], $max_pages, $_gets, 'display.php');
 	} else {
 		echo "<div class=\"empty-result\">{$lang['strnodata']}</div>\n";
 	}

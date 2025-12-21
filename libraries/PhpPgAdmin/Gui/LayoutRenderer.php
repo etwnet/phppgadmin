@@ -61,7 +61,7 @@ class LayoutRenderer extends AbstractContext
 		echo "<!DOCTYPE html>\n";
 		echo '<html lang="' . $lang['applocale'] . '" dir="' . htmlspecialchars($lang['applangdir']) . '">';
 		echo "\n";
-?>
+		?>
 
 		<head>
 			<meta charset="utf-8" />
@@ -74,7 +74,7 @@ class LayoutRenderer extends AbstractContext
 			<script src="js/core/xloadtree2.js" type="text/javascript"></script>
 			<script src="js/core/popper.js" defer type="text/javascript"></script>
 			<script src="js/flatpickr/flatpickr.js" defer type="text/javascript"></script>
-			<?php if ($langIso2 != 'en') : ?>
+			<?php if ($langIso2 != 'en'): ?>
 				<script src="js/flatpickr/l10n/<?= $langIso2 ?>.js" defer type="text/javascript"></script>
 			<?php endif ?>
 			<script src="libraries/ace/src-min-noconflict/ace.js" defer type="text/javascript"></script>
@@ -104,7 +104,7 @@ class LayoutRenderer extends AbstractContext
 			}
 			?>
 		</head>
-	<?php
+		<?php
 	}
 
 	public function printBody()
@@ -180,14 +180,15 @@ EOT;
 	{
 		global $appName;
 		$lang = $this->lang();
-	?>
+		?>
 		<div class="logo">
 			<a href="index.php">
 				<?= htmlspecialchars($appName) ?>
 			</a>
 		</div>
 		<div class="refreshTree">
-			<a href="#" onclick="writeTree()"><img class="icon" src="<?= $this->misc->icon('Refresh'); ?>" alt="<?= $lang['strrefresh']; ?>" title="<?= $lang['strrefresh']; ?>" /></a>
+			<a href="#" onclick="writeTree()"><img class="icon" src="<?= $this->misc->icon('Refresh'); ?>"
+					alt="<?= $lang['strrefresh']; ?>" title="<?= $lang['strrefresh']; ?>" /></a>
 		</div>
 		<div id="wfxt-container"></div>
 		<script>
@@ -214,17 +215,17 @@ EOT;
 			//WebFXTreeAbstractNode.prototype.target = 'detail';
 
 			// Disable double click:
-			WebFXTreeAbstractNode.prototype._ondblclick = function() {}
+			WebFXTreeAbstractNode.prototype._ondblclick = function () { }
 
 			// Show tree XML on double click - for debugging purposes only
 			/*
 			// UNCOMMENT THIS FOR DEBUGGING (SHOWS THE SOURCE XML)
 			WebFXTreeAbstractNode.prototype._ondblclick = function(e){
-			    var el = e.target || e.srcElement;
+				var el = e.target || e.srcElement;
 
-			    if (this.src != null)
-			        window.open(this.src, this.target || "_self");
-			    return false;
+				if (this.src != null)
+					window.open(this.src, this.target || "_self");
+				return false;
 			};
 			*/
 
@@ -241,7 +242,7 @@ EOT;
 
 			writeTree();
 		</script>
-<?php
+		<?php
 	}
 
 	/**
@@ -337,8 +338,9 @@ EOT;
 	 * @param int $page - the page currently viewed
 	 * @param int $pages - the maximum number of pages
 	 * @param array $gets -  the parameters to include in the link to the wanted page
+	 * @param string $script - (optional) the script to link to (default current script)
 	 */
-	function printPageNavigation($page, $pages, $gets)
+	function printPageNavigation($page, $pages, $gets, $script = '')
 	{
 		$conf = $this->conf();
 		$lang = $this->lang();
@@ -349,15 +351,17 @@ EOT;
 		}
 		$window = 3;
 
-		if ($page < 1 || $page > $pages) return;
-		if ($pages < 1) return;
+		if ($page < 1 || $page > $pages)
+			return;
+		if ($pages < 1)
+			return;
 
 		unset($gets['page']);
 		$url = http_build_query($gets);
 
 		echo "<div class=\"pagenav-container\">\n";
 
-		echo "<form method=\"get\" action=\"?$url\" class=\"pagenav-form\">";
+		echo "<form method=\"get\" action=\"$script?$url\" class=\"pagenav-form\">";
 		echo "<span class=\"me-1\">{$lang['strjumppage']}</span>\n";
 		echo "<input type=\"number\" class=\"page\" name=\"page\" min=\"1\" max=\"$pages\" value=\"$page\">\n";
 		echo "<button type=\"submit\">↩</button>\n";
@@ -365,9 +369,9 @@ EOT;
 
 
 		$class = ($page > 1) ? "pagenav" : "pagenav disabled";
-		echo "<a class=\"$class\" href=\"?{$url}&page=" . max(1, $page - 1) . "\">⮜</a>\n";
+		echo "<a class=\"$class\" href=\"$script?{$url}&page=" . max(1, $page - 1) . "\">⮜</a>\n";
 
-		echo "<a class=\"pagenav" . ($page == 1 ? " current" : "") . "\" href=\"?{$url}&page=1\">1</a>\n";
+		echo "<a class=\"pagenav" . ($page == 1 ? " current" : "") . "\" href=\"$script?{$url}&page=1\">1</a>\n";
 
 		$min_page = $page - $window;
 		$max_page = $page + $window;
@@ -390,7 +394,7 @@ EOT;
 
 		for ($i = $min_page; $i <= $max_page; $i++) {
 			$class = ($i == $page) ? "pagenav current" : "pagenav";
-			echo "<a class=\"$class\" href=\"?{$url}&page={$i}\">$i</a>\n";
+			echo "<a class=\"$class\" href=\"$script?{$url}&page={$i}\">$i</a>\n";
 		}
 
 		if ($max_page < $pages - 1) {
@@ -398,16 +402,16 @@ EOT;
 		}
 
 		if ($pages > 1) {
-			echo "<a class=\"pagenav" . ($page == $pages ? " current" : "") . "\" href=\"?{$url}&page={$pages}\">$pages</a>\n";
+			echo "<a class=\"pagenav" . ($page == $pages ? " current" : "") . "\" href=\"$script?{$url}&page={$pages}\">$pages</a>\n";
 		}
 
 		$class = ($page < $pages) ? "pagenav" : "pagenav disabled";
-		echo "<a class=\"$class\" href=\"?{$url}&page=" . ($page + 1) . "\">⮞</a>\n";
+		echo "<a class=\"$class\" href=\"$script?{$url}&page=" . ($page + 1) . "\">⮞</a>\n";
 
 		$query_params = $gets;
 		unset($query_params['max_rows']);
 		$sub_url = http_build_query($query_params);
-		echo "<form method=\"get\" action=\"?$sub_url\" class=\"pagenav-form ml-2\">";
+		echo "<form method=\"get\" action=\"$script?$sub_url\" class=\"pagenav-form ml-2\">";
 		echo "<span class=\"me-1\">{$lang['strselectmaxrows']}</span>\n";
 		echo "<select name=\"max_rows\" class=\"max_rows\" onchange=\"this.form.querySelector('button[type=submit]').click()\">\n";
 		foreach ($limits as $limit) {
@@ -462,7 +466,8 @@ EOT;
 				? ($params['null'] === true ? '<i class="null">NULL</i>' : $params['null'])
 				: '';
 
-		if (isset($params['map']) && isset($params['map'][$str])) $str = $params['map'][$str];
+		if (isset($params['map']) && isset($params['map'][$str]))
+			$str = $params['map'][$str];
 
 		// Clip the value if the 'clip' parameter is true.
 		if (isset($params['clip']) && $params['clip'] === true) {
@@ -491,12 +496,15 @@ EOT;
 				$out = nl2br(htmlspecialchars($str));
 				break;
 			case 'yesno':
-				if (!isset($params['true'])) $params['true'] = $lang['stryes'];
-				if (!isset($params['false'])) $params['false'] = $lang['strno'];
-				// No break - fall through to boolean case.
+				if (!isset($params['true']))
+					$params['true'] = $lang['stryes'];
+				if (!isset($params['false']))
+					$params['false'] = $lang['strno'];
+			// No break - fall through to boolean case.
 			case 'bool':
 			case 'boolean':
-				if (is_bool($str)) $str = $str ? 't' : 'f';
+				if (is_bool($str))
+					$str = $str ? 't' : 'f';
 				switch ($str) {
 					case 't':
 						$out = ($params['true'] ?? $lang['strtrue']);
@@ -594,10 +602,13 @@ EOT;
 				$out = nl2br(htmlspecialchars($str));
 		}
 
-		if (isset($params['class'])) $class = $params['class'];
-		if (isset($params['align'])) $align = $params['align'];
+		if (isset($params['class']))
+			$class = $params['class'];
+		if (isset($params['align']))
+			$align = $params['align'];
 
-		if (!isset($tag) && (isset($class) || isset($align))) $tag = 'div';
+		if (!isset($tag) && (isset($class) || isset($align)))
+			$tag = 'div';
 
 		if (isset($tag)) {
 			$attr = isset($attr) ? " $attr" : '';
