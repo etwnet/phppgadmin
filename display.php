@@ -659,6 +659,9 @@ function doBrowse($msg = '')
 
 	$save_history = !isset($_REQUEST['nohistory']);
 
+	if (!isset($_REQUEST['schema']))
+		$_REQUEST['schema'] = $pg->_schema;
+
 	// This code is used when browsing FK in pure-xHTML (without js)
 	if (isset($_REQUEST['fkey'])) {
 		$ops = [];
@@ -922,13 +925,13 @@ function doBrowse($msg = '')
 	$_gets['max_rows'] = $_REQUEST['max_rows'];
 
 	if ($save_history) {
-		$misc->saveSqlHistory($query);
+		$misc->saveSqlHistory($query, true);
 	}
 
 	$_sub_params = $_gets;
 	unset($_sub_params['query']);
 	?>
-	<form method="get" action="display.php?<?= http_build_query($_sub_params) ?>">
+	<form method="post" action="display.php?<?= http_build_query($_sub_params) ?>">
 		<div>
 			<textarea name="query" class="sql-editor frame resizable auto-expand" width="90%" rows="5" cols="100"
 				resizable="true"><?= htmlspecialchars_nc($query) ?></textarea>

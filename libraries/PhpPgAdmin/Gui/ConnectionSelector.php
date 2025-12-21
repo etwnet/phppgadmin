@@ -18,7 +18,7 @@ class ConnectionSelector extends AbstractContext
         echo "<label for=\"connection-server\">";
         $this->misc()->printHelp($lang['strserver'], 'pg.server');
         echo ":&nbsp;</label>";
-        echo "<select id=\"connection-server\" name=\"server\" {$onchange}>\n";
+        echo "<select id=\"connection-server\" data-use-in-url=\"1\" name=\"server\" {$onchange}>\n";
 
         $servers = $this->misc()->getServers();
         foreach ($servers as $info) {
@@ -36,7 +36,7 @@ class ConnectionSelector extends AbstractContext
             echo "<label for=\"connection-database\">&nbsp;&nbsp;&nbsp;";
             $this->misc()->printHelp($lang['strdatabase'], 'pg.database');
             echo ":&nbsp;</label>";
-            echo "<select id=\"connection-database\" name=\"database\" {$onchange}>\n";
+            echo "<select id=\"connection-database\" data-use-in-url=\"1\" name=\"database\" {$onchange}>\n";
 
             if (!isset($_REQUEST['database'])) {
                 echo "<option value=\"\">--</option>\n";

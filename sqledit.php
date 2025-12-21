@@ -23,14 +23,14 @@ function _printConnection()
 	// The javascript action on the select box reloads the
 	// popup whenever the server or database is changed.
 	// This ensures that the correct page encoding is used.
-	$onchange = "onchange=\"location.href='sqledit.php?action=" .
+	$onchange = "onchange=\"history.replaceState(null, '', 'sqledit.php?action=" .
 		urlencode($action) . "&amp;server=' + encodeURI(server.options[server.selectedIndex].value) + '&amp;database=' + encodeURI(database.options[database.selectedIndex].value) + ";
 
 	// The exact URL to reload to is different between SQL and Find mode, however.
 	if ($action == 'find') {
-		$onchange .= "'&amp;term=' + encodeURI(term.value) + '&amp;filter=' + encodeURI(filter.value) + '&amp;'\"";
+		$onchange .= "'&amp;term=' + encodeURI(term.value) + '&amp;filter=' + encodeURI(filter.value) + '&amp;')\"";
 	} else {
-		$onchange .= "'&amp;query=' + encodeURI(query.value) + '&amp;search_path=' + encodeURI(search_path.value) + (paginate.checked ? '&amp;paginate=on' : '')  + '&amp;'\"";
+		$onchange .= "'&amp;query=' + encodeURI(query.value) + '&amp;search_path=' + encodeURI(search_path.value) + (paginate.checked ? '&amp;paginate=on' : '')  + '&amp;')\"";
 	}
 
 	$misc->printConnection($onchange);
@@ -108,14 +108,30 @@ function doDefault()
 	if (!isset($_SESSION['sqlquery']))
 		$_SESSION['sqlquery'] = '';
 
-	$misc->printHeader($lang['strsql']);
+	if (!isset($_REQUEST['paginate']))
+		$_REQUEST['paginate'] = '1';
+
+	$scripts = <<<'EOD'
+<script type="text/javascript">
+	// Adjust form method based on whether the query is read-only
+	function adjustPopupSqlFormMethod(form) {
+		if (!form.script.value && isSqlReadQuery(form.query.value)) {
+			form.method = 'get';
+		} else {
+			form.method = 'post';
+		}
+	}
+</script>
+EOD;
+
+	$misc->printHeader($lang['strsql'], $scripts);
 
 	// Bring to the front always
 	echo "<body id=\"content\" class=\"popup\" onload=\"window.focus();\">\n";
 
 	$misc->printTabs($misc->getNavTabs('popup'), 'sql');
 
-	echo "<form action=\"sql.php\" method=\"post\" enctype=\"multipart/form-data\" target=\"detail\">\n";
+	echo "<form action=\"sql.php\" onsubmit=\"adjustPopupSqlFormMethod(this)\" method=\"post\" enctype=\"multipart/form-data\" target=\"detail\">\n";
 	_printConnection();
 	echo "\n";
 	if (!isset($_REQUEST['search_path']))
@@ -123,7 +139,7 @@ function doDefault()
 
 	echo "<p class=\"flex-row\"><label class=\"flex-7\" for=\"search_path\">";
 	$misc->printHelp($lang['strsearchpath'], 'pg.schema.search_path');
-	echo ":</label> <input class=\"flex-5\" type=\"text\" name=\"search_path\" id=\"search_path\" size=\"50\" value=\"",
+	echo ":</label> <input data-use-in-url=\"1\" class=\"flex-5\" type=\"text\" name=\"search_path\" id=\"search_path\" size=\"50\" value=\"",
 		htmlspecialchars_nc($_REQUEST['search_path']), "\" /></p>\n";
 
 	echo "<textarea class=\"sql-editor frame resizable\" rows=\"10\" cols=\"50\" name=\"query\">",
@@ -139,7 +155,7 @@ function doDefault()
 		}
 	}
 
-	echo "<p><label for=\"paginate\"><input type=\"checkbox\" id=\"paginate\" name=\"paginate\"", (isset($_REQUEST['paginate']) ? ' checked="checked"' : ''), " />&nbsp;{$lang['strpaginate']}</label></p>\n";
+	echo "<p><label for=\"paginate\"><input data-use-in-url=\"1\" type=\"checkbox\" id=\"paginate\" name=\"paginate\"", (isset($_REQUEST['paginate']) ? ' checked="checked"' : ''), " />&nbsp;{$lang['strpaginate']}</label></p>\n";
 
 	echo "<p><input type=\"submit\" name=\"execute\" accesskey=\"r\" value=\"{$lang['strexecute']}\" />\n";
 	echo "<input type=\"reset\" accesskey=\"q\" value=\"{$lang['strreset']}\" /></p>\n";

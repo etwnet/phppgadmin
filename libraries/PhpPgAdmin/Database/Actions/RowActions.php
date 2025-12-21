@@ -18,14 +18,16 @@ class RowActions extends AbstractActions
 	 * empty for no identifiers.
 	 * -1 on error
 	 */
-	public function getRowIdentifier($table) {
+	public function getRowIdentifier($table)
+	{
 		$oldtable = $table;
 		$c_schema = $this->connection->_schema;
 		$this->connection->clean($c_schema);
 		$this->connection->clean($table);
 
 		$status = $this->connection->beginTransaction();
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		// Get the first primary or unique index (sorting primary keys first) that
 		// is NOT a partial index.
@@ -57,7 +59,9 @@ class RowActions extends AbstractActions
 		else {
 			$attnames = (new TableActions($this->connection))
 				->getAttributeNames(
-					$oldtable, explode(' ', $rs->fields['indkey']));
+					$oldtable,
+					explode(' ', $rs->fields['indkey'])
+				);
 			if (!is_array($attnames)) {
 				$this->connection->rollbackTransaction();
 				return -1;
@@ -87,10 +91,17 @@ class RowActions extends AbstractActions
 	 * @return -5 failed setting transaction read only
 	 */
 	public function browseQuery(
-		$type, $table, $query, $orderby, $page, $page_size, &$max_pages
+		$type,
+		$table,
+		$query,
+		$orderby,
+		$page,
+		$page_size,
+		&$max_pages
 	) {
 		// Check that we're not going to divide by zero
-		if (!is_numeric($page_size) || $page_size != (int)$page_size || $page_size <= 0) return -3;
+		if (!is_numeric($page_size) || $page_size != (int) $page_size || $page_size <= 0)
+			return -3;
 
 		// If $type is TABLE, then generate the query
 		if (empty($query) && $type == "TABLE") {
@@ -106,12 +117,26 @@ class RowActions extends AbstractActions
 		// Trim off trailing semi-colon if there is one
 		$query = rtrim($query, ';');
 
+		// Detect whether the query is a SELECT or WITH-query
+		$normalized = preg_replace('/^(\s*--.*\n|\s*\/\*.*?\*\/)*/s', '', $query);
+		$normalized = ltrim($normalized);
+		$is_select = preg_match('/^(SELECT|WITH)\b/i', $normalized);
+
+
 		// Generate count query
-		$count = "SELECT COUNT(*) AS total FROM ({$query}) AS sub";
+		if ($is_select) {
+			$count = "SELECT COUNT(*) AS total FROM ({$query}) AS sub";
+		} else {
+			// No COUNT possible → treat as single-page result
+			$max_pages = 1;
+			$this->totalRowsFound = 0;
+			goto skip_count;
+		}
 
 		// Open a transaction
 		$status = $this->connection->beginTransaction();
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		// If backend supports read only queries, then specify read only mode
 		// to avoid side effects from repeating queries that do writes.
@@ -125,7 +150,7 @@ class RowActions extends AbstractActions
 
 
 		// Count the number of rows
-		$total = (int)$this->connection->selectField($count, 'total');
+		$total = (int) $this->connection->selectField($count, 'total');
 		if ($total < 0) {
 			$this->connection->rollbackTransaction();
 			return -2;
@@ -136,15 +161,18 @@ class RowActions extends AbstractActions
 		$max_pages = ceil($total / $page_size);
 
 		// Check that page is less than or equal to max pages
-		if (!is_numeric($page) || $page != (int)$page || $page > $max_pages || $page < 1) {
+		if (!is_numeric($page) || $page != (int) $page || $page > $max_pages || $page < 1) {
 			$this->connection->rollbackTransaction();
 			return -3;
 		}
 
+		skip_count:
+
 		// Set fetch mode to NUM so that duplicate field names are properly returned
 		// for non-table queries.  Since the SELECT feature only allows selecting one
 		// table, duplicate fields shouldn't appear.
-		if ($type == 'QUERY') $this->connection->conn->setFetchMode(ADODB_FETCH_NUM);
+		if ($type == 'QUERY')
+			$this->connection->conn->setFetchMode(ADODB_FETCH_NUM);
 
 		// Add ORDER BY fields
 		if (!empty($orderby)) {
@@ -154,10 +182,24 @@ class RowActions extends AbstractActions
 				$order_by .= $sep . $this->connection->escapeIdentifier($field) . ' ' . $dir;
 				$sep = ", ";
 			}
-		} else $order_by = "";
+		} else
+			$order_by = "";
 
 		$this->lastQueryLimit = $page_size;
 		$this->lastQueryOffset = ($page - 1) * $page_size;
+
+		if (!$is_select) {
+			// Non-SELECT queries must run directly
+			$rs = $this->connection->selectSet($query);
+			if (is_int($rs)) {
+				$this->connection->rollbackTransaction();
+				return -1;
+			}
+			$this->connection->endTransaction();
+			$this->lastQueryLimit = $this->totalRowsFound = $rs->rowCount();
+			return $rs;
+		}
+
 		// Actually retrieve the rows, with offset and limit
 		$rs = $this->connection->selectSet("SELECT * FROM ({$query}) AS sub {$order_by} LIMIT {$page_size} OFFSET {$this->lastQueryOffset}");
 		$status = $this->connection->endTransaction();
@@ -176,7 +218,8 @@ class RowActions extends AbstractActions
 	 * @param array $key The associative array holding the key to retrieve
 	 * @return ADORecordSet A recordset
 	 */
-	public function browseRow($table, $key) {
+	public function browseRow($table, $key)
+	{
 		$f_schema = $this->connection->_schema;
 		$this->connection->fieldClean($f_schema);
 		$this->connection->fieldClean($table);
@@ -206,12 +249,15 @@ class RowActions extends AbstractActions
 	 * @return int 0 success
 	 * @return int -1 invalid parameters
 	 */
-	public function insertRow($table, $fields, $values, $nulls, $functions, $expr, $types) {
+	public function insertRow($table, $fields, $values, $nulls, $functions, $expr, $types)
+	{
 
-		if (!is_array($fields) || !is_array($values) || !is_array($nulls)
+		if (
+			!is_array($fields) || !is_array($values) || !is_array($nulls)
 			|| !is_array($functions) || !is_array($expr) || !is_array($types)
 			|| count($fields) != count($values) || count($types) != count($values)
-		) return -1;
+		)
+			return -1;
 
 		// Build clause
 		if (count($values) > 0) {
@@ -254,12 +300,15 @@ class RowActions extends AbstractActions
 	 * @return int 0 success
 	 * @return int -1 invalid parameters
 	 */
-	public function editRow($table, $values, $nulls, $functions, $expr, $types, $keyarr) {
+	public function editRow($table, $values, $nulls, $functions, $expr, $types, $keyarr)
+	{
 
-		if (!is_array($values) || !is_array($nulls)
+		if (
+			!is_array($values) || !is_array($nulls)
 			|| !is_array($functions) || !is_array($expr) || !is_array($types)
 			|| count($types) != count($values) || empty($values)
-		) return -1;
+		)
+			return -1;
 
 		$f_schema = $this->connection->_schema;
 		$this->connection->fieldClean($f_schema);
@@ -274,8 +323,10 @@ class RowActions extends AbstractActions
 			$sql .= "\"{$key}\"=";
 
 			// Handle NULL values
-			if (isset($nulls[$key])) $sql .= 'NULL';
-			else $sql .= $this->formatValue($types[$key], $functions[$key] ?? null, isset($expr[$key]), $value);
+			if (isset($nulls[$key]))
+				$sql .= 'NULL';
+			else
+				$sql .= $this->formatValue($types[$key], $functions[$key] ?? null, isset($expr[$key]), $value);
 
 			$sep = ", ";
 		}
@@ -321,46 +372,51 @@ class RowActions extends AbstractActions
 	 * @param ?string $value The actual value entered in the field.  Can be NULL
 	 * @return string The suitably quoted and escaped value.
 	 */
-	private function formatValue($type, $function, $expr, $value) {
+	private function formatValue($type, $function, $expr, $value)
+	{
 		switch ($type) {
-		case 'bool':
-		case 'boolean':
-			if ($value == 't')
-				return 'TRUE';
-			elseif ($value == 'f')
-				return 'FALSE';
-			elseif ($value == '')
-				return 'NULL';
-			else
-				return $value;
-		default:
-			if ($function) {
-				// ENCODE (value,'base64') => ENCODE ('test','base64')
-				if (!$expr) $value = "'" . $this->connection->clean($value) . "'";
-				return preg_replace('/\bvalue\b/', $value, $function);
-			}
-			if ($expr) {
-				return $value;
-			}
-			// Checking variable fields is difficult as there might be a size
-			// attribute...
-			$is_date_or_time = strlen($type) >= 4 && (
+			case 'bool':
+			case 'boolean':
+				if ($value == 't')
+					return 'TRUE';
+				elseif ($value == 'f')
+					return 'FALSE';
+				elseif ($value == '')
+					return 'NULL';
+				else
+					return $value;
+			default:
+				if ($function) {
+					// ENCODE (value,'base64') => ENCODE ('test','base64')
+					if (!$expr)
+						$value = "'" . $this->connection->clean($value) . "'";
+					return preg_replace('/\bvalue\b/', $value, $function);
+				}
+				if ($expr) {
+					return $value;
+				}
+				// Checking variable fields is difficult as there might be a size
+				// attribute...
+				$is_date_or_time = strlen($type) >= 4 && (
 					substr_compare($type, 'time', 0, 4) === 0 ||
 					substr_compare($type, 'date', 0, 4) === 0
 				);
-			if ($is_date_or_time) {
-				// Assume it's one of the time types...
-				if ($value == '') return "''";
-				elseif (strcasecmp($value, 'CURRENT_TIMESTAMP') == 0
-					|| strcasecmp($value, 'CURRENT_TIME') == 0
-					|| strcasecmp($value, 'CURRENT_DATE') == 0
-					|| strcasecmp($value, 'LOCALTIME') == 0
-					|| strcasecmp($value, 'LOCALTIMESTAMP') == 0) {
-					return $value;
+				if ($is_date_or_time) {
+					// Assume it's one of the time types...
+					if ($value == '')
+						return "''";
+					elseif (
+						strcasecmp($value, 'CURRENT_TIMESTAMP') == 0
+						|| strcasecmp($value, 'CURRENT_TIME') == 0
+						|| strcasecmp($value, 'CURRENT_DATE') == 0
+						|| strcasecmp($value, 'LOCALTIME') == 0
+						|| strcasecmp($value, 'LOCALTIMESTAMP') == 0
+					) {
+						return $value;
+					}
 				}
-			}
-			$this->connection->clean($value);
-			return "'{$value}'";
+				$this->connection->clean($value);
+				return "'{$value}'";
 		}
 	}
 
@@ -371,8 +427,10 @@ class RowActions extends AbstractActions
 	 * @param array $key An array mapping column => value to delete
 	 * @return int 0 success
 	 */
-	public function deleteRow($table, $key, $schema = null) {
-		if (!is_array($key)) return -1;
+	public function deleteRow($table, $key, $schema = null)
+	{
+		if (!is_array($key))
+			return -1;
 		// Begin transaction.  We do this so that we can ensure only one row is
 		// deleted
 		$status = $this->connection->beginTransaction();
@@ -381,7 +439,8 @@ class RowActions extends AbstractActions
 			return -1;
 		}
 
-		if (empty($schema)) $schema = $this->connection->_schema;
+		if (empty($schema))
+			$schema = $this->connection->_schema;
 
 		$status = $this->connection->delete($table, $key, $schema);
 		if ($status != 0 || $this->connection->conn->Affected_Rows() != 1) {

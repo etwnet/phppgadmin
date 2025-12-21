@@ -116,9 +116,9 @@ $subject = $_REQUEST['subject'] ?? '';
 if ($subject == 'history') {
 	// Or maybe we came from the history popup
 	$_SESSION['sqlquery'] = $_SESSION['history'][$_REQUEST['server']][$_REQUEST['database']][$_GET['queryid']]['query'];
-} elseif (isset($_POST['query'])) {
+} elseif (isset($_REQUEST['query'])) {
 	// Or maybe we came from an sql form
-	$_SESSION['sqlquery'] = $_POST['query'];
+	$_SESSION['sqlquery'] = $_REQUEST['query'];
 } else {
 	echo "could not find the query!!";
 }
@@ -156,11 +156,8 @@ if (isset($_REQUEST['search_path'])) {
 }
 
 // May as well try to time the query
-if (function_exists('microtime')) {
-	list($usec, $sec) = explode(' ', microtime());
-	$start_time = ((float) $usec + (float) $sec);
-} else
-	$start_time = null;
+$start_time = microtime(true);
+
 // Execute the query.  If it's a script upload, special handling is necessary
 if (isset($_FILES['script']) && $_FILES['script']['size'] > 0) {
 	// Execute the script via our ScriptActions class
@@ -181,22 +178,18 @@ if (isset($_FILES['script']) && $_FILES['script']['size'] > 0) {
 
 	// Request was run, saving it in history
 	if ($rs !== false && !isset($_REQUEST['nohistory']))
-		$misc->saveSqlHistory($_SESSION['sqlquery']);
+		$misc->saveSqlHistory($_SESSION['sqlquery'], false);
 
 	// Render the result
 	renderQueryResult($result, $_SESSION['sqlquery']);
 }
 
 // May as well try to time the query
-if ($start_time !== null) {
-	list($usec, $sec) = explode(' ', microtime());
-	$end_time = ((float) $usec + (float) $sec);
-	// Get duration in milliseconds, round to 3dp's	
-	$duration = number_format(($end_time - $start_time) * 1000, 3);
-} else
-	$duration = null;
+$end_time = microtime(true);
+$duration = number_format(($end_time - $start_time) * 1000, 3);
 
 // Reload the tree as we may have made schema changes
+// Todo: refine this to only reload on changes
 AppContainer::setShouldReloadTree(true);
 
 // Display duration if we know it

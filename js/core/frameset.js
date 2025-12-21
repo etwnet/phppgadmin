@@ -261,24 +261,29 @@ function frameSetHandler() {
 			} else {
 				return loadContent(payload.url);
 			}
+		} else if (type === "linkNavigation") {
+			return loadContent(payload.url);
 		}
 	});
 
 	return true;
 }
 
-/** Popup handler intecepting form submissions */
+/** Popup handler intecepting form submissions and links */
 
 function popupHandler() {
 	document.addEventListener("submit", (e) => {
 		const form = e.target;
 		if (!form.matches("form")) return;
 
+		// We lost the popup reference, lets create a new one again
+		if (!window.opener) return;
+
 		e.preventDefault();
 		console.log("Intercepted form:", form);
 
 		const action = form.getAttribute("action");
-		const method = form.getAttribute("method") || "GET";
+		let method = form.getAttribute("method") || "GET";
 		const post = /post/i.test(method);
 
 		const formData = new FormData(form);
@@ -291,7 +296,7 @@ function popupHandler() {
 			const hiddenInputs = form.querySelectorAll("input[type=hidden]");
 			hiddenInputs.forEach((input) => {
 				if (input.name) {
-					if (!/^(loginServer|action)$/.test(input.name)) {
+					if (!/^(action)$/.test(input.name)) {
 						params.append(input.name, input.value);
 					}
 				}
@@ -305,7 +310,7 @@ function popupHandler() {
 
 		url.search = params.toString();
 
-		window.opener?.postMessage(
+		window.opener.postMessage(
 			{
 				type: "formSubmission",
 				payload: {
@@ -315,7 +320,59 @@ function popupHandler() {
 					data: Object.fromEntries(formData.entries()),
 				},
 			},
-			window.opener?.location.origin
+			window.opener.location.origin
+		);
+	});
+
+	document.addEventListener("click", (e) => {
+		const target = e.target.closest("a");
+		if (!target) {
+			return;
+		}
+
+		const url = new URL(target.href, window.location.origin);
+		if (url.host !== window.location.host) {
+			// Ignore external links
+			return;
+		}
+
+		if (target.target != "detail") {
+			// Intercept only frameset links
+			return;
+		}
+
+		// We lost the popup reference, lets create a new one again
+		if (!window.opener) return;
+
+		e.preventDefault();
+		e.stopPropagation();
+
+		if (target.href === window.location.href + "#") {
+			// Emulate scroll top
+			if (target.classList.contains("bottom_link")) {
+				contentContainer.scrollTo({
+					top: 0,
+					left: 0,
+					behavior: "smooth",
+				});
+			}
+			return;
+		}
+
+		if (target.href.startsWith("javascript")) {
+			return;
+		}
+
+		console.log("Intercepted link:", target.href);
+
+		window.opener.postMessage(
+			{
+				type: "linkNavigation",
+				payload: {
+					url: target.href,
+				},
+			},
+			window.opener.location.origin
 		);
 	});
 

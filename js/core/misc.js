@@ -1,4 +1,5 @@
 (function () {
+	// Multi-form toggle
 	window.toggleAllMf = function (bool) {
 		var inputs = document.getElementById("multi_form").getElementsByTagName("input");
 
@@ -6,6 +7,106 @@
 			if (inputs[i].type == "checkbox") inputs[i].checked = bool;
 		}
 		return false;
+	};
+
+	/**
+	 * SQL query extractor
+	 * @param {string} sql
+	 * @returns {string[]}
+	 */
+	window.extractSqlQueries = function (sql) {
+		const queries = [];
+		let current = "";
+		let inString = false;
+		let stringChar = null;
+		let inLineComment = false;
+		let inBlockComment = false;
+
+		for (let i = 0; i < sql.length; i++) {
+			const c = sql[i];
+			const n = sql[i + 1];
+
+			// Line comment --
+			if (!inString && !inBlockComment && c === "-" && n === "-") {
+				inLineComment = true;
+			}
+
+			// End line comment
+			if (inLineComment && c === "\n") {
+				inLineComment = false;
+			}
+
+			// Block comment /*
+			if (!inString && !inLineComment && c === "/" && n === "*") {
+				inBlockComment = true;
+			}
+
+			// End block comment */
+			if (inBlockComment && c === "*" && n === "/") {
+				inBlockComment = false;
+				i++;
+				continue;
+			}
+
+			// Strings '...' or "..."
+			if (!inLineComment && !inBlockComment) {
+				if (!inString && (c === "'" || c === '"')) {
+					inString = true;
+					stringChar = c;
+				} else if (inString && c === stringChar) {
+					inString = false;
+				}
+			}
+
+			// Semicolon ends query
+			if (!inString && !inLineComment && !inBlockComment && c === ";") {
+				if (current.trim().length > 0) {
+					queries.push(current.trim());
+				}
+				current = "";
+				continue;
+			}
+
+			current += c;
+		}
+
+		if (current.trim().length > 0) {
+			queries.push(current.trim());
+		}
+
+		return queries;
+	};
+
+	window.isSqlReadQuery = function (sql) {
+		const statements = extractSqlQueries(sql);
+		//console.log("Extracted statements:", statements);
+		if (statements.length === 0) {
+			return false;
+		}
+
+		for (const stmt of statements) {
+			const upper = stmt.toUpperCase();
+
+			if (
+				upper.startsWith("SELECT") ||
+				upper.startsWith("WITH") ||
+				upper.startsWith("SET") ||
+				upper.startsWith("SHOW")
+			) {
+				continue; // ok
+			}
+
+			if (upper.startsWith("EXPLAIN")) {
+				const rest = upper.slice(7).trim();
+				if (rest.startsWith("SELECT")) {
+					continue; // ok
+				}
+			}
+
+			return false;
+		}
+
+		return true;
 	};
 
 	/**

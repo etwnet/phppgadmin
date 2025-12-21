@@ -150,7 +150,8 @@ class Misc extends AbstractContext
 	 */
 	function printMsg($msg)
 	{
-		if ($msg != '') echo "<p class=\"message\">{$msg}</p>\n";
+		if ($msg != '')
+			echo "<p class=\"message\">{$msg}</p>\n";
 	}
 
 	/**
@@ -506,14 +507,14 @@ class Misc extends AbstractContext
 		if (!preg_match('/^(\d+)([bkm]*)$/i', $strIniSize, $a_IniParts))
 			return false;
 
-		$nSize = (float)$a_IniParts[1];
+		$nSize = (float) $a_IniParts[1];
 		$strUnit = strtolower($a_IniParts[2]);
 
 		switch ($strUnit) {
 			case 'm':
-				return ($nSize * (float)1048576);
+				return ($nSize * (float) 1048576);
 			case 'k':
-				return ($nSize * (float)1024);
+				return ($nSize * (float) 1024);
 			case 'b':
 			default:
 				return $nSize;
@@ -706,7 +707,7 @@ class Misc extends AbstractContext
 			$parts = explode('/', $file);
 			// images/themes/<theme>/<icon>.<ext>
 			$theme = $parts[2];
-			$icon  = pathinfo($file, PATHINFO_FILENAME);
+			$icon = pathinfo($file, PATHINFO_FILENAME);
 
 			$cache['themes'][$theme][$icon] = $file;
 		}
@@ -716,7 +717,7 @@ class Misc extends AbstractContext
 			$parts = explode('/', $file);
 			// plugins/<plugin>/images/<icon>.<ext>
 			$plugin = $parts[1];
-			$icon   = pathinfo($file, PATHINFO_FILENAME);
+			$icon = pathinfo($file, PATHINFO_FILENAME);
 
 			$cache['plugins'][$plugin][$icon] = $file;
 		}
@@ -882,14 +883,17 @@ class Misc extends AbstractContext
 
 		foreach ($conf['servers'] as $idx => $info) {
 			$server_id = $info['host'] . ':' . $info['port'] . ':' . $info['sslmode'];
-			if (($group === false)
+			if (
+				($group === false)
 				or (isset($group[$idx]))
 				or ($group === 'all')
 			) {
 				$server_id = $info['host'] . ':' . $info['port'] . ':' . $info['sslmode'];
 
-				if (isset($logins[$server_id])) $srvs[$server_id] = $logins[$server_id];
-				else $srvs[$server_id] = $info;
+				if (isset($logins[$server_id]))
+					$srvs[$server_id] = $logins[$server_id];
+				else
+					$srvs[$server_id] = $info;
 
 				$srvs[$server_id]['id'] = $server_id;
 				$srvs[$server_id]['action'] = url(
@@ -1023,9 +1027,9 @@ class Misc extends AbstractContext
 	 * Save the given SQL statement in the history of the database and server.
 	 * @param string $sql the SQL statement to save.
 	 */
-	function saveSqlHistory($sql)
+	function saveSqlHistory($sql, $paginate)
 	{
-		$server   = $_REQUEST['server'];
+		$server = $_REQUEST['server'];
 		$database = $_REQUEST['database'];
 
 		if (!isset($_SESSION['history'][$server][$database])) {
@@ -1042,13 +1046,12 @@ class Misc extends AbstractContext
 			}
 		}
 
-		list($usec, $sec) = explode(' ', microtime());
-		$time = ((float)$usec + (float)$sec);
+		$time = microtime(true);
 
-		$history["$time"] = [
-			'query'    => $sql,
-			'paginate' => (!isset($_REQUEST['paginate']) ? 'f' : 't'),
-			'queryid'  => $time,
+		$history[(string) $time] = [
+			'query' => $sql,
+			'paginate' => $paginate ? 't' : 'f',
+			'queryid' => $time,
 		];
 	}
 
