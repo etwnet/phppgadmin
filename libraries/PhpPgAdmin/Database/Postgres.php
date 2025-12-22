@@ -221,6 +221,15 @@ class Postgres extends AbstractConnection
 
 		$term = "\$_PATTERN_\$%{$term}%\$_PATTERN_\$";
 
+		// Determine how to filter functions/aggregates based on PostgreSQL version
+		if ($this->major_version >= 11) {
+			$func_filter = "NOT (pp.prokind = 'a')";
+			$agg_filter = "p.prokind = 'a'";
+		} else {
+			$func_filter = "NOT pp.proisagg";
+			$agg_filter = "p.proisagg";
+		}
+
 		$sql .= "
             SELECT 'SCHEMA' AS type, oid, NULL AS schemaname, NULL AS relname, nspname AS name
                 FROM pg_catalog.pg_namespace pn WHERE nspname ILIKE {$term} {$where}
@@ -234,7 +243,7 @@ class Postgres extends AbstractConnection
                 AND pa.attname ILIKE {$term} AND pa.attnum > 0 AND NOT pa.attisdropped AND pc.relkind IN ('r', 'v') {$where}
             UNION ALL
             SELECT 'FUNCTION', pp.oid, pn.nspname, NULL, pp.proname || '(' || pg_catalog.oidvectortypes(pp.proargtypes) || ')' FROM pg_catalog.pg_proc pp, pg_catalog.pg_namespace pn
-                WHERE pp.pronamespace=pn.oid AND NOT (CASE WHEN (SELECT count(*) FROM pg_catalog.pg_proc WHERE prokind IS NOT NULL) > 0 THEN pp.prokind = 'a' ELSE pp.proisagg END) AND pp.proname ILIKE {$term} {$where}
+                WHERE pp.pronamespace=pn.oid AND {$func_filter} AND pp.proname ILIKE {$term} {$where}
             UNION ALL
             SELECT 'INDEX', NULL, pn.nspname, pc.relname, pc2.relname FROM pg_catalog.pg_class pc, pg_catalog.pg_namespace pn,
                 pg_catalog.pg_index pi, pg_catalog.pg_class pc2 WHERE pc.relnamespace=pn.oid AND pc.oid=pi.indrelid
@@ -298,7 +307,7 @@ class Postgres extends AbstractConnection
                 UNION ALL
                 SELECT DISTINCT ON (p.proname) 'AGGREGATE', p.oid, pn.nspname, NULL, p.proname FROM pg_catalog.pg_proc p
                     LEFT JOIN pg_catalog.pg_namespace pn ON p.pronamespace=pn.oid
-                    WHERE p.prokind = 'a' AND p.proname ILIKE {$term} {$where}
+                    WHERE {$agg_filter} AND p.proname ILIKE {$term} {$where}
                 UNION ALL
                 SELECT DISTINCT ON (po.opcname) 'OPCLASS', po.oid, pn.nspname, NULL, po.opcname FROM pg_catalog.pg_opclass po,
                     pg_catalog.pg_namespace pn WHERE po.opcnamespace=pn.oid
@@ -393,6 +402,37 @@ class Postgres extends AbstractConnection
 		}
 
 		return $this->selectSet($sql);
+	}
+
+	/**
+	 * Sends a cancel or kill command to a process
+	 * @param $pid The ID of the backend process
+	 * @param $signal 'CANCEL'
+	 * @return 0 success
+	 * @return -1 invalid signal type
+	 */
+	function sendSignal($pid, $signal)
+	{
+		// Clean
+		$pid = (int) $pid;
+
+		if ($signal == 'CANCEL')
+			$sql = "SELECT pg_catalog.pg_cancel_backend({$pid}) AS val";
+		elseif ($signal == 'KILL')
+			$sql = "SELECT pg_catalog.pg_terminate_backend({$pid}) AS val";
+		else
+			return -1;
+
+
+		// Execute the query
+		$val = $this->selectField($sql, 'val');
+
+		if ($val === 'f')
+			return -1;
+		elseif ($val === 't')
+			return 0;
+		else
+			return -1;
 	}
 
 	/**

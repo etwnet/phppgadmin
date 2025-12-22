@@ -24,7 +24,8 @@ function frameSetHandler() {
 	document.addEventListener("mousemove", (e) => {
 		if (isResizing) {
 			const newWidth =
-				(isRtl ? window.innerWidth - e.clientX : e.clientX) - resizer.offsetWidth;
+				(isRtl ? window.innerWidth - e.clientX : e.clientX) -
+				resizer.offsetWidth;
 			tree.style.width = newWidth + "px";
 			positionLoadingIndicator();
 		}

@@ -6,9 +6,6 @@
  * (table OID, attribute number) from query result sets using native
  * PostgreSQL functions pg_field_table() and pg_field_num().
  *
- * Requires: PHP 7.4+ (for pg_field_table and pg_field_num support)
- * PostgreSQL 7.4+ (for pg_field_table and pg_field_num availability)
- *
  * @package ADOdb
  * @author phpPgAdmin Project
  * @license BSD-3-Clause
@@ -20,16 +17,16 @@ if (!defined('ADODB_DIR')) {
 }
 
 // Load the base postgres9 driver
-require_once(ADODB_DIR . "/drivers/adodb-postgres9.inc.php");
+require_once ADODB_DIR . "/drivers/adodb-postgres9.inc.php";
 
 /**
  * Enhanced PostgreSQL 9+ Driver
  *
  * Extends ADODB_postgres9 with metadata caching capabilities
  */
-class ADODB_postgres9Enhanced extends ADODB_postgres9
+class ADODB_postgres9_enhanced extends ADODB_postgres9
 {
-    var $databaseType = 'postgres9enhanced';
+    public $databaseType = 'postgres9_enhanced';
 }
 
 /**
@@ -43,9 +40,9 @@ class ADODB_postgres9Enhanced extends ADODB_postgres9
  * This allows applications to determine the source table and column
  * attribution directly from query results without separate metadata queries.
  */
-class ADORecordSet_postgres9Enhanced extends ADORecordSet_postgres9
+class ADORecordSet_postgres9_enhanced extends ADORecordSet_postgres9
 {
-    var $databaseType = "postgres9enhanced";
+    //public $databaseType = "postgres9_enhanced";
 
     /**
      * @var bool|mixed Native PostgreSQL result resource
@@ -158,9 +155,9 @@ class ADORecordSet_postgres9Enhanced extends ADORecordSet_postgres9
  * Provides the same field metadata caching as ADORecordSet_postgres9Enhanced,
  * but returns associative arrays instead of numeric arrays.
  */
-class ADORecordSet_assoc_postgres9Enhanced extends ADORecordSet_assoc_postgres9
+class ADORecordSet_assoc_postgres9_enhanced extends ADORecordSet_assoc_postgres9
 {
-    var $databaseType = "postgres9enhanced";
+    //public $databaseType = "postgres9_enhanced";
 
     /**
      * @var bool|mixed Native PostgreSQL result resource

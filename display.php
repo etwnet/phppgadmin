@@ -763,6 +763,7 @@ function doBrowse($msg = '')
 	}
 
 	// Change type to handle primary key information
+	// Disable numeric fields and duplicate field names for now
 	if ($type == 'QUERY' && !empty($table) && !empty($schema)) {
 		$type = 'SELECT';
 	}
@@ -908,7 +909,7 @@ function doBrowse($msg = '')
 		$_gets[$subject] = $table_name;
 	if (isset($subject))
 		$_gets['subject'] = $subject;
-	if (isset($_REQUEST['query']) && mb_strlen($_REQUEST['query']) < $conf['max_get_query_length'])
+	if (isset($_REQUEST['query']) && mb_strlen($_REQUEST['query']) <= $conf['max_get_query_length'])
 		$_gets['query'] = $_REQUEST['query'];
 	if (isset($_REQUEST['count']))
 		$_gets['count'] = $_REQUEST['count'];
@@ -1318,7 +1319,7 @@ function beginHtml()
 	// is small enough for a GET request.
 	function adjustQueryFormMethod(form) {
 		const isValidReadQuery =
-			form.query.value.length < {$conf['max_get_query_length']} &&
+			form.query.value.length <= {$conf['max_get_query_length']} &&
 			isSqlReadQuery(form.query.value);
 		if (isValidReadQuery) {
 			form.method = 'get';

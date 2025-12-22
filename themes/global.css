@@ -326,6 +326,10 @@ td[class^="opbutton"] img.icon {
 	height: 300px;
 }
 
+.sql-editor.bigger {
+	height: 500px;
+}
+
 .sql-viewer.ace_editor .ace_content,
 .sql-viewer.ace_editor .ace_scroller {
 	background-color: transparent !important;

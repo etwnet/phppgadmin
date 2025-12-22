@@ -66,28 +66,28 @@ function format_string($template, $data)
 				$subst = chr($param);
 				break;
 			case 'd':
-				$subst = (string)(int)$param;
+				$subst = (string) (int) $param;
 				break;
 			case 'f':
 			case 'F':
 				if ($precision !== null) {
-					$subst = number_format((float)$param, $precision);
+					$subst = number_format((float) $param, $precision);
 				} else {
-					$subst = (string)(float)$param;
+					$subst = (string) (float) $param;
 				}
 				break;
 			case 'o':
 				$subst = base_convert($param, 10, 8);
 				break;
 			case 'p':
-				$subst = (string)(round((float)$param, $precision) * 100);
+				$subst = (string) (round((float) $param, $precision) * 100);
 				break;
 			case 's':
 			default:
-				$subst = (string)$param;
+				$subst = (string) $param;
 				break;
 			case 'u':
-				$subst = (string)abs((int)$param);
+				$subst = (string) abs((int) $param);
 				break;
 			case 'x':
 				$subst = strtolower(base_convert($param, 10, 16));
@@ -96,7 +96,7 @@ function format_string($template, $data)
 				$subst = base_convert($param, 10, 16);
 				break;
 		}
-		$minLength = (int)$match['minlen'];
+		$minLength = (int) $match['minlen'];
 		if ($match['justify'] != '-') {
 			// justify right
 			if (strlen($subst) < $minLength) {
@@ -111,4 +111,121 @@ function format_string($template, $data)
 		$template = $match['left'] . $subst . $match['right'];
 	}
 	return $template;
+}
+
+/**
+ * SQL query extractor with multibyte string support
+ * @param string $sql
+ * @return string[]
+ */
+function extractSqlQueries($sql)
+{
+	$queries = [];
+	$current = "";
+	$inString = false;
+	$stringChar = null;
+	$inLineComment = false;
+	$inBlockComment = false;
+
+	$len = mb_strlen($sql);
+
+	for ($i = 0; $i < $len; $i++) {
+		$c = mb_substr($sql, $i, 1);
+		$n = ($i + 1 < $len) ? mb_substr($sql, $i + 1, 1) : null;
+
+		// Line comment --
+		if (!$inString && !$inBlockComment && $c === "-" && $n === "-") {
+			$inLineComment = true;
+		}
+
+		// End line comment
+		if ($inLineComment && $c === "\n") {
+			$inLineComment = false;
+		}
+
+		// Block comment /*
+		if (!$inString && !$inLineComment && $c === "/" && $n === "*") {
+			$inBlockComment = true;
+		}
+
+		// End block comment */
+		if ($inBlockComment && $c === "*" && $n === "/") {
+			$inBlockComment = false;
+			$i++;
+			continue;
+		}
+
+		// Strings '...' or "..."
+		if (!$inLineComment && !$inBlockComment) {
+			if (!$inString && ($c === "'" || $c === '"')) {
+				$inString = true;
+				$stringChar = $c;
+			} elseif ($inString && $c === $stringChar) {
+				$inString = false;
+			}
+		}
+
+		// Semicolon ends query
+		if (!$inString && !$inLineComment && !$inBlockComment && $c === ";") {
+			$trimmed = trim($current);
+			if ($trimmed !== "") {
+				$queries[] = $trimmed;
+			}
+			$current = "";
+			continue;
+		}
+
+		$current .= $c;
+	}
+
+	$trimmed = trim($current);
+	if ($trimmed !== "") {
+		$queries[] = $trimmed;
+	}
+
+	return $queries;
+}
+
+/**
+ * Check if SQL contains only read-only queries
+ * @param string $sql
+ * @return bool
+ */
+function isSqlReadQuery($sql)
+{
+	$statements = extractSqlQueries($sql);
+	if (count($statements) === 0) {
+		return false;
+	}
+
+	foreach ($statements as $stmt) {
+		$upper = strtoupper($stmt);
+
+		if (strlen($upper) < 7) {
+			return false;
+		}
+
+		$isRead = substr_compare($upper, "SELECT", 0, 6) === 0 ||
+			substr_compare($upper, "WITH", 0, 4) === 0 ||
+			substr_compare($upper, "SET", 0, 3) === 0 ||
+			substr_compare($upper, "SHOW", 0, 4) === 0;
+
+		if ($isRead) {
+			continue;
+		}
+
+		$isRead = substr_compare($upper, "EXPLAIN", 0, 7) === 0;
+		if ($isRead) {
+			$rest = trim(substr($upper, 7));
+			$isRead = substr_compare($rest, "SELECT", 0, 6) === 0 ||
+				substr_compare($rest, "WITH", 0, 4) === 0;
+			if ($isRead) {
+				continue;
+			}
+		}
+
+		return false;
+	}
+
+	return true;
 }

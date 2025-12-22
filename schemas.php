@@ -1,6 +1,8 @@
 <?php
 
 use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\Actions\RoleActions;
+use PhpPgAdmin\Database\Actions\SchemaActions;
 
 /**
  * Manage schemas in a database
@@ -11,32 +13,30 @@ use PhpPgAdmin\Core\AppContainer;
 // Include application functions
 include_once('./libraries/bootstrap.php');
 
-$action = $_REQUEST['action'] ?? '';
-if (!isset($msg)) $msg = '';
 
 /**
  * Show default list of schemas in the database
  */
 function doDefault($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
-	$conf = AppContainer::getConf();
 	$lang = AppContainer::getLang();
+	$schemaActions = new SchemaActions($pg);
 
 	$misc->printTrail('database');
 	$misc->printTabs('database', 'schemas');
 	$misc->printMsg($msg);
 
 	// Check that the DB actually supports schemas
-	$schemas = $data->getSchemas();
+	$schemas = $schemaActions->getSchemas();
 
 	$columns = [
 		'schema' => [
 			'title' => $lang['strschema'],
 			'field' => field('nspname'),
-			'url'   => "redirect.php?subject=schema&amp;{$misc->href}&amp;",
-			'vars'  => ['schema' => 'nspname'],
+			'url' => "redirect.php?subject=schema&amp;{$misc->href}&amp;",
+			'vars' => ['schema' => 'nspname'],
 		],
 		'owner' => [
 			'title' => $lang['strowner'],
@@ -98,23 +98,24 @@ function doDefault($msg = '')
 		]
 	];
 
-	if (!$data->hasAlterSchema()) unset($actions['alter']);
-
 	$misc->printTable($schemas, $columns, $actions, 'schemas-schemas', $lang['strnoschemas']);
 
-	$misc->printNavLinks(['create' => [
-		'attr' => [
-			'href' => [
-				'url' => 'schemas.php',
-				'urlvars' => [
-					'action' => 'create',
-					'server' => $_REQUEST['server'],
-					'database' => $_REQUEST['database']
+	$misc->printNavLinks([
+		'create' => [
+			'attr' => [
+				'href' => [
+					'url' => 'schemas.php',
+					'urlvars' => [
+						'action' => 'create',
+						'server' => $_REQUEST['server'],
+						'database' => $_REQUEST['database']
+					]
 				]
-			]
-		],
-		'content' => $lang['strcreateschema']
-	]], 'schemas-schemas', get_defined_vars());
+			],
+			'icon' => $misc->icon('CreateSchema'),
+			'content' => $lang['strcreateschema']
+		]
+	], 'schemas-schemas', get_defined_vars());
 }
 
 /**
@@ -122,29 +123,34 @@ function doDefault($msg = '')
  */
 function doCreate($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$roleActions = new RoleActions($pg);
 
 	$server_info = $misc->getServerInfo();
 
-	if (!isset($_POST['formName'])) $_POST['formName'] = '';
-	if (!isset($_POST['formAuth'])) $_POST['formAuth'] = $server_info['username'];
-	if (!isset($_POST['formSpc'])) $_POST['formSpc'] = '';
-	if (!isset($_POST['formComment'])) $_POST['formComment'] = '';
+	if (!isset($_POST['formName']))
+		$_POST['formName'] = '';
+	if (!isset($_POST['formAuth']))
+		$_POST['formAuth'] = $server_info['username'];
+	if (!isset($_POST['formSpc']))
+		$_POST['formSpc'] = '';
+	if (!isset($_POST['formComment']))
+		$_POST['formComment'] = '';
 
 	// Fetch all users from the database
-	$users = $data->getUsers();
+	$users = $roleActions->getUsers();
 
 	$misc->printTrail('database');
 	$misc->printTitle($lang['strcreateschema'], 'pg.schema.create');
 	$misc->printMsg($msg);
 
 	echo "<form action=\"schemas.php\" method=\"post\">\n";
-	echo "<table style=\"width: 100%\">\n";
+	echo "<table>\n";
 	echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
-	echo "\t\t<td class=\"data1\"><input name=\"formName\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-	htmlspecialchars_nc($_POST['formName']), "\" /></td>\n\t</tr>\n";
+	echo "\t\t<td class=\"data1\"><input name=\"formName\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
+		htmlspecialchars_nc($_POST['formName']), "\" /></td>\n\t</tr>\n";
 	// Owner
 	echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strowner']}</th>\n";
 	echo "\t\t<td class=\"data1\">\n\t\t\t<select name=\"formAuth\">\n";
@@ -156,7 +162,7 @@ function doCreate($msg = '')
 	echo "\t\t\t</select>\n\t\t</td>\n\t</tr>\n";
 	echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
 	echo "\t\t<td class=\"data1\"><textarea name=\"formComment\" rows=\"3\" cols=\"32\">",
-	htmlspecialchars_nc($_POST['formComment']), "</textarea></td>\n\t</tr>\n";
+		htmlspecialchars_nc($_POST['formComment']), "</textarea></td>\n\t</tr>\n";
 
 	echo "</table>\n";
 	echo "<p>\n";
@@ -174,13 +180,19 @@ function doCreate($msg = '')
  */
 function doSaveCreate()
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
+	$schemaActions = new SchemaActions($pg);
 
 	// Check that they've given a name
-	if ($_POST['formName'] == '') doCreate($lang['strschemaneedsname']);
+	if ($_POST['formName'] == '')
+		doCreate($lang['strschemaneedsname']);
 	else {
-		$status = $data->createSchema($_POST['formName'], $_POST['formAuth'], $_POST['formComment']);
+		$status = $schemaActions->createSchema(
+			$_POST['formName'],
+			$_POST['formAuth'],
+			$_POST['formComment']
+		);
 		if ($status == 0) {
 			AppContainer::setShouldReloadTree(true);
 			doDefault($lang['strschemacreated']);
@@ -195,20 +207,28 @@ function doSaveCreate()
  */
 function doAlter($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$schemaActions = new SchemaActions($pg);
+	$roleActions = new RoleActions($pg);
+
+	$schemaName = $_REQUEST['schema'] ?? '';
 
 	$misc->printTrail('schema');
-	$misc->printTitle($lang['stralter'], 'pg.schema.alter');
+	$misc->printTitle("{$lang['stralterschema']}: $schemaName", 'pg.schema.alter');
 	$misc->printMsg($msg);
 
-	$schema = $data->getSchemaByName($_REQUEST['schema']);
+	$schema = $schemaActions->getSchemaByName($schemaName);
 	if ($schema->recordCount() > 0) {
-		if (!isset($_POST['comment'])) $_POST['comment'] = $schema->fields['nspcomment'];
-		if (!isset($_POST['schema'])) $_POST['schema'] = $_REQUEST['schema'];
-		if (!isset($_POST['name'])) $_POST['name'] = $_REQUEST['schema'];
-		if (!isset($_POST['owner'])) $_POST['owner'] = $schema->fields['ownername'];
+		if (!isset($_POST['comment']))
+			$_POST['comment'] = $schema->fields['nspcomment'];
+		if (!isset($_POST['schema']))
+			$_POST['schema'] = $schemaName;
+		if (!isset($_POST['name']))
+			$_POST['name'] = $schemaName;
+		if (!isset($_POST['owner']))
+			$_POST['owner'] = $schema->fields['ownername'];
 
 		echo "<form action=\"schemas.php\" method=\"post\">\n";
 		echo "<table>\n";
@@ -216,23 +236,20 @@ function doAlter($msg = '')
 		echo "\t<tr>\n";
 		echo "\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
 		echo "\t\t<td class=\"data1\">";
-		echo "\t\t\t<input name=\"name\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-		htmlspecialchars_nc($_POST['name']), "\" />\n";
+		echo "\t\t\t<input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
+			htmlspecialchars_nc($_POST['name']), "\" />\n";
 		echo "\t\t</td>\n";
 		echo "\t</tr>\n";
 
-		if ($data->hasAlterSchemaOwner()) {
-			$users = $data->getUsers();
-			echo "<tr><th class=\"data left required\">{$lang['strowner']}</th>\n";
-			echo "<td class=\"data2\"><select name=\"owner\">";
-			while (!$users->EOF) {
-				$uname = $users->fields['usename'];
-				echo "<option value=\"", htmlspecialchars_nc($uname), "\"", ($uname == $_POST['owner']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($uname), "</option>\n";
-				$users->moveNext();
-			}
-			echo "</select></td></tr>\n";
-		} else
-			echo "<input name=\"owner\" value=\"{$_POST['owner']}\" type=\"hidden\" />";
+		$users = $roleActions->getUsers();
+		echo "<tr><th class=\"data left required\">{$lang['strowner']}</th>\n";
+		echo "<td class=\"data2\"><select name=\"owner\">";
+		while (!$users->EOF) {
+			$uname = $users->fields['usename'];
+			echo "<option value=\"", htmlspecialchars_nc($uname), "\"", ($uname == $_POST['owner']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($uname), "</option>\n";
+			$users->moveNext();
+		}
+		echo "</select></td></tr>\n";
 
 		echo "\t<tr>\n";
 		echo "\t\t<th class=\"data\">{$lang['strcomment']}</th>\n";
@@ -255,11 +272,16 @@ function doAlter($msg = '')
  */
 function doSaveAlter($msg = '')
 {
-	$data = AppContainer::getData();
-	$misc = AppContainer::getMisc();
+	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
+	$schemaActions = new SchemaActions($pg);
 
-	$status = $data->updateSchema($_POST['schema'], $_POST['comment'], $_POST['name'], $_POST['owner']);
+	$status = $schemaActions->updateSchema(
+		$_POST['schema'],
+		$_POST['comment'],
+		$_POST['name'],
+		$_POST['owner']
+	);
 	if ($status == 0) {
 		AppContainer::setShouldReloadTree(true);
 		doDefault($lang['strschemaaltered']);
@@ -272,9 +294,10 @@ function doSaveAlter($msg = '')
  */
 function doDrop($confirm)
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$schemaActions = new SchemaActions($pg);
 
 	if (empty($_REQUEST['nsp']) && empty($_REQUEST['ma'])) {
 		doDefault($lang['strspecifyschematodrop']);
@@ -308,26 +331,27 @@ function doDrop($confirm)
 	} else {
 		if (is_array($_POST['nsp'])) {
 			$msg = '';
-			$status = $data->beginTransaction();
+			$status = $pg->beginTransaction();
 			if ($status == 0) {
 				foreach ($_POST['nsp'] as $s) {
-					$status = $data->dropSchema($s, isset($_POST['cascade']));
+					$status = $schemaActions->dropSchema($s, isset($_POST['cascade']));
 					if ($status == 0)
 						$msg .= sprintf('%s: %s<br />', htmlentities($s, ENT_QUOTES, 'UTF-8'), $lang['strschemadropped']);
 					else {
-						$data->endTransaction();
+						$pg->endTransaction();
 						doDefault(sprintf('%s%s: %s<br />', $msg, htmlentities($s, ENT_QUOTES, 'UTF-8'), $lang['strschemadroppedbad']));
 						return;
 					}
 				}
 			}
-			if ($data->endTransaction() == 0) {
+			if ($pg->endTransaction() == 0) {
 				// Everything went fine, back to the Default page....
 				AppContainer::setShouldReloadTree(true);
 				doDefault($msg);
-			} else doDefault($lang['strschemadroppedbad']);
+			} else
+				doDefault($lang['strschemadroppedbad']);
 		} else {
-			$status = $data->dropSchema($_POST['nsp'], isset($_POST['cascade']));
+			$status = $schemaActions->dropSchema($_POST['nsp'], isset($_POST['cascade']));
 			if ($status == 0) {
 				AppContainer::setShouldReloadTree(true);
 				doDefault($lang['strschemadropped']);
@@ -342,7 +366,7 @@ function doDrop($confirm)
  */
 function doExport($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
 
@@ -354,21 +378,21 @@ function doExport($msg = '')
 	echo "<table>\n";
 	echo "<tr><th class=\"data\">{$lang['strformat']}</th><th class=\"data\" colspan=\"2\">{$lang['stroptions']}</th></tr>\n";
 	// Data only
-	echo "<tr><th class=\"data left\" rowspan=\"" . ($data->hasServerOids() ? 2 : 1) . "\">";
+	echo "<tr><th class=\"data left\" rowspan=\"" . ($pg->hasServerOids() ? 2 : 1) . "\">";
 	echo "<input type=\"radio\" id=\"what1\" name=\"what\" value=\"dataonly\" checked=\"checked\" /><label for=\"what1\">{$lang['strdataonly']}</label></th>\n";
 	echo "<td>{$lang['strformat']}</td>\n";
 	echo "<td><select name=\"d_format\">\n";
 	echo "<option value=\"copy\">COPY</option>\n";
 	echo "<option value=\"sql\">SQL</option>\n";
 	echo "</select>\n</td>\n</tr>\n";
-	if ($data->hasServerOids()) {
+	if ($pg->hasServerOids()) {
 		echo "<tr><td><label for=\"d_oids\">{$lang['stroids']}</label></td><td><input type=\"checkbox\" id=\"d_oids\" name=\"d_oids\" /></td>\n</tr>\n";
 	}
 	// Structure only
 	echo "<tr><th class=\"data left\"><input type=\"radio\" id=\"what2\" name=\"what\" value=\"structureonly\" /><label for=\"what2\">{$lang['strstructureonly']}</label></th>\n";
 	echo "<td><label for=\"s_clean\">{$lang['strdrop']}</label></td><td><input type=\"checkbox\" id=\"s_clean\" name=\"s_clean\" /></td>\n</tr>\n";
 	// Structure and data
-	echo "<tr><th class=\"data left\" rowspan=\"" . ($data->hasServerOids() ? 3 : 2) . "\">";
+	echo "<tr><th class=\"data left\" rowspan=\"" . ($pg->hasServerOids() ? 3 : 2) . "\">";
 	echo "<input type=\"radio\" id=\"what3\" name=\"what\" value=\"structureanddata\" /><label for=\"what3\">{$lang['strstructureanddata']}</label></th>\n";
 	echo "<td>{$lang['strformat']}</td>\n";
 	echo "<td><select name=\"sd_format\">\n";
@@ -376,7 +400,7 @@ function doExport($msg = '')
 	echo "<option value=\"sql\">SQL</option>\n";
 	echo "</select>\n</td>\n</tr>\n";
 	echo "<tr><td><label for=\"sd_clean\">{$lang['strdrop']}</label></td><td><input type=\"checkbox\" id=\"sd_clean\" name=\"sd_clean\" /></td>\n</tr>\n";
-	if ($data->hasServerOids()) {
+	if ($pg->hasServerOids()) {
 		echo "<tr><td><label for=\"sd_oids\">{$lang['stroids']}</label></td><td><input type=\"checkbox\" id=\"sd_oids\" name=\"sd_oids\" /></td>\n</tr>\n";
 	}
 	echo "</table>\n";
@@ -406,31 +430,32 @@ function doExport($msg = '')
 function doTree()
 {
 	$misc = AppContainer::getMisc();
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
+	$schemaActions = new SchemaActions($pg);
 
-	$schemas = $data->getSchemas();
+	$schemas = $schemaActions->getSchemas();
 
 	$reqvars = $misc->getRequestVars('schema');
 
 	$attrs = [
-		'text'   => field('nspname'),
-		'icon'   => 'Schema',
+		'text' => field('nspname'),
+		'icon' => 'Schema',
 		'toolTip' => field('nspcomment'),
 		'action' => url(
 			'redirect.php',
 			$reqvars,
 			[
 				'subject' => 'schema',
-				'schema'  => field('nspname')
+				'schema' => field('nspname')
 			]
 		),
 		'branch' => url(
 			'schemas.php',
 			$reqvars,
 			[
-				'action'  => 'subtree',
-				'schema'  => field('nspname')
+				'action' => 'subtree',
+				'schema' => field('nspname')
 			]
 		),
 	];
@@ -443,8 +468,6 @@ function doTree()
 function doSubTree()
 {
 	$misc = AppContainer::getMisc();
-	$data = AppContainer::getData();
-	$lang = AppContainer::getLang();
 
 	$tabs = $misc->getNavTabs('schema');
 
@@ -453,8 +476,8 @@ function doSubTree()
 	$reqvars = $misc->getRequestVars('schema');
 
 	$attrs = [
-		'text'   => field('title'),
-		'icon'   => field('icon'),
+		'text' => field('title'),
+		'icon' => field('icon'),
 		'action' => url(
 			field('url'),
 			$reqvars,
@@ -472,26 +495,43 @@ function doSubTree()
 	exit;
 }
 
-if ($action == 'tree') doTree();
-if ($action == 'subtree') doSubTree();
+// Main program
+
+$misc = AppContainer::getMisc();
+$lang = AppContainer::getLang();
+
+$action = $_REQUEST['action'] ?? '';
+
+
+if ($action == 'tree')
+	doTree();
+if ($action == 'subtree')
+	doSubTree();
 
 $misc->printHeader($lang['strschemas']);
 $misc->printBody();
 
-if (isset($_POST['cancel'])) $action = '';
+if (isset($_POST['cancel']))
+	$action = '';
 
 switch ($action) {
 	case 'create':
-		if (isset($_POST['create'])) doSaveCreate();
-		else doCreate();
+		if (isset($_POST['create']))
+			doSaveCreate();
+		else
+			doCreate();
 		break;
 	case 'alter':
-		if (isset($_POST['alter'])) doSaveAlter();
-		else doAlter();
+		if (isset($_POST['alter']))
+			doSaveAlter();
+		else
+			doAlter();
 		break;
 	case 'drop':
-		if (isset($_POST['drop'])) doDrop(false);
-		else doDrop(true);
+		if (isset($_POST['drop']))
+			doDrop(false);
+		else
+			doDrop(true);
 		break;
 	case 'export':
 		doExport();

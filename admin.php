@@ -330,7 +330,7 @@ function doEditAutovacuum($type, $confirm, $msg = '')
 	$lang = AppContainer::getLang();
 
 	if (empty($_REQUEST['table'])) {
-		doAdmin($type, '', $lang['strspecifyeditvacuumtable']);
+		doAdmin($type, $lang['strspecifyeditvacuumtable']);
 		return;
 	}
 
@@ -342,7 +342,7 @@ function doEditAutovacuum($type, $confirm, $msg = '')
 		$misc->printMsg(sprintf($msg, $misc->printVal($_REQUEST['table'])));
 
 		if (empty($_REQUEST['table'])) {
-			doAdmin($type, '', $lang['strspecifyeditvacuumtable']);
+			doAdmin($type, $lang['strspecifyeditvacuumtable']);
 			return;
 		}
 
@@ -358,12 +358,18 @@ function doEditAutovacuum($type, $confirm, $msg = '')
 			$disabled = '';
 		}
 
-		if (!isset($old_val['autovacuum_vacuum_threshold'])) $old_val['autovacuum_vacuum_threshold'] = '';
-		if (!isset($old_val['autovacuum_vacuum_scale_factor'])) $old_val['autovacuum_vacuum_scale_factor'] = '';
-		if (!isset($old_val['autovacuum_analyze_threshold'])) $old_val['autovacuum_analyze_threshold'] = '';
-		if (!isset($old_val['autovacuum_analyze_scale_factor'])) $old_val['autovacuum_analyze_scale_factor'] = '';
-		if (!isset($old_val['autovacuum_vacuum_cost_delay'])) $old_val['autovacuum_vacuum_cost_delay'] = '';
-		if (!isset($old_val['autovacuum_vacuum_cost_limit'])) $old_val['autovacuum_vacuum_cost_limit'] = '';
+		if (!isset($old_val['autovacuum_vacuum_threshold']))
+			$old_val['autovacuum_vacuum_threshold'] = '';
+		if (!isset($old_val['autovacuum_vacuum_scale_factor']))
+			$old_val['autovacuum_vacuum_scale_factor'] = '';
+		if (!isset($old_val['autovacuum_analyze_threshold']))
+			$old_val['autovacuum_analyze_threshold'] = '';
+		if (!isset($old_val['autovacuum_analyze_scale_factor']))
+			$old_val['autovacuum_analyze_scale_factor'] = '';
+		if (!isset($old_val['autovacuum_vacuum_cost_delay']))
+			$old_val['autovacuum_vacuum_cost_delay'] = '';
+		if (!isset($old_val['autovacuum_vacuum_cost_limit']))
+			$old_val['autovacuum_vacuum_cost_limit'] = '';
 
 		echo "<form action=\"{$script}\" method=\"post\">\n";
 		echo $misc->form;
@@ -416,7 +422,7 @@ function doEditAutovacuum($type, $confirm, $msg = '')
 		);
 
 		if ($status == 0)
-			doAdmin($type, '', sprintf($lang['strsetvacuumtablesaved'], $_REQUEST['table']));
+			doAdmin($type, sprintf($lang['strsetvacuumtablesaved'], $_REQUEST['table']));
 		else
 			doEditAutovacuum($type, true, $lang['strsetvacuumtablefail']);
 	}
@@ -433,7 +439,7 @@ function doDropAutovacuum($type, $confirm)
 	$lang = AppContainer::getLang();
 
 	if (empty($_REQUEST['table'])) {
-		doAdmin($type, '', $lang['strspecifydelvacuumtable']);
+		doAdmin($type, $lang['strspecifydelvacuumtable']);
 		return;
 	}
 
@@ -467,9 +473,9 @@ function doDropAutovacuum($type, $confirm)
 		$status = $data->dropAutovacuum($_POST['table']);
 
 		if ($status == 0) {
-			doAdmin($type, '', sprintf($lang['strvacuumtablereset'], $misc->printVal($_POST['table'])));
+			doAdmin($type, sprintf($lang['strvacuumtablereset'], $misc->printVal($_POST['table'])));
 		} else
-			doAdmin($type, '', sprintf($lang['strdelvacuumtablefail'], $misc->printVal($_POST['table'])));
+			doAdmin($type, sprintf($lang['strdelvacuumtablefail'], $misc->printVal($_POST['table'])));
 	}
 }
 
@@ -581,8 +587,10 @@ function doAdmin($type, $msg = '')
 		// get defaults values for autovacuum
 		$defaults = $data->getAutovacuum();
 		// Fetch the autovacuum properties from the database or table if != ''
-		if ($type == 'table') $autovac = $data->getTableAutovacuum($_REQUEST['table']);
-		else $autovac = $data->getTableAutovacuum();
+		if ($type == 'table')
+			$autovac = $data->getTableAutovacuum($_REQUEST['table']);
+		else
+			$autovac = $data->getTableAutovacuum();
 
 		echo "<br /><br /><h2>{$lang['strvacuumpertable']}</h2>";
 		echo '<p>' . (($defaults['autovacuum'] == 'on') ? $lang['strturnedon'] : $lang['strturnedoff']) . '</p>';
@@ -599,14 +607,14 @@ function doAdmin($type, $msg = '')
 			'namespace' => [
 				'title' => $lang['strschema'],
 				'field' => field('nspname'),
-				'url'   => "redirect.php?subject=schema&amp;{$misc->href}&amp;",
-				'vars'  => ['schema' => 'nspname'],
+				'url' => "redirect.php?subject=schema&amp;{$misc->href}&amp;",
+				'vars' => ['schema' => 'nspname'],
 			],
 			'relname' => [
 				'title' => $lang['strtable'],
 				'field' => field('relname'),
-				'url'	=> "redirect.php?subject=table&amp;{$misc->href}&amp;",
-				'vars'  => ['table' => 'relname', 'schema' => 'nspname'],
+				'url' => "redirect.php?subject=table&amp;{$misc->href}&amp;",
+				'vars' => ['table' => 'relname', 'schema' => 'nspname'],
 			],
 			'autovacuum_enabled' => [
 				'title' => $lang['strenabled'],
@@ -726,28 +734,40 @@ function adminActions($action, $type)
 			doVacuum($type, true);
 			break;
 		case 'cluster':
-			if (isset($_POST['cluster'])) doCluster($type);
+			if (isset($_POST['cluster']))
+				doCluster($type);
 			// if multi-action from table canceled: back to the schema default page
-			else if (($type == 'table') && is_array($_REQUEST['object'])) doDefault();
-			else doAdmin($type);
+			else if (($type == 'table') && is_array($_REQUEST['object']))
+				doDefault();
+			else
+				doAdmin($type);
 			break;
 		case 'reindex':
-			if (isset($_POST['reindex'])) doReindex($type);
+			if (isset($_POST['reindex']))
+				doReindex($type);
 			// if multi-action from table canceled: back to the schema default page
-			else if (($type == 'table') && is_array($_REQUEST['object'])) doDefault();
-			else doAdmin($type);
+			else if (($type == 'table') && is_array($_REQUEST['object']))
+				doDefault();
+			else
+				doAdmin($type);
 			break;
 		case 'analyze':
-			if (isset($_POST['analyze'])) doAnalyze($type);
+			if (isset($_POST['analyze']))
+				doAnalyze($type);
 			// if multi-action from table canceled: back to the schema default page
-			else if (($type == 'table') && is_array($_REQUEST['object'])) doDefault();
-			else doAdmin($type);
+			else if (($type == 'table') && is_array($_REQUEST['object']))
+				doDefault();
+			else
+				doAdmin($type);
 			break;
 		case 'vacuum':
-			if (isset($_POST['vacuum'])) doVacuum($type);
+			if (isset($_POST['vacuum']))
+				doVacuum($type);
 			// if multi-action from table canceled: back to the schema default page
-			else if (($type == 'table') && is_array($_REQUEST['object'])) doDefault();
-			else doAdmin($type);
+			else if (($type == 'table') && is_array($_REQUEST['object']))
+				doDefault();
+			else
+				doAdmin($type);
 			break;
 		case 'admin':
 			doAdmin($type);
@@ -762,8 +782,10 @@ function adminActions($action, $type)
 		//	doAddAutovacuum(true);
 		//	break;
 		case 'editautovac':
-			if (isset($_POST['save'])) doEditAutovacuum($type, false);
-			else doAdmin($type);
+			if (isset($_POST['save']))
+				doEditAutovacuum($type, false);
+			else
+				doAdmin($type);
 			break;
 		case 'delautovac':
 			doDropAutovacuum($type, false);

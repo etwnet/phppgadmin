@@ -54,45 +54,63 @@ function doFind()
 	$misc->printHeader($lang['strfind']);
 
 	// Bring to the front always
-	echo "<body class=\"popup\" onload=\"window.focus();\">\n";
+	echo "<body id=\"content\" class=\"popup\" onload=\"window.focus();\">\n";
 
 	$misc->printTabs($misc->getNavTabs('popup'), 'find');
 
-	echo "<form action=\"database.php\" method=\"post\" target=\"detail\">\n";
-	_printConnection();
-	echo "<p><input name=\"term\" value=\"", htmlspecialchars_nc($_REQUEST['term']),
-		"\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" />\n";
+	?>
+	<form action="database.php" method="get" name="findform" target="detail">
+		<?= _printConnection() ?>
+		<?php
+		// Build filter options array
+		$filterOptions = [
+			'' => 'strallobjects',
+			'SCHEMA' => 'strschemas',
+			'TABLE' => 'strtables',
+			'VIEW' => 'strviews',
+			'SEQUENCE' => 'strsequences',
+			'COLUMN' => 'strcolumns',
+			'RULE' => 'strrules',
+			'INDEX' => 'strindexes',
+			'TRIGGER' => 'strtriggers',
+			'CONSTRAINT' => 'strconstraints',
+			'FUNCTION' => 'strfunctions',
+			'DOMAIN' => 'strdomains',
+		];
 
-	// Output list of filters.  This is complex due to all the 'has' and 'conf' feature possibilities
-	echo "<select name=\"filter\">\n";
-	echo "\t<option value=\"\"", ($_REQUEST['filter'] == '') ? ' selected="selected"' : '', ">{$lang['strallobjects']}</option>\n";
-	echo "\t<option value=\"SCHEMA\"", ($_REQUEST['filter'] == 'SCHEMA') ? ' selected="selected"' : '', ">{$lang['strschemas']}</option>\n";
-	echo "\t<option value=\"TABLE\"", ($_REQUEST['filter'] == 'TABLE') ? ' selected="selected"' : '', ">{$lang['strtables']}</option>\n";
-	echo "\t<option value=\"VIEW\"", ($_REQUEST['filter'] == 'VIEW') ? ' selected="selected"' : '', ">{$lang['strviews']}</option>\n";
-	echo "\t<option value=\"SEQUENCE\"", ($_REQUEST['filter'] == 'SEQUENCE') ? ' selected="selected"' : '', ">{$lang['strsequences']}</option>\n";
-	echo "\t<option value=\"COLUMN\"", ($_REQUEST['filter'] == 'COLUMN') ? ' selected="selected"' : '', ">{$lang['strcolumns']}</option>\n";
-	echo "\t<option value=\"RULE\"", ($_REQUEST['filter'] == 'RULE') ? ' selected="selected"' : '', ">{$lang['strrules']}</option>\n";
-	echo "\t<option value=\"INDEX\"", ($_REQUEST['filter'] == 'INDEX') ? ' selected="selected"' : '', ">{$lang['strindexes']}</option>\n";
-	echo "\t<option value=\"TRIGGER\"", ($_REQUEST['filter'] == 'TRIGGER') ? ' selected="selected"' : '', ">{$lang['strtriggers']}</option>\n";
-	echo "\t<option value=\"CONSTRAINT\"", ($_REQUEST['filter'] == 'CONSTRAINT') ? ' selected="selected"' : '', ">{$lang['strconstraints']}</option>\n";
-	echo "\t<option value=\"FUNCTION\"", ($_REQUEST['filter'] == 'FUNCTION') ? ' selected="selected"' : '', ">{$lang['strfunctions']}</option>\n";
-	echo "\t<option value=\"DOMAIN\"", ($_REQUEST['filter'] == 'DOMAIN') ? ' selected="selected"' : '', ">{$lang['strdomains']}</option>\n";
-	if ($conf['show_advanced']) {
-		echo "\t<option value=\"AGGREGATE\"", ($_REQUEST['filter'] == 'AGGREGATE') ? ' selected="selected"' : '', ">{$lang['straggregates']}</option>\n";
-		echo "\t<option value=\"TYPE\"", ($_REQUEST['filter'] == 'TYPE') ? ' selected="selected"' : '', ">{$lang['strtypes']}</option>\n";
-		echo "\t<option value=\"OPERATOR\"", ($_REQUEST['filter'] == 'OPERATOR') ? ' selected="selected"' : '', ">{$lang['stroperators']}</option>\n";
-		echo "\t<option value=\"OPCLASS\"", ($_REQUEST['filter'] == 'OPCLASS') ? ' selected="selected"' : '', ">{$lang['stropclasses']}</option>\n";
-		echo "\t<option value=\"CONVERSION\"", ($_REQUEST['filter'] == 'CONVERSION') ? ' selected="selected"' : '', ">{$lang['strconversions']}</option>\n";
-		echo "\t<option value=\"LANGUAGE\"", ($_REQUEST['filter'] == 'LANGUAGE') ? ' selected="selected"' : '', ">{$lang['strlanguages']}</option>\n";
-	}
-	echo "</select>\n";
-
-	echo "<input type=\"submit\" value=\"{$lang['strfind']}\" />\n";
-	echo "<input type=\"hidden\" name=\"action\" value=\"find\" /></p>\n";
-	echo "</form>\n";
+		if ($conf['show_advanced']) {
+			$filterOptions['AGGREGATE'] = 'straggregates';
+			$filterOptions['TYPE'] = 'strtypes';
+			$filterOptions['OPERATOR'] = 'stroperators';
+			$filterOptions['OPCLASS'] = 'stropclasses';
+			$filterOptions['CONVERSION'] = 'strconversions';
+			$filterOptions['LANGUAGE'] = 'strlanguages';
+		}
+		?>
+		<!-- Output list of filters.  This is complex due to all the 'has' and 'conf' feature possibilities -->
+		<p>
+			<select name="filter">
+				<?php foreach ($filterOptions as $value => $langKey): ?>
+					<option value="<?= $value; ?>" <?php if ($_REQUEST['filter'] == $value)
+						  echo ' selected="selected"'; ?>>
+						<?= $lang[$langKey]; ?>
+					</option>
+				<?php endforeach; ?>
+			</select>
+		</p>
+		<p>
+			<input name="term" value="<?= htmlspecialchars_nc($_REQUEST['term']); ?>" size="32"
+				maxlength="<?= $pg->_maxNameLen; ?>" />
+		</p>
+		<p>
+			<input type="submit" value="<?= $lang['strfind']; ?>" />
+			<input type="hidden" name="action" value="find" />
+		</p>
+	</form>
+	<?php
 
 	// Default focus
-	$misc->setFocus('forms[0].term');
+	$misc->setFocus('findform.term');
 }
 
 /**
@@ -109,13 +127,12 @@ function doDefault()
 	if (!isset($_SESSION['sqlquery']))
 		$_SESSION['sqlquery'] = '';
 
-	if (!isset($_REQUEST['paginate']))
-		$_REQUEST['paginate'] = '1';
+	$paginate = $_REQUEST['paginate'] ?? '';
 
 	$scripts = <<<EOD
 <script type="text/javascript">
 	// Adjust form method based on whether the query is read-only
-	function adjustPopupSqlFormMethod(form) {
+	const adjustPopupSqlFormMethod = function(form) {
 		const isValidReadQuery =
 			!form.script.value
 			&& isSqlReadQuery(form.query.value)
@@ -124,9 +141,8 @@ function doDefault()
 			form.method = 'get';
 		} else {
 			form.method = 'post';
-			form.paginate.checked = false;
 		}
-	}
+	};
 </script>
 EOD;
 
@@ -137,35 +153,67 @@ EOD;
 
 	$misc->printTabs($misc->getNavTabs('popup'), 'sql');
 
-	echo "<form action=\"sql.php\" onsubmit=\"adjustPopupSqlFormMethod(this)\" method=\"post\" enctype=\"multipart/form-data\" target=\"detail\">\n";
-	_printConnection();
-	echo "\n";
-	if (!isset($_REQUEST['search_path']))
-		$_REQUEST['search_path'] = implode(',', $schemaActions->getSearchPath());
+	?>
+	<form action="sql.php" onsubmit="adjustPopupSqlFormMethod(this)" method="post" enctype="multipart/form-data"
+		target="detail">
+		<?php
+		_printConnection();
+		if (!isset($_REQUEST['search_path']))
+			$_REQUEST['search_path'] = implode(',', $schemaActions->getSearchPath());
+		?>
 
-	echo "<p class=\"flex-row\"><label class=\"flex-7\" for=\"search_path\">";
-	$misc->printHelp($lang['strsearchpath'], 'pg.schema.search_path');
-	echo ":</label> <input data-use-in-url=\"1\" class=\"flex-5\" type=\"text\" name=\"search_path\" id=\"search_path\" size=\"50\" value=\"",
-		htmlspecialchars_nc($_REQUEST['search_path']), "\" /></p>\n";
+		<p class="flex-row">
+			<label class="flex-7" for="search_path">
+				<?php
+				$misc->printHelp($lang['strsearchpath'], 'pg.schema.search_path');
+				?>:
+			</label>
+			<input data-use-in-url="t" class="flex-5" type="text" name="search_path" id="search_path" size="50"
+				value="<?= htmlspecialchars_nc($_REQUEST['search_path']); ?>">
+		</p>
 
-	echo "<textarea class=\"sql-editor frame resizable\" rows=\"10\" cols=\"50\" name=\"query\">",
-		htmlspecialchars_nc($_SESSION['sqlquery']), "</textarea>\n";
+		<textarea class="sql-editor frame resizable" rows="10" cols="50"
+			name="query"><?= htmlspecialchars_nc($_SESSION['sqlquery']); ?></textarea>
 
-	// Check that file uploads are enabled
-	if (ini_get('file_uploads')) {
-		// Don't show upload option if max size of uploads is zero
-		$max_size = $misc->inisizeToBytes(ini_get('upload_max_filesize'));
-		if (is_double($max_size) && $max_size > 0) {
-			echo "<p><input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"{$max_size}\" />\n";
-			echo "<label for=\"script\">{$lang['struploadscript']}</label> <input id=\"script\" name=\"script\" type=\"file\" /></p>\n";
+		<?php
+		if (ini_get('file_uploads')) {
+			// Don't show upload option if max size of uploads is zero
+			$max_size = $misc->inisizeToBytes(ini_get('upload_max_filesize'));
+			if (is_double($max_size) && $max_size > 0) {
+				?>
+				<p class="flex-row">
+					<input type="hidden" name="MAX_FILE_SIZE" value="<?= $max_size; ?>">
+					<label class="flex-5" for="script"><?= $lang['struploadscript']; ?></label>
+					<input class="flex-7" id="script" name="script" type="file">
+				</p>
+				<?php
+			}
 		}
-	}
 
-	echo "<p><label for=\"paginate\"><input data-use-in-url=\"1\" type=\"checkbox\" id=\"paginate\" name=\"paginate\"", (isset($_REQUEST['paginate']) ? ' checked="checked"' : ''), " />&nbsp;{$lang['strpaginate']}</label></p>\n";
+		?>
+		<p class="flex-row">
+			<span class="flex-5"><?= $lang['strpaginate']; ?></span>
+			<span class="flex-7">
+				<input data-use-in-url="t" type="radio" id="paginate-auto" name="paginate" value="" <?php if (empty($paginate))
+					echo ' checked="checked"'; ?>> <label
+					for="paginate-auto"><?= $lang['strauto']; ?></label>
+				&nbsp;
+				<input data-use-in-url="t" type="radio" id="paginate-true" name="paginate" value="t" <?php if ($paginate == 't')
+					echo ' checked="checked"'; ?>> <label
+					for="paginate-true"><?= $lang['stryes']; ?></label>
+				&nbsp;
+				<input data-use-in-url="t" type="radio" id="paginate-false" name="paginate" value="f" <?php if ($paginate == 'f')
+					echo ' checked="checked"'; ?>> <label
+					for="paginate-false"><?= $lang['strno']; ?></label>
+			</span>
+		</p>
 
-	echo "<p><input type=\"submit\" name=\"execute\" accesskey=\"r\" value=\"{$lang['strexecute']}\" />\n";
-	echo "<input type=\"reset\" accesskey=\"q\" value=\"{$lang['strreset']}\" /></p>\n";
-	echo "</form>\n";
+		<p>
+			<input type="submit" name="execute" accesskey="r" value="<?= $lang['strexecute']; ?>" />
+			<input type="reset" accesskey="q" value="<?= $lang['strreset']; ?>" />
+		</p>
+	</form>
+	<?php
 
 	// Default focus
 	$misc->setFocus('forms[0].query');

@@ -123,22 +123,31 @@ if ($subject == 'history') {
 	echo "could not find the query!!";
 }
 
+$isUpload = isset($_FILES['script']) && $_FILES['script']['size'] > 0;
+$isReadQuery = !$isUpload && isSqlReadQuery($_SESSION['sqlquery']);
+
 // Pagination maybe set by a get link that has it as FALSE,
 // if that's the case, unset the variable.
 
+/*
 if (isset($_REQUEST['paginate']) && $_REQUEST['paginate'] == 'f') {
 	unset($_REQUEST['paginate']);
 	unset($_POST['paginate']);
 	unset($_GET['paginate']);
 }
+*/
+$paginate = $_REQUEST['paginate'] ?? '';
+if ($isUpload) {
+	$paginate = 'f';
+}
+if (empty($paginate)) {
+	$paginate = $isReadQuery ? 't' : 'f';
+}
+
 // Check to see if pagination has been specified. In that case, send to display
 // script for pagination
-/* if a file is given or the request is an explain, do not paginate */
-if (
-	isset($_REQUEST['paginate']) && !(isset($_FILES['script']) && $_FILES['script']['size'] > 0)
-	&& (preg_match('/^\s*explain/i', $_SESSION['sqlquery']) == 0)
-) {
-	include('./display.php');
+if ($paginate == 't') {
+	require './display.php';
 	exit;
 }
 
@@ -159,7 +168,7 @@ if (isset($_REQUEST['search_path'])) {
 $start_time = microtime(true);
 
 // Execute the query.  If it's a script upload, special handling is necessary
-if (isset($_FILES['script']) && $_FILES['script']['size'] > 0) {
+if ($isUpload) {
 	// Execute the script via our ScriptActions class
 	$scriptActions = new ScriptActions($pg);
 	$scriptActions->executeScript('script', 'sqlCallback');
@@ -189,10 +198,11 @@ $end_time = microtime(true);
 $duration = number_format(($end_time - $start_time) * 1000, 3);
 
 // Reload the tree as we may have made schema changes
-// Todo: refine this to only reload on changes
-AppContainer::setShouldReloadTree(true);
+if (!$isReadQuery) {
+	AppContainer::setShouldReloadTree(true);
+}
 
-// Display duration if we know it
+// Display duration
 if ($duration !== null) {
 	echo "<p>", sprintf($lang['strruntime'], $duration), "</p>\n";
 }
@@ -229,6 +239,7 @@ $navlinks['alter'] = array(
 			'url' => 'database.php',
 			'urlvars' => array_merge($fields, array(
 				'action' => 'sql',
+				'paginate' => $paginate,
 			))
 		)
 	),
