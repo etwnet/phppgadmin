@@ -16,6 +16,47 @@ use PhpPgAdmin\Database\Actions\SchemaActions;
 use PhpPgAdmin\Misc;
 use PhpPgAdmin\PluginManager;
 
+/**
+ * Register custom ADODB driver loader
+ *
+ * This callback intercepts ADONewConnection() calls and loads the enhanced
+ * PostgreSQL driver which caches field metadata (table OID, attribute number)
+ * from query result sets.
+ *
+ * The enhanced driver provides methods like FieldTableOID($i) and FieldAttnum($i)
+ * on result sets for direct field source metadata inspection.
+ */
+$ADODB_NEWCONNECTION = function ($dbType) {
+	if ($dbType !== 'postgres9enhanced') {
+		// Not our driver, let ADODB handle it with default loading
+		return false;
+	}
+
+	// Load the custom enhanced driver
+	$customDriverFile = __DIR__ . '/adodb-custom/adodb-postgres9-enhanced.inc.php';
+	if (!file_exists($customDriverFile)) {
+		die("failed to load driver: custom driver file not found at " . $customDriverFile);
+	}
+
+	try {
+		require_once $customDriverFile;
+
+		// Instantiate the enhanced driver class
+		if (!class_exists('ADODB_postgres9Enhanced')) {
+			die("failed to load driver: ADODB_postgres9Enhanced class not found after loading " . $customDriverFile);
+		}
+
+		$driver = new ADODB_postgres9Enhanced();
+		if (!$driver) {
+			die("failed to load driver: could not instantiate ADODB_postgres9Enhanced");
+		}
+
+		return $driver;
+	} catch (Exception $e) {
+		die("failed to load driver: " . $e->getMessage());
+	}
+};
+
 // Set error reporting level to max
 error_reporting(E_ALL);
 

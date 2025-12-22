@@ -1318,8 +1318,8 @@ function beginHtml()
 	// is small enough for a GET request.
 	function adjustQueryFormMethod(form) {
 		const isValidReadQuery =
-			&& isSqlReadQuery(form.query.value)
-			&& form.query.value.length < {$conf['max_get_query_length']};
+			form.query.value.length < {$conf['max_get_query_length']} &&
+			isSqlReadQuery(form.query.value);
 		if (isValidReadQuery) {
 			form.method = 'get';
 		} else {
@@ -1332,6 +1332,8 @@ EOT;
 	$misc->printHeader($title ?? '', $scripts);
 	$misc->printBody();
 }
+
+// Main program
 
 //$pg = AppContainer::getPostgres();
 //$conf = AppContainer::getConf();

@@ -91,6 +91,10 @@ class LayoutRenderer extends AbstractContext
 				.calendar-icon-bg {
 					background-image: url("<?= $this->misc->icon('Calendar') ?> ");
 				}
+
+				#tree {
+					<?= "width: {$conf['left_width']}px;" ?>
+				}
 			</style>
 			<title><?= $safeTitle ?></title>
 			<?= $scripts ?>

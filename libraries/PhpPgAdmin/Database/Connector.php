@@ -31,7 +31,7 @@ class Connector
 		$database,
 		$fetchMode = ADODB_FETCH_ASSOC
 	) {
-		$this->conn = ADONewConnection('postgres8');
+		$this->conn = ADONewConnection('postgres9enhanced');
 		$this->conn->setFetchMode($fetchMode);
 
 		// Ignore host if null
@@ -56,7 +56,7 @@ class Connector
 	/**
 	 * Gets the name of the correct database driver to use.  As a side effect,
 	 * sets the platform.
-	 * @param (return-by-ref) $description A description of the database and version
+	 * @param string (return-by-ref) $description A description of the database and version
 	 * @return string The class name of the driver eg. Postgres84
 	 * @return null if version is < 8
 	 * @return -3 Database-specific failure
