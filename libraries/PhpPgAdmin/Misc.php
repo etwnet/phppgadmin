@@ -183,8 +183,8 @@ class Misc extends AbstractContext
 
 		// Create the connection object and make the connection
 		$connector = new Connector(
-			$server_info['host'],
-			$server_info['port'],
+			$server_info['host'] ?? null,
+			$server_info['port'] ?? null,
 			$server_info['sslmode'],
 			$server_info['username'],
 			$server_info['password'],

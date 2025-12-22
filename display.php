@@ -511,7 +511,6 @@ function printTableHeaderCells($rs, $args, $withOid)
 
 			$keys = array_keys($_REQUEST['orderby']);
 
-			// Todo show field position in orderby
 			echo "<th class=\"data\"><span><a class=\"orderby\" data-col=\"", htmlspecialchars($finfo->name), "\" data-type=\"", htmlspecialchars($finfo->type), "\" href=\"display.php?{$sortLink}\"><span>", htmlspecialchars($finfo->name), "</span>";
 			if (isset($_REQUEST['orderby'][$finfo->name])) {
 				if ($_REQUEST['orderby'][$finfo->name] === 'desc')
@@ -689,7 +688,6 @@ function doBrowse($msg = '')
 
 	if (isset($table_name)) {
 		if (isset($_REQUEST['query'])) {
-			$_SESSION['sqlquery'] = $_REQUEST['query'];
 			//$misc->printTitle($lang['strselect']);
 			$type = 'SELECT';
 		} else {
@@ -697,12 +695,15 @@ function doBrowse($msg = '')
 		}
 	} else {
 		if (!isset($_REQUEST['query'])) {
-			// we come from sql.php, $_SESSION['sqlquery'] has been set there
-			$_REQUEST['query'] = $_SESSION['sqlquery'];
+			// if we come from sql.php or the query is too large to be passed
+			// via GET parameters, retrieve it from the session
+			$_REQUEST['query'] = $_SESSION['sqlquery'] ?? '';
 		}
 		//$misc->printTitle($lang['strqueryresults']);
 		$type = 'QUERY';
 	}
+	// save the sql query in session for further use
+	$_SESSION['sqlquery'] = $_REQUEST['query'] ?? '';
 
 	// get or build sql query
 	if (!empty($_REQUEST['query'])) {
@@ -710,11 +711,11 @@ function doBrowse($msg = '')
 		$parse_table = true;
 	} else {
 		$parse_table = false;
-		$query = "SELECT * FROM " . pg_escape_id($_REQUEST['schema']);
+		$query = "SELECT * FROM " . $pg->escapeIdentifier($_REQUEST['schema']);
 		if ($_REQUEST['subject'] == 'view') {
-			$query = "{$query}." . pg_escape_id($_REQUEST['view']) . ";";
+			$query .= "." . $pg->escapeIdentifier($_REQUEST['view']) . ";";
 		} else {
-			$query = "{$query}." . pg_escape_id($_REQUEST['table']) . ";";
+			$query .= "." . $pg->escapeIdentifier($_REQUEST['table']) . ";";
 		}
 	}
 
@@ -907,7 +908,7 @@ function doBrowse($msg = '')
 		$_gets[$subject] = $table_name;
 	if (isset($subject))
 		$_gets['subject'] = $subject;
-	if (isset($_REQUEST['query']))
+	if (isset($_REQUEST['query']) && mb_strlen($_REQUEST['query']) < $conf['max_get_query_length'])
 		$_gets['query'] = $_REQUEST['query'];
 	if (isset($_REQUEST['count']))
 		$_gets['count'] = $_REQUEST['count'];
@@ -930,10 +931,9 @@ function doBrowse($msg = '')
 
 	$_sub_params = $_gets;
 	unset($_sub_params['query']);
-	// Since we use the SQL query as url parameter for pagination and sorting,
-	// we can use GET method for the form.
+	// We adjust the form method via javascript to avoid length limits on GET requests
 	?>
-	<form method="get" action="display.php?<?= http_build_query($_sub_params) ?>">
+	<form method="get" onsubmit="adjustQueryFormMethod(this)" action="display.php?<?= http_build_query($_sub_params) ?>">
 		<div>
 			<textarea name="query" class="sql-editor frame resizable auto-expand" width="90%" rows="5" cols="100"
 				resizable="true"><?= htmlspecialchars_nc($query) ?></textarea>
@@ -1285,6 +1285,7 @@ function beginHtml()
 {
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$conf = AppContainer::getConf();
 
 	// Set the title based on the subject of the request
 	$subject_type = $_REQUEST['subject'] ?? '';
@@ -1311,6 +1312,22 @@ function beginHtml()
 	$scripts .= "errmsg: '" . str_replace("'", "\'", $lang['strconnectionfail']) . "'\n";
 	$scripts .= "};\n";
 	$scripts .= "</script>\n";
+	$scripts .= <<<EOT
+<script type="text/javascript">
+	// Adjust form method based on whether the query is read-only and its length
+	// is small enough for a GET request.
+	function adjustQueryFormMethod(form) {
+		const isValidReadQuery =
+			&& isSqlReadQuery(form.query.value)
+			&& form.query.value.length < {$conf['max_get_query_length']};
+		if (isValidReadQuery) {
+			form.method = 'get';
+		} else {
+			form.method = 'post';
+		}
+	}
+</script>
+EOT;
 
 	$misc->printHeader($title ?? '', $scripts);
 	$misc->printBody();

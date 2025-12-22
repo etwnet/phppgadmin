@@ -97,9 +97,9 @@ input[type="reset"]:active {
 	transform: scale(0.97);
 }
 
-input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not(
-		[type="radio"]
-	),
+input:not([type="button"]):not([type="submit"]):not([type="reset"]):not(
+		[type="checkbox"]
+	):not([type="radio"]),
 textarea,
 select {
 	--input-border-radius: var(--bs-border-radius-sm);
@@ -116,9 +116,9 @@ select {
 	padding: 3px 5px;
 }
 
-input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not(
-		[type="radio"]
-	):hover,
+input:not([type="button"]):not([type="submit"]):not([type="reset"]):not(
+		[type="checkbox"]
+	):not([type="radio"]):hover,
 textarea:hover,
 select:hover {
 	box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.2);
@@ -470,6 +470,7 @@ ul.toplink li a:active {
 
 .active a {
 	font-weight: bold;
+	color: #3073a9;
 }
 
 a.help {

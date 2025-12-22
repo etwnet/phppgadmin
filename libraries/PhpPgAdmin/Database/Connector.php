@@ -66,7 +66,7 @@ class Connector
 		$v = pg_version($this->conn->_connectionID);
 		$version = $v['server'];
 
-		$majorVersion = (float)substr($version, 0, 3);
+		$majorVersion = (float) substr($version, 0, 3);
 
 		if ($majorVersion < AppContainer::getPgServerMinVersion())
 			return null;

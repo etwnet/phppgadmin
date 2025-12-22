@@ -41,8 +41,8 @@ $conf['servers'][0]['pg_dumpall_path'] = '/usr/bin/pg_dumpall';
 //$conf['servers'][1]['port'] = 5432;
 //$conf['servers'][1]['sslmode'] = 'allow';
 //$conf['servers'][1]['defaultdb'] = 'template1';
-//$conf['servers'][1]['pg_dump_path'] = 'C:\\Program Files\\PostgreSQL\\8.0\\bin\\pg_dump.exe';
-//$conf['servers'][1]['pg_dumpall_path'] = 'C:\\Program Files\\PostgreSQL\\8.0\\bin\\pg_dumpall.exe';
+//$conf['servers'][1]['pg_dump_path'] = 'C:\\Program Files\\PostgreSQL\\18.0\\bin\\pg_dump.exe';
+//$conf['servers'][1]['pg_dumpall_path'] = 'C:\\Program Files\\PostgreSQL\\18.0\\bin\\pg_dumpall.exe';
 
 
 /* Groups definition */
@@ -127,7 +127,7 @@ $conf['show_system'] = false;
 $conf['min_password_length'] = 1;
 
 // Width of the left frame in pixels (object browser)
-$conf['left_width'] = 200;
+$conf['left_width'] = 250;
 
 // Which look & feel theme to use
 $conf['theme'] = 'default';
@@ -157,6 +157,10 @@ $conf['help_base'] = 'http://www.postgresql.org/docs/%s/interactive/';
 // Time in seconds. If set to 0, refreshing data using ajax will be disabled (locks and activity pages)
 $conf['ajax_refresh'] = 3;
 
+// Maximum length of an SQL query when sent via GET method
+// Set it to zero to send all queries via POST method
+$conf['max_get_query_length'] = 5000;
+
 /** Plugins management
 	* Add plugin names to the following array to activate them
 	* Example:
@@ -166,3 +170,5 @@ $conf['ajax_refresh'] = 3;
 	*   );
 	*/
 $conf['plugins'] = array();
+
+return $conf;

@@ -41,16 +41,14 @@ if (version_compare(phpversion(), $phpMinVer, '<'))
 // Check to see if the configuration file exists, if not, explain
 $configFile = __DIR__ . '/../conf/config.inc.php';
 if (file_exists($configFile)) {
-	$conf = [];
-	require $configFile;
+	$conf = require $configFile;
 	if (empty($conf['theme'])) {
 		$conf['theme'] = 'bootstrap';
 	}
 	// Set conf by reference
 	AppContainer::setConf($conf);
 } else {
-	echo 'Configuration error: Copy conf/config.inc.php-dist to conf/config.inc.php and edit appropriately.';
-	exit;
+	die('Configuration error: Copy conf/config.inc.php-dist to conf/config.inc.php and edit appropriately.');
 }
 
 // Setup session storage configuration
@@ -73,8 +71,7 @@ if (!empty($conf['session_path'])) {
 	if (is_dir($sessionPath) && is_writable($sessionPath)) {
 		ini_set('session.save_path', $sessionPath);
 	} else {
-		echo "Configuration error: Session path '$sessionPath' is not writable.";
-		exit;
+		die("Configuration error: Session path '$sessionPath' is not writable.");
 	}
 
 	ini_set('session.save_handler', 'files');
@@ -99,6 +96,53 @@ if (!isset($conf['default_lang']))
 	$conf['default_lang'] = 'english';
 $lang = [];
 require_once __DIR__ . '/../lang/english.php';
+
+// Validate that all required config keys are present
+if (!isset($_SESSION['config_verified'])) {
+	$required = [
+		'default_lang' => null,
+		'autocomplete' => null,
+		'extra_login_security' => null,
+		'owned_only' => null,
+		'show_comments' => null,
+		'show_advanced' => null,
+		'show_system' => null,
+		'min_password_length' => null,
+		'left_width' => null,
+		//'theme' => null,
+		'show_oids' => null,
+		'max_rows' => null,
+		'max_chars' => null,
+		'session_timeout' => null,
+		'session_path' => null,
+		'help_base' => null,
+		'ajax_refresh' => null,
+		'max_get_query_length' => null,
+		'plugins' => null,
+		'servers' => null,
+	];
+	$missing = array_keys(array_diff_key($required, $conf));
+	if (!empty($missing)) {
+		die("Missing keys in \$conf: " . implode(', ', $missing));
+	}
+
+	$required = [
+		'desc' => null,
+		'host' => null,
+		'port' => null,
+		'sslmode' => null,
+		'defaultdb' => null,
+		//'pg_dump_path' => null,
+		//'pg_dumpall_path' => null
+	];
+	foreach ($conf['servers'] as $i => $server) {
+		$missing = array_keys(array_diff_key($required, $server));
+		if (!empty($missing)) {
+			die("Missing keys in \$conf['servers'][$i]: " . implode(', ', $missing));
+		}
+	}
+	$_SESSION['config_verified'] = true;
+}
 
 // Determine language file to import
 
@@ -301,12 +345,10 @@ if (empty($_ENV["SKIP_DB_CONNECTION"] ?? '')) {
 
 	// Connect to the current database, or if one is not specified
 	// then connect to the default database.
-	if (isset($_REQUEST['database']))
-		$_curr_db = $_REQUEST['database'];
-	else
-		$_curr_db = $_server_info['defaultdb'];
+	$_curr_db = $_REQUEST['database'] ?? $_server_info['defaultdb'];
 
-	require __DIR__ . '/../classes/database/Connection.php';
+	require __DIR__ . '/errorhandler.inc.php';
+	require __DIR__ . '/adodb/adodb.inc.php';
 
 	// Connect to database and set the global $data variable
 	$data = $misc->getDatabaseAccessor($_curr_db);

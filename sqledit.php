@@ -103,6 +103,7 @@ function doDefault()
 	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$conf = AppContainer::getConf();
 	$schemaActions = new SchemaActions($pg);
 
 	if (!isset($_SESSION['sqlquery']))
@@ -111,14 +112,14 @@ function doDefault()
 	if (!isset($_REQUEST['paginate']))
 		$_REQUEST['paginate'] = '1';
 
-	$scripts = <<<'EOD'
+	$scripts = <<<EOD
 <script type="text/javascript">
 	// Adjust form method based on whether the query is read-only
 	function adjustPopupSqlFormMethod(form) {
 		const isValidReadQuery =
 			!form.script.value
 			&& isSqlReadQuery(form.query.value)
-			&& form.query.value.length < 5000;
+			&& form.query.value.length < {$conf['max_get_query_length']};
 		if (isValidReadQuery) {
 			form.method = 'get';
 		} else {
