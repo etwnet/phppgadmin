@@ -14,8 +14,8 @@ class DumpManager
      * Supported export formats and their requirements
      */
     const FORMATS = [
-        'copy' => ['requires_pg_dump' => true, 'name' => 'COPY'],
-        'sql' => ['requires_pg_dump' => true, 'name' => 'SQL'],
+        'copy' => ['requires_pg_dump' => false, 'name' => 'COPY'],
+        'sql' => ['requires_pg_dump' => false, 'name' => 'SQL'],
         'csv' => ['requires_pg_dump' => false, 'name' => 'CSV'],
         'tab' => ['requires_pg_dump' => false, 'name' => 'Tabbed'],
         'html' => ['requires_pg_dump' => false, 'name' => 'XHTML'],
@@ -36,15 +36,8 @@ class DumpManager
         $available = [];
 
         foreach (self::FORMATS as $format => $info) {
-            // COPY/SQL only available for dataonly with pg_dump
-            if ($info['requires_pg_dump']) {
-                if ($has_pg_dump && $what === 'dataonly') {
-                    $available[] = $format;
-                }
-            } else {
-                // CSV/TAB/HTML/XML always available
-                $available[] = $format;
-            }
+            // All formats are now available either via pg_dump or internal dumper
+            $available[] = $format;
         }
 
         return [
@@ -105,6 +98,29 @@ class DumpManager
 
         // Format validation passed
         return;
+    }
+
+    /**
+     * Get information about the current dump strategy (pg_dump vs internal)
+     * @param bool $all True if doing cluster-wide dump
+     * @return array ['strategy' => string, 'message' => string]
+     */
+    public static function getDumpStrategyInfo($all = false)
+    {
+        $pg_dump_path = self::detectDumpExecutable($all);
+        $exec_type = $all ? 'pg_dumpall' : 'pg_dump';
+
+        if (!empty($pg_dump_path)) {
+            return [
+                'strategy' => 'external',
+                'message' => "Using external {$exec_type} at: {$pg_dump_path}"
+            ];
+        }
+
+        return [
+            'strategy' => 'internal',
+            'message' => "{$exec_type} not found. Using internal PHP-based dumper as fallback."
+        ];
     }
 
     /**

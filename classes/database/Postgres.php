@@ -9,7 +9,11 @@
 
 include_once('./classes/database/ADODB_base.php');
 
-class Postgres extends ADODB_base {
+/**
+ * @deprecated please use /libraries/Database/Postgres instead.
+ */
+class Postgres extends ADODB_base
+{
 
 	var $major_version = 14;
 	// Max object name length
@@ -64,9 +68,11 @@ class Postgres extends ADODB_base {
 	var $fkinitial = array('INITIALLY IMMEDIATE', 'INITIALLY DEFERRED');
 	var $fkmatches = array('MATCH SIMPLE', 'MATCH FULL');
 	// Function properties
-	var $funcprops = array(array('', 'VOLATILE', 'IMMUTABLE', 'STABLE'),
+	var $funcprops = array(
+		array('', 'VOLATILE', 'IMMUTABLE', 'STABLE'),
 		array('', 'CALLED ON NULL INPUT', 'RETURNS NULL ON NULL INPUT'),
-		array('', 'SECURITY INVOKER', 'SECURITY DEFINER'));
+		array('', 'SECURITY INVOKER', 'SECURITY DEFINER')
+	);
 	// Default help URL
 	var $help_base;
 	// Help sub pages
@@ -138,17 +144,54 @@ class Postgres extends ADODB_base {
 	// Rule action types
 	var $rule_events = array('SELECT', 'INSERT', 'UPDATE', 'DELETE');
 	// Select operators
-	var $selectOps = array('=' => 'i', '!=' => 'i', '<' => 'i', '>' => 'i', '<=' => 'i', '>=' => 'i',
-		'<<' => 'i', '>>' => 'i', '<<=' => 'i', '>>=' => 'i',
-		'LIKE' => 'i', 'NOT LIKE' => 'i', 'ILIKE' => 'i', 'NOT ILIKE' => 'i', 'SIMILAR TO' => 'i',
-		'NOT SIMILAR TO' => 'i', '~' => 'i', '!~' => 'i', '~*' => 'i', '!~*' => 'i',
-		'IS NULL' => 'p', 'IS NOT NULL' => 'p', 'IN' => 'x', 'NOT IN' => 'x',
-		'@@' => 'i', '@@@' => 'i', '@>' => 'i', '<@' => 'i',
-		'@@ to_tsquery' => 't', '@@@ to_tsquery' => 't', '@> to_tsquery' => 't', '<@ to_tsquery' => 't',
-		'@@ plainto_tsquery' => 't', '@@@ plainto_tsquery' => 't', '@> plainto_tsquery' => 't', '<@ plainto_tsquery' => 't');
+	var $selectOps = array(
+		'=' => 'i',
+		'!=' => 'i',
+		'<' => 'i',
+		'>' => 'i',
+		'<=' => 'i',
+		'>=' => 'i',
+		'<<' => 'i',
+		'>>' => 'i',
+		'<<=' => 'i',
+		'>>=' => 'i',
+		'LIKE' => 'i',
+		'NOT LIKE' => 'i',
+		'ILIKE' => 'i',
+		'NOT ILIKE' => 'i',
+		'SIMILAR TO' => 'i',
+		'NOT SIMILAR TO' => 'i',
+		'~' => 'i',
+		'!~' => 'i',
+		'~*' => 'i',
+		'!~*' => 'i',
+		'IS NULL' => 'p',
+		'IS NOT NULL' => 'p',
+		'IN' => 'x',
+		'NOT IN' => 'x',
+		'@@' => 'i',
+		'@@@' => 'i',
+		'@>' => 'i',
+		'<@' => 'i',
+		'@@ to_tsquery' => 't',
+		'@@@ to_tsquery' => 't',
+		'@> to_tsquery' => 't',
+		'<@ to_tsquery' => 't',
+		'@@ plainto_tsquery' => 't',
+		'@@@ plainto_tsquery' => 't',
+		'@> plainto_tsquery' => 't',
+		'<@ plainto_tsquery' => 't'
+	);
 	// Array of allowed trigger events
-	var $triggerEvents = array('INSERT', 'UPDATE', 'DELETE', 'INSERT OR UPDATE', 'INSERT OR DELETE',
-		'DELETE OR UPDATE', 'INSERT OR DELETE OR UPDATE');
+	var $triggerEvents = array(
+		'INSERT',
+		'UPDATE',
+		'DELETE',
+		'INSERT OR UPDATE',
+		'INSERT OR DELETE',
+		'DELETE OR UPDATE',
+		'INSERT OR DELETE OR UPDATE'
+	);
 	// When to execute the trigger
 	var $triggerExecTimes = array('BEFORE', 'AFTER');
 	// How often to execute the trigger
@@ -170,7 +213,8 @@ class Postgres extends ADODB_base {
 	 * Constructor
 	 * @param ADOConnection $conn The database connection
 	 */
-	function __construct($conn) {
+	function __construct($conn)
+	{
 		parent::__construct($conn);
 	}
 
@@ -181,8 +225,10 @@ class Postgres extends ADODB_base {
 	 * @param string $str The string to clean, by reference
 	 * @return string The cleaned string
 	 */
-	function clean(&$str) {
-		if ($str === null) return null;
+	function clean(&$str)
+	{
+		if ($str === null)
+			return null;
 		$str = str_replace("\r\n", "\n", $str);
 		$str = pg_escape_string($this->conn->_connectionID, $str);
 		return $str;
@@ -193,8 +239,10 @@ class Postgres extends ADODB_base {
 	 * @param string $str The string to clean, by reference
 	 * @return string The cleaned string
 	 */
-	function fieldClean(&$str) {
-		if ($str === null) return null;
+	function fieldClean(&$str)
+	{
+		if ($str === null)
+			return null;
 		$str = str_replace('"', '""', $str);
 		return $str;
 	}
@@ -204,9 +252,11 @@ class Postgres extends ADODB_base {
 	 * @param array $arr The array to clean, by reference
 	 * @return array The cleaned array
 	 */
-	function fieldArrayClean(&$arr) {
+	function fieldArrayClean(&$arr)
+	{
 		foreach ($arr as $k => $v) {
-			if ($v === null) continue;
+			if ($v === null)
+				continue;
 			$arr[$k] = str_replace('"', '""', $v);
 		}
 		return $arr;
@@ -217,9 +267,11 @@ class Postgres extends ADODB_base {
 	 * @param array $arr The array to clean, by reference
 	 * @return array The cleaned array
 	 */
-	function arrayClean(&$arr) {
+	function arrayClean(&$arr)
+	{
 		foreach ($arr as $k => $v) {
-			if ($v === null) continue;
+			if ($v === null)
+				continue;
 			$arr[$k] = pg_escape_string($this->conn->_connectionID, $v);
 		}
 		return $arr;
@@ -230,7 +282,8 @@ class Postgres extends ADODB_base {
 	 * @param string $data The bytea data
 	 * @return string Data formatted for on-screen display
 	 */
-	function escapeBytea($data) {
+	function escapeBytea($data)
+	{
 		return htmlentities($data, ENT_QUOTES, 'UTF-8');
 	}
 
@@ -241,7 +294,8 @@ class Postgres extends ADODB_base {
 	 * @param string $type The database type of the field
 	 * @param array $extras An array of attributes name as key and attributes' values as value
 	 */
-	function printField($name, $value, $type, $extras = array()) {
+	function printField($name, $value, $type, $extras = array())
+	{
 		global $lang;
 
 		if (!isset($value)) {
@@ -265,59 +319,62 @@ class Postgres extends ADODB_base {
 		//var_dump($type);
 
 		switch ($base_type) {
-		case 'bool':
-		case 'boolean':
-			if ($value == '') $value = null;
-			elseif ($value == 'true') $value = 't';
-			elseif ($value == 'false') $value = 'f';
+			case 'bool':
+			case 'boolean':
+				if ($value == '')
+					$value = null;
+				elseif ($value == 'true')
+					$value = 't';
+				elseif ($value == 'false')
+					$value = 'f';
 
-			// If value is null, 't' or 'f'...
-			if ($value === null || $value == 't' || $value == 'f') {
-				/*
-				echo "<select name=\"", htmlspecialchars($name), "\"{$extra_str}>\n";
-				echo "<option value=\"\"", ($value === null) ? ' selected="selected"' : '', "></option>\n";
-				echo "<option value=\"t\"", ($value == 't') ? ' selected="selected"' : '', ">{$lang['strtrue']}</option>\n";
-				echo "<option value=\"f\"", ($value == 'f') ? ' selected="selected"' : '', ">{$lang['strfalse']}</option>\n";
-				echo "</select>\n";
-				*/
-				$input_name = htmlspecialchars($name);
-				echo "<label><input type=\"radio\" name=\"$input_name\" value=\"\"", ($value == null) ? " checked" : "", "> {$lang['strnull']}</label>&nbsp;&nbsp;&nbsp;";
-				echo "<label><input type=\"radio\" name=\"$input_name\" value=\"t\"", ($value == 't') ? " checked" : "", "> {$lang['strtrue']}</label>&nbsp;&nbsp;&nbsp;";
-				echo "<label><input type=\"radio\" name=\"$input_name\" value=\"f\"", ($value == 'f') ? " checked" : "", "> {$lang['strfalse']}</label>";
-			} else {
+				// If value is null, 't' or 'f'...
+				if ($value === null || $value == 't' || $value == 'f') {
+					/*
+					echo "<select name=\"", htmlspecialchars($name), "\"{$extra_str}>\n";
+					echo "<option value=\"\"", ($value === null) ? ' selected="selected"' : '', "></option>\n";
+					echo "<option value=\"t\"", ($value == 't') ? ' selected="selected"' : '', ">{$lang['strtrue']}</option>\n";
+					echo "<option value=\"f\"", ($value == 'f') ? ' selected="selected"' : '', ">{$lang['strfalse']}</option>\n";
+					echo "</select>\n";
+					*/
+					$input_name = htmlspecialchars($name);
+					echo "<label><input type=\"radio\" name=\"$input_name\" value=\"\"", ($value == null) ? " checked" : "", "> {$lang['strnull']}</label>&nbsp;&nbsp;&nbsp;";
+					echo "<label><input type=\"radio\" name=\"$input_name\" value=\"t\"", ($value == 't') ? " checked" : "", "> {$lang['strtrue']}</label>&nbsp;&nbsp;&nbsp;";
+					echo "<label><input type=\"radio\" name=\"$input_name\" value=\"f\"", ($value == 'f') ? " checked" : "", "> {$lang['strfalse']}</label>";
+				} else {
+					echo "<input name=\"", htmlspecialchars($name), "\" value=\"", htmlspecialchars($value ?? ''), "\" size=\"35\"{$extra_str} />\n";
+				}
+				break;
+			case 'bytea':
+			case 'bytea[]':
+				if (!is_null($value)) {
+					$value = $this->escapeBytea($value);
+				}
+			case 'text':
+			case 'text[]':
+			case 'json':
+			case 'jsonb':
+			case 'xml':
+			case 'xml[]':
+				$n = substr_count($value ?? '', "\n");
+				$n = $n < 5 ? 5 : $n;
+				$n = $n > 20 ? 20 : $n;
+				echo "<textarea name=\"", htmlspecialchars($name), "\" rows=\"{$n}\" cols=\"75\"{$extra_str}>\n";
+				echo htmlspecialchars($value ?? '');
+				echo "</textarea>\n";
+				break;
+			case 'character':
+			case 'character[]':
+				$n = substr_count($value, "\n");
+				$n = $n < 5 ? 5 : $n;
+				$n = $n > 20 ? 20 : $n;
+				echo "<textarea name=\"", htmlspecialchars($name), "\" rows=\"{$n}\" cols=\"35\"{$extra_str}>\n";
+				echo htmlspecialchars($value ?? '');
+				echo "</textarea>\n";
+				break;
+			default:
 				echo "<input name=\"", htmlspecialchars($name), "\" value=\"", htmlspecialchars($value ?? ''), "\" size=\"35\"{$extra_str} />\n";
-			}
-			break;
-		case 'bytea':
-		case 'bytea[]':
-			if (!is_null($value)) {
-				$value = $this->escapeBytea($value);
-			}
-		case 'text':
-		case 'text[]':
-		case 'json':
-		case 'jsonb':
-		case 'xml':
-		case 'xml[]':
-			$n = substr_count($value ?? '', "\n");
-			$n = $n < 5 ? 5 : $n;
-			$n = $n > 20 ? 20 : $n;
-			echo "<textarea name=\"", htmlspecialchars($name), "\" rows=\"{$n}\" cols=\"75\"{$extra_str}>\n";
-			echo htmlspecialchars($value ?? '');
-			echo "</textarea>\n";
-			break;
-		case 'character':
-		case 'character[]':
-			$n = substr_count($value, "\n");
-			$n = $n < 5 ? 5 : $n;
-			$n = $n > 20 ? 20 : $n;
-			echo "<textarea name=\"", htmlspecialchars($name), "\" rows=\"{$n}\" cols=\"35\"{$extra_str}>\n";
-			echo htmlspecialchars($value ?? '');
-			echo "</textarea>\n";
-			break;
-		default:
-			echo "<input name=\"", htmlspecialchars($name), "\" value=\"", htmlspecialchars($value ?? ''), "\" size=\"35\"{$extra_str} />\n";
-			break;
+				break;
 		}
 	}
 
@@ -329,46 +386,51 @@ class Postgres extends ADODB_base {
 	 * @param ?string $value The actual value entered in the field.  Can be NULL
 	 * @return string The suitably quoted and escaped value.
 	 */
-	function formatValue($type, $function, $expr, $value) {
+	function formatValue($type, $function, $expr, $value)
+	{
 		switch ($type) {
-		case 'bool':
-		case 'boolean':
-			if ($value == 't')
-				return 'TRUE';
-			elseif ($value == 'f')
-				return 'FALSE';
-			elseif ($value == '')
-				return 'NULL';
-			else
-				return $value;
-		default:
-			if ($function) {
-				// ENCODE (value,'base64') => ENCODE ('test','base64')
-				if (!$expr) $value = "'" . $this->clean($value) . "'";
-				return preg_replace('/\bvalue\b/', $value, $function);
-			}
-			if ($expr) {
-				return $value;
-			}
-			// Checking variable fields is difficult as there might be a size
-			// attribute...
-			$is_date_or_time = strlen($type) >= 4 && (
+			case 'bool':
+			case 'boolean':
+				if ($value == 't')
+					return 'TRUE';
+				elseif ($value == 'f')
+					return 'FALSE';
+				elseif ($value == '')
+					return 'NULL';
+				else
+					return $value;
+			default:
+				if ($function) {
+					// ENCODE (value,'base64') => ENCODE ('test','base64')
+					if (!$expr)
+						$value = "'" . $this->clean($value) . "'";
+					return preg_replace('/\bvalue\b/', $value, $function);
+				}
+				if ($expr) {
+					return $value;
+				}
+				// Checking variable fields is difficult as there might be a size
+				// attribute...
+				$is_date_or_time = strlen($type) >= 4 && (
 					substr_compare($type, 'time', 0, 4) === 0 ||
 					substr_compare($type, 'date', 0, 4) === 0
 				);
-			if ($is_date_or_time) {
-				// Assume it's one of the time types...
-				if ($value == '') return "''";
-				elseif (strcasecmp($value, 'CURRENT_TIMESTAMP') == 0
-					|| strcasecmp($value, 'CURRENT_TIME') == 0
-					|| strcasecmp($value, 'CURRENT_DATE') == 0
-					|| strcasecmp($value, 'LOCALTIME') == 0
-					|| strcasecmp($value, 'LOCALTIMESTAMP') == 0) {
-					return $value;
+				if ($is_date_or_time) {
+					// Assume it's one of the time types...
+					if ($value == '')
+						return "''";
+					elseif (
+						strcasecmp($value, 'CURRENT_TIMESTAMP') == 0
+						|| strcasecmp($value, 'CURRENT_TIME') == 0
+						|| strcasecmp($value, 'CURRENT_DATE') == 0
+						|| strcasecmp($value, 'LOCALTIME') == 0
+						|| strcasecmp($value, 'LOCALTIMESTAMP') == 0
+					) {
+						return $value;
+					}
 				}
-			}
-			$this->clean($value);
-			return "'{$value}'";
+				$this->clean($value);
+				return "'{$value}'";
 		}
 	}
 
@@ -378,7 +440,8 @@ class Postgres extends ADODB_base {
 	 * @param $typname The name of the type
 	 * @param $typmod The contents of the typmod field
 	 */
-	function formatType($typname, $typmod) {
+	function formatType($typname, $typmod)
+	{
 		// This is a specific constant in the 7.0 source
 		$varhdrsz = 4;
 
@@ -407,10 +470,12 @@ class Postgres extends ADODB_base {
 				$scale = $tmp_typmod & 0xffff;
 				$temp .= "({$precision}, {$scale})";
 			}
-		} else $temp = $typname;
+		} else
+			$temp = $typname;
 
 		// Add array qualifier if it's an array
-		if ($is_array) $temp .= '[]';
+		if ($is_array)
+			$temp .= '[]';
 
 		return $temp;
 	}
@@ -420,7 +485,8 @@ class Postgres extends ADODB_base {
 	/**
 	 * Fetch a URL (or array of URLs) for a given help page.
 	 */
-	function getHelp($help) {
+	function getHelp($help)
+	{
 		$this->getHelpPages();
 
 		if (isset($this->help_page[$help])) {
@@ -436,7 +502,8 @@ class Postgres extends ADODB_base {
 			return null;
 	}
 
-	function getHelpPages() {
+	function getHelpPages()
+	{
 		include_once('./help/PostgresDoc14.php');
 		return $this->help_page;
 	}
@@ -448,7 +515,8 @@ class Postgres extends ADODB_base {
 	 * @param $database The name of the database to retrieve
 	 * @return ADORecordSet|int The database info
 	 */
-	function getDatabase($database) {
+	function getDatabase($database)
+	{
 		$this->clean($database);
 		$sql = "SELECT * FROM pg_database WHERE datname='{$database}'";
 		return $this->selectSet($sql);
@@ -460,7 +528,8 @@ class Postgres extends ADODB_base {
 	 *
 	 * @return ADORecordSet|int A list of databases, sorted alphabetically
 	 */
-	function getDatabases($currentdatabase = NULL) {
+	function getDatabases($currentdatabase = NULL)
+	{
 		global $conf, $misc;
 
 		$server_info = $misc->getServerInfo();
@@ -469,7 +538,8 @@ class Postgres extends ADODB_base {
 			$username = $server_info['username'];
 			$this->clean($username);
 			$clause = " AND pg_has_role('{$username}'::name,pr.rolname,'USAGE')";
-		} else $clause = '';
+		} else
+			$clause = '';
 
 		if ($currentdatabase != NULL) {
 			$this->clean($currentdatabase);
@@ -505,7 +575,8 @@ class Postgres extends ADODB_base {
 	 * @param string $database the name of the database to get the comment for
 	 * @return ADORecordSet|int recordset of the db comment info
 	 */
-	function getDatabaseComment($database) {
+	function getDatabaseComment($database)
+	{
 		$this->clean($database);
 		$sql = "SELECT description FROM pg_catalog.pg_database JOIN pg_catalog.pg_shdescription ON (oid=objoid AND classoid='pg_database'::regclass) WHERE pg_database.datname = '{$database}' ";
 		return $this->selectSet($sql);
@@ -516,7 +587,8 @@ class Postgres extends ADODB_base {
 	 * @param string $database the name of the database to get the owner for
 	 * @return ADORecordSet|int recordset of the db owner info
 	 */
-	function getDatabaseOwner($database) {
+	function getDatabaseOwner($database)
+	{
 		$this->clean($database);
 		$sql = "SELECT usename FROM pg_user, pg_database WHERE pg_user.usesysid = pg_database.datdba AND pg_database.datname = '{$database}' ";
 		return $this->selectSet($sql);
@@ -526,7 +598,8 @@ class Postgres extends ADODB_base {
 	 * Returns the current database encoding
 	 * @return The encoding.  eg. SQL_ASCII, UTF-8, etc.
 	 */
-	function getDatabaseEncoding() {
+	function getDatabaseEncoding()
+	{
 		return pg_parameter_status($this->conn->_connectionID, 'server_encoding');
 	}
 
@@ -534,7 +607,8 @@ class Postgres extends ADODB_base {
 	 * Returns the current default_with_oids setting
 	 * @return default_with_oids setting
 	 */
-	function getDefaultWithOid() {
+	function getDefaultWithOid()
+	{
 		// OID support was removed in PG12
 		// But this function is referenced when browsing data
 		return false;
@@ -549,8 +623,15 @@ class Postgres extends ADODB_base {
 	 * @return -1 tablespace error
 	 * @return -2 comment error
 	 */
-	function createDatabase($database, $encoding, $tablespace = '', $comment = '', $template = 'template1',
-									$lc_collate = '', $lc_ctype = '') {
+	function createDatabase(
+		$database,
+		$encoding,
+		$tablespace = '',
+		$comment = '',
+		$template = 'template1',
+		$lc_collate = '',
+		$lc_ctype = ''
+	) {
 		$this->fieldClean($database);
 		$this->clean($encoding);
 		$this->fieldClean($tablespace);
@@ -560,18 +641,24 @@ class Postgres extends ADODB_base {
 
 		$sql = "CREATE DATABASE \"{$database}\" WITH TEMPLATE=\"{$template}\"";
 
-		if ($encoding != '') $sql .= " ENCODING='{$encoding}'";
-		if ($lc_collate != '') $sql .= " LC_COLLATE='{$lc_collate}'";
-		if ($lc_ctype != '') $sql .= " LC_CTYPE='{$lc_ctype}'";
+		if ($encoding != '')
+			$sql .= " ENCODING='{$encoding}'";
+		if ($lc_collate != '')
+			$sql .= " LC_COLLATE='{$lc_collate}'";
+		if ($lc_ctype != '')
+			$sql .= " LC_CTYPE='{$lc_ctype}'";
 
-		if ($tablespace != '' && $this->hasTablespaces()) $sql .= " TABLESPACE \"{$tablespace}\"";
+		if ($tablespace != '' && $this->hasTablespaces())
+			$sql .= " TABLESPACE \"{$tablespace}\"";
 
 		$status = $this->execute($sql);
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		if ($comment != '' && $this->hasSharedComments()) {
 			$status = $this->setComment('DATABASE', $database, '', $comment);
-			if ($status != 0) return -2;
+			if ($status != 0)
+				return -2;
 		}
 
 		return 0;
@@ -584,7 +671,8 @@ class Postgres extends ADODB_base {
 	 * @param string $newName new name of database
 	 * @return int 0 on success
 	 */
-	function alterDatabaseRename($oldName, $newName) {
+	function alterDatabaseRename($oldName, $newName)
+	{
 		$this->fieldClean($oldName);
 		$this->fieldClean($newName);
 
@@ -600,7 +688,8 @@ class Postgres extends ADODB_base {
 	 * @param $database The name of the database to drop
 	 * @return 0 success
 	 */
-	function dropDatabase($database) {
+	function dropDatabase($database)
+	{
 		$this->fieldClean($database);
 		$sql = "DROP DATABASE \"{$database}\"";
 		return $this->execute($sql);
@@ -613,7 +702,8 @@ class Postgres extends ADODB_base {
 	 * @param string $newOwner user that will own the database
 	 * @return int 0 on success
 	 */
-	function alterDatabaseOwner($dbName, $newOwner) {
+	function alterDatabaseOwner($dbName, $newOwner)
+	{
 		$this->fieldClean($dbName);
 		$this->fieldClean($newOwner);
 
@@ -633,7 +723,8 @@ class Postgres extends ADODB_base {
 	 * @return -3 rename error
 	 * @return -4 comment error
 	 */
-	function alterDatabase($dbName, $newName, $newOwner = '', $comment = '') {
+	function alterDatabase($dbName, $newName, $newOwner = '', $comment = '')
+	{
 
 		$status = $this->beginTransaction();
 		if ($status != 0) {
@@ -672,7 +763,8 @@ class Postgres extends ADODB_base {
 	 * @param $database (optional) Find only prepared transactions executed in a specific database
 	 * @return A recordset
 	 */
-	function getPreparedXacts($database = null) {
+	function getPreparedXacts($database = null)
+	{
 		if ($database === null)
 			$sql = "SELECT * FROM pg_prepared_xacts";
 		else {
@@ -690,7 +782,8 @@ class Postgres extends ADODB_base {
 	 * @param $filter The object type to restrict to ('' means no restriction)
 	 * @return A recordset
 	 */
-	function findObject($term, $filter) {
+	function findObject($term, $filter)
+	{
 		global $conf;
 
 		/*about escaping:
@@ -836,7 +929,8 @@ class Postgres extends ADODB_base {
 	 * Returns all available variable information.
 	 * @return A recordset
 	 */
-	function getVariables() {
+	function getVariables()
+	{
 		$sql = "SHOW ALL";
 
 		return $this->selectSet($sql);
@@ -848,13 +942,15 @@ class Postgres extends ADODB_base {
 	 * Return all schemas in the current database.
 	 * @return All schemas, sorted alphabetically
 	 */
-	function getSchemas() {
+	function getSchemas()
+	{
 		global $conf;
 
 		if (!$conf['show_system']) {
 			$where = "WHERE nspname NOT LIKE 'pg@_%' ESCAPE '@' AND nspname != 'information_schema'";
 
-		} else $where = "WHERE nspname !~ '^pg_t(emp_[0-9]+|oast)$'";
+		} else
+			$where = "WHERE nspname !~ '^pg_t(emp_[0-9]+|oast)$'";
 		$sql = "
 			SELECT pn.nspname, pu.rolname AS nspowner,
 				pg_catalog.obj_description(pn.oid, 'pg_namespace') AS nspcomment
@@ -871,7 +967,8 @@ class Postgres extends ADODB_base {
 	 * @param $schema The name of the schema
 	 * @return Schema information
 	 */
-	function getSchemaByName($schema) {
+	function getSchemaByName($schema)
+	{
 		$this->clean($schema);
 		$sql = "
 			SELECT nspname, nspowner, r.rolname AS ownername, nspacl,
@@ -887,7 +984,8 @@ class Postgres extends ADODB_base {
 	 * @param string $schema The the name of the schema to work in
 	 * @return 0 success
 	 */
-	function setSchema($schema) {
+	function setSchema($schema)
+	{
 		throw new Exception($schema);
 		// Get the current schema search path, including 'pg_catalog'.
 		$search_path = $this->getSearchPath();
@@ -897,7 +995,8 @@ class Postgres extends ADODB_base {
 		if ($status == 0) {
 			$this->_schema = $schema;
 			return 0;
-		} else return $status;
+		} else
+			return $status;
 	}
 
 	/**
@@ -907,9 +1006,12 @@ class Postgres extends ADODB_base {
 	 * @return -1 Array not passed
 	 * @return -2 Array must contain at least one item
 	 */
-	function setSearchPath($paths) {
-		if (!is_array($paths)) return -1;
-		elseif (sizeof($paths) == 0) return -2;
+	function setSearchPath($paths)
+	{
+		if (!is_array($paths))
+			return -1;
+		elseif (sizeof($paths) == 0)
+			return -2;
 		elseif (sizeof($paths) == 1 && $paths[0] == '') {
 			// Need to handle empty paths in some cases
 			$paths[0] = 'pg_catalog';
@@ -918,7 +1020,8 @@ class Postgres extends ADODB_base {
 		// Loop over all the paths to check that none are empty
 		$temp = array();
 		foreach ($paths as $schema) {
-			if ($schema != '') $temp[] = $schema;
+			if ($schema != '')
+				$temp[] = $schema;
 		}
 		$this->fieldArrayClean($temp);
 
@@ -934,16 +1037,19 @@ class Postgres extends ADODB_base {
 	 * @param $comment (optional) If omitted, defaults to nothing
 	 * @return 0 success
 	 */
-	function createSchema($schemaname, $authorization = '', $comment = '') {
+	function createSchema($schemaname, $authorization = '', $comment = '')
+	{
 		$this->fieldClean($schemaname);
 		$this->fieldClean($authorization);
 
 		$sql = "CREATE SCHEMA \"{$schemaname}\"";
-		if ($authorization != '') $sql .= " AUTHORIZATION \"{$authorization}\"";
+		if ($authorization != '')
+			$sql .= " AUTHORIZATION \"{$authorization}\"";
 
 		if ($comment != '') {
 			$status = $this->beginTransaction();
-			if ($status != 0) return -1;
+			if ($status != 0)
+				return -1;
 		}
 
 		// Create the new schema
@@ -974,7 +1080,8 @@ class Postgres extends ADODB_base {
 	 * @param $owner The new owner for this schema
 	 * @return 0 success
 	 */
-	function updateSchema($schemaname, $comment, $name, $owner) {
+	function updateSchema($schemaname, $comment, $name, $owner)
+	{
 		$this->fieldClean($schemaname);
 		$this->fieldClean($name);
 		$this->fieldClean($owner);
@@ -1021,11 +1128,13 @@ class Postgres extends ADODB_base {
 	 * @param $cascade True to cascade drop, false to restrict
 	 * @return 0 success
 	 */
-	function dropSchema($schemaname, $cascade) {
+	function dropSchema($schemaname, $cascade)
+	{
 		$this->fieldClean($schemaname);
 
 		$sql = "DROP SCHEMA \"{$schemaname}\"";
-		if ($cascade) $sql .= " CASCADE";
+		if ($cascade)
+			$sql .= " CASCADE";
 
 		return $this->execute($sql);
 	}
@@ -1034,7 +1143,8 @@ class Postgres extends ADODB_base {
 	 * Return the current schema search path
 	 * @return Array of schema names
 	 */
-	function getSearchPath() {
+	function getSearchPath()
+	{
 		$sql = 'SELECT current_schemas(false) AS search_path';
 
 		return $this->phpArray($this->selectField($sql, 'search_path'));
@@ -1048,7 +1158,8 @@ class Postgres extends ADODB_base {
 	 * @return True if it has a unique id, false otherwise
 	 * @return null error
 	 **/
-	function hasObjectID($table) {
+	function hasObjectID($table)
+	{
 		// OID support is gone since PG12
 		// But that function is required by table exports
 		return false;
@@ -1059,7 +1170,8 @@ class Postgres extends ADODB_base {
 	 * @param $table The name of the table
 	 * @return A recordset
 	 */
-	function getTable($table) {
+	function getTable($table)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($table);
@@ -1086,7 +1198,8 @@ class Postgres extends ADODB_base {
 	 * @param string $table
 	 * @return ?string
 	 */
-	function getTableType($schema, $table) {
+	function getTableType($schema, $table)
+	{
 		$this->clean($schema);
 		$this->clean($table);
 		$sql = "SELECT c.relkind
@@ -1109,7 +1222,8 @@ class Postgres extends ADODB_base {
 	 * @param $all True to fetch all tables, false for just in current schema
 	 * @return All tables, sorted alphabetically
 	 */
-	function getTables($all = false) {
+	function getTables($all = false)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		if ($all) {
@@ -1139,7 +1253,8 @@ class Postgres extends ADODB_base {
 	 * @param string $field (optional) The name of a field to return
 	 * @return ADORecordSet All attributes in order
 	 */
-	function getTableAttributes($table, $field = '') {
+	function getTableAttributes($table, $field = '')
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($table);
@@ -1208,7 +1323,8 @@ class Postgres extends ADODB_base {
 	 * @param $table The table to find the parents for
 	 * @return A recordset
 	 */
-	function getTableParents($table) {
+	function getTableParents($table)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($table);
@@ -1235,7 +1351,8 @@ class Postgres extends ADODB_base {
 	 * @param $table The table to find the children for
 	 * @return A recordset
 	 */
-	function getTableChildren($table) {
+	function getTableChildren($table)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($table);
@@ -1263,7 +1380,8 @@ class Postgres extends ADODB_base {
 	 * @return A string containing the formatted SQL code
 	 * @return null On error
 	 */
-	function getTableDefPrefix($table, $clean = false) {
+	function getTableDefPrefix($table, $clean = false)
+	{
 		// Fetch table
 		$t = $this->getTable($table);
 		if (!is_object($t) || $t->recordCount() != 1) {
@@ -1297,7 +1415,8 @@ class Postgres extends ADODB_base {
 		$sql .= "-- Definition\n\n";
 		// DROP TABLE must be fully qualified in case a table with the same name exists
 		// in pg_catalog.
-		if (!$clean) $sql .= "-- ";
+		if (!$clean)
+			$sql .= "-- ";
 		$sql .= "DROP TABLE ";
 		$sql .= "\"{$t->fields['nspname']}\".\"{$t->fields['relname']}\";\n";
 		$sql .= "CREATE TABLE \"{$t->fields['nspname']}\".\"{$t->fields['relname']}\" (\n";
@@ -1310,8 +1429,10 @@ class Postgres extends ADODB_base {
 			$this->fieldClean($atts->fields['attname']);
 			$sql .= "    \"{$atts->fields['attname']}\"";
 			// Dump SERIAL and BIGSERIAL columns correctly
-			if ($this->phpBool($atts->fields['attisserial']) &&
-				($atts->fields['type'] == 'integer' || $atts->fields['type'] == 'bigint')) {
+			if (
+				$this->phpBool($atts->fields['attisserial']) &&
+				($atts->fields['type'] == 'integer' || $atts->fields['type'] == 'bigint')
+			) {
 				if ($atts->fields['type'] == 'integer')
 					$sql .= " SERIAL";
 				else
@@ -1328,8 +1449,10 @@ class Postgres extends ADODB_base {
 			}
 
 			// Output comma or not
-			if ($i < $num) $sql .= ",\n";
-			else $sql .= "\n";
+			if ($i < $num)
+				$sql .= ",\n";
+			else
+				$sql .= "\n";
 
 			// Does this column have a comment?
 			if ($atts->fields['comment'] !== null) {
@@ -1349,24 +1472,26 @@ class Postgres extends ADODB_base {
 				$sql .= $cons->fields['consrc'];
 			else {
 				switch ($cons->fields['contype']) {
-				case 'p':
-					$keys = $this->getAttributeNames($table, explode(' ', $cons->fields['indkey']));
-					$sql .= "PRIMARY KEY (" . join(',', $keys) . ")";
-					break;
-				case 'u':
-					$keys = $this->getAttributeNames($table, explode(' ', $cons->fields['indkey']));
-					$sql .= "UNIQUE (" . join(',', $keys) . ")";
-					break;
-				default:
-					// Unrecognised constraint
-					$this->rollbackTransaction();
-					return null;
+					case 'p':
+						$keys = $this->getAttributeNames($table, explode(' ', $cons->fields['indkey']));
+						$sql .= "PRIMARY KEY (" . join(',', $keys) . ")";
+						break;
+					case 'u':
+						$keys = $this->getAttributeNames($table, explode(' ', $cons->fields['indkey']));
+						$sql .= "UNIQUE (" . join(',', $keys) . ")";
+						break;
+					default:
+						// Unrecognised constraint
+						$this->rollbackTransaction();
+						return null;
 				}
 			}
 
 			// Output comma or not
-			if ($i < $num) $sql .= ",\n";
-			else $sql .= "\n";
+			if ($i < $num)
+				$sql .= ",\n";
+			else
+				$sql .= "\n";
 
 			$cons->moveNext();
 			$i++;
@@ -1425,22 +1550,22 @@ class Postgres extends ADODB_base {
 			// Then storage
 			if ($atts->fields['attstorage'] != $atts->fields['typstorage']) {
 				switch ($atts->fields['attstorage']) {
-				case 'p':
-					$storage = 'PLAIN';
-					break;
-				case 'e':
-					$storage = 'EXTERNAL';
-					break;
-				case 'm':
-					$storage = 'MAIN';
-					break;
-				case 'x':
-					$storage = 'EXTENDED';
-					break;
-				default:
-					// Unknown storage type
-					$this->rollbackTransaction();
-					return null;
+					case 'p':
+						$storage = 'PLAIN';
+						break;
+					case 'e':
+						$storage = 'EXTERNAL';
+						break;
+					case 'm':
+						$storage = 'MAIN';
+						break;
+					case 'x':
+						$storage = 'EXTENDED';
+						break;
+					default:
+						// Unknown storage type
+						$this->rollbackTransaction();
+						return null;
 				}
 				$sql .= "ALTER TABLE ONLY \"{$t->fields['nspname']}\".\"{$t->fields['relname']}\" ALTER COLUMN \"{$atts->fields['attname']}\" SET STORAGE {$storage};\n";
 			}
@@ -1456,7 +1581,8 @@ class Postgres extends ADODB_base {
 		}
 
 		// Add comments on columns, if any
-		if ($col_comments_sql != '') $sql .= $col_comments_sql;
+		if ($col_comments_sql != '')
+			$sql .= $col_comments_sql;
 
 		// Privileges
 		$privs = $this->getPrivileges($table, 'table');
@@ -1478,7 +1604,8 @@ class Postgres extends ADODB_base {
 				$nongrant = array_diff($v[2], $v[4]);
 
 				// Skip empty or owner ACEs
-				if (sizeof($v[2]) == 0 || ($v[0] == 'user' && $v[1] == $t->fields['relowner'])) continue;
+				if (sizeof($v[2]) == 0 || ($v[0] == 'user' && $v[1] == $t->fields['relowner']))
+					continue;
 
 				// Change user if necessary
 				if ($this->hasGrantOption() && $v[3] != $t->fields['relowner']) {
@@ -1490,21 +1617,21 @@ class Postgres extends ADODB_base {
 				// Output privileges with no GRANT OPTION
 				$sql .= "GRANT " . join(', ', $nongrant) . " ON TABLE \"{$t->fields['relname']}\" TO ";
 				switch ($v[0]) {
-				case 'public':
-					$sql .= "PUBLIC;\n";
-					break;
-				case 'user':
-					$this->fieldClean($v[1]);
-					$sql .= "\"{$v[1]}\";\n";
-					break;
-				case 'group':
-					$this->fieldClean($v[1]);
-					$sql .= "GROUP \"{$v[1]}\";\n";
-					break;
-				default:
-					// Unknown privilege type - fail
-					$this->rollbackTransaction();
-					return null;
+					case 'public':
+						$sql .= "PUBLIC;\n";
+						break;
+					case 'user':
+						$this->fieldClean($v[1]);
+						$sql .= "\"{$v[1]}\";\n";
+						break;
+					case 'group':
+						$this->fieldClean($v[1]);
+						$sql .= "GROUP \"{$v[1]}\";\n";
+						break;
+					default:
+						// Unknown privilege type - fail
+						$this->rollbackTransaction();
+						return null;
 				}
 
 				// Reset user if necessary
@@ -1515,7 +1642,8 @@ class Postgres extends ADODB_base {
 				// Output privileges with GRANT OPTION
 
 				// Skip empty or owner ACEs
-				if (!$this->hasGrantOption() || sizeof($v[4]) == 0) continue;
+				if (!$this->hasGrantOption() || sizeof($v[4]) == 0)
+					continue;
 
 				// Change user if necessary
 				if ($this->hasGrantOption() && $v[3] != $t->fields['relowner']) {
@@ -1526,20 +1654,20 @@ class Postgres extends ADODB_base {
 
 				$sql .= "GRANT " . join(', ', $v[4]) . " ON \"{$t->fields['relname']}\" TO ";
 				switch ($v[0]) {
-				case 'public':
-					$sql .= "PUBLIC";
-					break;
-				case 'user':
-					$this->fieldClean($v[1]);
-					$sql .= "\"{$v[1]}\"";
-					break;
-				case 'group':
-					$this->fieldClean($v[1]);
-					$sql .= "GROUP \"{$v[1]}\"";
-					break;
-				default:
-					// Unknown privilege type - fail
-					return null;
+					case 'public':
+						$sql .= "PUBLIC";
+						break;
+					case 'user':
+						$this->fieldClean($v[1]);
+						$sql .= "\"{$v[1]}\"";
+						break;
+					case 'group':
+						$this->fieldClean($v[1]);
+						$sql .= "GROUP \"{$v[1]}\"";
+						break;
+					default:
+						// Unknown privilege type - fail
+						return null;
 				}
 				$sql .= " WITH GRANT OPTION;\n";
 
@@ -1564,7 +1692,8 @@ class Postgres extends ADODB_base {
 	 * @return A string containing the formatted SQL code
 	 * @return null On error
 	 */
-	function getTableDefSuffix($table) {
+	function getTableDefSuffix($table)
+	{
 		$sql = '';
 
 		// Indexes
@@ -1639,15 +1768,29 @@ class Postgres extends ADODB_base {
 	 * @return 0 success
 	 * @return -1 no fields supplied
 	 */
-	function createTable($name, $fields, $field, $type, $array, $length, $notnull,
-								$default, $withoutoids, $colcomment, $tblcomment, $tablespace,
-								$uniquekey, $primarykey) {
+	function createTable(
+		$name,
+		$fields,
+		$field,
+		$type,
+		$array,
+		$length,
+		$notnull,
+		$default,
+		$withoutoids,
+		$colcomment,
+		$tblcomment,
+		$tablespace,
+		$uniquekey,
+		$primarykey
+	) {
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($name);
 
 		$status = $this->beginTransaction();
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		$found = false;
 		$first = true;
@@ -1660,47 +1803,59 @@ class Postgres extends ADODB_base {
 			$this->clean($colcomment[$i]);
 
 			// Skip blank columns - for user convenience
-			if ($field[$i] == '' || $type[$i] == '') continue;
+			if ($field[$i] == '' || $type[$i] == '')
+				continue;
 			// If not the first column, add a comma
-			if (!$first) $sql .= ", ";
-			else $first = false;
+			if (!$first)
+				$sql .= ", ";
+			else
+				$first = false;
 
 			switch ($type[$i]) {
 				// Have to account for weird placing of length for with/without
 				// time zone types
-			case 'timestamp with time zone':
-			case 'timestamp without time zone':
-				$qual = substr($type[$i], 9);
-				$sql .= "\"{$field[$i]}\" timestamp";
-				if ($length[$i] != '') $sql .= "({$length[$i]})";
-				$sql .= $qual;
-				break;
-			case 'time with time zone':
-			case 'time without time zone':
-				$qual = substr($type[$i], 4);
-				$sql .= "\"{$field[$i]}\" time";
-				if ($length[$i] != '') $sql .= "({$length[$i]})";
-				$sql .= $qual;
-				break;
-			default:
-				$sql .= "\"{$field[$i]}\" {$type[$i]}";
-				if ($length[$i] != '') $sql .= "({$length[$i]})";
+				case 'timestamp with time zone':
+				case 'timestamp without time zone':
+					$qual = substr($type[$i], 9);
+					$sql .= "\"{$field[$i]}\" timestamp";
+					if ($length[$i] != '')
+						$sql .= "({$length[$i]})";
+					$sql .= $qual;
+					break;
+				case 'time with time zone':
+				case 'time without time zone':
+					$qual = substr($type[$i], 4);
+					$sql .= "\"{$field[$i]}\" time";
+					if ($length[$i] != '')
+						$sql .= "({$length[$i]})";
+					$sql .= $qual;
+					break;
+				default:
+					$sql .= "\"{$field[$i]}\" {$type[$i]}";
+					if ($length[$i] != '')
+						$sql .= "({$length[$i]})";
 			}
 			// Add array qualifier if necessary
-			if ($array[$i] == '[]') $sql .= '[]';
+			if ($array[$i] == '[]')
+				$sql .= '[]';
 			// Add other qualifiers
 			if (!isset($primarykey[$i])) {
-				if (isset($uniquekey[$i])) $sql .= " UNIQUE";
-				if (isset($notnull[$i])) $sql .= " NOT NULL";
+				if (isset($uniquekey[$i]))
+					$sql .= " UNIQUE";
+				if (isset($notnull[$i]))
+					$sql .= " NOT NULL";
 			}
-			if ($default[$i] != '') $sql .= " DEFAULT {$default[$i]}";
+			if ($default[$i] != '')
+				$sql .= " DEFAULT {$default[$i]}";
 
-			if ($colcomment[$i] != '') $comment_sql .= "COMMENT ON COLUMN \"{$name}\".\"{$field[$i]}\" IS '{$colcomment[$i]}';\n";
+			if ($colcomment[$i] != '')
+				$comment_sql .= "COMMENT ON COLUMN \"{$name}\".\"{$field[$i]}\" IS '{$colcomment[$i]}';\n";
 
 			$found = true;
 		}
 
-		if (!$found) return -1;
+		if (!$found)
+			return -1;
 
 		// PRIMARY KEY
 		$primarykeycolumns = array();
@@ -1763,7 +1918,8 @@ class Postgres extends ADODB_base {
 	 * @param $constraints if true, copy the constraints as well (CHECK on table & attr)
 	 * @param $tablespace The tablespace name ('' means none/default)
 	 */
-	function createTableLike($name, $like, $defaults = false, $constraints = false, $idx = false, $tablespace = '') {
+	function createTableLike($name, $like, $defaults = false, $constraints = false, $idx = false, $tablespace = '')
+	{
 
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
@@ -1773,13 +1929,17 @@ class Postgres extends ADODB_base {
 		$like = "\"{$like['schema']}\".\"{$like['table']}\"";
 
 		$status = $this->beginTransaction();
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		$sql = "CREATE TABLE \"{$f_schema}\".\"{$name}\" (LIKE {$like}";
 
-		if ($defaults) $sql .= " INCLUDING DEFAULTS";
-		if ($this->hasCreateTableLikeWithConstraints() && $constraints) $sql .= " INCLUDING CONSTRAINTS";
-		if ($this->hasCreateTableLikeWithIndexes() && $idx) $sql .= " INCLUDING INDEXES";
+		if ($defaults)
+			$sql .= " INCLUDING DEFAULTS";
+		if ($this->hasCreateTableLikeWithConstraints() && $constraints)
+			$sql .= " INCLUDING CONSTRAINTS";
+		if ($this->hasCreateTableLikeWithIndexes() && $idx)
+			$sql .= " INCLUDING INDEXES";
 
 		$sql .= ")";
 
@@ -1804,7 +1964,8 @@ class Postgres extends ADODB_base {
 	 * @param $name The new table's name
 	 * @return 0 success
 	 */
-	function alterTableName($tblrs, $name = null) {
+	function alterTableName($tblrs, $name = null)
+	{
 		/* vars cleaned in _alterTable */
 		// Rename (only if name has changed)
 		if (!empty($name) && ($name != $tblrs->fields['relname'])) {
@@ -1828,7 +1989,8 @@ class Postgres extends ADODB_base {
 	 * @param $name The new table's owner
 	 * @return 0 success
 	 */
-	function alterTableOwner($tblrs, $owner = null) {
+	function alterTableOwner($tblrs, $owner = null)
+	{
 		/* vars cleaned in _alterTable */
 		if (!empty($owner) && ($tblrs->fields['relowner'] != $owner)) {
 			$f_schema = $this->_schema;
@@ -1850,7 +2012,8 @@ class Postgres extends ADODB_base {
 	 * @param $name The new table's tablespace
 	 * @return 0 success
 	 */
-	function alterTableTablespace($tblrs, $tablespace = null) {
+	function alterTableTablespace($tblrs, $tablespace = null)
+	{
 		/* vars cleaned in _alterTable */
 		if (!empty($tablespace) && ($tblrs->fields['tablespace'] != $tablespace)) {
 			$f_schema = $this->_schema;
@@ -1872,7 +2035,8 @@ class Postgres extends ADODB_base {
 	 * @param $name The new table's schema
 	 * @return 0 success
 	 */
-	function alterTableSchema($tblrs, $schema = null) {
+	function alterTableSchema($tblrs, $schema = null)
+	{
 		/* vars cleaned in _alterTable */
 		if (!empty($schema) && ($tblrs->fields['nspname'] != $schema)) {
 			$f_schema = $this->_schema;
@@ -1903,33 +2067,45 @@ class Postgres extends ADODB_base {
 	 * @return -7 schema error
 	 */
 	protected
-	function _alterTable($tblrs, $name, $owner, $schema, $comment, $tablespace) {
+		function _alterTable(
+		$tblrs,
+		$name,
+		$owner,
+		$schema,
+		$comment,
+		$tablespace
+	) {
 
 		$this->fieldArrayClean($tblrs->fields);
 
 		// Comment
 		$status = $this->setComment('TABLE', '', $tblrs->fields['relname'], $comment);
-		if ($status != 0) return -4;
+		if ($status != 0)
+			return -4;
 
 		// Owner
 		$this->fieldClean($owner);
 		$status = $this->alterTableOwner($tblrs, $owner);
-		if ($status != 0) return -5;
+		if ($status != 0)
+			return -5;
 
 		// Tablespace
 		$this->fieldClean($tablespace);
 		$status = $this->alterTableTablespace($tblrs, $tablespace);
-		if ($status != 0) return -6;
+		if ($status != 0)
+			return -6;
 
 		// Rename
 		$this->fieldClean($name);
 		$status = $this->alterTableName($tblrs, $name);
-		if ($status != 0) return -3;
+		if ($status != 0)
+			return -3;
 
 		// Schema
 		$this->fieldClean($schema);
 		$status = $this->alterTableSchema($tblrs, $schema);
-		if ($status != 0) return -7;
+		if ($status != 0)
+			return -7;
 
 		return 0;
 	}
@@ -1947,7 +2123,8 @@ class Postgres extends ADODB_base {
 	 * @return -2 get existing table error
 	 * @return $this->_alterTable error code
 	 */
-	function alterTable($table, $name, $owner, $schema, $comment, $tablespace) {
+	function alterTable($table, $name, $owner, $schema, $comment, $tablespace)
+	{
 
 		$data = $this->getTable($table);
 
@@ -1975,7 +2152,8 @@ class Postgres extends ADODB_base {
 	 * @param $user The user to change to
 	 * @return The SQL
 	 */
-	function getChangeUserSQL($user) {
+	function getChangeUserSQL($user)
+	{
 		$this->clean($user);
 		return "SET SESSION AUTHORIZATION '{$user}';";
 	}
@@ -1989,15 +2167,18 @@ class Postgres extends ADODB_base {
 	 * @return -1 $atts must be an array
 	 * @return -2 wrong number of attributes found
 	 */
-	function getAttributeNames($table, $atts) {
+	function getAttributeNames($table, $atts)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($table);
 		$this->arrayClean($atts);
 
-		if (!is_array($atts)) return -1;
+		if (!is_array($atts))
+			return -1;
 
-		if (sizeof($atts) == 0) return array();
+		if (sizeof($atts) == 0)
+			return array();
 
 		$sql = "SELECT attnum, attname FROM pg_catalog.pg_attribute WHERE
 			attrelid=(SELECT oid FROM pg_catalog.pg_class WHERE relname='{$table}' AND
@@ -2022,7 +2203,8 @@ class Postgres extends ADODB_base {
 	 * @param $table The table to be emptied
 	 * @return 0 success
 	 */
-	function emptyTable($table) {
+	function emptyTable($table)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($table);
@@ -2038,13 +2220,15 @@ class Postgres extends ADODB_base {
 	 * @param $cascade True to cascade drop, false to restrict
 	 * @return 0 success
 	 */
-	function dropTable($table, $cascade) {
+	function dropTable($table, $cascade)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($table);
 
 		$sql = "DROP TABLE \"{$f_schema}\".\"{$table}\"";
-		if ($cascade) $sql .= " CASCADE";
+		if ($cascade)
+			$sql .= " CASCADE";
 
 		return $this->execute($sql);
 	}
@@ -2060,7 +2244,8 @@ class Postgres extends ADODB_base {
 	 * @param $length The optional size of the column (ie. 30 for varchar(30))
 	 * @return 0 success
 	 */
-	function addColumn($table, $column, $type, $array, $length, $notnull, $default, $comment) {
+	function addColumn($table, $column, $type, $array, $length, $notnull, $default, $comment)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($table);
@@ -2074,35 +2259,39 @@ class Postgres extends ADODB_base {
 			switch ($type) {
 				// Have to account for weird placing of length for with/without
 				// time zone types
-			case 'timestamp with time zone':
-			case 'timestamp without time zone':
-				$qual = substr($type, 9);
-				$sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ADD COLUMN \"{$column}\" timestamp({$length}){$qual}";
-				break;
-			case 'time with time zone':
-			case 'time without time zone':
-				$qual = substr($type, 4);
-				$sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ADD COLUMN \"{$column}\" time({$length}){$qual}";
-				break;
-			default:
-				$sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ADD COLUMN \"{$column}\" {$type}({$length})";
+				case 'timestamp with time zone':
+				case 'timestamp without time zone':
+					$qual = substr($type, 9);
+					$sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ADD COLUMN \"{$column}\" timestamp({$length}){$qual}";
+					break;
+				case 'time with time zone':
+				case 'time without time zone':
+					$qual = substr($type, 4);
+					$sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ADD COLUMN \"{$column}\" time({$length}){$qual}";
+					break;
+				default:
+					$sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ADD COLUMN \"{$column}\" {$type}({$length})";
 			}
 		}
 
 		// Add array qualifier, if requested
-		if ($array) $sql .= '[]';
+		if ($array)
+			$sql .= '[]';
 
 		// If we have advanced column adding, add the extra qualifiers
 		if ($this->hasCreateFieldWithConstraints()) {
 			// NOT NULL clause
-			if ($notnull) $sql .= ' NOT NULL';
+			if ($notnull)
+				$sql .= ' NOT NULL';
 
 			// DEFAULT clause
-			if ($default != '') $sql .= ' DEFAULT ' . $default;
+			if ($default != '')
+				$sql .= ' DEFAULT ' . $default;
 		}
 
 		$status = $this->beginTransaction();
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		$status = $this->execute($sql);
 		if ($status != 0) {
@@ -2139,8 +2328,20 @@ class Postgres extends ADODB_base {
 	 * @return -5 comment error
 	 * @return -6 transaction error
 	 */
-	function alterColumn($table, $column, $name, $notnull, $oldnotnull, $default, $olddefault,
-								$type, $length, $array, $oldtype, $comment) {
+	function alterColumn(
+		$table,
+		$column,
+		$name,
+		$notnull,
+		$oldnotnull,
+		$default,
+		$olddefault,
+		$type,
+		$length,
+		$array,
+		$oldtype,
+		$comment
+	) {
 		// Begin transaction
 		$status = $this->beginTransaction();
 		if ($status != 0) {
@@ -2185,23 +2386,24 @@ class Postgres extends ADODB_base {
 			switch ($type) {
 				// Have to account for weird placing of length for with/without
 				// time zone types
-			case 'timestamp with time zone':
-			case 'timestamp without time zone':
-				$qual = substr($type, 9);
-				$ftype = "timestamp({$length}){$qual}";
-				break;
-			case 'time with time zone':
-			case 'time without time zone':
-				$qual = substr($type, 4);
-				$ftype = "time({$length}){$qual}";
-				break;
-			default:
-				$ftype = "{$type}({$length})";
+				case 'timestamp with time zone':
+				case 'timestamp without time zone':
+					$qual = substr($type, 9);
+					$ftype = "timestamp({$length}){$qual}";
+					break;
+				case 'time with time zone':
+				case 'time without time zone':
+					$qual = substr($type, 4);
+					$ftype = "time({$length}){$qual}";
+					break;
+				default:
+					$ftype = "{$type}({$length})";
 			}
 		}
 
 		// Add array qualifier, if requested
-		if ($array) $ftype .= '[]';
+		if ($array)
+			$ftype .= '[]';
 
 		if ($ftype != $oldtype) {
 			$toAlter[] = "ALTER COLUMN \"{$name}\" TYPE {$ftype}";
@@ -2237,7 +2439,8 @@ class Postgres extends ADODB_base {
 	 * @param $newName The new name for the column
 	 * @return 0 success
 	 */
-	function renameColumn($table, $column, $newName) {
+	function renameColumn($table, $column, $newName)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($table);
@@ -2256,7 +2459,8 @@ class Postgres extends ADODB_base {
 	 * @param $default The new default value
 	 * @return 0 success
 	 */
-	function setColumnDefault($table, $column, $default) {
+	function setColumnDefault($table, $column, $default)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($table);
@@ -2274,7 +2478,8 @@ class Postgres extends ADODB_base {
 	 * @param $state True to set null, false to set not null
 	 * @return 0 success
 	 */
-	function setColumnNull($table, $column, $state) {
+	function setColumnNull($table, $column, $state)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($table);
@@ -2292,14 +2497,16 @@ class Postgres extends ADODB_base {
 	 * @param $cascade True to cascade drop, false to restrict
 	 * @return 0 success
 	 */
-	function dropColumn($table, $column, $cascade) {
+	function dropColumn($table, $column, $cascade)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($table);
 		$this->fieldClean($column);
 
 		$sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" DROP COLUMN \"{$column}\"";
-		if ($cascade) $sql .= " CASCADE";
+		if ($cascade)
+			$sql .= " CASCADE";
 
 		return $this->execute($sql);
 	}
@@ -2310,7 +2517,8 @@ class Postgres extends ADODB_base {
 	 * @param $column The column name to drop default
 	 * @return 0 success
 	 */
-	function dropColumnDefault($table, $column) {
+	function dropColumnDefault($table, $column)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($table);
@@ -2326,10 +2534,12 @@ class Postgres extends ADODB_base {
 	 * transaction, sets variables, etc.
 	 * @return 0 success
 	 */
-	function beginDump() {
+	function beginDump()
+	{
 		// Begin serializable transaction (to dump consistent data)
 		$status = $this->beginTransaction();
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		// Set serializable
 		$sql = "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE";
@@ -2362,7 +2572,8 @@ class Postgres extends ADODB_base {
 	 * Ends the data object for a dump.
 	 * @return 0 success
 	 */
-	function endDump() {
+	function endDump()
+	{
 		return $this->endTransaction();
 	}
 
@@ -2373,12 +2584,15 @@ class Postgres extends ADODB_base {
 	 * @return A recordset on success
 	 * @return -1 Failed to set datestyle
 	 */
-	function dumpRelation($relation, $oids) {
+	function dumpRelation($relation, $oids)
+	{
 		$this->fieldClean($relation);
 
 		// Actually retrieve the rows
-		if ($oids) $oid_str = $this->id . ', ';
-		else $oid_str = '';
+		if ($oids)
+			$oid_str = $this->id . ', ';
+		else
+			$oid_str = '';
 
 		return $this->selectSet("SELECT {$oid_str}* FROM \"{$relation}\"");
 	}
@@ -2389,7 +2603,8 @@ class Postgres extends ADODB_base {
 	 *
 	 * @return A recordset
 	 */
-	function getTableAutovacuum($table = '') {
+	function getTableAutovacuum($table = '')
+	{
 
 		$sql = '';
 
@@ -2450,14 +2665,16 @@ class Postgres extends ADODB_base {
 	 * @return An array mapping attribute number to attribute name, empty for no identifiers
 	 * @return -1 error
 	 */
-	function getRowIdentifier($table) {
+	function getRowIdentifier($table)
+	{
 		$oldtable = $table;
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($table);
 
 		$status = $this->beginTransaction();
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		// Get the first primary or unique index (sorting primary keys first) that
 		// is NOT a partial index.
@@ -2509,12 +2726,15 @@ class Postgres extends ADODB_base {
 	 * @return int 0 success
 	 * @return int -1 invalid parameters
 	 */
-	function insertRow($table, $fields, $values, $nulls, $functions, $expr, $types) {
+	function insertRow($table, $fields, $values, $nulls, $functions, $expr, $types)
+	{
 
-		if (!is_array($fields) || !is_array($values) || !is_array($nulls)
+		if (
+			!is_array($fields) || !is_array($values) || !is_array($nulls)
 			|| !is_array($functions) || !is_array($expr) || !is_array($types)
 			|| count($fields) != count($values) || count($types) != count($values)
-		) return -1;
+		)
+			return -1;
 
 		// Build clause
 		if (count($values) > 0) {
@@ -2557,12 +2777,15 @@ class Postgres extends ADODB_base {
 	 * @return int 0 success
 	 * @return -1 invalid parameters
 	 */
-	function editRow($table, $values, $nulls, $functions, $expr, $types, $keyarr) {
+	function editRow($table, $values, $nulls, $functions, $expr, $types, $keyarr)
+	{
 
-		if (!is_array($values) || !is_array($nulls)
+		if (
+			!is_array($values) || !is_array($nulls)
 			|| !is_array($functions) || !is_array($expr) || !is_array($types)
 			|| count($types) != count($values)
-		) return -1;
+		)
+			return -1;
 
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
@@ -2579,8 +2802,10 @@ class Postgres extends ADODB_base {
 				$sql .= "\"{$key}\"=";
 
 				// Handle NULL values
-				if (isset($nulls[$key])) $sql .= 'NULL';
-				else $sql .= $this->formatValue($types[$key], $functions[$key] ?? null, isset($expr[$key]), $value);
+				if (isset($nulls[$key]))
+					$sql .= 'NULL';
+				else
+					$sql .= $this->formatValue($types[$key], $functions[$key] ?? null, isset($expr[$key]), $value);
 
 				$sep = ", ";
 			}
@@ -2624,8 +2849,10 @@ class Postgres extends ADODB_base {
 	 * @param $key An array mapping column => value to delete
 	 * @return 0 success
 	 */
-	function deleteRow($table, $key, $schema = false) {
-		if (!is_array($key)) return -1;
+	function deleteRow($table, $key, $schema = false)
+	{
+		if (!is_array($key))
+			return -1;
 		else {
 			// Begin transaction.  We do this so that we can ensure only one row is
 			// deleted
@@ -2635,7 +2862,8 @@ class Postgres extends ADODB_base {
 				return -1;
 			}
 
-			if ($schema === false) $schema = $this->_schema;
+			if ($schema === false)
+				$schema = $this->_schema;
 
 			$status = $this->delete($table, $key, $schema);
 			if ($status != 0 || $this->conn->Affected_Rows() != 1) {
@@ -2655,7 +2883,8 @@ class Postgres extends ADODB_base {
 	 * @param $sequence Sequence Name
 	 * @return t/f based on user permissions
 	 */
-	function hasSequencePrivilege($sequence) {
+	function hasSequencePrivilege($sequence)
+	{
 		/* This double-cleaning is deliberate */
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
@@ -2673,7 +2902,8 @@ class Postgres extends ADODB_base {
 	 * @param $sequence Sequence name
 	 * @return A recordset
 	 */
-	function getSequence($sequence) {
+	function getSequence($sequence)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$c_sequence = $sequence;
@@ -2685,7 +2915,8 @@ class Postgres extends ADODB_base {
 			$join = "CROSS JOIN \"{$c_schema}\".\"{$c_sequence}\" AS s";
 		} else {
 			$join = 'CROSS JOIN ( values (null, null, null) ) AS s (last_value, log_cnt, is_called) ';
-		};
+		}
+		;
 
 		$sql = "
             SELECT
@@ -2729,7 +2960,8 @@ class Postgres extends ADODB_base {
 	 * Returns all sequences in the current database
 	 * @return A recordset
 	 */
-	function getSequences($all = false) {
+	function getSequences($all = false)
+	{
 		if ($all) {
 			// Exclude pg_catalog and information_schema tables
 			$sql = "
@@ -2777,7 +3009,8 @@ class Postgres extends ADODB_base {
 	 * @return 0 success
 	 * @return -1 sequence not found
 	 */
-	function nextvalSequence($sequence) {
+	function nextvalSequence($sequence)
+	{
 		/* This double-cleaning is deliberate */
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
@@ -2797,7 +3030,8 @@ class Postgres extends ADODB_base {
 	 * @return 0 success
 	 * @return -1 sequence not found
 	 */
-	function setvalSequence($sequence, $nextvalue) {
+	function setvalSequence($sequence, $nextvalue)
+	{
 		/* This double-cleaning is deliberate */
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
@@ -2817,7 +3051,8 @@ class Postgres extends ADODB_base {
 	 * @return 0 success
 	 * @return -1 sequence not found
 	 */
-	function restartSequence($sequence) {
+	function restartSequence($sequence)
+	{
 
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
@@ -2834,10 +3069,12 @@ class Postgres extends ADODB_base {
 	 * @return 0 success
 	 * @return -1 sequence not found
 	 */
-	function resetSequence($sequence) {
+	function resetSequence($sequence)
+	{
 		// Get the minimum value of the sequence
 		$seq = $this->getSequence($sequence);
-		if ($seq->recordCount() != 1) return -1;
+		if ($seq->recordCount() != 1)
+			return -1;
 		$minvalue = $seq->fields['min_value'];
 
 		$f_schema = $this->_schema;
@@ -2862,8 +3099,15 @@ class Postgres extends ADODB_base {
 	 * @param $cycledvalue True if cycled, false otherwise
 	 * @return 0 success
 	 */
-	function createSequence($sequence, $increment, $minvalue, $maxvalue,
-									$startvalue, $cachevalue, $cycledvalue) {
+	function createSequence(
+		$sequence,
+		$increment,
+		$minvalue,
+		$maxvalue,
+		$startvalue,
+		$cachevalue,
+		$cycledvalue
+	) {
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($sequence);
@@ -2874,12 +3118,18 @@ class Postgres extends ADODB_base {
 		$this->clean($cachevalue);
 
 		$sql = "CREATE SEQUENCE \"{$f_schema}\".\"{$sequence}\"";
-		if ($increment != '') $sql .= " INCREMENT {$increment}";
-		if ($minvalue != '') $sql .= " MINVALUE {$minvalue}";
-		if ($maxvalue != '') $sql .= " MAXVALUE {$maxvalue}";
-		if ($startvalue != '') $sql .= " START {$startvalue}";
-		if ($cachevalue != '') $sql .= " CACHE {$cachevalue}";
-		if ($cycledvalue) $sql .= " CYCLE";
+		if ($increment != '')
+			$sql .= " INCREMENT {$increment}";
+		if ($minvalue != '')
+			$sql .= " MINVALUE {$minvalue}";
+		if ($maxvalue != '')
+			$sql .= " MAXVALUE {$maxvalue}";
+		if ($startvalue != '')
+			$sql .= " START {$startvalue}";
+		if ($cachevalue != '')
+			$sql .= " CACHE {$cachevalue}";
+		if ($cycledvalue)
+			$sql .= " CYCLE";
 
 		return $this->execute($sql);
 	}
@@ -2890,7 +3140,8 @@ class Postgres extends ADODB_base {
 	 * @param $name The new name for the sequence
 	 * @return 0 success
 	 */
-	function alterSequenceName($seqrs, $name) {
+	function alterSequenceName($seqrs, $name)
+	{
 		/* vars are cleaned in _alterSequence */
 		if (!empty($name) && ($seqrs->fields['seqname'] != $name)) {
 			$f_schema = $this->_schema;
@@ -2911,7 +3162,8 @@ class Postgres extends ADODB_base {
 	 * @param $name The new owner for the sequence
 	 * @return 0 success
 	 */
-	function alterSequenceOwner($seqrs, $owner) {
+	function alterSequenceOwner($seqrs, $owner)
+	{
 		// If owner has been changed, then do the alteration.  We are
 		// careful to avoid this generally as changing owner is a
 		// superuser only function.
@@ -2931,7 +3183,8 @@ class Postgres extends ADODB_base {
 	 * @param $name The new schema for the sequence
 	 * @return 0 success
 	 */
-	function alterSequenceSchema($seqrs, $schema) {
+	function alterSequenceSchema($seqrs, $schema)
+	{
 		/* vars are cleaned in _alterSequence */
 		if (!empty($schema) && ($seqrs->fields['nspname'] != $schema)) {
 			$f_schema = $this->_schema;
@@ -2954,19 +3207,34 @@ class Postgres extends ADODB_base {
 	 * @param $startvalue The sequence start value when issuing a restart
 	 * @return 0 success
 	 */
-	function alterSequenceProps($seqrs, $increment, $minvalue, $maxvalue,
-										 $restartvalue, $cachevalue, $cycledvalue, $startvalue) {
+	function alterSequenceProps(
+		$seqrs,
+		$increment,
+		$minvalue,
+		$maxvalue,
+		$restartvalue,
+		$cachevalue,
+		$cycledvalue,
+		$startvalue
+	) {
 
 		$sql = '';
 		/* vars are cleaned in _alterSequence */
-		if (!empty($increment) && ($increment != $seqrs->fields['increment_by'])) $sql .= " INCREMENT {$increment}";
-		if (!empty($minvalue) && ($minvalue != $seqrs->fields['min_value'])) $sql .= " MINVALUE {$minvalue}";
-		if (!empty($maxvalue) && ($maxvalue != $seqrs->fields['max_value'])) $sql .= " MAXVALUE {$maxvalue}";
-		if (!empty($restartvalue) && ($restartvalue != $seqrs->fields['last_value'])) $sql .= " RESTART {$restartvalue}";
-		if (!empty($cachevalue) && ($cachevalue != $seqrs->fields['cache_value'])) $sql .= " CACHE {$cachevalue}";
-		if (!empty($startvalue) && ($startvalue != $seqrs->fields['start_value'])) $sql .= " START {$startvalue}";
+		if (!empty($increment) && ($increment != $seqrs->fields['increment_by']))
+			$sql .= " INCREMENT {$increment}";
+		if (!empty($minvalue) && ($minvalue != $seqrs->fields['min_value']))
+			$sql .= " MINVALUE {$minvalue}";
+		if (!empty($maxvalue) && ($maxvalue != $seqrs->fields['max_value']))
+			$sql .= " MAXVALUE {$maxvalue}";
+		if (!empty($restartvalue) && ($restartvalue != $seqrs->fields['last_value']))
+			$sql .= " RESTART {$restartvalue}";
+		if (!empty($cachevalue) && ($cachevalue != $seqrs->fields['cache_value']))
+			$sql .= " CACHE {$cachevalue}";
+		if (!empty($startvalue) && ($startvalue != $seqrs->fields['start_value']))
+			$sql .= " START {$startvalue}";
 		// toggle cycle yes/no
-		if (!is_null($cycledvalue)) $sql .= (!$cycledvalue ? ' NO ' : '') . " CYCLE";
+		if (!is_null($cycledvalue))
+			$sql .= (!$cycledvalue ? ' NO ' : '') . " CYCLE";
 		if ($sql != '') {
 			$f_schema = $this->_schema;
 			$this->fieldClean($f_schema);
@@ -2999,8 +3267,20 @@ class Postgres extends ADODB_base {
 	 * @return -7 schema error
 	 */
 	protected
-	function _alterSequence($seqrs, $name, $comment, $owner, $schema, $increment,
-									$minvalue, $maxvalue, $restartvalue, $cachevalue, $cycledvalue, $startvalue) {
+		function _alterSequence(
+		$seqrs,
+		$name,
+		$comment,
+		$owner,
+		$schema,
+		$increment,
+		$minvalue,
+		$maxvalue,
+		$restartvalue,
+		$cachevalue,
+		$cycledvalue,
+		$startvalue
+	) {
 
 		$this->fieldArrayClean($seqrs->fields);
 
@@ -3023,8 +3303,16 @@ class Postgres extends ADODB_base {
 		$this->clean($cachevalue);
 		$this->clean($cycledvalue);
 		$this->clean($startvalue);
-		$status = $this->alterSequenceProps($seqrs, $increment, $minvalue,
-			$maxvalue, $restartvalue, $cachevalue, $cycledvalue, $startvalue);
+		$status = $this->alterSequenceProps(
+			$seqrs,
+			$increment,
+			$minvalue,
+			$maxvalue,
+			$restartvalue,
+			$cachevalue,
+			$cycledvalue,
+			$startvalue
+		);
 		if ($status != 0)
 			return -6;
 
@@ -3062,8 +3350,20 @@ class Postgres extends ADODB_base {
 	 * @return -2 get existing sequence error
 	 * @return $this->_alterSequence error code
 	 */
-	function alterSequence($sequence, $name, $comment, $owner = null, $schema = null, $increment = null,
-								  $minvalue = null, $maxvalue = null, $restartvalue = null, $cachevalue = null, $cycledvalue = null, $startvalue = null) {
+	function alterSequence(
+		$sequence,
+		$name,
+		$comment,
+		$owner = null,
+		$schema = null,
+		$increment = null,
+		$minvalue = null,
+		$maxvalue = null,
+		$restartvalue = null,
+		$cachevalue = null,
+		$cycledvalue = null,
+		$startvalue = null
+	) {
 
 		$this->fieldClean($sequence);
 
@@ -3078,8 +3378,20 @@ class Postgres extends ADODB_base {
 			return -1;
 		}
 
-		$status = $this->_alterSequence($data, $name, $comment, $owner, $schema, $increment,
-			$minvalue, $maxvalue, $restartvalue, $cachevalue, $cycledvalue, $startvalue);
+		$status = $this->_alterSequence(
+			$data,
+			$name,
+			$comment,
+			$owner,
+			$schema,
+			$increment,
+			$minvalue,
+			$maxvalue,
+			$restartvalue,
+			$cachevalue,
+			$cycledvalue,
+			$startvalue
+		);
 
 		if ($status != 0) {
 			$this->rollbackTransaction();
@@ -3095,13 +3407,15 @@ class Postgres extends ADODB_base {
 	 * @param $cascade True to cascade drop, false to restrict
 	 * @return 0 success
 	 */
-	function dropSequence($sequence, $cascade) {
+	function dropSequence($sequence, $cascade)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($sequence);
 
 		$sql = "DROP SEQUENCE \"{$f_schema}\".\"{$sequence}\"";
-		if ($cascade) $sql .= " CASCADE";
+		if ($cascade)
+			$sql .= " CASCADE";
 
 		return $this->execute($sql);
 	}
@@ -3113,7 +3427,8 @@ class Postgres extends ADODB_base {
 	 * @param $view The name of the view to retrieve
 	 * @return View info
 	 */
-	function getView($view) {
+	function getView($view)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($view);
@@ -3133,7 +3448,8 @@ class Postgres extends ADODB_base {
 	 * Returns a list of all views in the database
 	 * @return All views
 	 */
-	function getViews() {
+	function getViews()
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$sql = "
@@ -3156,7 +3472,8 @@ class Postgres extends ADODB_base {
 	 * @return -2 drop view error
 	 * @return -3 create view error
 	 */
-	function setView($viewname, $definition, $comment) {
+	function setView($viewname, $definition, $comment)
+	{
 		return $this->createView($viewname, $definition, true, $comment);
 	}
 
@@ -3167,9 +3484,11 @@ class Postgres extends ADODB_base {
 	 * @param $replace True to replace the view, false otherwise
 	 * @return 0 success
 	 */
-	function createView($viewname, $definition, $replace, $comment) {
+	function createView($viewname, $definition, $replace, $comment)
+	{
 		$status = $this->beginTransaction();
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
@@ -3178,7 +3497,8 @@ class Postgres extends ADODB_base {
 		// Note: $definition not cleaned
 
 		$sql = "CREATE ";
-		if ($replace) $sql .= "OR REPLACE ";
+		if ($replace)
+			$sql .= "OR REPLACE ";
 		$sql .= "VIEW \"{$f_schema}\".\"{$viewname}\" AS {$definition}";
 
 		$status = $this->execute($sql);
@@ -3204,7 +3524,8 @@ class Postgres extends ADODB_base {
 	 * @param $name The new view's name
 	 * @return 0 success
 	 */
-	function alterViewName($vwrs, $name) {
+	function alterViewName($vwrs, $name)
+	{
 		// Rename (only if name has changed)
 		/* $vwrs and $name are cleaned in _alterView */
 		if (!empty($name) && ($name != $vwrs->fields['relname'])) {
@@ -3226,7 +3547,8 @@ class Postgres extends ADODB_base {
 	 * @param $name The new view's owner
 	 * @return 0 success
 	 */
-	function alterViewOwner($vwrs, $owner = null) {
+	function alterViewOwner($vwrs, $owner = null)
+	{
 		/* $vwrs and $owner are cleaned in _alterView */
 		if ((!empty($owner)) && ($vwrs->fields['relowner'] != $owner)) {
 			$f_schema = $this->_schema;
@@ -3246,7 +3568,8 @@ class Postgres extends ADODB_base {
 	 * @param $name The new view's schema
 	 * @return 0 success
 	 */
-	function alterViewSchema($vwrs, $schema) {
+	function alterViewSchema($vwrs, $schema)
+	{
 		/* $vwrs and $schema are cleaned in _alterView */
 		if (!empty($schema) && ($vwrs->fields['nspname'] != $schema)) {
 			$f_schema = $this->_schema;
@@ -3273,7 +3596,13 @@ class Postgres extends ADODB_base {
 	 * @return -6 schema error
 	 */
 	protected
-	function _alterView($vwrs, $name, $owner, $schema, $comment) {
+		function _alterView(
+		$vwrs,
+		$name,
+		$owner,
+		$schema,
+		$comment
+	) {
 
 		$this->fieldArrayClean($vwrs->fields);
 
@@ -3284,17 +3613,20 @@ class Postgres extends ADODB_base {
 		// Owner
 		$this->fieldClean($owner);
 		$status = $this->alterViewOwner($vwrs, $owner);
-		if ($status != 0) return -5;
+		if ($status != 0)
+			return -5;
 
 		// Rename
 		$this->fieldClean($name);
 		$status = $this->alterViewName($vwrs, $name);
-		if ($status != 0) return -3;
+		if ($status != 0)
+			return -3;
 
 		// Schema
 		$this->fieldClean($schema);
 		$status = $this->alterViewSchema($vwrs, $schema);
-		if ($status != 0) return -6;
+		if ($status != 0)
+			return -6;
 
 		return 0;
 	}
@@ -3311,7 +3643,8 @@ class Postgres extends ADODB_base {
 	 * @return -2 get existing view error
 	 * @return $this->_alterView error code
 	 */
-	function alterView($view, $name, $owner, $schema, $comment) {
+	function alterView($view, $name, $owner, $schema, $comment)
+	{
 
 		$data = $this->getView($view);
 		if ($data->recordCount() != 1)
@@ -3339,13 +3672,15 @@ class Postgres extends ADODB_base {
 	 * @param $cascade True to cascade drop, false to restrict
 	 * @return 0 success
 	 */
-	function dropView($viewname, $cascade) {
+	function dropView($viewname, $cascade)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($viewname);
 
 		$sql = "DROP VIEW \"{$f_schema}\".\"{$viewname}\"";
-		if ($cascade) $sql .= " CASCADE";
+		if ($cascade)
+			$sql .= " CASCADE";
 
 		return $this->execute($sql);
 	}
@@ -3358,7 +3693,8 @@ class Postgres extends ADODB_base {
 	 * @param $unique Only get unique/pk indexes
 	 * @return A recordset
 	 */
-	function getIndexes($table = '', $unique = false) {
+	function getIndexes($table = '', $unique = false)
+	{
 		$this->clean($table);
 
 		$sql = "
@@ -3368,7 +3704,8 @@ class Postgres extends ADODB_base {
 			WHERE c.relname = '{$table}' AND pg_catalog.pg_table_is_visible(c.oid)
 				AND c.oid = i.indrelid AND i.indexrelid = c2.oid
 		";
-		if ($unique) $sql .= " AND i.indisunique ";
+		if ($unique)
+			$sql .= " AND i.indisunique ";
 		$sql .= " ORDER BY c2.relname";
 
 		return $this->selectSet($sql);
@@ -3380,7 +3717,8 @@ class Postgres extends ADODB_base {
 	 *
 	 * @return true if the table has been already clustered
 	 */
-	function alreadyClustered($table) {
+	function alreadyClustered($table)
+	{
 
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
@@ -3414,16 +3752,19 @@ class Postgres extends ADODB_base {
 	 * @param $tablespace The tablespaces ('' means none/default)
 	 * @return 0 success
 	 */
-	function createIndex($name, $table, $columns, $type, $unique, $where, $tablespace, $concurrently) {
+	function createIndex($name, $table, $columns, $type, $unique, $where, $tablespace, $concurrently)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($name);
 		$this->fieldClean($table);
 
 		$sql = "CREATE";
-		if ($unique) $sql .= " UNIQUE";
+		if ($unique)
+			$sql .= " UNIQUE";
 		$sql .= " INDEX";
-		if ($concurrently) $sql .= " CONCURRENTLY";
+		if ($concurrently)
+			$sql .= " CONCURRENTLY";
 		$sql .= " \"{$name}\" ON \"{$f_schema}\".\"{$table}\" USING {$type} ";
 
 		if (is_array($columns)) {
@@ -3453,13 +3794,15 @@ class Postgres extends ADODB_base {
 	 * @param $cascade True to cascade drop, false to restrict
 	 * @return 0 success
 	 */
-	function dropIndex($index, $cascade) {
+	function dropIndex($index, $cascade)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($index);
 
 		$sql = "DROP INDEX \"{$f_schema}\".\"{$index}\"";
-		if ($cascade) $sql .= " CASCADE";
+		if ($cascade)
+			$sql .= " CASCADE";
 
 		return $this->execute($sql);
 	}
@@ -3470,22 +3813,25 @@ class Postgres extends ADODB_base {
 	 * @param $name The name of the specific database, table, or index to be reindexed
 	 * @param $force If true, recreates indexes forcedly in PostgreSQL 7.0-7.1, forces rebuild of system indexes in 7.2-7.3, ignored in >=7.4
 	 */
-	function reindex($type, $name, $force = false) {
+	function reindex($type, $name, $force = false)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($name);
 		switch ($type) {
-		case 'DATABASE':
-			$sql = "REINDEX {$type} \"{$name}\"";
-			if ($force) $sql .= ' FORCE';
-			break;
-		case 'TABLE':
-		case 'INDEX':
-			$sql = "REINDEX {$type} \"{$f_schema}\".\"{$name}\"";
-			if ($force) $sql .= ' FORCE';
-			break;
-		default:
-			return -1;
+			case 'DATABASE':
+				$sql = "REINDEX {$type} \"{$name}\"";
+				if ($force)
+					$sql .= ' FORCE';
+				break;
+			case 'TABLE':
+			case 'INDEX':
+				$sql = "REINDEX {$type} \"{$f_schema}\".\"{$name}\"";
+				if ($force)
+					$sql .= ' FORCE';
+				break;
+			default:
+				return -1;
 		}
 
 		return $this->execute($sql);
@@ -3497,7 +3843,8 @@ class Postgres extends ADODB_base {
 	 * @param $table The table the index is on
 	 * @return 0 success
 	 */
-	function clusterIndex($table = '', $index = '') {
+	function clusterIndex($table = '', $index = '')
+	{
 
 		$sql = 'CLUSTER';
 
@@ -3526,7 +3873,8 @@ class Postgres extends ADODB_base {
 	 * @param $table The table to find rules for
 	 * @return A recordset
 	 */
-	function getConstraints($table) {
+	function getConstraints($table)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($table);
@@ -3572,7 +3920,8 @@ class Postgres extends ADODB_base {
 	 * @param $table the table where we are looking for fk
 	 * @return a recordset
 	 */
-	function getConstraintsWithFields($table) {
+	function getConstraintsWithFields($table)
+	{
 
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
@@ -3589,8 +3938,10 @@ class Postgres extends ADODB_base {
 
 		$rs = $this->selectSet($sql);
 
-		if ($rs->EOF) $max_col = 0;
-		else $max_col = $rs->fields['nb'];
+		if ($rs->EOF)
+			$max_col = 0;
+		else
+			$max_col = $rs->fields['nb'];
 
 		$sql = '
 			SELECT
@@ -3633,8 +3984,10 @@ class Postgres extends ADODB_base {
 	 * @return 0 success
 	 * @return -1 no fields given
 	 */
-	function addPrimaryKey($table, $fields, $name = '', $tablespace = '') {
-		if (!is_array($fields) || sizeof($fields) == 0) return -1;
+	function addPrimaryKey($table, $fields, $name = '', $tablespace = '')
+	{
+		if (!is_array($fields) || sizeof($fields) == 0)
+			return -1;
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($table);
@@ -3643,7 +3996,8 @@ class Postgres extends ADODB_base {
 		$this->fieldClean($tablespace);
 
 		$sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ADD ";
-		if ($name != '') $sql .= "CONSTRAINT \"{$name}\" ";
+		if ($name != '')
+			$sql .= "CONSTRAINT \"{$name}\" ";
 		$sql .= "PRIMARY KEY (\"" . join('","', $fields) . "\")";
 
 		if ($tablespace != '' && $this->hasTablespaces())
@@ -3661,8 +4015,10 @@ class Postgres extends ADODB_base {
 	 * @return 0 success
 	 * @return -1 no fields given
 	 */
-	function addUniqueKey($table, $fields, $name = '', $tablespace = '') {
-		if (!is_array($fields) || sizeof($fields) == 0) return -1;
+	function addUniqueKey($table, $fields, $name = '', $tablespace = '')
+	{
+		if (!is_array($fields) || sizeof($fields) == 0)
+			return -1;
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($table);
@@ -3671,7 +4027,8 @@ class Postgres extends ADODB_base {
 		$this->fieldClean($tablespace);
 
 		$sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ADD ";
-		if ($name != '') $sql .= "CONSTRAINT \"{$name}\" ";
+		if ($name != '')
+			$sql .= "CONSTRAINT \"{$name}\" ";
 		$sql .= "UNIQUE (\"" . join('","', $fields) . "\")";
 
 		if ($tablespace != '' && $this->hasTablespaces())
@@ -3687,7 +4044,8 @@ class Postgres extends ADODB_base {
 	 * @param $name (optional) The name to give the check, otherwise default name is assigned
 	 * @return 0 success
 	 */
-	function addCheckConstraint($table, $definition, $name = '') {
+	function addCheckConstraint($table, $definition, $name = '')
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($table);
@@ -3695,7 +4053,8 @@ class Postgres extends ADODB_base {
 		// @@ How the heck do you clean a definition???
 
 		$sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ADD ";
-		if ($name != '') $sql .= "CONSTRAINT \"{$name}\" ";
+		if ($name != '')
+			$sql .= "CONSTRAINT \"{$name}\" ";
 		$sql .= "CHECK ({$definition})";
 
 		return $this->execute($sql);
@@ -3710,7 +4069,8 @@ class Postgres extends ADODB_base {
 	 * @return -3 lock error
 	 * @return -4 check drop error
 	 */
-	function dropCheckConstraint($table, $name) {
+	function dropCheckConstraint($table, $name)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$c_schema = $this->_schema;
@@ -3722,7 +4082,8 @@ class Postgres extends ADODB_base {
 
 		// Begin transaction
 		$status = $this->beginTransaction();
-		if ($status != 0) return -2;
+		if ($status != 0)
+			return -2;
 
 		// Properly lock the table
 		$sql = "LOCK TABLE \"{$f_schema}\".\"{$table}\" IN ACCESS EXCLUSIVE MODE";
@@ -3774,10 +4135,24 @@ class Postgres extends ADODB_base {
 	 * @return 0 success
 	 * @return -1 no fields given
 	 */
-	function addForeignKey($table, $targschema, $targtable, $sfields, $tfields, $upd_action, $del_action,
-								  $match, $deferrable, $initially, $name = '') {
-		if (!is_array($sfields) || sizeof($sfields) == 0 ||
-			!is_array($tfields) || sizeof($tfields) == 0) return -1;
+	function addForeignKey(
+		$table,
+		$targschema,
+		$targtable,
+		$sfields,
+		$tfields,
+		$upd_action,
+		$del_action,
+		$match,
+		$deferrable,
+		$initially,
+		$name = ''
+	) {
+		if (
+			!is_array($sfields) || sizeof($sfields) == 0 ||
+			!is_array($tfields) || sizeof($tfields) == 0
+		)
+			return -1;
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($table);
@@ -3788,15 +4163,21 @@ class Postgres extends ADODB_base {
 		$this->fieldClean($name);
 
 		$sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" ADD ";
-		if ($name != '') $sql .= "CONSTRAINT \"{$name}\" ";
+		if ($name != '')
+			$sql .= "CONSTRAINT \"{$name}\" ";
 		$sql .= "FOREIGN KEY (\"" . join('","', $sfields) . "\") ";
 		// Target table needs to be fully qualified
 		$sql .= "REFERENCES \"{$targschema}\".\"{$targtable}\"(\"" . join('","', $tfields) . "\") ";
-		if ($match != $this->fkmatches[0]) $sql .= " {$match}";
-		if ($upd_action != $this->fkactions[0]) $sql .= " ON UPDATE {$upd_action}";
-		if ($del_action != $this->fkactions[0]) $sql .= " ON DELETE {$del_action}";
-		if ($deferrable != $this->fkdeferrable[0]) $sql .= " {$deferrable}";
-		if ($initially != $this->fkinitial[0]) $sql .= " {$initially}";
+		if ($match != $this->fkmatches[0])
+			$sql .= " {$match}";
+		if ($upd_action != $this->fkactions[0])
+			$sql .= " ON UPDATE {$upd_action}";
+		if ($del_action != $this->fkactions[0])
+			$sql .= " ON DELETE {$del_action}";
+		if ($deferrable != $this->fkdeferrable[0])
+			$sql .= " {$deferrable}";
+		if ($initially != $this->fkinitial[0])
+			$sql .= " {$initially}";
 
 		return $this->execute($sql);
 	}
@@ -3809,14 +4190,16 @@ class Postgres extends ADODB_base {
 	 * @param $cascade True to cascade drop, false to restrict
 	 * @return 0 success
 	 */
-	function dropConstraint($constraint, $relation, $type, $cascade) {
+	function dropConstraint($constraint, $relation, $type, $cascade)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($constraint);
 		$this->fieldClean($relation);
 
 		$sql = "ALTER TABLE \"{$f_schema}\".\"{$relation}\" DROP CONSTRAINT \"{$constraint}\"";
-		if ($cascade) $sql .= " CASCADE";
+		if ($cascade)
+			$sql .= " CASCADE";
 
 		return $this->execute($sql);
 	}
@@ -3827,8 +4210,10 @@ class Postgres extends ADODB_base {
 	 * @return A recordset of linked tables and columns
 	 * @return -1 $tables isn't an array
 	 */
-	function getLinkingKeys($tables) {
-		if (!is_array($tables)) return -1;
+	function getLinkingKeys($tables)
+	{
+		if (!is_array($tables))
+			return -1;
 
 		$this->clean($tables[0]['tablename']);
 		$this->clean($tables[0]['schemaname']);
@@ -3911,11 +4296,13 @@ class Postgres extends ADODB_base {
 	 * @param $table The table to find referrers for
 	 * @return A recordset
 	 */
-	function getReferrers($table) {
+	function getReferrers($table)
+	{
 		$this->clean($table);
 
 		$status = $this->beginTransaction();
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
@@ -3950,7 +4337,8 @@ class Postgres extends ADODB_base {
 	 * @param $domain The name of the domain to fetch
 	 * @return A recordset
 	 */
-	function getDomain($domain) {
+	function getDomain($domain)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($domain);
@@ -3978,7 +4366,8 @@ class Postgres extends ADODB_base {
 	 * Return all domains in current schema.  Excludes domain constraints.
 	 * @return All tables, sorted alphabetically
 	 */
-	function getDomains() {
+	function getDomains()
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 
@@ -4006,7 +4395,8 @@ class Postgres extends ADODB_base {
 	 * @param $domain The name of the domain whose constraints to fetch
 	 * @return A recordset
 	 */
-	function getDomainConstraints($domain) {
+	function getDomainConstraints($domain)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($domain);
@@ -4042,7 +4432,8 @@ class Postgres extends ADODB_base {
 	 * @param $check A CHECK constraint if there is one
 	 * @return 0 success
 	 */
-	function createDomain($domain, $type, $length, $array, $notnull, $default, $check) {
+	function createDomain($domain, $type, $length, $array, $notnull, $default, $check)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($domain);
@@ -4055,27 +4446,31 @@ class Postgres extends ADODB_base {
 			switch ($type) {
 				// Have to account for weird placing of length for with/without
 				// time zone types
-			case 'timestamp with time zone':
-			case 'timestamp without time zone':
-				$qual = substr($type, 9);
-				$sql .= "timestamp({$length}){$qual}";
-				break;
-			case 'time with time zone':
-			case 'time without time zone':
-				$qual = substr($type, 4);
-				$sql .= "time({$length}){$qual}";
-				break;
-			default:
-				$sql .= "{$type}({$length})";
+				case 'timestamp with time zone':
+				case 'timestamp without time zone':
+					$qual = substr($type, 9);
+					$sql .= "timestamp({$length}){$qual}";
+					break;
+				case 'time with time zone':
+				case 'time without time zone':
+					$qual = substr($type, 4);
+					$sql .= "time({$length}){$qual}";
+					break;
+				default:
+					$sql .= "{$type}({$length})";
 			}
 		}
 
 		// Add array qualifier, if requested
-		if ($array) $sql .= '[]';
+		if ($array)
+			$sql .= '[]';
 
-		if ($notnull) $sql .= ' NOT NULL';
-		if ($default != '') $sql .= " DEFAULT {$default}";
-		if ($this->hasDomainConstraints() && $check != '') $sql .= " CHECK ({$check})";
+		if ($notnull)
+			$sql .= ' NOT NULL';
+		if ($default != '')
+			$sql .= " DEFAULT {$default}";
+		if ($this->hasDomainConstraints() && $check != '')
+			$sql .= " CHECK ({$check})";
 
 		return $this->execute($sql);
 	}
@@ -4092,7 +4487,8 @@ class Postgres extends ADODB_base {
 	 * @return -3 not null error
 	 * @return -4 owner error
 	 */
-	function alterDomain($domain, $domdefault, $domnotnull, $domowner) {
+	function alterDomain($domain, $domdefault, $domnotnull, $domowner)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($domain);
@@ -4146,13 +4542,15 @@ class Postgres extends ADODB_base {
 	 * @param $cascade True to cascade drop, false to restrict
 	 * @return 0 success
 	 */
-	function dropDomain($domain, $cascade) {
+	function dropDomain($domain, $cascade)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($domain);
 
 		$sql = "DROP DOMAIN \"{$f_schema}\".\"{$domain}\"";
-		if ($cascade) $sql .= " CASCADE";
+		if ($cascade)
+			$sql .= " CASCADE";
 
 		return $this->execute($sql);
 	}
@@ -4164,14 +4562,16 @@ class Postgres extends ADODB_base {
 	 * @param $name (optional) The name to give the check, otherwise default name is assigned
 	 * @return 0 success
 	 */
-	function addDomainCheckConstraint($domain, $definition, $name = '') {
+	function addDomainCheckConstraint($domain, $definition, $name = '')
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($domain);
 		$this->fieldClean($name);
 
 		$sql = "ALTER DOMAIN \"{$f_schema}\".\"{$domain}\" ADD ";
-		if ($name != '') $sql .= "CONSTRAINT \"{$name}\" ";
+		if ($name != '')
+			$sql .= "CONSTRAINT \"{$name}\" ";
 		$sql .= "CHECK ({$definition})";
 
 		return $this->execute($sql);
@@ -4184,14 +4584,16 @@ class Postgres extends ADODB_base {
 	 * @param $cascade True to cascade, false otherwise
 	 * @return 0 success
 	 */
-	function dropDomainConstraint($domain, $constraint, $cascade) {
+	function dropDomainConstraint($domain, $constraint, $cascade)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($domain);
 		$this->fieldClean($constraint);
 
 		$sql = "ALTER DOMAIN \"{$f_schema}\".\"{$domain}\" DROP CONSTRAINT \"{$constraint}\"";
-		if ($cascade) $sql .= " CASCADE";
+		if ($cascade)
+			$sql .= " CASCADE";
 
 		return $this->execute($sql);
 	}
@@ -4203,7 +4605,8 @@ class Postgres extends ADODB_base {
 	 * @param $func The name of the function to retrieve
 	 * @return Function info
 	 */
-	function getFunction($function_oid) {
+	function getFunction($function_oid)
+	{
 		$this->clean($function_oid);
 
 		$sql = "
@@ -4239,7 +4642,8 @@ class Postgres extends ADODB_base {
 	 *
 	 * @return All functions
 	 */
-	function getFunctions($all = false, $type = null) {
+	function getFunctions($all = false, $type = null)
+	{
 		if ($all) {
 			$where = 'pg_catalog.pg_function_is_visible(p.oid)';
 			$distinct = 'DISTINCT ON (p.proname)';
@@ -4290,7 +4694,8 @@ class Postgres extends ADODB_base {
 	 * @param $f The array of data for the function
 	 * @return An array containing the properties
 	 */
-	function getFunctionProperties($f) {
+	function getFunctionProperties($f)
+	{
 		$temp = array();
 
 		// Volatility
@@ -4340,7 +4745,8 @@ class Postgres extends ADODB_base {
 	 * @return -6 alter owner error
 	 * @return -7 alter schema error
 	 */
-	function setFunction($function_oid, $funcname, $newname, $args, $returns, $definition, $language, $flags, $setof, $funcown, $newown, $funcschema, $newschema, $cost, $rows, $comment) {
+	function setFunction($function_oid, $funcname, $newname, $args, $returns, $definition, $language, $flags, $setof, $funcown, $newown, $funcschema, $newschema, $cost, $rows, $comment)
+	{
 		// Begin a transaction
 		$status = $this->beginTransaction();
 		if ($status != 0) {
@@ -4420,7 +4826,8 @@ class Postgres extends ADODB_base {
 	 * @return -3 create function failed
 	 * @return -4 set comment failed
 	 */
-	function createFunction($funcname, $args, $returns, $definition, $language, $flags, $setof, $cost, $rows, $comment, $replace = false) {
+	function createFunction($funcname, $args, $returns, $definition, $language, $flags, $setof, $cost, $rows, $comment, $replace = false)
+	{
 
 		// Begin a transaction
 		$status = $this->beginTransaction();
@@ -4439,7 +4846,8 @@ class Postgres extends ADODB_base {
 		$this->fieldClean($f_schema);
 
 		$sql = "CREATE";
-		if ($replace) $sql .= " OR REPLACE";
+		if ($replace)
+			$sql .= " OR REPLACE";
 		$sql .= " FUNCTION \"{$f_schema}\".\"{$funcname}\" (";
 
 		if ($args != '')
@@ -4447,7 +4855,8 @@ class Postgres extends ADODB_base {
 
 		// For some reason, the returns field cannot have quotes...
 		$sql .= ") RETURNS ";
-		if ($setof) $sql .= "SETOF ";
+		if ($setof)
+			$sql .= "SETOF ";
 		$sql .= "{$returns} AS ";
 
 		if (is_array($definition)) {
@@ -4474,8 +4883,10 @@ class Postgres extends ADODB_base {
 		// Add flags
 		foreach ($flags as $v) {
 			// Skip default flags
-			if ($v == '') continue;
-			else $sql .= "\n{$v}";
+			if ($v == '')
+				continue;
+			else
+				$sql .= "\n{$v}";
 		}
 
 		$status = $this->execute($sql);
@@ -4500,7 +4911,8 @@ class Postgres extends ADODB_base {
 	 * @param $cascade True to cascade drop, false to restrict
 	 * @return 0 success
 	 */
-	function dropFunction($function_oid, $cascade) {
+	function dropFunction($function_oid, $cascade)
+	{
 		// Function comes in with $object as function OID
 		$fn = $this->getFunction($function_oid);
 		$f_schema = $this->_schema;
@@ -4508,7 +4920,8 @@ class Postgres extends ADODB_base {
 		$this->fieldClean($fn->fields['proname']);
 
 		$sql = "DROP FUNCTION \"{$f_schema}\".\"{$fn->fields['proname']}\"({$fn->fields['proarguments']})";
-		if ($cascade) $sql .= " CASCADE";
+		if ($cascade)
+			$sql .= " CASCADE";
 
 		return $this->execute($sql);
 	}
@@ -4520,7 +4933,8 @@ class Postgres extends ADODB_base {
 	 * @param $typname The name of the view to retrieve
 	 * @return Type info
 	 */
-	function getType($typname) {
+	function getType($typname)
+	{
 		$this->clean($typname);
 
 		$sql = "SELECT typtype, typbyval, typname, typinput AS typin, typoutput AS typout, typlen, typalign
@@ -4536,7 +4950,8 @@ class Postgres extends ADODB_base {
 	 * @param $domains If true, will include domains
 	 * @return A recordet
 	 */
-	function getTypes($all = false, $tabletypes = false, $domains = false) {
+	function getTypes($all = false, $tabletypes = false, $domains = false)
+	{
 		if ($all)
 			$where = '1 = 1';
 		else {
@@ -4579,8 +4994,18 @@ class Postgres extends ADODB_base {
 	 * @param ...
 	 * @return 0 success
 	 */
-	function createType($typname, $typin, $typout, $typlen, $typdef,
-							  $typelem, $typdelim, $typbyval, $typalign, $typstorage) {
+	function createType(
+		$typname,
+		$typin,
+		$typout,
+		$typlen,
+		$typdef,
+		$typelem,
+		$typdelim,
+		$typbyval,
+		$typalign,
+		$typstorage
+	) {
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($typname);
@@ -4592,12 +5017,18 @@ class Postgres extends ADODB_base {
 				INPUT = \"{$typin}\",
 				OUTPUT = \"{$typout}\",
 				INTERNALLENGTH = {$typlen}";
-		if ($typdef != '') $sql .= ", DEFAULT = {$typdef}";
-		if ($typelem != '') $sql .= ", ELEMENT = {$typelem}";
-		if ($typdelim != '') $sql .= ", DELIMITER = {$typdelim}";
-		if ($typbyval) $sql .= ", PASSEDBYVALUE, ";
-		if ($typalign != '') $sql .= ", ALIGNMENT = {$typalign}";
-		if ($typstorage != '') $sql .= ", STORAGE = {$typstorage}";
+		if ($typdef != '')
+			$sql .= ", DEFAULT = {$typdef}";
+		if ($typelem != '')
+			$sql .= ", ELEMENT = {$typelem}";
+		if ($typdelim != '')
+			$sql .= ", DELIMITER = {$typdelim}";
+		if ($typbyval)
+			$sql .= ", PASSEDBYVALUE, ";
+		if ($typalign != '')
+			$sql .= ", ALIGNMENT = {$typalign}";
+		if ($typstorage != '')
+			$sql .= ", STORAGE = {$typstorage}";
 
 		$sql .= ")";
 
@@ -4610,13 +5041,15 @@ class Postgres extends ADODB_base {
 	 * @param $cascade True to cascade drop, false to restrict
 	 * @return 0 success
 	 */
-	function dropType($typname, $cascade) {
+	function dropType($typname, $cascade)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($typname);
 
 		$sql = "DROP TYPE \"{$f_schema}\".\"{$typname}\"";
-		if ($cascade) $sql .= " CASCADE";
+		if ($cascade)
+			$sql .= " CASCADE";
 
 		return $this->execute($sql);
 	}
@@ -4630,15 +5063,18 @@ class Postgres extends ADODB_base {
 	 * @return -1 transaction error
 	 * @return -2 no values supplied
 	 */
-	function createEnumType($name, $values, $typcomment) {
+	function createEnumType($name, $values, $typcomment)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($name);
 
-		if (empty($values)) return -2;
+		if (empty($values))
+			return -2;
 
 		$status = $this->beginTransaction();
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		$values = array_unique($values);
 
@@ -4673,7 +5109,8 @@ class Postgres extends ADODB_base {
 	 * Get defined values for a given enum
 	 * @return A recordset
 	 */
-	function getEnumValues($name) {
+	function getEnumValues($name)
+	{
 		$this->clean($name);
 
 		$sql = "SELECT enumlabel AS enumval
@@ -4695,13 +5132,15 @@ class Postgres extends ADODB_base {
 	 * @return 0 success
 	 * @return -1 no fields supplied
 	 */
-	function createCompositeType($name, $fields, $field, $type, $array, $length, $colcomment, $typcomment) {
+	function createCompositeType($name, $fields, $field, $type, $array, $length, $colcomment, $typcomment)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($name);
 
 		$status = $this->beginTransaction();
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		$found = false;
 		$first = true;
@@ -4714,41 +5153,50 @@ class Postgres extends ADODB_base {
 			$this->clean($colcomment[$i]);
 
 			// Skip blank columns - for user convenience
-			if ($field[$i] == '' || $type[$i] == '') continue;
+			if ($field[$i] == '' || $type[$i] == '')
+				continue;
 			// If not the first column, add a comma
-			if (!$first) $sql .= ", ";
-			else $first = false;
+			if (!$first)
+				$sql .= ", ";
+			else
+				$first = false;
 
 			switch ($type[$i]) {
 				// Have to account for weird placing of length for with/without
 				// time zone types
-			case 'timestamp with time zone':
-			case 'timestamp without time zone':
-				$qual = substr($type[$i], 9);
-				$sql .= "\"{$field[$i]}\" timestamp";
-				if ($length[$i] != '') $sql .= "({$length[$i]})";
-				$sql .= $qual;
-				break;
-			case 'time with time zone':
-			case 'time without time zone':
-				$qual = substr($type[$i], 4);
-				$sql .= "\"{$field[$i]}\" time";
-				if ($length[$i] != '') $sql .= "({$length[$i]})";
-				$sql .= $qual;
-				break;
-			default:
-				$sql .= "\"{$field[$i]}\" {$type[$i]}";
-				if ($length[$i] != '') $sql .= "({$length[$i]})";
+				case 'timestamp with time zone':
+				case 'timestamp without time zone':
+					$qual = substr($type[$i], 9);
+					$sql .= "\"{$field[$i]}\" timestamp";
+					if ($length[$i] != '')
+						$sql .= "({$length[$i]})";
+					$sql .= $qual;
+					break;
+				case 'time with time zone':
+				case 'time without time zone':
+					$qual = substr($type[$i], 4);
+					$sql .= "\"{$field[$i]}\" time";
+					if ($length[$i] != '')
+						$sql .= "({$length[$i]})";
+					$sql .= $qual;
+					break;
+				default:
+					$sql .= "\"{$field[$i]}\" {$type[$i]}";
+					if ($length[$i] != '')
+						$sql .= "({$length[$i]})";
 			}
 			// Add array qualifier if necessary
-			if ($array[$i] == '[]') $sql .= '[]';
+			if ($array[$i] == '[]')
+				$sql .= '[]';
 
-			if ($colcomment[$i] != '') $comment_sql .= "COMMENT ON COLUMN \"{$f_schema}\".\"{$name}\".\"{$field[$i]}\" IS '{$colcomment[$i]}';\n";
+			if ($colcomment[$i] != '')
+				$comment_sql .= "COMMENT ON COLUMN \"{$f_schema}\".\"{$name}\".\"{$field[$i]}\" IS '{$colcomment[$i]}';\n";
 
 			$found = true;
 		}
 
-		if (!$found) return -1;
+		if (!$found)
+			return -1;
 
 		$sql .= ")";
 
@@ -4780,7 +5228,8 @@ class Postgres extends ADODB_base {
 	 * Returns a list of all casts in the database
 	 * @return All casts
 	 */
-	function getCasts() {
+	function getCasts()
+	{
 		global $conf;
 
 		if ($conf['show_system'])
@@ -4822,7 +5271,8 @@ class Postgres extends ADODB_base {
 	 * Returns a list of all conversions in the database
 	 * @return All conversions
 	 */
-	function getConversions() {
+	function getConversions()
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$sql = "
@@ -4848,7 +5298,8 @@ class Postgres extends ADODB_base {
 	 * @param $table The table to find rules for
 	 * @return A recordset
 	 */
-	function getRules($table) {
+	function getRules($table)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($table);
@@ -4876,7 +5327,8 @@ class Postgres extends ADODB_base {
 	 * @return 0 success
 	 * @return -1 invalid event
 	 */
-	function setRule($name, $event, $table, $where, $instead, $type, $action) {
+	function setRule($name, $event, $table, $where, $instead, $type, $action)
+	{
 		return $this->createRule($name, $event, $table, $where, $instead, $type, $action, true);
 	}
 
@@ -4893,23 +5345,29 @@ class Postgres extends ADODB_base {
 	 * @return 0 success
 	 * @return -1 invalid event
 	 */
-	function createRule($name, $event, $table, $where, $instead, $type, $action, $replace = false) {
+	function createRule($name, $event, $table, $where, $instead, $type, $action, $replace = false)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($name);
 		$this->fieldClean($table);
-		if (!in_array($event, $this->rule_events)) return -1;
+		if (!in_array($event, $this->rule_events))
+			return -1;
 
 		$sql = "CREATE";
-		if ($replace) $sql .= " OR REPLACE";
+		if ($replace)
+			$sql .= " OR REPLACE";
 		$sql .= " RULE \"{$name}\" AS ON {$event} TO \"{$f_schema}\".\"{$table}\"";
 		// Can't escape WHERE clause
-		if ($where != '') $sql .= " WHERE {$where}";
+		if ($where != '')
+			$sql .= " WHERE {$where}";
 		$sql .= " DO";
-		if ($instead) $sql .= " INSTEAD";
+		if ($instead)
+			$sql .= " INSTEAD";
 		if ($type == 'NOTHING')
 			$sql .= " NOTHING";
-		else $sql .= " ({$action})";
+		else
+			$sql .= " ({$action})";
 
 		return $this->execute($sql);
 	}
@@ -4921,14 +5379,16 @@ class Postgres extends ADODB_base {
 	 * @param $cascade True to cascade drop, false to restrict
 	 * @return 0 success
 	 */
-	function dropRule($rule, $relation, $cascade) {
+	function dropRule($rule, $relation, $cascade)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($rule);
 		$this->fieldClean($relation);
 
 		$sql = "DROP RULE \"{$rule}\" ON \"{$f_schema}\".\"{$relation}\"";
-		if ($cascade) $sql .= " CASCADE";
+		if ($cascade)
+			$sql .= " CASCADE";
 
 		return $this->execute($sql);
 	}
@@ -4941,7 +5401,8 @@ class Postgres extends ADODB_base {
 	 * @param $trigger The name of the trigger to retrieve
 	 * @return A recordset
 	 */
-	function getTrigger($table, $trigger) {
+	function getTrigger($table, $trigger)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($table);
@@ -4962,7 +5423,8 @@ class Postgres extends ADODB_base {
 	 * @param $table The name of a table whose triggers to retrieve
 	 * @return A recordset
 	 */
-	function getTriggers($table = '') {
+	function getTriggers($table = '')
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($table);
@@ -4992,15 +5454,21 @@ class Postgres extends ADODB_base {
 	 * @param $trigger An array containing fields from the trigger table
 	 * @return The trigger definition string
 	 */
-	function getTriggerDef($trigger) {
+	function getTriggerDef($trigger)
+	{
 
 		$this->fieldArrayClean($trigger);
 		// Constants to figure out tgtype
-		if (!defined('TRIGGER_TYPE_ROW')) define('TRIGGER_TYPE_ROW', (1 << 0));
-		if (!defined('TRIGGER_TYPE_BEFORE')) define('TRIGGER_TYPE_BEFORE', (1 << 1));
-		if (!defined('TRIGGER_TYPE_INSERT')) define('TRIGGER_TYPE_INSERT', (1 << 2));
-		if (!defined('TRIGGER_TYPE_DELETE')) define('TRIGGER_TYPE_DELETE', (1 << 3));
-		if (!defined('TRIGGER_TYPE_UPDATE')) define('TRIGGER_TYPE_UPDATE', (1 << 4));
+		if (!defined('TRIGGER_TYPE_ROW'))
+			define('TRIGGER_TYPE_ROW', (1 << 0));
+		if (!defined('TRIGGER_TYPE_BEFORE'))
+			define('TRIGGER_TYPE_BEFORE', (1 << 1));
+		if (!defined('TRIGGER_TYPE_INSERT'))
+			define('TRIGGER_TYPE_INSERT', (1 << 2));
+		if (!defined('TRIGGER_TYPE_DELETE'))
+			define('TRIGGER_TYPE_DELETE', (1 << 3));
+		if (!defined('TRIGGER_TYPE_UPDATE'))
+			define('TRIGGER_TYPE_UPDATE', (1 << 4));
 
 		$trigger['tgisconstraint'] = $this->phpBool($trigger['tgisconstraint']);
 		$trigger['tgdeferrable'] = $this->phpBool($trigger['tgdeferrable']);
@@ -5090,7 +5558,8 @@ class Postgres extends ADODB_base {
 	/**
 	 * Returns a list of all functions that can be used in triggers
 	 */
-	function getTriggerFunctions() {
+	function getTriggerFunctions()
+	{
 		return $this->getFunctions(true, 'trigger');
 	}
 
@@ -5104,7 +5573,8 @@ class Postgres extends ADODB_base {
 	 * @param $tgargs The function arguments
 	 * @return 0 success
 	 */
-	function createTrigger($tgname, $table, $tgproc, $tgtime, $tgevent, $tgfrequency, $tgargs) {
+	function createTrigger($tgname, $table, $tgproc, $tgtime, $tgevent, $tgfrequency, $tgargs)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($tgname);
@@ -5126,7 +5596,8 @@ class Postgres extends ADODB_base {
 	 * @param $name The new name for the trigger
 	 * @return 0 success
 	 */
-	function alterTrigger($table, $trigger, $name) {
+	function alterTrigger($table, $trigger, $name)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($table);
@@ -5145,14 +5616,16 @@ class Postgres extends ADODB_base {
 	 * @param $cascade True to cascade drop, false to restrict
 	 * @return 0 success
 	 */
-	function dropTrigger($tgname, $table, $cascade) {
+	function dropTrigger($tgname, $table, $cascade)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($tgname);
 		$this->fieldClean($table);
 
 		$sql = "DROP TRIGGER \"{$tgname}\" ON \"{$f_schema}\".\"{$table}\"";
-		if ($cascade) $sql .= " CASCADE";
+		if ($cascade)
+			$sql .= " CASCADE";
 
 		return $this->execute($sql);
 	}
@@ -5163,7 +5636,8 @@ class Postgres extends ADODB_base {
 	 * @param $table The table in which to enable the trigger
 	 * @return 0 success
 	 */
-	function enableTrigger($tgname, $table) {
+	function enableTrigger($tgname, $table)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($tgname);
@@ -5180,7 +5654,8 @@ class Postgres extends ADODB_base {
 	 * @param $table The table in which to disable the trigger
 	 * @return 0 success
 	 */
-	function disableTrigger($tgname, $table) {
+	function disableTrigger($tgname, $table)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($tgname);
@@ -5197,7 +5672,8 @@ class Postgres extends ADODB_base {
 	 * Returns a list of all operators in the database
 	 * @return All operators
 	 */
-	function getOperators() {
+	function getOperators()
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		// We stick with the subselects here, as you cannot ORDER BY a regtype
@@ -5224,7 +5700,8 @@ class Postgres extends ADODB_base {
 	 * @param $operator_oid The oid of the operator
 	 * @return Function info
 	 */
-	function getOperator($operator_oid) {
+	function getOperator($operator_oid)
+	{
 		$this->clean($operator_oid);
 
 		$sql = "
@@ -5255,7 +5732,8 @@ class Postgres extends ADODB_base {
 	 * @param $cascade True to cascade drop, false to restrict
 	 * @return 0 success
 	 */
-	function dropOperator($operator_oid, $cascade) {
+	function dropOperator($operator_oid, $cascade)
+	{
 		// Function comes in with $object as operator OID
 		$opr = $this->getOperator($operator_oid);
 		$f_schema = $this->_schema;
@@ -5264,12 +5742,17 @@ class Postgres extends ADODB_base {
 
 		$sql = "DROP OPERATOR \"{$f_schema}\".{$opr->fields['oprname']} (";
 		// Quoting or formatting here???
-		if ($opr->fields['oprleftname'] !== null) $sql .= $opr->fields['oprleftname'] . ', ';
-		else $sql .= "NONE, ";
-		if ($opr->fields['oprrightname'] !== null) $sql .= $opr->fields['oprrightname'] . ')';
-		else $sql .= "NONE)";
+		if ($opr->fields['oprleftname'] !== null)
+			$sql .= $opr->fields['oprleftname'] . ', ';
+		else
+			$sql .= "NONE, ";
+		if ($opr->fields['oprrightname'] !== null)
+			$sql .= $opr->fields['oprrightname'] . ')';
+		else
+			$sql .= "NONE)";
 
-		if ($cascade) $sql .= " CASCADE";
+		if ($cascade)
+			$sql .= " CASCADE";
 
 		return $this->execute($sql);
 	}
@@ -5282,7 +5765,8 @@ class Postgres extends ADODB_base {
 	 * @return A recordset
 	 */
 
-	function getOpClasses() {
+	function getOpClasses()
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$sql = "
@@ -5317,7 +5801,8 @@ class Postgres extends ADODB_base {
 	 *
 	 * @return 0 success
 	 */
-	function createFtsConfiguration($cfgname, $parser = '', $template = '', $comment = '') {
+	function createFtsConfiguration($cfgname, $parser = '', $template = '', $comment = '')
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($cfgname);
@@ -5338,7 +5823,8 @@ class Postgres extends ADODB_base {
 
 		if ($comment != '') {
 			$status = $this->beginTransaction();
-			if ($status != 0) return -1;
+			if ($status != 0)
+				return -1;
 		}
 
 		// Create the FTS configuration
@@ -5368,7 +5854,8 @@ class Postgres extends ADODB_base {
 	 *
 	 * @return A recordset
 	 */
-	function getFtsConfigurations($all = true) {
+	function getFtsConfigurations($all = true)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$sql = "
@@ -5396,7 +5883,8 @@ class Postgres extends ADODB_base {
 	 *
 	 * @return FTS configuration information
 	 */
-	function getFtsConfigurationByName($ftscfg) {
+	function getFtsConfigurationByName($ftscfg)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($ftscfg);
@@ -5424,7 +5912,8 @@ class Postgres extends ADODB_base {
 	 *
 	 * @return RecordSet
 	 */
-	function getFtsConfigurationMap($ftscfg) {
+	function getFtsConfigurationMap($ftscfg)
+	{
 
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
@@ -5462,7 +5951,8 @@ class Postgres extends ADODB_base {
 	 *
 	 * @return RecordSet
 	 */
-	function getFtsParsers($all = true) {
+	function getFtsParsers($all = true)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$sql = "
@@ -5488,7 +5978,8 @@ class Postgres extends ADODB_base {
 	 *
 	 * @returns RecordSet
 	 */
-	function getFtsDictionaries($all = true) {
+	function getFtsDictionaries($all = true)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$sql = "
@@ -5510,7 +6001,8 @@ class Postgres extends ADODB_base {
 	/**
 	 * Returns all FTS dictionary templates available
 	 */
-	function getFtsDictionaryTemplates() {
+	function getFtsDictionaryTemplates()
+	{
 
 		$sql = "
  			SELECT
@@ -5540,13 +6032,15 @@ class Postgres extends ADODB_base {
 	 *
 	 * @return 0 on success
 	 */
-	function dropFtsConfiguration($ftscfg, $cascade) {
+	function dropFtsConfiguration($ftscfg, $cascade)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($ftscfg);
 
 		$sql = "DROP TEXT SEARCH CONFIGURATION \"{$f_schema}\".\"{$ftscfg}\"";
-		if ($cascade) $sql .= ' CASCADE';
+		if ($cascade)
+			$sql .= ' CASCADE';
 
 		return $this->execute($sql);
 	}
@@ -5559,14 +6053,16 @@ class Postgres extends ADODB_base {
 	 * @todo Support of dictionary templates dropping
 	 * @return 0 on success
 	 */
-	function dropFtsDictionary($ftsdict, $cascade) {
+	function dropFtsDictionary($ftsdict, $cascade)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($ftsdict);
 
 		$sql = "DROP TEXT SEARCH DICTIONARY";
 		$sql .= " \"{$f_schema}\".\"{$ftsdict}\"";
-		if ($cascade) $sql .= ' CASCADE';
+		if ($cascade)
+			$sql .= ' CASCADE';
 
 		return $this->execute($sql);
 	}
@@ -5579,7 +6075,8 @@ class Postgres extends ADODB_base {
 	 *
 	 * @return 0 on success
 	 */
-	function updateFtsConfiguration($cfgname, $comment, $name) {
+	function updateFtsConfiguration($cfgname, $comment, $name)
+	{
 
 		$status = $this->beginTransaction();
 		if ($status != 0) {
@@ -5624,8 +6121,15 @@ class Postgres extends ADODB_base {
 	 *
 	 * @return 0 success
 	 */
-	function createFtsDictionary($dictname, $isTemplate = false, $template = '', $lexize = '',
-										  $init = '', $option = '', $comment = '') {
+	function createFtsDictionary(
+		$dictname,
+		$isTemplate = false,
+		$template = '',
+		$lexize = '',
+		$init = '',
+		$option = '',
+		$comment = ''
+	) {
 
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
@@ -5638,8 +6142,10 @@ class Postgres extends ADODB_base {
 		$sql = "CREATE TEXT SEARCH";
 		if ($isTemplate) {
 			$sql .= " TEMPLATE \"{$f_schema}\".\"{$dictname}\" (";
-			if ($lexize != '') $sql .= " LEXIZE = {$lexize}";
-			if ($init != '') $sql .= ", INIT = {$init}";
+			if ($lexize != '')
+				$sql .= " LEXIZE = {$lexize}";
+			if ($init != '')
+				$sql .= ", INIT = {$init}";
 			$sql .= ")";
 			$whatToComment = 'TEXT SEARCH TEMPLATE';
 		} else {
@@ -5651,7 +6157,8 @@ class Postgres extends ADODB_base {
 
 				$sql .= " TEMPLATE = {$template}";
 			}
-			if ($option != '') $sql .= ", {$option}";
+			if ($option != '')
+				$sql .= ", {$option}";
 			$sql .= ")";
 			$whatToComment = 'TEXT SEARCH DICTIONARY';
 		}
@@ -5660,7 +6167,8 @@ class Postgres extends ADODB_base {
 		 * run both commands */
 		if ($comment != '') {
 			$status = $this->beginTransaction();
-			if ($status != 0) return -1;
+			if ($status != 0)
+				return -1;
 		}
 
 		// Create the FTS dictionary
@@ -5690,7 +6198,8 @@ class Postgres extends ADODB_base {
 	 *
 	 * @return 0 on success
 	 */
-	function updateFtsDictionary($dictname, $comment, $name) {
+	function updateFtsDictionary($dictname, $comment, $name)
+	{
 
 		$status = $this->beginTransaction();
 		if ($status != 0) {
@@ -5728,7 +6237,8 @@ class Postgres extends ADODB_base {
 	 *
 	 * @return RecordSet of FTS dictionary information
 	 */
-	function getFtsDictionaryByName($ftsdict) {
+	function getFtsDictionaryByName($ftsdict)
+	{
 
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
@@ -5762,7 +6272,8 @@ class Postgres extends ADODB_base {
 	 *
 	 * @return 0 success
 	 */
-	function changeFtsMapping($ftscfg, $mapping, $action, $dictname = null) {
+	function changeFtsMapping($ftscfg, $mapping, $action, $dictname = null)
+	{
 
 		if (count($mapping) > 0) {
 			$f_schema = $this->_schema;
@@ -5772,15 +6283,15 @@ class Postgres extends ADODB_base {
 			$this->arrayClean($mapping);
 
 			switch ($action) {
-			case 'alter':
-				$whatToDo = "ALTER";
-				break;
-			case 'drop':
-				$whatToDo = "DROP";
-				break;
-			default:
-				$whatToDo = "ADD";
-				break;
+				case 'alter':
+					$whatToDo = "ALTER";
+					break;
+				case 'drop':
+					$whatToDo = "DROP";
+					break;
+				default:
+					$whatToDo = "ADD";
+					break;
 			}
 
 			$sql = "ALTER TEXT SEARCH CONFIGURATION \"{$f_schema}\".\"{$ftscfg}\" {$whatToDo} MAPPING FOR ";
@@ -5802,7 +6313,8 @@ class Postgres extends ADODB_base {
 	 *
 	 * @return FTS configuration information
 	 */
-	function getFtsMappingByName($ftscfg, $mapping) {
+	function getFtsMappingByName($ftscfg, $mapping)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($ftscfg);
@@ -5840,7 +6352,8 @@ class Postgres extends ADODB_base {
 	 *
 	 * @return 0 on success
 	 */
-	function getFtsMappings($ftscfg) {
+	function getFtsMappings($ftscfg)
+	{
 
 		$cfg = $this->getFtsConfigurationByName($ftscfg);
 
@@ -5858,7 +6371,8 @@ class Postgres extends ADODB_base {
 	 * @param $all True to get all languages, regardless of show_system
 	 * @return A recordset
 	 */
-	function getLanguages($all = false) {
+	function getLanguages($all = false)
+	{
 		global $conf;
 
 		if ($conf['show_system'] || $all)
@@ -5894,7 +6408,8 @@ class Postgres extends ADODB_base {
 	 * @return 0 success
 	 * @return -1 error
 	 */
-	function createAggregate($name, $basetype, $sfunc, $stype, $ffunc, $initcond, $sortop, $comment) {
+	function createAggregate($name, $basetype, $sfunc, $stype, $ffunc, $initcond, $sortop, $comment)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($name);
@@ -5908,9 +6423,12 @@ class Postgres extends ADODB_base {
 		$this->beginTransaction();
 
 		$sql = "CREATE AGGREGATE \"{$f_schema}\".\"{$name}\" (BASETYPE = \"{$basetype}\", SFUNC = \"{$sfunc}\", STYPE = \"{$stype}\"";
-		if (trim($ffunc) != '') $sql .= ", FINALFUNC = \"{$ffunc}\"";
-		if (trim($initcond) != '') $sql .= ", INITCOND = \"{$initcond}\"";
-		if (trim($sortop) != '') $sql .= ", SORTOP = \"{$sortop}\"";
+		if (trim($ffunc) != '')
+			$sql .= ", FINALFUNC = \"{$ffunc}\"";
+		if (trim($initcond) != '')
+			$sql .= ", INITCOND = \"{$initcond}\"";
+		if (trim($sortop) != '')
+			$sql .= ", SORTOP = \"{$sortop}\"";
 		$sql .= ")";
 
 		$status = $this->execute($sql);
@@ -5937,7 +6455,8 @@ class Postgres extends ADODB_base {
 	 * @param $newaggrname The new name of the aggregate
 	 * @return 0 success
 	 */
-	function renameAggregate($aggrschema, $aggrname, $aggrtype, $newaggrname) {
+	function renameAggregate($aggrschema, $aggrname, $aggrtype, $newaggrname)
+	{
 		/* this function is called from alterAggregate where params are cleaned */
 		$sql = "ALTER AGGREGATE \"{$aggrschema}\"" . '.' . "\"{$aggrname}\" (\"{$aggrtype}\") RENAME TO \"{$newaggrname}\"";
 		return $this->execute($sql);
@@ -5950,14 +6469,16 @@ class Postgres extends ADODB_base {
 	 * @param $cascade True to cascade drop, false to restrict
 	 * @return 0 success
 	 */
-	function dropAggregate($aggrname, $aggrtype, $cascade) {
+	function dropAggregate($aggrname, $aggrtype, $cascade)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($aggrname);
 		$this->fieldClean($aggrtype);
 
 		$sql = "DROP AGGREGATE \"{$f_schema}\".\"{$aggrname}\" (\"{$aggrtype}\")";
-		if ($cascade) $sql .= " CASCADE";
+		if ($cascade)
+			$sql .= " CASCADE";
 
 		return $this->execute($sql);
 	}
@@ -5968,7 +6489,8 @@ class Postgres extends ADODB_base {
 	 * @param $basetype The input data type of the aggregate
 	 * @return A recordset
 	 */
-	function getAggregate($name, $basetype) {
+	function getAggregate($name, $basetype)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->fieldclean($name);
@@ -5996,7 +6518,8 @@ class Postgres extends ADODB_base {
 	 * Gets all aggregates
 	 * @return A recordset
 	 */
-	function getAggregates() {
+	function getAggregates()
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$sql = "SELECT p.proname, CASE p.proargtypes[0] WHEN 'pg_catalog.\"any\"'::pg_catalog.regtype THEN NULL ELSE
@@ -6016,7 +6539,8 @@ class Postgres extends ADODB_base {
 	 * @param $newaggrowner The new owner of the aggregate
 	 * @return 0 success
 	 */
-	function changeAggregateOwner($aggrname, $aggrtype, $newaggrowner) {
+	function changeAggregateOwner($aggrname, $aggrtype, $newaggrowner)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($aggrname);
@@ -6032,7 +6556,8 @@ class Postgres extends ADODB_base {
 	 * @param $newaggrschema The new schema for the aggregate
 	 * @return 0 success
 	 */
-	function changeAggregateSchema($aggrname, $aggrtype, $newaggrschema) {
+	function changeAggregateSchema($aggrname, $aggrtype, $newaggrschema)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($aggrname);
@@ -6058,7 +6583,8 @@ class Postgres extends ADODB_base {
 	 * @return -3 change schema error
 	 * @return -4 change name error
 	 */
-	function alterAggregate($aggrname, $aggrtype, $aggrowner, $aggrschema, $aggrcomment, $newaggrname, $newaggrowner, $newaggrschema, $newaggrcomment) {
+	function alterAggregate($aggrname, $aggrtype, $aggrowner, $aggrschema, $aggrcomment, $newaggrname, $newaggrowner, $newaggrschema, $newaggrcomment)
+	{
 		// Clean fields
 		$this->fieldClean($aggrname);
 		$this->fieldClean($aggrtype);
@@ -6116,12 +6642,14 @@ class Postgres extends ADODB_base {
 	 * @param $rolename (optional) The role name to exclude from the select
 	 * @return All roles
 	 */
-	function getRoles($rolename = '') {
+	function getRoles($rolename = '')
+	{
 		$sql = '
 			SELECT rolname, rolsuper, rolcreatedb, rolcreaterole, rolinherit,
 				rolcanlogin, rolconnlimit, rolvaliduntil, rolconfig
 			FROM pg_catalog.pg_roles';
-		if ($rolename) $sql .= " WHERE rolname!='{$rolename}'";
+		if ($rolename)
+			$sql .= " WHERE rolname!='{$rolename}'";
 		$sql .= ' ORDER BY rolname';
 
 		return $this->selectSet($sql);
@@ -6132,7 +6660,8 @@ class Postgres extends ADODB_base {
 	 * @param $rolename The name of the role to retrieve
 	 * @return The role's data
 	 */
-	function getRole($rolename) {
+	function getRole($rolename)
+	{
 		$this->clean($rolename);
 
 		$sql = "
@@ -6150,12 +6679,14 @@ class Postgres extends ADODB_base {
 	 * @param $admin (optional) Flag to grant the admin option
 	 * @return 0 success
 	 */
-	function grantRole($role, $rolename, $admin = 0) {
+	function grantRole($role, $rolename, $admin = 0)
+	{
 		$this->fieldClean($role);
 		$this->fieldClean($rolename);
 
 		$sql = "GRANT \"{$role}\" TO \"{$rolename}\"";
-		if ($admin == 1) $sql .= ' WITH ADMIN OPTION';
+		if ($admin == 1)
+			$sql .= ' WITH ADMIN OPTION';
 
 		return $this->execute($sql);
 	}
@@ -6168,12 +6699,14 @@ class Postgres extends ADODB_base {
 	 * @param $type (optional) Type of revoke: RESTRICT | CASCADE
 	 * @return 0 success
 	 */
-	function revokeRole($role, $rolename, $admin = 0, $type = 'RESTRICT') {
+	function revokeRole($role, $rolename, $admin = 0, $type = 'RESTRICT')
+	{
 		$this->fieldClean($role);
 		$this->fieldClean($rolename);
 
 		$sql = "REVOKE ";
-		if ($admin == 1) $sql .= 'ADMIN OPTION FOR ';
+		if ($admin == 1)
+			$sql .= 'ADMIN OPTION FOR ';
 		$sql .= "\"{$role}\" FROM \"{$rolename}\" {$type}";
 
 		return $this->execute($sql);
@@ -6183,7 +6716,8 @@ class Postgres extends ADODB_base {
 	 * Returns all users in the database cluster
 	 * @return All users
 	 */
-	function getUsers() {
+	function getUsers()
+	{
 		$sql = "SELECT usename, usesuper, usecreatedb, valuntil AS useexpires, useconfig
 			FROM pg_user
 			ORDER BY usename";
@@ -6196,7 +6730,8 @@ class Postgres extends ADODB_base {
 	 * @param $username The username of the user to retrieve
 	 * @return The user's data
 	 */
-	function getUser($username) {
+	function getUser($username)
+	{
 		$this->clean($username);
 
 		$sql = "SELECT usename, usesuper, usecreatedb, valuntil AS useexpires, useconfig
@@ -6222,7 +6757,8 @@ class Postgres extends ADODB_base {
 	 * @param $adminmembers (array) Roles which are automatically added as admin members of the new role
 	 * @return 0 success
 	 */
-	function createRole($rolename, $password, $superuser, $createdb, $createrole, $inherits, $login, $connlimit, $expiry, $memberof, $members, $adminmembers) {
+	function createRole($rolename, $password, $superuser, $createdb, $createrole, $inherits, $login, $connlimit, $expiry, $memberof, $members, $adminmembers)
+	{
 		// Do not use encrypted passwords. The algorithm does not work with newer versions!
 		//$enc = $this->_encryptPassword($rolename, $password);
 		$this->fieldClean($rolename);
@@ -6234,17 +6770,27 @@ class Postgres extends ADODB_base {
 		$this->fieldArrayClean($adminmembers);
 
 		$sql = "CREATE ROLE \"{$rolename}\"";
-		if ($password != '') $sql .= " WITH PASSWORD '{$password}'";
+		if ($password != '')
+			$sql .= " WITH PASSWORD '{$password}'";
 		$sql .= ($superuser) ? ' SUPERUSER' : ' NOSUPERUSER';
 		$sql .= ($createdb) ? ' CREATEDB' : ' NOCREATEDB';
 		$sql .= ($createrole) ? ' CREATEROLE' : ' NOCREATEROLE';
 		$sql .= ($inherits) ? ' INHERIT' : ' NOINHERIT';
 		$sql .= ($login) ? ' LOGIN' : ' NOLOGIN';
-		if ($connlimit != '') $sql .= " CONNECTION LIMIT {$connlimit}"; else  $sql .= ' CONNECTION LIMIT -1';
-		if ($expiry != '') $sql .= " VALID UNTIL '{$expiry}'"; else $sql .= " VALID UNTIL 'infinity'";
-		if (is_array($memberof) && sizeof($memberof) > 0) $sql .= ' IN ROLE "' . join('", "', $memberof) . '"';
-		if (is_array($members) && sizeof($members) > 0) $sql .= ' ROLE "' . join('", "', $members) . '"';
-		if (is_array($adminmembers) && sizeof($adminmembers) > 0) $sql .= ' ADMIN "' . join('", "', $adminmembers) . '"';
+		if ($connlimit != '')
+			$sql .= " CONNECTION LIMIT {$connlimit}";
+		else
+			$sql .= ' CONNECTION LIMIT -1';
+		if ($expiry != '')
+			$sql .= " VALID UNTIL '{$expiry}'";
+		else
+			$sql .= " VALID UNTIL 'infinity'";
+		if (is_array($memberof) && sizeof($memberof) > 0)
+			$sql .= ' IN ROLE "' . join('", "', $memberof) . '"';
+		if (is_array($members) && sizeof($members) > 0)
+			$sql .= ' ROLE "' . join('", "', $members) . '"';
+		if (is_array($adminmembers) && sizeof($adminmembers) > 0)
+			$sql .= ' ADMIN "' . join('", "', $adminmembers) . '"';
 
 		return $this->execute($sql);
 	}
@@ -6268,7 +6814,8 @@ class Postgres extends ADODB_base {
 	 * @param $adminmembersold (array) Original roles that are admin members of the role
 	 * @return 0 success
 	 */
-	function setRole($rolename, $password, $superuser, $createdb, $createrole, $inherits, $login, $connlimit, $expiry, $memberof, $members, $adminmembers, $memberofold, $membersold, $adminmembersold) {
+	function setRole($rolename, $password, $superuser, $createdb, $createrole, $inherits, $login, $connlimit, $expiry, $memberof, $members, $adminmembers, $memberofold, $membersold, $adminmembersold)
+	{
 		$enc = $this->_encryptPassword($rolename, $password);
 		$this->fieldClean($rolename);
 		$this->clean($enc);
@@ -6279,32 +6826,42 @@ class Postgres extends ADODB_base {
 		$this->fieldArrayClean($adminmembers);
 
 		$sql = "ALTER ROLE \"{$rolename}\"";
-		if ($password != '') $sql .= " WITH ENCRYPTED PASSWORD '{$enc}'";
+		if ($password != '')
+			$sql .= " WITH ENCRYPTED PASSWORD '{$enc}'";
 		$sql .= ($superuser) ? ' SUPERUSER' : ' NOSUPERUSER';
 		$sql .= ($createdb) ? ' CREATEDB' : ' NOCREATEDB';
 		$sql .= ($createrole) ? ' CREATEROLE' : ' NOCREATEROLE';
 		$sql .= ($inherits) ? ' INHERIT' : ' NOINHERIT';
 		$sql .= ($login) ? ' LOGIN' : ' NOLOGIN';
-		if ($connlimit != '') $sql .= " CONNECTION LIMIT {$connlimit}"; else $sql .= ' CONNECTION LIMIT -1';
-		if ($expiry != '') $sql .= " VALID UNTIL '{$expiry}'"; else $sql .= " VALID UNTIL 'infinity'";
+		if ($connlimit != '')
+			$sql .= " CONNECTION LIMIT {$connlimit}";
+		else
+			$sql .= ' CONNECTION LIMIT -1';
+		if ($expiry != '')
+			$sql .= " VALID UNTIL '{$expiry}'";
+		else
+			$sql .= " VALID UNTIL 'infinity'";
 
 		$status = $this->execute($sql);
 
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		//memberof
 		$old = explode(',', $memberofold);
 		foreach ($memberof as $m) {
 			if (!in_array($m, $old)) {
 				$status = $this->grantRole($m, $rolename);
-				if ($status != 0) return -1;
+				if ($status != 0)
+					return -1;
 			}
 		}
 		if ($memberofold) {
 			foreach ($old as $o) {
 				if (!in_array($o, $memberof)) {
 					$status = $this->revokeRole($o, $rolename, 0, 'CASCADE');
-					if ($status != 0) return -1;
+					if ($status != 0)
+						return -1;
 				}
 			}
 		}
@@ -6314,14 +6871,16 @@ class Postgres extends ADODB_base {
 		foreach ($members as $m) {
 			if (!in_array($m, $old)) {
 				$status = $this->grantRole($rolename, $m);
-				if ($status != 0) return -1;
+				if ($status != 0)
+					return -1;
 			}
 		}
 		if ($membersold) {
 			foreach ($old as $o) {
 				if (!in_array($o, $members)) {
 					$status = $this->revokeRole($rolename, $o, 0, 'CASCADE');
-					if ($status != 0) return -1;
+					if ($status != 0)
+						return -1;
 				}
 			}
 		}
@@ -6331,14 +6890,16 @@ class Postgres extends ADODB_base {
 		foreach ($adminmembers as $m) {
 			if (!in_array($m, $old)) {
 				$status = $this->grantRole($rolename, $m, 1);
-				if ($status != 0) return -1;
+				if ($status != 0)
+					return -1;
 			}
 		}
 		if ($adminmembersold) {
 			foreach ($old as $o) {
 				if (!in_array($o, $adminmembers)) {
 					$status = $this->revokeRole($rolename, $o, 1, 'CASCADE');
-					if ($status != 0) return -1;
+					if ($status != 0)
+						return -1;
 				}
 			}
 		}
@@ -6352,7 +6913,8 @@ class Postgres extends ADODB_base {
 	 * @param $newrolename The new name of the role
 	 * @return 0 success
 	 */
-	function renameRole($rolename, $newrolename) {
+	function renameRole($rolename, $newrolename)
+	{
 		$this->fieldClean($rolename);
 		$this->fieldClean($newrolename);
 
@@ -6384,12 +6946,28 @@ class Postgres extends ADODB_base {
 	 * @return -2 set role attributes error
 	 * @return -3 rename error
 	 */
-	function setRenameRole($rolename, $password, $superuser, $createdb, $createrole,
-								  $inherits, $login, $connlimit, $expiry, $memberof, $members, $adminmembers,
-								  $memberofold, $membersold, $adminmembersold, $newrolename) {
+	function setRenameRole(
+		$rolename,
+		$password,
+		$superuser,
+		$createdb,
+		$createrole,
+		$inherits,
+		$login,
+		$connlimit,
+		$expiry,
+		$memberof,
+		$members,
+		$adminmembers,
+		$memberofold,
+		$membersold,
+		$adminmembersold,
+		$newrolename
+	) {
 
 		$status = $this->beginTransaction();
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		if ($rolename != $newrolename) {
 			$status = $this->renameRole($rolename, $newrolename);
@@ -6414,7 +6992,8 @@ class Postgres extends ADODB_base {
 	 * @param $rolename The name of the role to drop
 	 * @return 0 success
 	 */
-	function dropRole($rolename) {
+	function dropRole($rolename)
+	{
 		$this->fieldClean($rolename);
 
 		$sql = "DROP ROLE \"{$rolename}\"";
@@ -6432,7 +7011,8 @@ class Postgres extends ADODB_base {
 	 * @param $group (array) The groups to create the user in
 	 * @return 0 success
 	 */
-	function createUser($username, $password, $createdb, $createuser, $expiry, $groups) {
+	function createUser($username, $password, $createdb, $createuser, $expiry, $groups)
+	{
 		$enc = $this->_encryptPassword($username, $password);
 		$this->fieldClean($username);
 		$this->clean($enc);
@@ -6440,12 +7020,16 @@ class Postgres extends ADODB_base {
 		$this->fieldArrayClean($groups);
 
 		$sql = "CREATE USER \"{$username}\"";
-		if ($password != '') $sql .= " WITH ENCRYPTED PASSWORD '{$enc}'";
+		if ($password != '')
+			$sql .= " WITH ENCRYPTED PASSWORD '{$enc}'";
 		$sql .= ($createdb) ? ' CREATEDB' : ' NOCREATEDB';
 		$sql .= ($createuser) ? ' CREATEUSER' : ' NOCREATEUSER';
-		if (is_array($groups) && sizeof($groups) > 0) $sql .= " IN GROUP \"" . join('", "', $groups) . "\"";
-		if ($expiry != '') $sql .= " VALID UNTIL '{$expiry}'";
-		else $sql .= " VALID UNTIL 'infinity'";
+		if (is_array($groups) && sizeof($groups) > 0)
+			$sql .= " IN GROUP \"" . join('", "', $groups) . "\"";
+		if ($expiry != '')
+			$sql .= " VALID UNTIL '{$expiry}'";
+		else
+			$sql .= " VALID UNTIL 'infinity'";
 
 		return $this->execute($sql);
 	}
@@ -6456,7 +7040,8 @@ class Postgres extends ADODB_base {
 	 * @param $newname The new name of the user
 	 * @return 0 success
 	 */
-	function renameUser($username, $newname) {
+	function renameUser($username, $newname)
+	{
 		$this->fieldClean($username);
 		$this->fieldClean($newname);
 
@@ -6474,18 +7059,22 @@ class Postgres extends ADODB_base {
 	 * @param $expiry string Format 'YYYY-MM-DD HH:MM:SS'.  '' means never expire.
 	 * @return 0 success
 	 */
-	function setUser($username, $password, $createdb, $createuser, $expiry) {
+	function setUser($username, $password, $createdb, $createuser, $expiry)
+	{
 		$enc = $this->_encryptPassword($username, $password);
 		$this->fieldClean($username);
 		$this->clean($enc);
 		$this->clean($expiry);
 
 		$sql = "ALTER USER \"{$username}\"";
-		if ($password != '') $sql .= " WITH ENCRYPTED PASSWORD '{$enc}'";
+		if ($password != '')
+			$sql .= " WITH ENCRYPTED PASSWORD '{$enc}'";
 		$sql .= ($createdb) ? ' CREATEDB' : ' NOCREATEDB';
 		$sql .= ($createuser) ? ' CREATEUSER' : ' NOCREATEUSER';
-		if ($expiry != '') $sql .= " VALID UNTIL '{$expiry}'";
-		else $sql .= " VALID UNTIL 'infinity'";
+		if ($expiry != '')
+			$sql .= " VALID UNTIL '{$expiry}'";
+		else
+			$sql .= " VALID UNTIL 'infinity'";
 
 		return $this->execute($sql);
 	}
@@ -6503,9 +7092,11 @@ class Postgres extends ADODB_base {
 	 * @return -2 set user attributes error
 	 * @return -3 rename error
 	 */
-	function setRenameUser($username, $password, $createdb, $createuser, $expiry, $newname) {
+	function setRenameUser($username, $password, $createdb, $createuser, $expiry, $newname)
+	{
 		$status = $this->beginTransaction();
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		if ($username != $newname) {
 			$status = $this->renameUser($username, $newname);
@@ -6530,7 +7121,8 @@ class Postgres extends ADODB_base {
 	 * @param $username The username of the user to drop
 	 * @return 0 success
 	 */
-	function dropUser($username) {
+	function dropUser($username)
+	{
 		$this->fieldClean($username);
 
 		$sql = "DROP USER \"{$username}\"";
@@ -6543,19 +7135,23 @@ class Postgres extends ADODB_base {
 	 * @param $username The username of the user
 	 * @return True if is a super user, false otherwise
 	 */
-	function isSuperUser($username = '') {
+	function isSuperUser($username = '')
+	{
 		$this->clean($username);
 
 		if (empty($usename)) {
 			$val = pg_parameter_status($this->conn->_connectionID, 'is_superuser');
-			if ($val !== false) return $val == 'on';
+			if ($val !== false)
+				return $val == 'on';
 		}
 
 		$sql = "SELECT usesuper FROM pg_user WHERE usename='{$username}'";
 
 		$usesuper = $this->selectField($sql, 'usesuper');
-		if ($usesuper == -1) return false;
-		else return $usesuper == 't';
+		if ($usesuper == -1)
+			return false;
+		else
+			return $usesuper == 't';
 	}
 
 	/**
@@ -6564,7 +7160,8 @@ class Postgres extends ADODB_base {
 	 * @param $password The new password
 	 * @return 0 success
 	 */
-	function changePassword($rolename, $password) {
+	function changePassword($rolename, $password)
+	{
 		$enc = $this->_encryptPassword($rolename, $password);
 		$this->fieldClean($rolename);
 		$this->clean($enc);
@@ -6580,7 +7177,8 @@ class Postgres extends ADODB_base {
 	 * @param $user The name of the user to add to the group
 	 * @return 0 success
 	 */
-	function addGroupMember($groname, $user) {
+	function addGroupMember($groname, $user)
+	{
 		$this->fieldClean($groname);
 		$this->fieldClean($user);
 
@@ -6594,7 +7192,8 @@ class Postgres extends ADODB_base {
 	 * @param $rolename The role name
 	 * @return All role names
 	 */
-	function getMemberOf($rolename) {
+	function getMemberOf($rolename)
+	{
 		$this->clean($rolename);
 
 		$sql = "
@@ -6614,7 +7213,8 @@ class Postgres extends ADODB_base {
 	 * @param $admin (optional) Find only admin members
 	 * @return All role names
 	 */
-	function getMembers($rolename, $admin = 'f') {
+	function getMembers($rolename, $admin = 'f')
+	{
 		$this->clean($rolename);
 
 		$sql = "
@@ -6633,7 +7233,8 @@ class Postgres extends ADODB_base {
 	 * @param $user The name of the user to remove from the group
 	 * @return 0 success
 	 */
-	function dropGroupMember($groname, $user) {
+	function dropGroupMember($groname, $user)
+	{
 		$this->fieldClean($groname);
 		$this->fieldClean($user);
 
@@ -6647,7 +7248,8 @@ class Postgres extends ADODB_base {
 	 * @param $groname The name of the group
 	 * @return All users in the group
 	 */
-	function getGroup($groname) {
+	function getGroup($groname)
+	{
 		$this->clean($groname);
 
 		$sql = "
@@ -6662,7 +7264,8 @@ class Postgres extends ADODB_base {
 	 * Returns all groups in the database cluser
 	 * @return All groups
 	 */
-	function getGroups() {
+	function getGroups()
+	{
 		$sql = "SELECT groname FROM pg_group ORDER BY groname";
 
 		return $this->selectSet($sql);
@@ -6674,7 +7277,8 @@ class Postgres extends ADODB_base {
 	 * @param $users An array of users to add to the group
 	 * @return 0 success
 	 */
-	function createGroup($groname, $users) {
+	function createGroup($groname, $users)
+	{
 		$this->fieldClean($groname);
 
 		$sql = "CREATE GROUP \"{$groname}\"";
@@ -6692,7 +7296,8 @@ class Postgres extends ADODB_base {
 	 * @param $groname The name of the group to drop
 	 * @return 0 success
 	 */
-	function dropGroup($groname) {
+	function dropGroup($groname)
+	{
 		$this->fieldClean($groname);
 
 		$sql = "DROP GROUP \"{$groname}\"";
@@ -6705,7 +7310,8 @@ class Postgres extends ADODB_base {
 	 * @param $acl The ACL to parse (of type aclitem[])
 	 * @return Privileges array
 	 */
-	function _parseACL($acl) {
+	function _parseACL($acl)
+	{
 		// Take off the first and last characters (the braces)
 		$acl = substr($acl, 1, strlen($acl) - 2);
 
@@ -6834,15 +7440,16 @@ class Postgres extends ADODB_base {
 	 * @return -2 object not found
 	 * @return -3 unknown privilege type
 	 */
-	function getPrivileges($object, $type, $table = null) {
+	function getPrivileges($object, $type, $table = null)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($object);
 
 		switch ($type) {
-		case 'column':
-			$this->clean($table);
-			$sql = "
+			case 'column':
+				$this->clean($table);
+				$sql = "
 					SELECT E'{' || pg_catalog.array_to_string(attacl, E',') || E'}' as acl
 					FROM pg_catalog.pg_attribute a
 						LEFT JOIN pg_catalog.pg_class c ON (a.attrelid = c.oid)
@@ -6850,43 +7457,46 @@ class Postgres extends ADODB_base {
 					WHERE n.nspname='{$c_schema}'
 						AND c.relname='{$table}'
 						AND a.attname='{$object}'";
-			break;
-		case 'table':
-		case 'view':
-		case 'sequence':
-			$sql = "
+				break;
+			case 'table':
+			case 'view':
+			case 'sequence':
+				$sql = "
 					SELECT relacl AS acl FROM pg_catalog.pg_class
 					WHERE relname='{$object}'
 						AND relnamespace=(SELECT oid FROM pg_catalog.pg_namespace
 							WHERE nspname='{$c_schema}')";
-			break;
-		case 'database':
-			$sql = "SELECT datacl AS acl FROM pg_catalog.pg_database WHERE datname='{$object}'";
-			break;
-		case 'function':
-			// Since we fetch functions by oid, they are already constrained to
-			// the current schema.
-			$sql = "SELECT proacl AS acl FROM pg_catalog.pg_proc WHERE oid='{$object}'";
-			break;
-		case 'language':
-			$sql = "SELECT lanacl AS acl FROM pg_catalog.pg_language WHERE lanname='{$object}'";
-			break;
-		case 'schema':
-			$sql = "SELECT nspacl AS acl FROM pg_catalog.pg_namespace WHERE nspname='{$object}'";
-			break;
-		case 'tablespace':
-			$sql = "SELECT spcacl AS acl FROM pg_catalog.pg_tablespace WHERE spcname='{$object}'";
-			break;
-		default:
-			return -1;
+				break;
+			case 'database':
+				$sql = "SELECT datacl AS acl FROM pg_catalog.pg_database WHERE datname='{$object}'";
+				break;
+			case 'function':
+				// Since we fetch functions by oid, they are already constrained to
+				// the current schema.
+				$sql = "SELECT proacl AS acl FROM pg_catalog.pg_proc WHERE oid='{$object}'";
+				break;
+			case 'language':
+				$sql = "SELECT lanacl AS acl FROM pg_catalog.pg_language WHERE lanname='{$object}'";
+				break;
+			case 'schema':
+				$sql = "SELECT nspacl AS acl FROM pg_catalog.pg_namespace WHERE nspname='{$object}'";
+				break;
+			case 'tablespace':
+				$sql = "SELECT spcacl AS acl FROM pg_catalog.pg_tablespace WHERE spcname='{$object}'";
+				break;
+			default:
+				return -1;
 		}
 
 
 		// Fetch the ACL for object
 		$acl = $this->selectField($sql, 'acl');
-		if ($acl == -1) return -2;
-		elseif ($acl == '' || $acl == null) return array();
-		else return $this->_parseACL($acl);
+		if ($acl == -1)
+			return -2;
+		elseif ($acl == '' || $acl == null)
+			return array();
+		else
+			return $this->_parseACL($acl);
 	}
 
 	/**
@@ -6908,8 +7518,17 @@ class Postgres extends ADODB_base {
 	 * @return -4 not granting to anything
 	 * @return -4 invalid mode
 	 */
-	function setPrivileges($mode, $type, $object, $public, $usernames, $groupnames,
-								  $privileges, $grantoption, $cascade, $table
+	function setPrivileges(
+		$mode,
+		$type,
+		$object,
+		$public,
+		$usernames,
+		$groupnames,
+		$privileges,
+		$grantoption,
+		$cascade,
+		$table
 	) {
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
@@ -6917,10 +7536,15 @@ class Postgres extends ADODB_base {
 		$this->fieldArrayClean($groupnames);
 
 		// Input checking
-		if (!is_array($privileges) || sizeof($privileges) == 0) return -3;
-		if (!is_array($usernames) || !is_array($groupnames) ||
-			(!$public && sizeof($usernames) == 0 && sizeof($groupnames) == 0)) return -4;
-		if ($mode != 'GRANT' && $mode != 'REVOKE') return -5;
+		if (!is_array($privileges) || sizeof($privileges) == 0)
+			return -3;
+		if (
+			!is_array($usernames) || !is_array($groupnames) ||
+			(!$public && sizeof($usernames) == 0 && sizeof($groupnames) == 0)
+		)
+			return -4;
+		if ($mode != 'GRANT' && $mode != 'REVOKE')
+			return -5;
 
 		$sql = $mode;
 
@@ -6941,39 +7565,39 @@ class Postgres extends ADODB_base {
 		}
 
 		switch ($type) {
-		case 'column':
-			$sql .= " (\"{$object}\")";
-			$object = $table;
-		case 'table':
-		case 'view':
-		case 'sequence':
-			$this->fieldClean($object);
-			$sql .= " ON \"{$f_schema}\".\"{$object}\"";
-			break;
-		case 'database':
-			$this->fieldClean($object);
-			$sql .= " ON DATABASE \"{$object}\"";
-			break;
-		case 'function':
-			// Function comes in with $object as function OID
-			$fn = $this->getFunction($object);
-			$this->fieldClean($fn->fields['proname']);
-			$sql .= " ON FUNCTION \"{$f_schema}\".\"{$fn->fields['proname']}\"({$fn->fields['proarguments']})";
-			break;
-		case 'language':
-			$this->fieldClean($object);
-			$sql .= " ON LANGUAGE \"{$object}\"";
-			break;
-		case 'schema':
-			$this->fieldClean($object);
-			$sql .= " ON SCHEMA \"{$object}\"";
-			break;
-		case 'tablespace':
-			$this->fieldClean($object);
-			$sql .= " ON TABLESPACE \"{$object}\"";
-			break;
-		default:
-			return -1;
+			case 'column':
+				$sql .= " (\"{$object}\")";
+				$object = $table;
+			case 'table':
+			case 'view':
+			case 'sequence':
+				$this->fieldClean($object);
+				$sql .= " ON \"{$f_schema}\".\"{$object}\"";
+				break;
+			case 'database':
+				$this->fieldClean($object);
+				$sql .= " ON DATABASE \"{$object}\"";
+				break;
+			case 'function':
+				// Function comes in with $object as function OID
+				$fn = $this->getFunction($object);
+				$this->fieldClean($fn->fields['proname']);
+				$sql .= " ON FUNCTION \"{$f_schema}\".\"{$fn->fields['proname']}\"({$fn->fields['proarguments']})";
+				break;
+			case 'language':
+				$this->fieldClean($object);
+				$sql .= " ON LANGUAGE \"{$object}\"";
+				break;
+			case 'schema':
+				$this->fieldClean($object);
+				$sql .= " ON SCHEMA \"{$object}\"";
+				break;
+			case 'tablespace':
+				$this->fieldClean($object);
+				$sql .= " ON TABLESPACE \"{$object}\"";
+				break;
+			default:
+				return -1;
 		}
 
 		// Dump PUBLIC
@@ -7020,7 +7644,8 @@ class Postgres extends ADODB_base {
 	 * @param $username The username
 	 * @param $password The password
 	 */
-	function _encryptPassword($username, $password) {
+	function _encryptPassword($username, $password)
+	{
 		return 'md5' . md5($password . $username);
 	}
 
@@ -7031,7 +7656,8 @@ class Postgres extends ADODB_base {
 	 * @param $all Include all tablespaces (necessary when moving objects back to the default space)
 	 * @return A recordset
 	 */
-	function getTablespaces($all = false) {
+	function getTablespaces($all = false)
+	{
 		global $conf;
 
 		$sql = "SELECT spcname, pg_catalog.pg_get_userbyid(spcowner) AS spcowner, pg_catalog.pg_tablespace_location(oid) as spclocation,
@@ -7051,7 +7677,8 @@ class Postgres extends ADODB_base {
 	 * Retrieves a tablespace's information
 	 * @return A recordset
 	 */
-	function getTablespace($spcname) {
+	function getTablespace($spcname)
+	{
 		$this->clean($spcname);
 
 		$sql = "SELECT spcname, pg_catalog.pg_get_userbyid(spcowner) AS spcowner, pg_catalog.pg_tablespace_location(oid) as spclocation,
@@ -7068,7 +7695,8 @@ class Postgres extends ADODB_base {
 	 * @param $spcloc The directory in which to create the tablespace
 	 * @return 0 success
 	 */
-	function createTablespace($spcname, $spcowner, $spcloc, $comment = '') {
+	function createTablespace($spcname, $spcowner, $spcloc, $comment = '')
+	{
 		$this->fieldClean($spcname);
 		$this->clean($spcloc);
 
@@ -7082,11 +7710,13 @@ class Postgres extends ADODB_base {
 		$sql .= " LOCATION '{$spcloc}'";
 
 		$status = $this->execute($sql);
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		if ($comment != '' && $this->hasSharedComments()) {
 			$status = $this->setComment('TABLESPACE', $spcname, '', $comment);
-			if ($status != 0) return -2;
+			if ($status != 0)
+				return -2;
 		}
 
 		return 0;
@@ -7103,14 +7733,16 @@ class Postgres extends ADODB_base {
 	 * @return -3 rename error
 	 * @return -4 comment error
 	 */
-	function alterTablespace($spcname, $name, $owner, $comment = '') {
+	function alterTablespace($spcname, $name, $owner, $comment = '')
+	{
 		$this->fieldClean($spcname);
 		$this->fieldClean($name);
 		$this->fieldClean($owner);
 
 		// Begin transaction
 		$status = $this->beginTransaction();
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		// Owner
 		$sql = "ALTER TABLESPACE \"{$spcname}\" OWNER TO \"{$owner}\"";
@@ -7135,7 +7767,8 @@ class Postgres extends ADODB_base {
 		// Set comment if it has changed
 		if (trim($comment) != '' && $this->hasSharedComments()) {
 			$status = $this->setComment('TABLESPACE', $spcname, '', $comment);
-			if ($status != 0) return -4;
+			if ($status != 0)
+				return -4;
 		}
 
 		return $this->endTransaction();
@@ -7146,7 +7779,8 @@ class Postgres extends ADODB_base {
 	 * @param $spcname The name of the domain to drop
 	 * @return 0 success
 	 */
-	function dropTablespace($spcname) {
+	function dropTablespace($spcname)
+	{
 		$this->fieldClean($spcname);
 
 		$sql = "DROP TABLESPACE \"{$spcname}\"";
@@ -7160,7 +7794,8 @@ class Postgres extends ADODB_base {
 	 * Analyze a database
 	 * @param $table (optional) The table to analyze
 	 */
-	function analyzeDB($table = '') {
+	function analyzeDB($table = '')
+	{
 		if ($table != '') {
 			$f_schema = $this->_schema;
 			$this->fieldClean($f_schema);
@@ -7180,12 +7815,16 @@ class Postgres extends ADODB_base {
 	 * @param $full If true, selects "full" vacuum
 	 * @param $freeze If true, selects aggressive "freezing" of tuples
 	 */
-	function vacuumDB($table = '', $analyze = false, $full = false, $freeze = false) {
+	function vacuumDB($table = '', $analyze = false, $full = false, $freeze = false)
+	{
 
 		$sql = "VACUUM";
-		if ($full) $sql .= " FULL";
-		if ($freeze) $sql .= " FREEZE";
-		if ($analyze) $sql .= " ANALYZE";
+		if ($full)
+			$sql .= " FULL";
+		if ($freeze)
+			$sql .= " FREEZE";
+		if ($analyze)
+			$sql .= " ANALYZE";
 		if ($table != '') {
 			$f_schema = $this->_schema;
 			$this->fieldClean($f_schema);
@@ -7200,7 +7839,8 @@ class Postgres extends ADODB_base {
 	 * Returns all autovacuum global configuration
 	 * @return associative array array( param => value, ...)
 	 */
-	function getAutovacuum() {
+	function getAutovacuum()
+	{
 
 		$_defaults = $this->selectSet("SELECT name, setting
 			FROM pg_catalog.pg_settings
@@ -7230,8 +7870,16 @@ class Postgres extends ADODB_base {
 	 * Returns all available autovacuum per table information.
 	 * @return A recordset
 	 */
-	function saveAutovacuum($table, $vacenabled, $vacthreshold, $vacscalefactor, $anathresold,
-									$anascalefactor, $vaccostdelay, $vaccostlimit) {
+	function saveAutovacuum(
+		$table,
+		$vacenabled,
+		$vacthreshold,
+		$vacscalefactor,
+		$anathresold,
+		$anascalefactor,
+		$vaccostdelay,
+		$vaccostlimit
+	) {
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($table);
@@ -7272,12 +7920,14 @@ class Postgres extends ADODB_base {
 		return $this->execute($sql);
 	}
 
-	function dropAutovacuum($table) {
+	function dropAutovacuum($table)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($table);
 
-		return $this->execute("
+		return $this->execute(
+			"
 			ALTER TABLE \"{$f_schema}\".\"{$table}\" RESET (autovacuum_enabled, autovacuum_vacuum_threshold,
 				autovacuum_vacuum_scale_factor, autovacuum_analyze_threshold, autovacuum_analyze_scale_factor,
 				autovacuum_vacuum_cost_delay, autovacuum_vacuum_cost_limit
@@ -7290,7 +7940,8 @@ class Postgres extends ADODB_base {
 	 * @param $database (optional) Find only connections to specified database
 	 * @return A recordset
 	 */
-	function getProcesses($database = null) {
+	function getProcesses($database = null)
+	{
 		if ($database === null)
 			$sql = "SELECT datname, usename, pid, 
                     case when wait_event is null then 'false' else wait_event_type || '::' || wait_event end as waiting, 
@@ -7317,7 +7968,8 @@ class Postgres extends ADODB_base {
 	 * @return A recordset
 	 */
 
-	function getLocks() {
+	function getLocks()
+	{
 		global $conf;
 
 		if (!$conf['show_system'])
@@ -7349,9 +8001,10 @@ class Postgres extends ADODB_base {
 	 * @return 0 success
 	 * @return -1 invalid signal type
 	 */
-	function sendSignal($pid, $signal) {
+	function sendSignal($pid, $signal)
+	{
 		// Clean
-		$pid = (int)$pid;
+		$pid = (int) $pid;
 
 		if ($signal == 'CANCEL')
 			$sql = "SELECT pg_catalog.pg_cancel_backend({$pid}) AS val";
@@ -7364,9 +8017,12 @@ class Postgres extends ADODB_base {
 		// Execute the query
 		$val = $this->selectField($sql, 'val');
 
-		if ($val === 'f') return -1;
-		elseif ($val === 't') return 0;
-		else return -1;
+		if ($val === 'f')
+			return -1;
+		elseif ($val === 't')
+			return 0;
+		else
+			return -1;
 	}
 
 	// Misc functions
@@ -7380,7 +8036,8 @@ class Postgres extends ADODB_base {
 	 * @param $comment The comment to add.
 	 * @return 0 success
 	 */
-	function setComment($obj_type, $obj_name, $table, $comment, $basetype = NULL) {
+	function setComment($obj_type, $obj_name, $table, $comment, $basetype = NULL)
+	{
 		$sql = "COMMENT ON {$obj_type} ";
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
@@ -7393,35 +8050,35 @@ class Postgres extends ADODB_base {
 		*/
 
 		switch ($obj_type) {
-		case 'TABLE':
-			$sql .= "\"{$f_schema}\".\"{$table}\" IS ";
-			break;
-		case 'COLUMN':
-			$sql .= "\"{$f_schema}\".\"{$table}\".\"{$obj_name}\" IS ";
-			break;
-		case 'SEQUENCE':
-		case 'VIEW':
-		case 'TEXT SEARCH CONFIGURATION':
-		case 'TEXT SEARCH DICTIONARY':
-		case 'TEXT SEARCH TEMPLATE':
-		case 'TEXT SEARCH PARSER':
-		case 'TYPE':
-			$sql .= "\"{$f_schema}\".";
-		case 'DATABASE':
-		case 'ROLE':
-		case 'SCHEMA':
-		case 'TABLESPACE':
-			$sql .= "\"{$obj_name}\" IS ";
-			break;
-		case 'FUNCTION':
-			$sql .= "\"{$f_schema}\".{$obj_name} IS ";
-			break;
-		case 'AGGREGATE':
-			$sql .= "\"{$f_schema}\".\"{$obj_name}\" (\"{$basetype}\") IS ";
-			break;
-		default:
-			// Unknown object type
-			return -1;
+			case 'TABLE':
+				$sql .= "\"{$f_schema}\".\"{$table}\" IS ";
+				break;
+			case 'COLUMN':
+				$sql .= "\"{$f_schema}\".\"{$table}\".\"{$obj_name}\" IS ";
+				break;
+			case 'SEQUENCE':
+			case 'VIEW':
+			case 'TEXT SEARCH CONFIGURATION':
+			case 'TEXT SEARCH DICTIONARY':
+			case 'TEXT SEARCH TEMPLATE':
+			case 'TEXT SEARCH PARSER':
+			case 'TYPE':
+				$sql .= "\"{$f_schema}\".";
+			case 'DATABASE':
+			case 'ROLE':
+			case 'SCHEMA':
+			case 'TABLESPACE':
+				$sql .= "\"{$obj_name}\" IS ";
+				break;
+			case 'FUNCTION':
+				$sql .= "\"{$f_schema}\".{$obj_name} IS ";
+				break;
+			case 'AGGREGATE':
+				$sql .= "\"{$f_schema}\".\"{$obj_name}\" (\"{$basetype}\") IS ";
+				break;
+			default:
+				// Unknown object type
+				return -1;
 		}
 
 		if ($comment != '')
@@ -7443,7 +8100,11 @@ class Postgres extends ADODB_base {
 	 * @param &$thislen Length of current character (ie. 1)
 	 */
 	private
-	function advance_1(&$i, &$prevlen, &$thislen) {
+		function advance_1(
+		&$i,
+		&$prevlen,
+		&$thislen
+	) {
 		$prevlen = $thislen;
 		$i += $thislen;
 		$thislen = 1;
@@ -7455,7 +8116,9 @@ class Postgres extends ADODB_base {
 	 * @return True if valid, false otherwise
 	 */
 	private
-	function valid_dolquote($dquote) {
+		function valid_dolquote(
+		$dquote
+	) {
 		// XXX: support multibyte
 		return (preg_match('/^[$][$]/', $dquote) || preg_match('/^[$][_[:alpha:]][_[:alnum:]]*[$]/', $dquote));
 	}
@@ -7471,15 +8134,18 @@ class Postgres extends ADODB_base {
 	 * its result and line number.
 	 * @return True for general success, false on any failure.
 	 */
-	function executeScript($name, $callback = null) {
+	function executeScript($name, $callback = null)
+	{
 		global $data;
 
 		// This whole function isn't very encapsulated, but hey...
 		$conn = $data->conn->_connectionID;
-		if (!is_uploaded_file($_FILES[$name]['tmp_name'])) return false;
+		if (!is_uploaded_file($_FILES[$name]['tmp_name']))
+			return false;
 
 		$fd = fopen($_FILES[$name]['tmp_name'], 'r');
-		if (!$fd) return false;
+		if (!$fd)
+			return false;
 
 		// Build up each SQL statement, they can be multiline
 		$query_buf = null;
@@ -7501,7 +8167,8 @@ class Postgres extends ADODB_base {
 			$lineno++;
 
 			// Nothing left on line? Then ignore...
-			if (trim($line) == '') continue;
+			if (trim($line) == '')
+				continue;
 
 			$len = strlen($line);
 			$query_start = 0;
@@ -7535,33 +8202,30 @@ class Postgres extends ADODB_base {
 					 * end of quote if matching non-backslashed character.
 					 * backslashes don't count for double quotes, though.
 					 */
-					if (substr($line, $i, 1) == $in_quote &&
-						($bslash_count % 2 == 0 || $in_quote == '"'))
+					if (
+						substr($line, $i, 1) == $in_quote &&
+						($bslash_count % 2 == 0 || $in_quote == '"')
+					)
 						$in_quote = 0;
-				} /* in or end of $foo$ type quote? */
-				else if ($dol_quote) {
+				} /* in or end of $foo$ type quote? */ else if ($dol_quote) {
 					if (strncmp(substr($line, $i), $dol_quote, strlen($dol_quote)) == 0) {
 						$this->advance_1($i, $prevlen, $thislen);
 						while (substr($line, $i, 1) != '$')
 							$this->advance_1($i, $prevlen, $thislen);
 						$dol_quote = null;
 					}
-				} /* start of extended comment? */
-				else if (substr($line, $i, 2) == '/*') {
+				} /* start of extended comment? */ else if (substr($line, $i, 2) == '/*') {
 					$in_xcomment++;
 					if ($in_xcomment == 1)
 						$this->advance_1($i, $prevlen, $thislen);
-				} /* in or end of extended comment? */
-				else if ($in_xcomment) {
+				} /* in or end of extended comment? */ else if ($in_xcomment) {
 					if (substr($line, $i, 2) == '*/' && !--$in_xcomment)
 						$this->advance_1($i, $prevlen, $thislen);
-				} /* start of quote? */
-				else if (substr($line, $i, 1) == '\'' || substr($line, $i, 1) == '"') {
+				} /* start of quote? */ else if (substr($line, $i, 1) == '\'' || substr($line, $i, 1) == '"') {
 					$in_quote = substr($line, $i, 1);
 				} /*
-				 * start of $foo$ type quote?
-				 */
-				else if (!$dol_quote && $this->valid_dolquote(substr($line, $i))) {
+				  * start of $foo$ type quote?
+				  */ else if (!$dol_quote && $this->valid_dolquote(substr($line, $i))) {
 					$dol_end = strpos(substr($line, $i + 1), '$');
 					$dol_quote = substr($line, $i, $dol_end + 1);
 					$this->advance_1($i, $prevlen, $thislen);
@@ -7569,24 +8233,21 @@ class Postgres extends ADODB_base {
 						$this->advance_1($i, $prevlen, $thislen);
 					}
 
-				} /* single-line comment? truncate line */
-				else if (substr($line, $i, 2) == '--') {
+				} /* single-line comment? truncate line */ else if (substr($line, $i, 2) == '--') {
 					$line = substr($line, 0, $i); /* remove comment */
 					break;
-				} /* count nested parentheses */
-				else if (substr($line, $i, 1) == '(') {
+				} /* count nested parentheses */ else if (substr($line, $i, 1) == '(') {
 					$paren_level++;
 				} else if (substr($line, $i, 1) == ')' && $paren_level > 0) {
 					$paren_level--;
-				} /* semicolon? then send query */
-				else if (substr($line, $i, 1) == ';' && !$bslash_count && !$paren_level) {
+				} /* semicolon? then send query */ else if (substr($line, $i, 1) == ';' && !$bslash_count && !$paren_level) {
 					$subline = substr(substr($line, 0, $i), $query_start);
 					/* is there anything else on the line? */
 					if (strspn($subline, " \t\n\r") != strlen($subline)) {
 						/*
 						 * insert a cosmetic newline, if this is not the first
 						 * line in the buffer
-						*/
+						 */
 						if (strlen($query_buf) > 0)
 							$query_buf .= "\n";
 						$query_buf .= $subline;
@@ -7600,7 +8261,8 @@ class Postgres extends ADODB_base {
 						$res = @pg_query($conn, $query_buf);
 
 						// Call the callback function for display
-						if ($callback !== null) $callback($query_buf, $res, $lineno);
+						if ($callback !== null)
+							$callback($query_buf, $res, $lineno);
 						// Check for COPY request
 						if (pg_result_status($res) == 4) { // 4 == PGSQL_COPY_FROM
 							while (!feof($fd)) {
@@ -7654,13 +8316,14 @@ class Postgres extends ADODB_base {
 		/*
 		 * Process query at the end of file without a semicolon, so long as
 		 * it's non-empty.
-		*/
+		 */
 		if (strlen($query_buf) > 0 && strspn($query_buf, " \t\n\r") != strlen($query_buf)) {
 			// Execute the query
 			$res = @pg_query($conn, $query_buf);
 
 			// Call the callback function for display
-			if ($callback !== null) $callback($query_buf, $res, $lineno);
+			if ($callback !== null)
+				$callback($query_buf, $res, $lineno);
 			// Check for COPY request
 			if (pg_result_status($res) == 4) { // 4 == PGSQL_COPY_FROM
 				while (!feof($fd)) {
@@ -7690,7 +8353,8 @@ class Postgres extends ADODB_base {
 	 *        mapped to sort direction (asc or desc or '' or null) to order by
 	 * @return The SQL query
 	 */
-	function getSelectSQL($table, $show, $values, $ops, $orderby = array()) {
+	function getSelectSQL($table, $show, $values, $ops, $orderby = array())
+	{
 		$this->fieldArrayClean($show);
 
 		// If an empty array is passed in, then show all columns
@@ -7732,23 +8396,23 @@ class Postgres extends ADODB_base {
 					}
 					// Different query format depending on operator type
 					switch ($this->selectOps[$ops[$k]]) {
-					case 'i':
-						// Only clean the field for the inline case
-						// this is because (x), subqueries need to
-						// to allow 'a','b' as input.
-						$this->clean($v);
-						$sql .= "\"{$k}\" {$ops[$k]} '{$v}'";
-						break;
-					case 'p':
-						$sql .= "\"{$k}\" {$ops[$k]}";
-						break;
-					case 'x':
-						$sql .= "\"{$k}\" {$ops[$k]} ({$v})";
-						break;
-					case 't':
-						$sql .= "\"{$k}\" {$ops[$k]}('{$v}')";
-						break;
-					default:
+						case 'i':
+							// Only clean the field for the inline case
+							// this is because (x), subqueries need to
+							// to allow 'a','b' as input.
+							$this->clean($v);
+							$sql .= "\"{$k}\" {$ops[$k]} '{$v}'";
+							break;
+						case 'p':
+							$sql .= "\"{$k}\" {$ops[$k]}";
+							break;
+						case 'x':
+							$sql .= "\"{$k}\" {$ops[$k]} ({$v})";
+							break;
+						case 't':
+							$sql .= "\"{$k}\" {$ops[$k]}('{$v}')";
+							break;
+						default:
 						// Shouldn't happen
 					}
 				}
@@ -7767,7 +8431,8 @@ class Postgres extends ADODB_base {
 				} else {
 					$sql .= '"' . $this->fieldClean($k) . '"';
 				}
-				if (strtoupper($v) == 'DESC') $sql .= " DESC";
+				if (strtoupper($v) == 'DESC')
+					$sql .= " DESC";
 			}
 		}
 
@@ -7796,10 +8461,17 @@ class Postgres extends ADODB_base {
 	 * @return -5 failed setting transaction read only
 	 */
 	function browseQuery(
-		$type, $table, $query, $orderby, $page, $page_size, &$max_pages
+		$type,
+		$table,
+		$query,
+		$orderby,
+		$page,
+		$page_size,
+		&$max_pages
 	) {
 		// Check that we're not going to divide by zero
-		if (!is_numeric($page_size) || $page_size != (int)$page_size || $page_size <= 0) return -3;
+		if (!is_numeric($page_size) || $page_size != (int) $page_size || $page_size <= 0)
+			return -3;
 
 		// If $type is TABLE, then generate the query
 		if (empty($query) && $type == "TABLE") {
@@ -7820,7 +8492,8 @@ class Postgres extends ADODB_base {
 
 		// Open a transaction
 		$status = $this->beginTransaction();
-		if ($status != 0) return -1;
+		if ($status != 0)
+			return -1;
 
 		// If backend supports read only queries, then specify read only mode
 		// to avoid side effects from repeating queries that do writes.
@@ -7834,7 +8507,7 @@ class Postgres extends ADODB_base {
 
 
 		// Count the number of rows
-		$total = (int)$this->selectField($count, 'total');
+		$total = (int) $this->selectField($count, 'total');
 		if ($total < 0) {
 			$this->rollbackTransaction();
 			return -2;
@@ -7845,7 +8518,7 @@ class Postgres extends ADODB_base {
 		$max_pages = ceil($total / $page_size);
 
 		// Check that page is less than or equal to max pages
-		if (!is_numeric($page) || $page != (int)$page || $page > $max_pages || $page < 1) {
+		if (!is_numeric($page) || $page != (int) $page || $page > $max_pages || $page < 1) {
 			$this->rollbackTransaction();
 			return -3;
 		}
@@ -7853,7 +8526,8 @@ class Postgres extends ADODB_base {
 		// Set fetch mode to NUM so that duplicate field names are properly returned
 		// for non-table queries.  Since the SELECT feature only allows selecting one
 		// table, duplicate fields shouldn't appear.
-		if ($type == 'QUERY') $this->conn->setFetchMode(ADODB_FETCH_NUM);
+		if ($type == 'QUERY')
+			$this->conn->setFetchMode(ADODB_FETCH_NUM);
 
 		// Add ORDER BY fields
 		if (!empty($orderby)) {
@@ -7863,7 +8537,8 @@ class Postgres extends ADODB_base {
 				$order_by .= $sep . pg_escape_id($field) . ' ' . $dir;
 				$sep = ", ";
 			}
-		} else $order_by = "";
+		} else
+			$order_by = "";
 
 		$this->lastQueryLimit = $page_size;
 		$this->lastQueryOffset = ($page - 1) * $page_size;
@@ -7884,7 +8559,8 @@ class Postgres extends ADODB_base {
 	 * @param array $key The associative array holding the key to retrieve
 	 * @return ADORecordSet A recordset
 	 */
-	function browseRow($table, $key) {
+	function browseRow($table, $key)
+	{
 		$f_schema = $this->_schema;
 		$this->fieldClean($f_schema);
 		$this->fieldClean($table);
@@ -7908,9 +8584,12 @@ class Postgres extends ADODB_base {
 	 * Change the value of a parameter to 't' or 'f' depending on whether it evaluates to true or false
 	 * @param $parameter the parameter
 	 */
-	function dbBool(&$parameter) {
-		if ($parameter) $parameter = 't';
-		else $parameter = 'f';
+	function dbBool(&$parameter)
+	{
+		if ($parameter)
+			$parameter = 't';
+		else
+			$parameter = 'f';
 
 		return $parameter;
 	}
@@ -7920,7 +8599,8 @@ class Postgres extends ADODB_base {
 	 * @param string $parameter the parameter
 	 * @return bool
 	 */
-	function phpBool($parameter) {
+	function phpBool($parameter)
+	{
 		$parameter = ($parameter == 't');
 		return $parameter;
 	}
@@ -7932,7 +8612,8 @@ class Postgres extends ADODB_base {
 	 * @param $database The database to fetch stats for
 	 * @return A recordset
 	 */
-	function getStatsDatabase($database) {
+	function getStatsDatabase($database)
+	{
 		$this->clean($database);
 
 		$sql = "SELECT * FROM pg_stat_database WHERE datname='{$database}'";
@@ -7945,7 +8626,8 @@ class Postgres extends ADODB_base {
 	 * @param $table The table to fetch stats for
 	 * @return A recordset
 	 */
-	function getStatsTableTuples($table) {
+	function getStatsTableTuples($table)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($table);
@@ -7961,7 +8643,8 @@ class Postgres extends ADODB_base {
 	 * @param $table The table to fetch stats for
 	 * @return A recordset
 	 */
-	function getStatsTableIO($table) {
+	function getStatsTableIO($table)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($table);
@@ -7977,7 +8660,8 @@ class Postgres extends ADODB_base {
 	 * @param $table The table to fetch index stats for
 	 * @return A recordset
 	 */
-	function getStatsIndexTuples($table) {
+	function getStatsIndexTuples($table)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($table);
@@ -7993,7 +8677,8 @@ class Postgres extends ADODB_base {
 	 * @param $table The table to fetch index stats for
 	 * @return A recordset
 	 */
-	function getStatsIndexIO($table) {
+	function getStatsIndexIO($table)
+	{
 		$c_schema = $this->_schema;
 		$this->clean($c_schema);
 		$this->clean($table);
@@ -8007,187 +8692,233 @@ class Postgres extends ADODB_base {
 
 	// Capabilities
 
-	function hasAggregateSortOp() {
+	function hasAggregateSortOp()
+	{
 		return true;
 	}
 
-	function hasAlterAggregate() {
+	function hasAlterAggregate()
+	{
 		return true;
 	}
 
-	function hasAlterColumnType() {
+	function hasAlterColumnType()
+	{
 		return true;
 	}
 
-	function hasAlterDatabaseOwner() {
+	function hasAlterDatabaseOwner()
+	{
 		return true;
 	}
 
-	function hasAlterDatabaseRename() {
+	function hasAlterDatabaseRename()
+	{
 		return true;
 	}
 
-	function hasAlterSchema() {
+	function hasAlterSchema()
+	{
 		return true;
 	}
 
-	function hasAlterSchemaOwner() {
+	function hasAlterSchemaOwner()
+	{
 		return true;
 	}
 
-	function hasAlterSequenceSchema() {
+	function hasAlterSequenceSchema()
+	{
 		return true;
 	}
 
-	function hasAlterSequenceStart() {
+	function hasAlterSequenceStart()
+	{
 		return true;
 	}
 
-	function hasAlterTableSchema() {
+	function hasAlterTableSchema()
+	{
 		return true;
 	}
 
-	function hasAutovacuum() {
+	function hasAutovacuum()
+	{
 		return true;
 	}
 
-	function hasCreateTableLike() {
+	function hasCreateTableLike()
+	{
 		return true;
 	}
 
-	function hasCreateTableLikeWithConstraints() {
+	function hasCreateTableLikeWithConstraints()
+	{
 		return true;
 	}
 
-	function hasCreateTableLikeWithIndexes() {
+	function hasCreateTableLikeWithIndexes()
+	{
 		return true;
 	}
 
-	function hasCreateFieldWithConstraints() {
+	function hasCreateFieldWithConstraints()
+	{
 		return true;
 	}
 
-	function hasDisableTriggers() {
+	function hasDisableTriggers()
+	{
 		return true;
 	}
 
-	function hasAlterDomains() {
+	function hasAlterDomains()
+	{
 		return true;
 	}
 
-	function hasDomainConstraints() {
+	function hasDomainConstraints()
+	{
 		return true;
 	}
 
-	function hasEnumTypes() {
+	function hasEnumTypes()
+	{
 		return true;
 	}
 
-	function hasFTS() {
+	function hasFTS()
+	{
 		return true;
 	}
 
-	function hasFunctionAlterOwner() {
+	function hasFunctionAlterOwner()
+	{
 		return true;
 	}
 
-	function hasFunctionAlterSchema() {
+	function hasFunctionAlterSchema()
+	{
 		return true;
 	}
 
-	function hasFunctionCosting() {
+	function hasFunctionCosting()
+	{
 		return true;
 	}
 
-	function hasFunctionGUC() {
+	function hasFunctionGUC()
+	{
 		return true;
 	}
 
-	function hasGrantOption() {
+	function hasGrantOption()
+	{
 		return true;
 	}
 
-	function hasNamedParams() {
+	function hasNamedParams()
+	{
 		return true;
 	}
 
-	function hasPrepare() {
+	function hasPrepare()
+	{
 		return true;
 	}
 
-	function hasPreparedXacts() {
+	function hasPreparedXacts()
+	{
 		return true;
 	}
 
-	function hasReadOnlyQueries() {
+	function hasReadOnlyQueries()
+	{
 		return true;
 	}
 
-	function hasRecluster() {
+	function hasRecluster()
+	{
 		return true;
 	}
 
-	function hasRoles() {
+	function hasRoles()
+	{
 		return true;
 	}
 
-	function hasServerAdminFuncs() {
+	function hasServerAdminFuncs()
+	{
 		return true;
 	}
 
-	function hasSharedComments() {
+	function hasSharedComments()
+	{
 		return true;
 	}
 
-	function hasQueryCancel() {
+	function hasQueryCancel()
+	{
 		return true;
 	}
 
-	function hasTablespaces() {
+	function hasTablespaces()
+	{
 		return true;
 	}
 
-	function hasUserRename() {
+	function hasUserRename()
+	{
 		return true;
 	}
 
-	function hasUserSignals() {
+	function hasUserSignals()
+	{
 		return true;
 	}
 
-	function hasVirtualTransactionId() {
+	function hasVirtualTransactionId()
+	{
 		return true;
 	}
 
-	function hasAlterDatabase() {
+	function hasAlterDatabase()
+	{
 		return $this->hasAlterDatabaseRename();
 	}
 
-	function hasDatabaseCollation() {
+	function hasDatabaseCollation()
+	{
 		return true;
 	}
 
-	function hasMagicTypes() {
+	function hasMagicTypes()
+	{
 		return true;
 	}
 
-	function hasQueryKill() {
+	function hasQueryKill()
+	{
 		return true;
 	}
 
-	function hasConcurrentIndexBuild() {
+	function hasConcurrentIndexBuild()
+	{
 		return true;
 	}
 
-	function hasForceReindex() {
+	function hasForceReindex()
+	{
 		return false;
 	}
 
-	function hasByteaHexDefault() {
+	function hasByteaHexDefault()
+	{
 		return true;
 	}
 
-	function hasServerOids() {
+	function hasServerOids()
+	{
 		return false;
 	}
 

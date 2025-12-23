@@ -146,6 +146,11 @@ class AppContainer
 		self::instance()->data = $data;
 	}
 
+	/**
+	 * Old Postgres class for legacy code.
+	 * @return PostgresLegacy
+	 * @deprecated Please do not use! Use getPostgres() instead.
+	 */
 	public static function getData(): ?PostgresLegacy
 	{
 		return self::instance()->data;
@@ -156,6 +161,10 @@ class AppContainer
 		self::instance()->postgres = $pg;
 	}
 
+	/**
+	 * New Postgres class for modern code.
+	 * @return PostgresNew
+	 */
 	public static function getPostgres(): ?PostgresNew
 	{
 		return self::instance()->postgres;

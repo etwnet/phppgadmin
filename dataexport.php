@@ -1,7 +1,10 @@
 <?php
 
 use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\Actions\DatabaseActions;
 use PhpPgAdmin\Database\DumpManager;
+use PhpPgAdmin\Database\Dump\DumpFactory;
+use PhpPgAdmin\Database\Actions\TableActions;
 
 /**
  * Does an export to the screen or as a download.  This checks to
@@ -26,6 +29,9 @@ $extensions = [
 // Prevent timeouts on large exports (non-safe mode only)
 if (!ini_get('safe_mode'))
 	set_time_limit(0);
+
+$pg = AppContainer::getPostgres();
+$misc = AppContainer::getMisc();
 
 // if (!isset($_REQUEST['table']) && !isset($_REQUEST['query']))
 // What must we do in this case? Maybe redirect to the homepage?
@@ -60,94 +66,66 @@ if (isset($_REQUEST['what'])) {
 			exit;
 	}
 
-	// Validate that the requested format is available
-	// This will die with error message if format requires pg_dump but it's not available
-	DumpManager::validateFormatAvailable($format, false, $what);
+	// Use internal dumper for SQL/COPY formats if requested or as fallback
+	if (in_array($format, ['sql', 'copy'])) {
+		$use_internal = isset($_REQUEST['use_internal']) || empty(DumpManager::getDumpExecutable(false));
 
-	// Determine export method
-	$use_pg_dump = false;
-	$use_psql_fallback = false;
+		if ($use_internal) {
+			$subject = $_REQUEST['subject'] ?? 'table';
+			$params = [
+				'table' => $_REQUEST['table'] ?? null,
+				'schema' => $_REQUEST['schema'] ?? $pg->_schema,
+				'database' => $_REQUEST['database'] ?? null
+			];
+			$options = [
+				'format' => $format,
+				'oids' => $oids,
+				'clean' => $clean,
+				'if_not_exists' => isset($_REQUEST['if_not_exists']),
+				'structure_only' => ($what === 'structureonly'),
+				'data_only' => ($what === 'dataonly')
+			];
 
-	if (in_array($format, ['copy', 'sql'])) {
-		// For COPY/SQL formats, check pg_dump availability
-		$pg_dump_path = DumpManager::getDumpExecutable(false);
-		if (!empty($pg_dump_path)) {
-			$use_pg_dump = true;
-		} else {
-			// pg_dump not available - check version and try psql COPY
-			$server_info = $misc->getServerInfo();
-			$psql_path = DumpManager::getPsqlExecutable();
-
-			if (!empty($psql_path) && $what === 'dataonly') {
-				// psql available for data-only COPY export
-				$use_psql_fallback = true;
+			// Set headers for download if necessary
+			if ($_REQUEST['output'] == 'download') {
+				header('Content-Type: application/download');
+				header('Content-Disposition: attachment; filename=dump.sql');
+			} else {
+				header('Content-Type: text/plain');
 			}
+
+			$dumper = DumpFactory::create($subject, $pg);
+			$dumper->dump($subject, $params, $options);
+			exit;
 		}
 	}
 
-	// If we're using pg_dump for COPY/SQL format, delegate to dbexport.php
-	if ($use_pg_dump && $what === 'dataonly') {
-		include('./dbexport.php');
-		exit;
-	}
-
-	// If we're using psql COPY fallback, delegate to dbexport.php with fallback flag
-	if ($use_psql_fallback) {
-		include('./dbexport.php');
-		exit;
-	}
-
-	// Make it do a download, if necessary
-	if ($_REQUEST['output'] == 'download') {
-		// Set headers.  MSIE is totally broken for SSL downloading, so
-		// we need to have it download in-place as plain text
-		if (strstr($_SERVER['HTTP_USER_AGENT'], 'MSIE') && isset($_SERVER['HTTPS'])) {
-			header('Content-Type: text/plain');
-		} else {
-			header('Content-Type: application/download');
-
-			if (isset($extensions[$format]))
-				$ext = $extensions[$format];
-			else
-				$ext = 'txt';
-
-			header('Content-Disposition: attachment; filename=dump.' . $ext);
-		}
-	} else {
-		header('Content-Type: text/plain');
-	}
-
-	if (isset($_REQUEST['query']))
-		$_REQUEST['query'] = trim(urldecode($_REQUEST['query']));
-
-	// Set the schema search path
-	if (isset($_REQUEST['search_path'])) {
-		$data->setSearchPath(array_map('trim', explode(',', $_REQUEST['search_path'])));
-	}
-
-	// Set up the dump transaction
-	$status = $data->beginDump();
+	// Validate that the requested format is available
+	$status = $pg->beginDump();
 
 	// If the dump is not dataonly then dump the structure prefix
-	if ($_REQUEST['what'] != 'dataonly')
-		echo $data->getTableDefPrefix($_REQUEST['table'], $clean);
+	if ($_REQUEST['what'] != 'dataonly') {
+		$tableActions = new TableActions($pg);
+		echo $tableActions->getTableDefPrefix($_REQUEST['table'], $clean);
+	}
 
 	// If the dump is not structureonly then dump the actual data
 	if ($_REQUEST['what'] != 'structureonly') {
 		// Get database encoding
-		$dbEncoding = $data->getDatabaseEncoding();
+		$databaseActions = new DatabaseActions($pg);
+		$dbEncoding = $databaseActions->getDatabaseEncoding();
 
 		// Set fetch mode to NUM so that duplicate field names are properly returned
-		$data->conn->setFetchMode(ADODB_FETCH_NUM);
+		$pg->conn->setFetchMode(ADODB_FETCH_NUM);
 
 		// Execute the query, if set, otherwise grab all rows from the table
 		if (isset($_REQUEST['table']))
-			$rs = $data->dumpRelation($_REQUEST['table'], $oids);
+			$rs = $pg->dumpRelation($_REQUEST['table'], $oids);
 		else
-			$rs = $data->conn->Execute($_REQUEST['query']);
+			$rs = $pg->conn->Execute($_REQUEST['query']);
 
 		if ($format == 'copy') {
-			$data->fieldClean($_REQUEST['table']);
+			$pg->fieldClean($_REQUEST['table']);
 			echo "COPY \"{$_REQUEST['table']}\"";
 			if ($oids)
 				echo " WITH OIDS";
@@ -156,7 +134,7 @@ if (isset($_REQUEST['what'])) {
 				$first = true;
 				foreach ($rs->fields as $k => $v) {
 					// Escape value
-					$v = $data->escapeBytea($v);
+					$v = $pg->escapeBytea($v);
 
 					// We add an extra escaping slash onto octal encoded characters
 					$v = preg_replace('/\\\\([0-7]{3})/', '\\\\\1', $v);
@@ -185,7 +163,7 @@ if (isset($_REQUEST['what'])) {
 				$j = 0;
 				foreach ($rs->fields as $k => $v) {
 					$finfo = $rs->fetchField($j++);
-					if ($finfo->name == $data->id && !$oids)
+					if ($finfo->name == $pg->id && !$oids)
 						continue;
 					echo "\t\t<th>", $misc->printVal($finfo->name, true), "</th>\r\n";
 				}
@@ -196,7 +174,7 @@ if (isset($_REQUEST['what'])) {
 				$j = 0;
 				foreach ($rs->fields as $k => $v) {
 					$finfo = $rs->fetchField($j++);
-					if ($finfo->name == $data->id && !$oids)
+					if ($finfo->name == $pg->id && !$oids)
 						continue;
 					echo "\t\t<td>", $misc->printVal($v, true, $finfo->type), "</td>\r\n";
 				}
@@ -238,7 +216,7 @@ if (isset($_REQUEST['what'])) {
 			echo "\t</records>\n";
 			echo "</data>\n";
 		} elseif ($format == 'sql') {
-			$data->fieldClean($_REQUEST['table']);
+			$pg->fieldClean($_REQUEST['table']);
 			while (!$rs->EOF) {
 				echo "INSERT INTO \"{$_REQUEST['table']}\" (";
 				$first = true;
@@ -247,9 +225,9 @@ if (isset($_REQUEST['what'])) {
 					$finfo = $rs->fetchField($j++);
 					$k = $finfo->name;
 					// SQL (INSERT) format cannot handle oids
-					//						if ($k == $data->id) continue;
+					//						if ($k == $pg->id) continue;
 					// Output field
-					$data->fieldClean($k);
+					$pg->fieldClean($k);
 					if ($first)
 						echo "\"{$k}\"";
 					else
@@ -320,12 +298,13 @@ if (isset($_REQUEST['what'])) {
 	// If the dump is not dataonly then dump the structure suffix
 	if ($_REQUEST['what'] != 'dataonly') {
 		// Set fetch mode back to ASSOC for the table suffix to work
-		$data->conn->setFetchMode(ADODB_FETCH_ASSOC);
-		echo $data->getTableDefSuffix($_REQUEST['table']);
+		$pg->conn->setFetchMode(ADODB_FETCH_ASSOC);
+		$tableActions = new TableActions($pg);
+		echo $tableActions->getTableDefSuffix($_REQUEST['table']);
 	}
 
 	// Finish the dump transaction
-	$status = $data->endDump();
+	$status = $pg->endDump();
 } else {
 
 	if (!isset($_REQUEST['query']) or empty($_REQUEST['query']))
@@ -383,6 +362,10 @@ if (isset($_REQUEST['what'])) {
 	echo "</table>\n";
 
 	echo "<h3>{$lang['stroptions']}</h3>\n";
+	echo "<p><input type=\"checkbox\" id=\"s_clean\" name=\"s_clean\" value=\"true\" /><label for=\"s_clean\">{$lang['strdrop']}</label>\n";
+	echo "<br/><input type=\"checkbox\" id=\"if_not_exists\" name=\"if_not_exists\" value=\"true\" /><label for=\"if_not_exists\">Use IF NOT EXISTS</label>\n";
+	echo "<br/><input type=\"checkbox\" id=\"use_internal\" name=\"use_internal\" value=\"true\" /><label for=\"use_internal\">Force internal PHP dumper</label></p>\n";
+
 	echo "<p><input type=\"radio\" id=\"output1\" name=\"output\" value=\"show\" checked=\"checked\" /><label for=\"output1\">{$lang['strshow']}</label>\n";
 	echo "<br/><input type=\"radio\" id=\"output2\" name=\"output\" value=\"download\" /><label for=\"output2\">{$lang['strdownload']}</label></p>\n";
 

@@ -2,6 +2,8 @@
 
 namespace PhpPgAdmin\Database;
 
+use ADORecordSet;
+
 class Postgres extends AbstractConnection
 {
 	// PostgreSQL-specific constants and metadata
@@ -617,6 +619,73 @@ class Postgres extends AbstractConnection
 	function getLastError()
 	{
 		return pg_last_error($this->conn->_connectionID);
+	}
+
+	/**
+	 * Sets up the data object for a dump.  eg. Starts the appropriate
+	 * transaction, sets variables, etc.
+	 * @return 0 success
+	 */
+	function beginDump()
+	{
+		// Begin serializable transaction (to dump consistent data)
+		$status = $this->beginTransaction();
+		if ($status != 0)
+			return -1;
+
+		// Set serializable
+		$sql = "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE";
+		$status = $this->execute($sql);
+		if ($status != 0) {
+			$this->rollbackTransaction();
+			return -1;
+		}
+
+		// Set datestyle to ISO
+		$sql = "SET DATESTYLE = ISO";
+		$status = $this->execute($sql);
+		if ($status != 0) {
+			$this->rollbackTransaction();
+			return -1;
+		}
+
+		// Set extra_float_digits to 2
+		$sql = "SET extra_float_digits TO 2";
+		$status = $this->execute($sql);
+		if ($status != 0) {
+			$this->rollbackTransaction();
+			return -1;
+		}
+
+		return 0;
+	}
+
+	/**
+	 * Ends the data object for a dump.
+	 * @return 0 success
+	 */
+	function endDump()
+	{
+		return $this->endTransaction();
+	}
+
+	/**
+	 * Returns a recordset of all columns in a relation.  Used for data export.
+	 * @@ Note: Really needs to use a cursor
+	 * @param $relation The name of a relation
+	 * @return ADORecordSet|int A recordset on success, -1 Failed to set datestyle
+	 */
+	function dumpRelation($relation, $oids)
+	{
+		$this->fieldClean($relation);
+
+		// Actually retrieve the rows
+		if ($oids)
+			$oid_str = $this->id . ', ';
+		else
+			$oid_str = '';
+
+		return $this->selectSet("SELECT {$oid_str}* FROM \"{$relation}\"");
 	}
 
 

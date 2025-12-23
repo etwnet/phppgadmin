@@ -2,6 +2,7 @@
 
 use PhpPgAdmin\Core\AppContainer;
 use PhpPgAdmin\Database\DumpManager;
+use PhpPgAdmin\Database\Dump\DumpFactory;
 
 /**
  * Does an export of a database, schema, or table (via pg_dump or php fallback)
@@ -22,15 +23,120 @@ AppContainer::setSkipHtmlFrame(true);
 $f_schema = $f_object = '';
 
 // Are we doing a cluster-wide dump or just a per-database dump
-$dumpall = ($_REQUEST['subject'] == 'server');
+$dumpall = $_REQUEST['subject'] == 'server';
+
+$output_method = $_REQUEST['output'] ?? 'show';
+
+// Generate timestamp for download filename
+$timestamp = date('Ymd_His');
+$filename_base = 'dump_' . $timestamp;
+
+// Add context to filename (database/schema/table and export type)
+$filename_parts = [];
+
+// Add database name if available
+if (isset($_REQUEST['database']) && !$dumpall) {
+	$filename_parts[] = $_REQUEST['database'];
+}
+
+// Add schema name if available
+if (isset($_REQUEST['schema'])) {
+	$filename_parts[] = $_REQUEST['schema'];
+}
+
+// Add table or view name if available
+if (isset($_REQUEST['table'])) {
+	$filename_parts[] = $_REQUEST['table'];
+} elseif (isset($_REQUEST['view'])) {
+	$filename_parts[] = $_REQUEST['view'];
+}
+
+// Add export type shorthand
+$what_map = [
+	'dataonly' => 'data',
+	'structureonly' => 'struct',
+	'structureanddata' => 'full'
+];
+$what_short = $what_map[$_REQUEST['what']] ?? 'export';
+$filename_parts[] = $what_short;
+
+// Build final filename
+if (!empty($filename_parts)) {
+	$filename_base .= '_' . implode('_', array_map(
+		function ($v) {
+			return preg_replace('/[^a-zA-Z0-9_-]/', '', $v); },
+		$filename_parts
+	));
+}
 
 // Detect pg_dump/pg_dumpall executable with automatic fallback
 $exe_path = DumpManager::getDumpExecutable($dumpall);
 
+$pg = AppContainer::getPostgres();
+
 if (empty($exe_path)) {
-	// pg_dump not available - this should have been caught by validation in dataexport.php
-	echo "Error: " . ($dumpall ? 'pg_dumpall' : 'pg_dump') . " executable not found.\n";
-	echo "Please use browser back button to select an available export format.\n";
+	// pg_dump not available - use internal dumper
+	$subject = $_REQUEST['subject'] ?? 'database';
+	$params = [
+		'table' => $_REQUEST['table'] ?? null,
+		'view' => $_REQUEST['view'] ?? null,
+		'schema' => $_REQUEST['schema'] ?? null,
+		'database' => $_REQUEST['database'] ?? null
+	];
+	$options = [
+		'format' => $_REQUEST['d_format'] ?? 'sql',
+		'clean' => isset($_REQUEST['s_clean']) || isset($_REQUEST['sd_clean']),
+		'if_not_exists' => isset($_REQUEST['if_not_exists']),
+		'structure_only' => ($_REQUEST['what'] === 'structureonly'),
+		'data_only' => ($_REQUEST['what'] === 'dataonly')
+	];
+
+	if ($output_method === 'download') {
+		header('Content-Type: application/download');
+		header('Content-Disposition: attachment; filename=' . $filename_base . '.sql');
+	} else {
+		header('Content-Type: text/html; charset=utf-8');
+		?>
+		<style>
+			.export-controls {
+				margin-bottom: 15px;
+			}
+
+			.export-controls a {
+				margin-right: 15px;
+				padding: 5px 10px;
+				background: #f0f0f0;
+				border: 1px solid #ccc;
+				text-decoration: none;
+				border-radius: 3px;
+			}
+
+			.export-controls a:hover {
+				background: #e0e0e0;
+			}
+
+			textarea {
+				width: 100%;
+				height: calc(100vh - 120px);
+				border: 1px solid #ccc;
+				font-family: monospace;
+				padding: 10px;
+				box-sizing: border-box;
+			}
+		</style>
+		<div class="export-controls">
+			<a href="javascript:history.back()">← Back</a>
+			<a href="javascript:location.reload()">↻ Reload</a>
+		</div>
+		<textarea readonly><?php
+	}
+
+	$dumper = DumpFactory::create($subject, $pg);
+	$dumper->dump($subject, $params, $options);
+
+	if ($output_method !== 'download') {
+		echo "</textarea>";
+	}
 	exit;
 }
 
@@ -83,51 +189,6 @@ if ($use_psql_fallback) {
 	}
 }
 
-$output_method = $_REQUEST['output'] ?? 'show';
-
-// Generate timestamp for download filename
-$timestamp = date('Ymd_His');
-$filename_base = 'dump_' . $timestamp;
-
-// Add context to filename (database/schema/table and export type)
-$filename_parts = [];
-
-// Add database name if available
-if (isset($_REQUEST['database']) && !$dumpall) {
-	$filename_parts[] = $_REQUEST['database'];
-}
-
-// Add schema name if available
-if (isset($_REQUEST['schema'])) {
-	$filename_parts[] = $_REQUEST['schema'];
-}
-
-// Add table or view name if available
-if (isset($_REQUEST['table'])) {
-	$filename_parts[] = $_REQUEST['table'];
-} elseif (isset($_REQUEST['view'])) {
-	$filename_parts[] = $_REQUEST['view'];
-}
-
-// Add export type shorthand
-$what_map = [
-	'dataonly' => 'data',
-	'structureonly' => 'struct',
-	'structureanddata' => 'full'
-];
-$what_short = $what_map[$_REQUEST['what']] ?? 'export';
-$filename_parts[] = $what_short;
-
-// Build final filename
-if (!empty($filename_parts)) {
-	$filename_base .= '_' . implode('_', array_map(
-		'preg_replace',
-		['/[^a-zA-Z0-9_-]/'],
-		['_'],
-		$filename_parts
-	));
-}
-
 // All validation passed - set headers and output HTML
 switch ($output_method) {
 	case 'show':
@@ -146,47 +207,47 @@ switch ($output_method) {
 // For show mode, start HTML output with textarea and links
 if ($output_method === 'show') {
 	?>
-	<style>
-		/*
-									body {
-										font-family: monospace;
-										margin: 10px;
-									}
-									*/
+		<style>
+			/*
+												body {
+													font-family: monospace;
+													margin: 10px;
+												}
+												*/
 
-		.export-controls {
-			margin-bottom: 15px;
-		}
+			.export-controls {
+				margin-bottom: 15px;
+			}
 
-		.export-controls a {
-			margin-right: 15px;
-			padding: 5px 10px;
-			background: #f0f0f0;
-			border: 1px solid #ccc;
-			text-decoration: none;
-			border-radius: 3px;
-		}
+			.export-controls a {
+				margin-right: 15px;
+				padding: 5px 10px;
+				background: #f0f0f0;
+				border: 1px solid #ccc;
+				text-decoration: none;
+				border-radius: 3px;
+			}
 
-		.export-controls a:hover {
-			background: #e0e0e0;
-		}
+			.export-controls a:hover {
+				background: #e0e0e0;
+			}
 
-		textarea {
-			width: 100%;
-			height: calc(100vh - 120px);
-			border: 1px solid #ccc;
-			font-family: monospace;
-			/*font-size: 12px;*/
-			padding: 10px;
-			box-sizing: border-box;
-		}
-	</style>
-	<div class="export-controls">
-		<a href="javascript:history.back()">← Back</a>
-		<a href="javascript:location.reload()">↻ Reload</a>
-	</div>
-	<?php
-	echo "<textarea readonly>";
+			textarea {
+				width: 100%;
+				height: calc(100vh - 120px);
+				border: 1px solid #ccc;
+				font-family: monospace;
+				/*font-size: 12px;*/
+				padding: 10px;
+				box-sizing: border-box;
+			}
+		</style>
+		<div class="export-controls">
+			<a href="javascript:history.back()">← Back</a>
+			<a href="javascript:location.reload()">↻ Reload</a>
+		</div>
+		<?php
+		echo "<textarea readonly>";
 }
 
 // Output dump header with version info
@@ -362,11 +423,11 @@ if ($output_method === 'show') {
 	}
 	echo "</textarea>\n";
 	?>
-	<div class="export-controls" style="margin-top: 15px;">
-		<a href="javascript:history.back()">← Back</a>
-		<a href="javascript:location.reload()">↻ Reload</a>
-	</div>
-	<?php
+		<div class="export-controls" style="margin-top: 15px;">
+			<a href="javascript:history.back()">← Back</a>
+			<a href="javascript:location.reload()">↻ Reload</a>
+		</div>
+		<?php
 } else {
 	// For downloads, output as-is (binary or plain text)
 	passthru($cmd);

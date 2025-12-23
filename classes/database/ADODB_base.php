@@ -9,13 +9,17 @@
 include_once('./libraries/errorhandler.inc.php');
 include_once('./libraries/adodb/adodb.inc.php');
 
-class ADODB_base {
+/**
+ * @deprecated please use /libraries/Database/AbstractConnection instead.
+ */
+class ADODB_base
+{
 
 	/**
 	 * @var ADOConnection
 	 */
 	var $conn;
-	
+
 	// The backend platform.  Set to UNKNOWN by default.
 	var $platform = 'UNKNOWN';
 
@@ -23,7 +27,8 @@ class ADODB_base {
 	 * Base constructor
 	 * @param $conn ADOConnection The connection object
 	 */
-	function __construct($conn) {
+	function __construct($conn)
+	{
 		$this->conn = $conn;
 		//$conn->LogSQL(true);
 	}
@@ -32,7 +37,8 @@ class ADODB_base {
 	 * Turns on or off query debugging
 	 * @param $debug True to turn on debugging, false otherwise
 	 */
-	function setDebug($debug) {
+	function setDebug($debug)
+	{
 		$this->conn->debug = $debug;
 	}
 
@@ -41,17 +47,19 @@ class ADODB_base {
 	 * @param $str The string to clean, by reference
 	 * @return The cleaned string
 	 */
-	function clean(&$str) {
+	function clean(&$str)
+	{
 		$str = addslashes($str);
 		return $str;
 	}
-	
+
 	/**
 	 * Cleans (escapes) an object name (eg. table, field)
 	 * @param $str The string to clean, by reference
 	 * @return The cleaned string
 	 */
-	function fieldClean(&$str) {
+	function fieldClean(&$str)
+	{
 		$str = str_replace('"', '""', $str);
 		return $str;
 	}
@@ -61,16 +69,18 @@ class ADODB_base {
 	 * @param $arr The array to clean, by reference
 	 * @return The cleaned array
 	 */
-	function arrayClean(&$arr) {
+	function arrayClean(&$arr)
+	{
 		return $arr = array_map('addslashes', $arr);
 	}
-	
+
 	/**
 	 * Executes a query on the underlying connection
 	 * @param string $sql The SQL query to execute
 	 * @return int error number
 	 */
-	function execute($sql) {
+	function execute($sql)
+	{
 		// Execute the statement
 		$this->conn->Execute($sql);
 
@@ -82,7 +92,8 @@ class ADODB_base {
 	 * Closes the connection the database class
 	 * relies on.
 	 */
-	function close() {
+	function close()
+	{
 		$this->conn->close();
 	}
 
@@ -93,7 +104,8 @@ class ADODB_base {
 	 * @param string $sql The SQL statement to be executed
 	 * @return ADORecordSet|int A recordset
 	 */
-	function selectSet($sql) {
+	function selectSet($sql)
+	{
 
 		$start = microtime(true);
 
@@ -103,15 +115,17 @@ class ADODB_base {
 		$end = microtime(true);
 		$this->lastQueryTime = $end - $start;
 
-		if (!$rs) return $this->conn->ErrorNo();
- 
- 		return $rs;	
- 	}
+		if (!$rs)
+			return $this->conn->ErrorNo();
 
-	public function getLastQueryTime() {
+		return $rs;
+	}
+
+	public function getLastQueryTime()
+	{
 		return $this->lastQueryTime;
 	}
- 	
+
 	/**
 	 * Retrieves a single value from a query
 	 *
@@ -122,13 +136,16 @@ class ADODB_base {
 	 * @return mixed A single field value
 	 * @return -1 No rows were found
 	 */
-	function selectField($sql, $field) {
+	function selectField($sql, $field)
+	{
 		// Execute the statement
 		$rs = $this->conn->Execute($sql);
 
 		// If failure, or no rows returned, return error value
-		if (!$rs) return $this->conn->ErrorNo();
-		elseif ($rs->RecordCount() == 0) return -1;
+		if (!$rs)
+			return $this->conn->ErrorNo();
+		elseif ($rs->RecordCount() == 0)
+			return -1;
 
 		return $rs->fields[$field];
 	}
@@ -142,7 +159,8 @@ class ADODB_base {
 	 * @return -1 on referential integrity violation
 	 * @return -2 on no rows deleted
 	 */
-	function delete($table, $conditions, $schema = '') {
+	function delete($table, $conditions, $schema = '')
+	{
 		$this->fieldClean($table);
 
 		if (!empty($schema)) {
@@ -152,11 +170,13 @@ class ADODB_base {
 
 		// Build clause
 		$sql = '';
-		foreach($conditions as $key => $value) {
+		foreach ($conditions as $key => $value) {
 			$this->clean($key);
 			$this->clean($value);
-			if ($sql) $sql .= " AND \"{$key}\"='{$value}'";
-			else $sql = "DELETE FROM {$schema}\"{$table}\" WHERE \"{$key}\"='{$value}'";
+			if ($sql)
+				$sql .= " AND \"{$key}\"='{$value}'";
+			else
+				$sql = "DELETE FROM {$schema}\"{$table}\" WHERE \"{$key}\"='{$value}'";
 		}
 
 		// Check for failures
@@ -167,7 +187,8 @@ class ADODB_base {
 		}
 
 		// Check for no rows modified
-		if ($this->conn->Affected_Rows() == 0) return -2;
+		if ($this->conn->Affected_Rows() == 0)
+			return -2;
 
 		return $this->conn->ErrorNo();
 	}
@@ -180,22 +201,27 @@ class ADODB_base {
 	 * @return -1 if a unique constraint is violated
 	 * @return -2 if a referential constraint is violated
 	 */
-	function insert($table, $vars) {
+	function insert($table, $vars)
+	{
 		$this->fieldClean($table);
 
 		// Build clause
 		if (sizeof($vars) > 0) {
 			$fields = '';
 			$values = '';
-			foreach($vars as $key => $value) {
+			foreach ($vars as $key => $value) {
 				$this->clean($key);
 				$this->clean($value);
 
-				if ($fields) $fields .= ", \"{$key}\"";
-				else $fields = "INSERT INTO \"{$table}\" (\"{$key}\"";
+				if ($fields)
+					$fields .= ", \"{$key}\"";
+				else
+					$fields = "INSERT INTO \"{$table}\" (\"{$key}\"";
 
-				if ($values) $values .= ", '{$value}'";
-				else $values = ") VALUES ('{$value}'";
+				if ($values)
+					$values .= ", '{$value}'";
+				else
+					$values = ") VALUES ('{$value}'";
 			}
 			$sql = $fields . $values . ')';
 		}
@@ -224,31 +250,38 @@ class ADODB_base {
 	 * @return -2 if a referential constraint is violated
 	 * @return -3 on no rows deleted
 	 */
-	function update($table, $vars, $where, $nulls = array()) {
+	function update($table, $vars, $where, $nulls = array())
+	{
 		$this->fieldClean($table);
 
 		$setClause = '';
 		$whereClause = '';
 
 		// Populate the syntax arrays
-		foreach($vars as $key => $value) {
+		foreach ($vars as $key => $value) {
 			$this->fieldClean($key);
 			$this->clean($value);
-			if ($setClause) $setClause .= ", \"{$key}\"='{$value}'";
-			else $setClause = "UPDATE \"{$table}\" SET \"{$key}\"='{$value}'";
+			if ($setClause)
+				$setClause .= ", \"{$key}\"='{$value}'";
+			else
+				$setClause = "UPDATE \"{$table}\" SET \"{$key}\"='{$value}'";
 		}
 
-		foreach($nulls as $value) {
+		foreach ($nulls as $value) {
 			$this->fieldClean($value);
-			if ($setClause) $setClause .= ", \"{$value}\"=NULL";
-			else $setClause = "UPDATE \"{$table}\" SET \"{$value}\"=NULL";
+			if ($setClause)
+				$setClause .= ", \"{$value}\"=NULL";
+			else
+				$setClause = "UPDATE \"{$table}\" SET \"{$value}\"=NULL";
 		}
 
-		foreach($where as $key => $value) {
+		foreach ($where as $key => $value) {
 			$this->fieldClean($key);
 			$this->clean($value);
-			if ($whereClause) $whereClause .= " AND \"{$key}\"='{$value}'";
-			else $whereClause = " WHERE \"{$key}\"='{$value}'";
+			if ($whereClause)
+				$whereClause .= " AND \"{$key}\"='{$value}'";
+			else
+				$whereClause = " WHERE \"{$key}\"='{$value}'";
 		}
 
 		// Check for failures
@@ -262,7 +295,8 @@ class ADODB_base {
 		}
 
 		// Check for no rows modified
-		if ($this->conn->Affected_Rows() == 0) return -3;
+		if ($this->conn->Affected_Rows() == 0)
+			return -3;
 
 		return $this->conn->ErrorNo();
 	}
@@ -271,7 +305,8 @@ class ADODB_base {
 	 * Begin a transaction
 	 * @return 0 success
 	 */
-	function beginTransaction() {
+	function beginTransaction()
+	{
 		return !$this->conn->BeginTrans();
 	}
 
@@ -279,7 +314,8 @@ class ADODB_base {
 	 * End a transaction
 	 * @return 0 success
 	 */
-	function endTransaction() {
+	function endTransaction()
+	{
 		return !$this->conn->CommitTrans();
 	}
 
@@ -287,7 +323,8 @@ class ADODB_base {
 	 * Roll back a transaction
 	 * @return 0 success
 	 */
-	function rollbackTransaction() {
+	function rollbackTransaction()
+	{
 		return !$this->conn->RollbackTrans();
 	}
 
@@ -295,7 +332,8 @@ class ADODB_base {
 	 * Get the backend platform
 	 * @return The backend platform
 	 */
-	function getPlatform() {
+	function getPlatform()
+	{
 		//return $this->conn->platform;
 		return "UNKNOWN";
 	}
@@ -306,7 +344,8 @@ class ADODB_base {
 	 * Change the value of a parameter to database representation depending on whether it evaluates to true or false
 	 * @param $parameter the parameter
 	 */
-	function dbBool(&$parameter) {
+	function dbBool(&$parameter)
+	{
 		return $parameter;
 	}
 
@@ -314,7 +353,8 @@ class ADODB_base {
 	 * Change a parameter from database representation to a boolean, (others evaluate to false)
 	 * @param $parameter the parameter
 	 */
-	function phpBool($parameter) {
+	function phpBool($parameter)
+	{
 		return $parameter;
 	}
 
@@ -323,20 +363,21 @@ class ADODB_base {
 	 * @param $arr String representing the DB array
 	 * @return A PHP array
 	 */
-	function phpArray($dbarr) {
+	function phpArray($dbarr)
+	{
 		// Take off the first and last characters (the braces)
 		$arr = substr($dbarr, 1, strlen($dbarr) - 2);
 
 		// Pick out array entries by carefully parsing.  This is necessary in order
 		// to cope with double quotes and commas, etc.
 		$elements = array();
-		$i = $j = 0;		
+		$i = $j = 0;
 		$in_quotes = false;
 		while ($i < strlen($arr)) {
 			// If current char is a double quote and it's not escaped, then
 			// enter quoted bit
 			$char = substr($arr, $i, 1);
-			if ($char == '"' && ($i == 0 || substr($arr, $i - 1, 1) != '\\')) 
+			if ($char == '"' && ($i == 0 || substr($arr, $i - 1, 1) != '\\'))
 				$in_quotes = !$in_quotes;
 			elseif ($char == ',' && !$in_quotes) {
 				// Add text so far to the array
