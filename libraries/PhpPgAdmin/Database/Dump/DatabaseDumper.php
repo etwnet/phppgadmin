@@ -17,12 +17,18 @@ class DatabaseDumper extends AbstractDumper
             return;
         }
 
+        $c_database = $database;
+        $this->connection->clean($c_database);
+
         $this->writeHeader("Database: {$database}");
 
         // Database settings
         $this->write("-- Database settings\n");
-        $this->write("CREATE DATABASE " . $this->getIfNotExists($options) . "\"{$database}\";\n");
-        $this->write("\\c \"{$database}\"\n\n");
+        if (!empty($options['clean'])) {
+            $this->write("DROP DATABASE IF EXISTS \"" . addslashes($c_database) . "\" CASCADE;\n");
+        }
+        $this->write("CREATE DATABASE " . $this->getIfNotExists($options) . "\"" . addslashes($c_database) . "\";\n");
+        $this->write("\\c \"" . addslashes($c_database) . "\"\n\n");
 
         // Iterate through schemas
         $schemaActions = new SchemaActions($this->connection);

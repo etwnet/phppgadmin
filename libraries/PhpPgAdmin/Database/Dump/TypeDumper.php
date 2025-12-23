@@ -59,6 +59,14 @@ class TypeDumper extends AbstractDumper
         }
 
         $this->write("CREATE TYPE \"{$schema}\".\"{$typeName}\" AS ENUM (" . implode(', ', $values) . ");\n");
+
+        // Add comment if present
+        $typeActions = new TypeActions($this->connection);
+        $typeInfo = $typeActions->getType($typeName);
+        if ($typeInfo && !$typeInfo->EOF && $typeInfo->fields['comment'] !== null) {
+            $this->connection->clean($typeInfo->fields['comment']);
+            $this->write("COMMENT ON TYPE \"" . addslashes($schema) . "\".\"" . addslashes($typeName) . "\" IS '{$typeInfo->fields['comment']}';\\n");
+        }
     }
 
     protected function dumpComposite($typeName, $schema, $options)
@@ -80,12 +88,20 @@ class TypeDumper extends AbstractDumper
         }
 
         $this->write("CREATE TYPE \"{$schema}\".\"{$typeName}\" AS (" . implode(', ', $fields) . ");\n");
+
+        // Add comment if present
+        $typeActions = new TypeActions($this->connection);
+        $typeInfo = $typeActions->getType($typeName);
+        if ($typeInfo && !$typeInfo->EOF && $typeInfo->fields['comment'] !== null) {
+            $this->connection->clean($typeInfo->fields['comment']);
+            $this->write("COMMENT ON TYPE \"" . addslashes($schema) . "\".\"" . addslashes($typeName) . "\" IS '{$typeInfo->fields['comment']}';\\n");
+        }
     }
 
     protected function dumpBase($fields, $schema, $options)
     {
         $typeName = $fields['typname'];
-        $this->write("CREATE TYPE \"{$schema}\".\"{$typeName}\" (\n");
+        $this->write("CREATE TYPE \"" . addslashes($schema) . "\".\"" . addslashes($typeName) . "\" (\n");
         $this->write("    INPUT = {$fields['typin']},\n");
         $this->write("    OUTPUT = {$fields['typout']}");
 

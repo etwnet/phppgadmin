@@ -24,9 +24,12 @@ class SchemaDumper extends AbstractDumper
 
         $this->writeHeader("Schema: {$schema}");
 
-        $this->writeDrop('SCHEMA', $schema, $options);
-        $this->write("CREATE SCHEMA " . $this->getIfNotExists($options) . "\"{$schema}\";\n");
-        $this->write("SET search_path = \"{$schema}\", pg_catalog;\n\n");
+        $c_schema = $schema;
+        $this->connection->clean($c_schema);
+
+        $this->writeDrop('SCHEMA', $c_schema, $options);
+        $this->write("CREATE SCHEMA " . $this->getIfNotExists($options) . "\"" . addslashes($c_schema) . "\";\n");
+        $this->write("SET search_path = \"" . addslashes($c_schema) . "\", pg_catalog;\n\n");
 
         // 1. Types & Domains
         $this->dumpTypes($schema, $options);

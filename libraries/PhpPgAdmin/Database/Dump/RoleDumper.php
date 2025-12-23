@@ -29,7 +29,7 @@ class RoleDumper extends AbstractDumper
 
             $this->writeDrop('ROLE', $rolename, $options);
 
-            $this->write("CREATE ROLE \"{$rolename}\"");
+            $this->write("CREATE ROLE \"" . addslashes($rolename) . "\"");
 
             $attrs = [];
             if ($this->connection->phpBool($roles->fields['rolsuper']))
@@ -65,13 +65,15 @@ class RoleDumper extends AbstractDumper
 
             // Memberships
             $members = $roleActions->getMembers($rolename);
-            while ($members && !$members->EOF) {
-                $this->write("GRANT \"{$rolename}\" TO \"{$members->fields['rolname']}\"");
-                if ($this->connection->phpBool($members->fields['admin_option'])) {
-                    $this->write(" WITH ADMIN OPTION");
+            if ($members) {
+                while (!$members->EOF) {
+                    $this->write("GRANT \"" . addslashes($rolename) . "\" TO \"" . addslashes($members->fields['rolname']) . "\"");
+                    if ($this->connection->phpBool($members->fields['admin_option'])) {
+                        $this->write(" WITH ADMIN OPTION");
+                    }
+                    $this->write(";\n");
+                    $members->moveNext();
                 }
-                $this->write(";\n");
-                $members->moveNext();
             }
 
             $roles->moveNext();

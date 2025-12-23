@@ -27,11 +27,23 @@ class TablespaceDumper extends AbstractDumper
 
             $this->writeDrop('TABLESPACE', $spcname, $options);
 
-            $this->write("CREATE TABLESPACE \"{$spcname}\"");
+            $this->write("CREATE TABLESPACE \"" . addslashes($spcname) . "\"");
             if (!empty($tablespaces->fields['spclocation'])) {
-                $this->write(" LOCATION '{$tablespaces->fields['spclocation']}'");
+                $location = $tablespaces->fields['spclocation'];
+                $this->connection->clean($location);
+                $this->write(" LOCATION '{$location}'");
             }
             $this->write(";\n");
+
+            // Add comment if present
+            $c_spcname = $spcname;
+            $this->connection->clean($c_spcname);
+            $commentSql = "SELECT pg_catalog.obj_description(oid, 'pg_tablespace') AS comment FROM pg_catalog.pg_tablespace WHERE spcname = '{$c_spcname}'";
+            $commentRs = $this->connection->selectSet($commentSql);
+            if ($commentRs && !$commentRs->EOF && !empty($commentRs->fields['comment'])) {
+                $this->connection->clean($commentRs->fields['comment']);
+                $this->write("COMMENT ON TABLESPACE \"" . addslashes($spcname) . "\" IS '{$commentRs->fields['comment']}';\\n");
+            }
 
             $this->writePrivileges($spcname, 'tablespace');
 

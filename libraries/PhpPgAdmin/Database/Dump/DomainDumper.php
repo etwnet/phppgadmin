@@ -16,44 +16,52 @@ class DomainDumper extends AbstractDumper
             return;
         }
 
-        $this->connection->clean($domainName);
-        $this->connection->clean($schema);
+        $c_domain = $domainName;
+        $c_schema = $schema;
+        $this->connection->clean($c_domain);
+        $this->connection->clean($c_schema);
 
         $sql = "SELECT t.oid, t.typname, pg_catalog.format_type(t.typbasetype, t.typtypmod) AS basetype,
                        t.typdefault, t.typnotnull,
                        (SELECT pg_catalog.obj_description(t.oid, 'pg_type')) AS comment
                 FROM pg_catalog.pg_type t
                 JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
-                WHERE t.typname = '{$domainName}' AND n.nspname = '{$schema}' AND t.typtype = 'd'";
+                WHERE t.typname = '{$c_domain}' AND n.nspname = '{$c_schema}' AND t.typtype = 'd'";
 
         $rs = $this->connection->selectSet($sql);
 
-        if ($rs && !$rs->EOF) {
-            $this->write("\n-- Domain: \"{$schema}\".\"{$domainName}\"\n");
-            $this->writeDrop('DOMAIN', "{$schema}\".\"{$domainName}", $options);
-
-            $this->write("CREATE DOMAIN \"{$schema}\".\"{$domainName}\" AS {$rs->fields['basetype']}");
-
-            if ($rs->fields['typdefault'] !== null) {
-                $this->write("\n    DEFAULT {$rs->fields['typdefault']}");
-            }
-
-            if ($this->connection->phpBool($rs->fields['typnotnull'])) {
-                $this->write("\n    NOT NULL");
-            }
-
-            // Constraints
-            $this->dumpConstraints($rs->fields['oid'], $options);
-
-            $this->write(";\n");
-
-            if ($rs->fields['comment'] !== null) {
-                $this->connection->clean($rs->fields['comment']);
-                $this->write("COMMENT ON DOMAIN \"{$schema}\".\"{$domainName}\" IS '{$rs->fields['comment']}';\n");
-            }
-
-            $this->writePrivileges($domainName, 'type', $schema);
+        if (!$rs) {
+            return;
         }
+
+        if ($rs->EOF) {
+            return;
+        }
+
+        $this->write("\n-- Domain: \"" . addslashes($c_schema) . "\".\"" . addslashes($c_domain) . "\"\n");
+        $this->writeDrop('DOMAIN', "\"" . addslashes($c_schema) . "\".\"" . addslashes($c_domain), $options);
+
+        $this->write("CREATE DOMAIN \"" . addslashes($c_schema) . "\".\"" . addslashes($c_domain) . "\" AS {$rs->fields['basetype']}");
+
+        if ($rs->fields['typdefault'] !== null) {
+            $this->write("\n    DEFAULT {$rs->fields['typdefault']}");
+        }
+
+        if ($this->connection->phpBool($rs->fields['typnotnull'])) {
+            $this->write("\n    NOT NULL");
+        }
+
+        // Constraints
+        $this->dumpConstraints($rs->fields['oid'], $options);
+
+        $this->write(";\n");
+
+        if ($rs->fields['comment'] !== null) {
+            $this->connection->clean($rs->fields['comment']);
+            $this->write("COMMENT ON DOMAIN \"" . addslashes($c_schema) . "\".\"" . addslashes($c_domain) . "\" IS '{$rs->fields['comment']}';\\n");
+        }
+
+        $this->writePrivileges($domainName, 'type', $schema);
     }
 
     protected function dumpConstraints($domainOid, $options)
@@ -63,8 +71,13 @@ class DomainDumper extends AbstractDumper
                 WHERE contypid = '{$domainOid}'::oid";
 
         $rs = $this->connection->selectSet($sql);
-        while ($rs && !$rs->EOF) {
-            $this->write("\n    CONSTRAINT \"{$rs->fields['conname']}\" {$rs->fields['consrc']}");
+        if (!$rs) {
+            return;
+        }
+        while (!$rs->EOF) {
+            $conname = $rs->fields['conname'];
+            $this->connection->clean($conname);
+            $this->write("\n    CONSTRAINT \"" . addslashes($conname) . "\" {$rs->fields['consrc']}");
             $rs->moveNext();
         }
     }

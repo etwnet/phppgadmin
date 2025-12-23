@@ -38,7 +38,23 @@ class SequenceDumper extends AbstractDumper
 
             // Set the current value
             if (!empty($rs->fields['last_value'])) {
-                $this->write("SELECT pg_catalog.setval('\"{$schema}\".\"{$sequence}\"', {$rs->fields['last_value']}, " . ($this->connection->phpBool($rs->fields['is_called']) ? 'true' : 'false') . ");\n");
+                $c_schema = $schema;
+                $c_sequence = $sequence;
+                $this->connection->clean($c_schema);
+                $this->connection->clean($c_sequence);
+                $this->write("SELECT pg_catalog.setval('\"" . addslashes($c_schema) . "\".\"" . addslashes($c_sequence) . "\"', {$rs->fields['last_value']}, " . ($this->connection->phpBool($rs->fields['is_called']) ? 'true' : 'false') . ");\n");
+            }
+
+            // Add comment if present
+            $c_schema = $schema;
+            $c_sequence = $sequence;
+            $this->connection->clean($c_schema);
+            $this->connection->clean($c_sequence);
+            $commentSql = "SELECT pg_catalog.obj_description(s.oid, 'pg_class') AS comment FROM pg_catalog.pg_class s JOIN pg_catalog.pg_namespace n ON n.oid = s.relnamespace WHERE s.relname = '{$c_sequence}' AND n.nspname = '{$c_schema}' AND s.relkind = 'S'";
+            $commentRs = $this->connection->selectSet($commentSql);
+            if ($commentRs && !$commentRs->EOF && !empty($commentRs->fields['comment'])) {
+                $this->connection->clean($commentRs->fields['comment']);
+                $this->write("COMMENT ON SEQUENCE \"" . addslashes($c_schema) . "\".\"" . addslashes($c_sequence) . "\" IS '{$commentRs->fields['comment']}';\\n");
             }
 
             $this->writePrivileges($sequence, 'sequence', $schema);
