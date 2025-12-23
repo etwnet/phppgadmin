@@ -676,7 +676,7 @@ function doSQL()
 				<p>
 					<input id="script" name="script" type="file">
 				</p>
-					<?php
+				<?php
 			}
 		}
 		?>

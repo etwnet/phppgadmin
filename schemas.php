@@ -37,6 +37,8 @@ function doDefault($msg = '')
 			'field' => field('nspname'),
 			'url' => "redirect.php?subject=schema&amp;{$misc->href}&amp;",
 			'vars' => ['schema' => 'nspname'],
+			'icon' => $misc->icon('Schema'),
+			'class' => 'no-wrap',
 		],
 		'owner' => [
 			'title' => $lang['strowner'],
