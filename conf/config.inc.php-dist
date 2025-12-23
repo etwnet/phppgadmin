@@ -31,9 +31,10 @@ $conf['servers'][0]['sslmode'] = 'allow';
 $conf['servers'][0]['defaultdb'] = 'template1';
 
 // Specify the path to the database dump utilities for this server.
-// You can set these to '' if no dumper is available.
-$conf['servers'][0]['pg_dump_path'] = '/usr/bin/pg_dump';
-$conf['servers'][0]['pg_dumpall_path'] = '/usr/bin/pg_dumpall';
+// Leave these blank to have phpPgAdmin attempt to auto-detect them.
+// $conf['servers'][0]['pg_dump_path'] = '/usr/bin/pg_dump';
+// $conf['servers'][0]['pg_dumpall_path'] = '/usr/bin/pg_dumpall';
+// $conf['servers'][0]['psql_path'] = '/usr/bin/psql';
 
 // Example for a second server (PostgreSQL for Windows)
 //$conf['servers'][1]['desc'] = 'Test Server';
@@ -43,6 +44,7 @@ $conf['servers'][0]['pg_dumpall_path'] = '/usr/bin/pg_dumpall';
 //$conf['servers'][1]['defaultdb'] = 'template1';
 //$conf['servers'][1]['pg_dump_path'] = 'C:\\Program Files\\PostgreSQL\\18.0\\bin\\pg_dump.exe';
 //$conf['servers'][1]['pg_dumpall_path'] = 'C:\\Program Files\\PostgreSQL\\18.0\\bin\\pg_dumpall.exe';
+//$conf['servers'][1]['psql_path'] = 'C:\\Program Files\\PostgreSQL\\18.0\\bin\\psql.exe';
 
 
 /* Groups definition */

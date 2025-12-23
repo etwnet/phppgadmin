@@ -40,14 +40,20 @@ class Misc extends AbstractContext
 	private $layoutRenderer = null;
 
 	/**
-	 * Checks if dumps are properly set up
-	 * @param $all (optional) True to check pg_dumpall, false to just check pg_dump
-	 * @return bool True, dumps are set up, false otherwise
+	 * Checks if dumps are available.
+	 * Always returns true - export options are always shown to the user.
+	 * At export time, DumpManager determines which formats are actually available
+	 * based on whether pg_dump is auto-detected.
+	 * This matches phpMyAdmin behavior where no path configuration is required.
+	 * 
+	 * @param bool $all (optional) Ignored - kept for backwards compatibility
+	 * @return bool Always true
 	 */
 	function isDumpEnabled($all = false)
 	{
-		$info = $this->getServerInfo();
-		return !empty($info[$all ? 'pg_dumpall_path' : 'pg_dump_path']);
+		// Always show export options. Actual format availability is determined
+		// at export time based on whether pg_dump is auto-detected.
+		return true;
 	}
 
 	/**
@@ -253,15 +259,6 @@ class Misc extends AbstractContext
 	function printBrowser()
 	{
 		return $this->getLayoutRenderer()->printBrowser();
-	}
-
-	/**
-	 * Outputs JavaScript code that will reload the browser
-	 * @param $tree bool True if dropping a database, false otherwise
-	 */
-	function printReload($tree)
-	{
-		return $this->getLayoutRenderer()->printReload($tree);
 	}
 
 	/**
@@ -774,7 +771,7 @@ class Misc extends AbstractContext
 	/**
 	 * Function to escape command line programs
 	 * @param $str The string to escape
-	 * @return The escaped string
+	 * @return string The escaped string
 	 */
 	function escapeShellCmd($str)
 	{
@@ -789,7 +786,7 @@ class Misc extends AbstractContext
 
 	/**
 	 * Get list of servers' groups if existing in the conf
-	 * @return ArrayRecordSet a recordset of servers' groups
+	 * @return ArrayRecordSet|array a recordset of servers' groups
 	 */
 	function getServersGroups($recordset = false, $group_id = false)
 	{
@@ -936,7 +933,7 @@ class Misc extends AbstractContext
 	 * If the parameter isn't supplied then the currently
 	 * connected server is returned.
 	 * @param string $server_id A server identifier (host:port)
-	 * @return array An associative array of server properties
+	 * @return array|null An associative array of server properties
 	 */
 	function getServerInfo($server_id = null)
 	{
@@ -1072,7 +1069,7 @@ class Misc extends AbstractContext
 	 * or by constraint.
 	 * @param string $table The table to retrieve FK constraints from
 	 * @param string $context Optional context ('insert' or 'search'); defaults to 'insert'
-	 * @returns array the array of FK definition:
+	 * @return array|false the array of FK definition:
 	 *   array(
 	 *     'byconstr' => array(
 	 *       constrain id => array(

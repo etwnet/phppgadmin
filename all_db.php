@@ -408,7 +408,7 @@ function doExport($msg = '')
 	$misc->printMsg($msg);
 
 	?>
-	<form action="dbexport.php" method="post">
+	<form action="dbexport.php" method="get">
 		<table>
 			<tr>
 				<th class="data"><?= $lang['strformat']; ?></th>
@@ -417,7 +417,7 @@ function doExport($msg = '')
 			<!-- Data only -->
 			<tr>
 				<th class="data left" rowspan="<?= $pg->hasServerOids() ? 2 : 1; ?>">
-					<input type="radio" id="what1" name="what" value="dataonly" checked="checked" />
+					<input type="radio" id="what1" name="what" value="dataonly" />
 					<label for="what1"><?= $lang['strdataonly']; ?></label>
 				</th>
 				<td>

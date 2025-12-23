@@ -6,6 +6,18 @@ function frameSetHandler() {
 	const content = document.getElementById("content");
 	const contentContainer = document.getElementById("content-container");
 
+	// Helper function to escape HTML special characters
+	const escapeHtml = (text) => {
+		const map = {
+			"&": "&amp;",
+			"<": "&lt;",
+			">": "&gt;",
+			'"': "&quot;",
+			"'": "&#039;",
+		};
+		return text.replace(/[&<>"']/g, (m) => map[m]);
+	};
+
 	// Frameset simulation
 	const resizer = document.getElementById("resizer");
 	if (!resizer) {
@@ -76,6 +88,15 @@ function frameSetHandler() {
 		url += (url.includes("?") ? "&" : "?") + "target=content";
 		console.log("Fetching:", url, options);
 
+		// Check if this is a download request (gzipped or download output)
+		const urlObj = new URL(url, window.location.href);
+		const output = urlObj.searchParams.get("output");
+		if (output === "download" || output === "gzipped") {
+			// For actual file downloads, open in new window and let browser handle it
+			window.open(url, "_blank");
+			return;
+		}
+
 		let finalUrl = null;
 		let indicatorTimeout = window.setTimeout(() => {
 			loadingIndicator.classList.add("show");
@@ -90,14 +111,34 @@ function frameSetHandler() {
 				throw new Error(`HTTP error ${res.status}`);
 			}
 
-			const html = await res.text();
+			const contentType = res.headers.get("content-type") || "";
+			const responseText = await res.text();
 
 			const unloadEvent = new CustomEvent("beforeFrameUnload", {
 				target: content,
 			});
 			document.dispatchEvent(unloadEvent);
 
-			setContent(html);
+			if (content.querySelector("form")) {
+				// If there was a form, replace current history state
+				const data = {
+					html: content.innerHTML,
+				};
+				history.replaceState(data, document.title, location.href);
+				//console.log("Replaced history state for form content");
+			}
+
+			if (
+				contentType.includes("text/plain") ||
+				contentType.includes("application/download")
+			) {
+				// Handle different content types
+				// For plain text (dumps/exports), wrap in <pre> tag
+				setContent(`<pre>${escapeHtml(responseText)}</pre>`);
+			} else {
+				// For HTML, parse as normal
+				setContent(responseText);
+			}
 
 			const urlObj = new URL(res.url || url, window.location.href);
 			urlObj.searchParams.delete("target");
@@ -107,7 +148,7 @@ function frameSetHandler() {
 				const form = content.querySelector("form");
 				const data = {};
 				if (/post/i.test(options.method ?? "") || form) {
-					data.html = html;
+					data.html = responseText;
 				}
 				history.pushState(data, document.title, finalUrl);
 				// Scroll back to the top
@@ -244,7 +285,11 @@ function frameSetHandler() {
 	window.addEventListener("message", (event) => {
 		console.log("Received message:", event.data);
 		if (event.origin !== window.location.origin) {
-			console.warn("Origin mismatch:", event.origin, window.location.origin);
+			console.warn(
+				"Origin mismatch:",
+				event.origin,
+				window.location.origin
+			);
 			return;
 		}
 		const { type, payload } = event.data;

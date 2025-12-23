@@ -1,13 +1,18 @@
 <?php
 
 use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\DumpManager;
 
 /**
  * Does an export to the screen or as a download.  This checks to
  * see if they have pg_dump set up, and will use it if possible.
+ * Falls back to PHP-based export if pg_dump is unavailable.
  *
  * $Id: dataexport.php,v 1.26 2007/07/12 19:26:22 xzilla Exp $
  */
+
+// Include application functions
+include_once('./libraries/bootstrap.php');
 
 $extensions = [
 	'sql' => 'sql',
@@ -19,7 +24,8 @@ $extensions = [
 ];
 
 // Prevent timeouts on large exports (non-safe mode only)
-if (!ini_get('safe_mode')) set_time_limit(0);
+if (!ini_get('safe_mode'))
+	set_time_limit(0);
 
 // if (!isset($_REQUEST['table']) && !isset($_REQUEST['query']))
 // What must we do in this case? Maybe redirect to the homepage?
@@ -29,43 +35,66 @@ if (isset($_REQUEST['what'])) {
 
 	// Include application functions
 	AppContainer::setSkipHtmlFrame(true);
-	include_once('./libraries/bootstrap.php');
 
-	switch ($_REQUEST['what']) {
+	// Determine the format being exported
+	$what = $_REQUEST['what'];
+
+	switch ($what) {
 		case 'dataonly':
-			// Check to see if they have pg_dump set up and if they do, use that
-			// instead of custom dump code
-			if (
-				$misc->isDumpEnabled()
-				&& ($_REQUEST['d_format'] == 'copy' || $_REQUEST['d_format'] == 'sql')
-			) {
-				include('./dbexport.php');
-				exit;
-			} else {
-				$format = $_REQUEST['d_format'];
-				$oids = isset($_REQUEST['d_oids']);
-			}
+			$format = $_REQUEST['d_format'] ?? 'csv';
+			$oids = isset($_REQUEST['d_oids']);
+			$clean = false;
 			break;
 		case 'structureonly':
-			// Check to see if they have pg_dump set up and if they do, use that
-			// instead of custom dump code
-			if ($misc->isDumpEnabled()) {
-				include('./dbexport.php');
-				exit;
-			} else $clean = isset($_REQUEST['s_clean']);
+			$format = $_REQUEST['s_format'] ?? 'sql';
+			$oids = false;
+			$clean = isset($_REQUEST['s_clean']);
 			break;
 		case 'structureanddata':
-			// Check to see if they have pg_dump set up and if they do, use that
-			// instead of custom dump code
-			if ($misc->isDumpEnabled()) {
-				include('./dbexport.php');
-				exit;
-			} else {
-				$format = $_REQUEST['sd_format'];
-				$clean = isset($_REQUEST['sd_clean']);
-				$oids = isset($_REQUEST['sd_oids']);
-			}
+			$format = $_REQUEST['sd_format'] ?? 'csv';
+			$oids = isset($_REQUEST['sd_oids']);
+			$clean = isset($_REQUEST['sd_clean']);
 			break;
+		default:
+			echo "Error: Unknown export type: " . htmlspecialchars($what);
+			exit;
+	}
+
+	// Validate that the requested format is available
+	// This will die with error message if format requires pg_dump but it's not available
+	DumpManager::validateFormatAvailable($format, false, $what);
+
+	// Determine export method
+	$use_pg_dump = false;
+	$use_psql_fallback = false;
+
+	if (in_array($format, ['copy', 'sql'])) {
+		// For COPY/SQL formats, check pg_dump availability
+		$pg_dump_path = DumpManager::getDumpExecutable(false);
+		if (!empty($pg_dump_path)) {
+			$use_pg_dump = true;
+		} else {
+			// pg_dump not available - check version and try psql COPY
+			$server_info = $misc->getServerInfo();
+			$psql_path = DumpManager::getPsqlExecutable();
+
+			if (!empty($psql_path) && $what === 'dataonly') {
+				// psql available for data-only COPY export
+				$use_psql_fallback = true;
+			}
+		}
+	}
+
+	// If we're using pg_dump for COPY/SQL format, delegate to dbexport.php
+	if ($use_pg_dump && $what === 'dataonly') {
+		include('./dbexport.php');
+		exit;
+	}
+
+	// If we're using psql COPY fallback, delegate to dbexport.php with fallback flag
+	if ($use_psql_fallback) {
+		include('./dbexport.php');
+		exit;
 	}
 
 	// Make it do a download, if necessary
@@ -88,7 +117,8 @@ if (isset($_REQUEST['what'])) {
 		header('Content-Type: text/plain');
 	}
 
-	if (isset($_REQUEST['query'])) $_REQUEST['query'] = trim(urldecode($_REQUEST['query']));
+	if (isset($_REQUEST['query']))
+		$_REQUEST['query'] = trim(urldecode($_REQUEST['query']));
 
 	// Set the schema search path
 	if (isset($_REQUEST['search_path'])) {
@@ -119,7 +149,8 @@ if (isset($_REQUEST['what'])) {
 		if ($format == 'copy') {
 			$data->fieldClean($_REQUEST['table']);
 			echo "COPY \"{$_REQUEST['table']}\"";
-			if ($oids) echo " WITH OIDS";
+			if ($oids)
+				echo " WITH OIDS";
 			echo " FROM stdin;\n";
 			while (!$rs->EOF) {
 				$first = true;
@@ -132,7 +163,8 @@ if (isset($_REQUEST['what'])) {
 					if ($first) {
 						echo (is_null($v)) ? '\\N' : $v;
 						$first = false;
-					} else echo "\t", (is_null($v)) ? '\\N' : $v;
+					} else
+						echo "\t", (is_null($v)) ? '\\N' : $v;
 				}
 				echo "\n";
 				$rs->moveNext();
@@ -153,7 +185,8 @@ if (isset($_REQUEST['what'])) {
 				$j = 0;
 				foreach ($rs->fields as $k => $v) {
 					$finfo = $rs->fetchField($j++);
-					if ($finfo->name == $data->id && !$oids) continue;
+					if ($finfo->name == $data->id && !$oids)
+						continue;
 					echo "\t\t<th>", $misc->printVal($finfo->name, true), "</th>\r\n";
 				}
 			}
@@ -163,7 +196,8 @@ if (isset($_REQUEST['what'])) {
 				$j = 0;
 				foreach ($rs->fields as $k => $v) {
 					$finfo = $rs->fetchField($j++);
-					if ($finfo->name == $data->id && !$oids) continue;
+					if ($finfo->name == $data->id && !$oids)
+						continue;
 					echo "\t\t<td>", $misc->printVal($v, true, $finfo->type), "</td>\r\n";
 				}
 				echo "\t</tr>\r\n";
@@ -194,7 +228,8 @@ if (isset($_REQUEST['what'])) {
 				foreach ($rs->fields as $k => $v) {
 					$finfo = $rs->fetchField($j++);
 					$name = htmlspecialchars_nc($finfo->name);
-					if (!is_null($v)) $v = htmlspecialchars_nc($v);
+					if (!is_null($v))
+						$v = htmlspecialchars_nc($v);
 					echo "\t\t\t<column name=\"{$name}\"", (is_null($v) ? ' null="null"' : ''), ">{$v}</column>\n";
 				}
 				echo "\t\t</row>\n";
@@ -215,8 +250,10 @@ if (isset($_REQUEST['what'])) {
 					//						if ($k == $data->id) continue;
 					// Output field
 					$data->fieldClean($k);
-					if ($first) echo "\"{$k}\"";
-					else echo ", \"{$k}\"";
+					if ($first)
+						echo "\"{$k}\"";
+					else
+						echo ", \"{$k}\"";
 
 					if (!is_null($v)) {
 						// Output value
@@ -231,7 +268,8 @@ if (isset($_REQUEST['what'])) {
 					if ($first) {
 						$values = (is_null($v) ? 'NULL' : "'{$v}'");
 						$first = false;
-					} else $values .= ', ' . ((is_null($v) ? 'NULL' : "'{$v}'"));
+					} else
+						$values .= ', ' . ((is_null($v) ? 'NULL' : "'{$v}'"));
 				}
 				echo ") VALUES ({$values});\n";
 				$rs->moveNext();
@@ -252,22 +290,26 @@ if (isset($_REQUEST['what'])) {
 				foreach ($rs->fields as $k => $v) {
 					$finfo = $rs->fetchField($k);
 					$v = $finfo->name;
-					if (!is_null($v)) $v = str_replace('"', '""', $v);
+					if (!is_null($v))
+						$v = str_replace('"', '""', $v);
 					if ($first) {
 						echo "\"{$v}\"";
 						$first = false;
-					} else echo "{$sep}\"{$v}\"";
+					} else
+						echo "{$sep}\"{$v}\"";
 				}
 				echo "\r\n";
 			}
 			while (!$rs->EOF) {
 				$first = true;
 				foreach ($rs->fields as $k => $v) {
-					if (!is_null($v)) $v = str_replace('"', '""', $v);
+					if (!is_null($v))
+						$v = str_replace('"', '""', $v);
 					if ($first) {
 						echo (is_null($v)) ? "\"\\N\"" : "\"{$v}\"";
 						$first = false;
-					} else echo is_null($v) ? "{$sep}\"\\N\"" : "{$sep}\"{$v}\"";
+					} else
+						echo is_null($v) ? "{$sep}\"\\N\"" : "{$sep}\"{$v}\"";
 				}
 				echo "\r\n";
 				$rs->moveNext();
@@ -285,8 +327,6 @@ if (isset($_REQUEST['what'])) {
 	// Finish the dump transaction
 	$status = $data->endDump();
 } else {
-	// Include application functions
-	include_once('./libraries/bootstrap.php');
 
 	if (!isset($_REQUEST['query']) or empty($_REQUEST['query']))
 		$_REQUEST['query'] = $_SESSION['sqlquery'];
@@ -295,20 +335,50 @@ if (isset($_REQUEST['what'])) {
 	$misc->printBody();
 	$misc->printTrail($_REQUEST['subject'] ?? 'database');
 	$misc->printTitle($lang['strexport']);
-	if (isset($msg)) $misc->printMsg($msg);
+	if (isset($msg))
+		$misc->printMsg($msg);
+
+	// Get available formats based on current dump situation
+	$available_formats = DumpManager::getAvailableFormats(false, 'dataonly');
+	$has_pg_dump = $available_formats['has_pg_dump'];
+	$available_list = $available_formats['available'];
+
+	// Show info about dump status
+	$dump_info = DumpManager::getDumpStrategyInfo(false);
+	if (!$has_pg_dump) {
+		echo "<div style=\"background-color: #fff3cd; border: 1px solid #ffc107; padding: 10px; margin-bottom: 15px; border-radius: 4px;\">\n";
+		echo "<strong>Note:</strong> " . htmlspecialchars($dump_info['message']) . "\n";
+		echo "</div>\n";
+	}
 
 	echo "<form action=\"dataexport.php\" method=\"post\">\n";
 	echo "<table>\n";
 	echo "<tr><th class=\"data\">{$lang['strformat']}:</th><td><select name=\"d_format\">\n";
-	// COPY and SQL require a table
+
+	// COPY and SQL require a table and pg_dump
 	if (isset($_REQUEST['table'])) {
-		echo "<option value=\"copy\">COPY</option>\n";
-		echo "<option value=\"sql\">SQL</option>\n";
+		if (in_array('copy', $available_list)) {
+			echo "<option value=\"copy\">COPY</option>\n";
+		}
+		if (in_array('sql', $available_list)) {
+			echo "<option value=\"sql\">SQL</option>\n";
+		}
 	}
-	echo "<option value=\"csv\">CSV</option>\n";
-	echo "<option value=\"tab\">{$lang['strtabbed']}</option>\n";
-	echo "<option value=\"html\">XHTML</option>\n";
-	echo "<option value=\"xml\">XML</option>\n";
+
+	// CSV/TAB/HTML/XML always available
+	if (in_array('csv', $available_list)) {
+		echo "<option value=\"csv\">CSV</option>\n";
+	}
+	if (in_array('tab', $available_list)) {
+		echo "<option value=\"tab\">{$lang['strtabbed']}</option>\n";
+	}
+	if (in_array('html', $available_list)) {
+		echo "<option value=\"html\">XHTML</option>\n";
+	}
+	if (in_array('xml', $available_list)) {
+		echo "<option value=\"xml\">XML</option>\n";
+	}
+
 	echo "</select></td></tr>";
 	echo "</table>\n";
 
