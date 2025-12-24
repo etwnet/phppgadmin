@@ -50,12 +50,14 @@ class ViewDumper extends AbstractDumper
             $this->write("CREATE OR REPLACE VIEW \"" . addslashes($c_schema) . "\".\"" . addslashes($c_view) . "\" AS\n{$def};\n");
         }
 
-        // Add comment if present
-        $commentSql = "SELECT pg_catalog.obj_description(c.oid, 'pg_class') AS comment FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE c.relname = '{$c_view}' AND n.nspname = '{$c_schema}' AND c.relkind = 'v'";
-        $commentRs = $this->connection->selectSet($commentSql);
-        if ($commentRs && !$commentRs->EOF && !empty($commentRs->fields['comment'])) {
-            $this->connection->clean($commentRs->fields['comment']);
-            $this->write("COMMENT ON VIEW \"" . addslashes($c_schema) . "\".\"" . addslashes($c_view) . "\" IS '{$commentRs->fields['comment']}';\\n");
+        // Add comment if present and requested
+        if ($this->shouldIncludeComments($options)) {
+            $commentSql = "SELECT pg_catalog.obj_description(c.oid, 'pg_class') AS comment FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE c.relname = '{$c_view}' AND n.nspname = '{$c_schema}' AND c.relkind = 'v'";
+            $commentRs = $this->connection->selectSet($commentSql);
+            if ($commentRs && !$commentRs->EOF && !empty($commentRs->fields['comment'])) {
+                $this->connection->clean($commentRs->fields['comment']);
+                $this->write("COMMENT ON VIEW \"" . addslashes($c_schema) . "\".\"" . addslashes($c_view) . "\" IS '{$commentRs->fields['comment']}';\\n");
+            }
         }
 
         $this->dumpRules($view, $schema, $options);

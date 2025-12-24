@@ -56,7 +56,7 @@ class DomainDumper extends AbstractDumper
 
         $this->write(";\n");
 
-        if (isset($rs->fields['comment']) && $rs->fields['comment'] !== null) {
+        if ($this->shouldIncludeComments($options) && isset($rs->fields['comment']) && $rs->fields['comment'] !== null) {
             $this->connection->clean($rs->fields['comment']);
             $this->write("COMMENT ON DOMAIN \"" . addslashes($c_schema) . "\".\"" . addslashes($c_domain) . "\" IS '{$rs->fields['comment']}';\\n");
         }

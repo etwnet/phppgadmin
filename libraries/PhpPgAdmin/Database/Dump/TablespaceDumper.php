@@ -35,14 +35,16 @@ class TablespaceDumper extends AbstractDumper
             }
             $this->write(";\n");
 
-            // Add comment if present
-            $c_spcname = $spcname;
-            $this->connection->clean($c_spcname);
-            $commentSql = "SELECT pg_catalog.obj_description(oid, 'pg_tablespace') AS comment FROM pg_catalog.pg_tablespace WHERE spcname = '{$c_spcname}'";
-            $commentRs = $this->connection->selectSet($commentSql);
-            if ($commentRs && !$commentRs->EOF && !empty($commentRs->fields['comment'])) {
-                $this->connection->clean($commentRs->fields['comment']);
-                $this->write("COMMENT ON TABLESPACE \"" . addslashes($spcname) . "\" IS '{$commentRs->fields['comment']}';\\n");
+            // Add comment if present and requested
+            if ($this->shouldIncludeComments($options)) {
+                $c_spcname = $spcname;
+                $this->connection->clean($c_spcname);
+                $commentSql = "SELECT pg_catalog.obj_description(oid, 'pg_tablespace') AS comment FROM pg_catalog.pg_tablespace WHERE spcname = '{$c_spcname}'";
+                $commentRs = $this->connection->selectSet($commentSql);
+                if ($commentRs && !$commentRs->EOF && !empty($commentRs->fields['comment'])) {
+                    $this->connection->clean($commentRs->fields['comment']);
+                    $this->write("COMMENT ON TABLESPACE \"" . addslashes($spcname) . "\" IS '{$commentRs->fields['comment']}';\\n");
+                }
             }
 
             $this->writePrivileges($spcname, 'tablespace');

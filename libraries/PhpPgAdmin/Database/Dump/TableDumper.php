@@ -54,6 +54,8 @@ class TableDumper extends AbstractDumper
 
         $format = $options['format'] ?? 'copy';
         $oids = !empty($options['oids']);
+        $insertFormat = $options['insert_format'] ?? 'single'; // 'single' or 'multi'
+        $batchSize = 1000; // Rows per INSERT statement for multi-row format
 
         // Set fetch mode to NUM for data dumping
         $this->connection->conn->setFetchMode(ADODB_FETCH_NUM);
@@ -77,8 +79,49 @@ class TableDumper extends AbstractDumper
                 $rs->moveNext();
             }
             $this->write("\\.\n");
+        } else if ($insertFormat === 'multi') {
+            // Multi-row INSERT format (batched by batchSize)
+            $fields = null;
+            $fieldStr = null;
+            $valuesList = [];
+            $rowCount = 0;
+
+            while ($rs && !$rs->EOF) {
+                // Get field names from first row
+                if ($fields === null) {
+                    $fields = [];
+                    $j = 0;
+                    foreach ($rs->fields as $v) {
+                        $finfo = $rs->fetchField($j++);
+                        $fields[] = "\"{$finfo->name}\"";
+                    }
+                    $fieldStr = implode(', ', $fields);
+                }
+
+                // Build values tuple for this row
+                $values = [];
+                $j = 0;
+                foreach ($rs->fields as $v) {
+                    if ($v === null) {
+                        $values[] = 'NULL';
+                    } else {
+                        $this->connection->clean($v);
+                        $values[] = "'{$v}'";
+                    }
+                }
+                $valuesList[] = "(" . implode(', ', $values) . ")";
+                $rowCount++;
+
+                // Write statement when batch is full or at end
+                if ($rowCount >= $batchSize || ($rs->EOF && $rowCount > 0)) {
+                    $this->write("INSERT INTO \"{$schema}\".\"{$table}\" ({$fieldStr}) VALUES " . implode(', ', $valuesList) . ";\n");
+                    $valuesList = [];
+                }
+
+                $rs->moveNext();
+            }
         } else {
-            // INSERT format
+            // Single-row INSERT format
             while ($rs && !$rs->EOF) {
                 $fields = [];
                 $values = [];

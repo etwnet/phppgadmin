@@ -60,12 +60,14 @@ class TypeDumper extends AbstractDumper
 
         $this->write("CREATE TYPE \"{$schema}\".\"{$typeName}\" AS ENUM (" . implode(', ', $values) . ");\n");
 
-        // Add comment if present
-        $typeActions = new TypeActions($this->connection);
-        $typeInfo = $typeActions->getType($typeName);
-        if ($typeInfo && !$typeInfo->EOF && isset($typeInfo->fields['comment']) && $typeInfo->fields['comment'] !== null) {
-            $this->connection->clean($typeInfo->fields['comment']);
-            $this->write("COMMENT ON TYPE \"" . addslashes($schema) . "\".\"" . addslashes($typeName) . "\" IS '{$typeInfo->fields['comment']}';\\n");
+        // Add comment if present and requested
+        if ($this->shouldIncludeComments($options)) {
+            $typeActions = new TypeActions($this->connection);
+            $typeInfo = $typeActions->getType($typeName);
+            if ($typeInfo && !$typeInfo->EOF && isset($typeInfo->fields['comment']) && $typeInfo->fields['comment'] !== null) {
+                $this->connection->clean($typeInfo->fields['comment']);
+                $this->write("COMMENT ON TYPE \"" . addslashes($schema) . "\".\"" . addslashes($typeName) . "\" IS '{$typeInfo->fields['comment']}';\\n");
+            }
         }
     }
 

@@ -497,6 +497,21 @@ table.sql-function {
 	white-space: nowrap;
 }
 
+textarea.monospace {
+	font-family: monospace;
+	font-size: initial;
+}
+
+textarea.dbexport {
+	width: 100%;
+	height: calc(100vh - 250px);
+	border: 1px solid #ccc;
+	font-family: monospace;
+	font-size: initial;
+	padding: 10px;
+	box-sizing: border-box;
+}
+
 /* Helper Classes */
 
 .text-start {

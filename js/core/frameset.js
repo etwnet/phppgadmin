@@ -70,7 +70,15 @@ function frameSetHandler() {
 
 	function setContent(html) {
 		content.innerHTML = html;
-		// Bringing scripts to life
+
+		// Restore form state BEFORE running scripts
+		// This ensures forms are in correct state when scripts initialize
+		const state = window.history.state;
+		if (state?.formStates) {
+			restoreAllFormStates(state.formStates);
+		}
+
+		// Now bring scripts to life
 		content.querySelectorAll("script").forEach((oldScript) => {
 			const newScript = document.createElement("script");
 			if (oldScript.src) {
@@ -80,6 +88,31 @@ function frameSetHandler() {
 			}
 			content.appendChild(newScript);
 			oldScript.remove();
+		});
+	}
+
+	/**
+	 * Capture all form values from all forms in content
+	 * @return {Object} Object with form indices as keys, containing all form field states
+	 */
+	function captureAllFormStates() {
+		const allFormStates = {};
+		content.querySelectorAll("form").forEach((form, index) => {
+			allFormStates[index] = captureFormState(form);
+		});
+		return allFormStates;
+	}
+
+	/**
+	 * Restore all form values from saved states
+	 * @param {Object} allFormStates - The saved form states by index
+	 */
+	function restoreAllFormStates(allFormStates) {
+		if (!allFormStates || typeof allFormStates !== "object") return;
+		content.querySelectorAll("form").forEach((form, index) => {
+			if (allFormStates[index]) {
+				restoreFormState(form, allFormStates[index]);
+			}
 		});
 	}
 
@@ -208,14 +241,15 @@ function frameSetHandler() {
 			document.dispatchEvent(unloadEvent);
 
 			if (content.querySelector("form")) {
-				// If there was a form, replace current history state
-				const form = content.querySelector("form");
-				const data = {
-					html: content.innerHTML,
-					formState: captureFormState(form),
-				};
-				history.replaceState(data, document.title, location.href);
-				//console.log("Replaced history state for form content");
+				// If there was a form, save state of all forms before navigation
+				const state = window.history.state ?? {};
+				state.formStates = captureAllFormStates();
+				// Preserve method if it exists, default to GET for initial loads
+				if (!state.method) {
+					state.method = "GET";
+				}
+				history.replaceState(state, document.title, location.href);
+				//console.log("Saved form states before navigation");
 			}
 
 			if (
@@ -235,15 +269,20 @@ function frameSetHandler() {
 			finalUrl = urlObj.toString();
 
 			if (addToHistory) {
-				const form = content.querySelector("form");
-				const data = {};
-				if (/post/i.test(options.method ?? "") || form) {
-					data.html = responseText;
-					if (form) {
-						data.formState = captureFormState(form);
-					}
+				const state = {};
+				const isPost = /post/i.test(options.method ?? "");
+
+				if (isPost) {
+					// For POST: save both HTML and all form states
+					state.html = responseText;
+					state.formStates = captureAllFormStates();
+					state.method = "POST";
+				} else {
+					// For GET: only save form states, not HTML
+					state.formStates = captureAllFormStates();
+					state.method = "GET";
 				}
-				history.pushState(data, document.title, finalUrl);
+				history.pushState(state, document.title, finalUrl);
 				// Scroll back to the top
 				contentContainer.scrollTo(0, 0);
 			}
@@ -365,17 +404,13 @@ function frameSetHandler() {
 
 		if (e.state?.html) {
 			setContent(e.state.html);
-			// Restore form state if available
-			if (e.state?.formState) {
-				const form = content.querySelector("form");
-				restoreFormState(form, e.state.formState);
-			}
 			const event = new CustomEvent("frameLoaded", {
 				detail: { url: url },
 				target: content,
 			});
 			document.dispatchEvent(event);
 		} else {
+			// Fallback: load content normally
 			loadContent(url, {}, false);
 		}
 	});

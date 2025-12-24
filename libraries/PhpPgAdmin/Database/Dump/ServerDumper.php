@@ -14,26 +14,41 @@ class ServerDumper extends AbstractDumper
     {
         $this->writeHeader("Server Cluster");
 
-        // 1. Roles
-        $roleDumper = DumpFactory::create('role', $this->connection);
-        $roleDumper->dump('role', [], $options);
+        // 1. Roles (if enabled)
+        if (!isset($options['export_roles']) || $options['export_roles']) {
+            $roleDumper = DumpFactory::create('role', $this->connection);
+            $roleDumper->dump('role', [], $options);
+        }
 
-        // 2. Tablespaces
-        $tablespaceDumper = DumpFactory::create('tablespace', $this->connection);
-        $tablespaceDumper->dump('tablespace', [], $options);
+        // 2. Tablespaces (if enabled)
+        if (!isset($options['export_tablespaces']) || $options['export_tablespaces']) {
+            $tablespaceDumper = DumpFactory::create('tablespace', $this->connection);
+            $tablespaceDumper->dump('tablespace', [], $options);
+        }
 
         // 3. Databases
         $databaseActions = new DatabaseActions($this->connection);
         $databases = $databaseActions->getDatabases();
 
+        // Get list of selected databases (if any)
+        $selectedDatabases = !empty($options['databases']) ? $options['databases'] : [];
+
         $dbDumper = DumpFactory::create('database', $this->connection);
         while ($databases && !$databases->EOF) {
             $dbName = $databases->fields['datname'];
 
-            // Skip template databases unless requested
-            if (empty($options['all_databases']) && strpos($dbName, 'template') === 0) {
-                $databases->moveNext();
-                continue;
+            // If specific databases are selected, only dump those
+            if (!empty($selectedDatabases)) {
+                if (!in_array($dbName, $selectedDatabases)) {
+                    $databases->moveNext();
+                    continue;
+                }
+            } else {
+                // Default behavior: skip template databases unless requested
+                if (empty($options['all_databases']) && strpos($dbName, 'template') === 0) {
+                    $databases->moveNext();
+                    continue;
+                }
             }
 
             $dbDumper->dump('database', ['database' => $dbName], $options);

@@ -262,7 +262,9 @@ class RowActions extends AbstractActions
 		// Build clause
 		if (count($values) > 0) {
 			// Escape all field names
-			$fields = array_map(['Postgres', 'fieldClean'], $fields);
+			foreach ($fields as &$field) {
+				$this->connection->fieldClean($field);
+			}
 			$f_schema = $this->connection->_schema;
 			$this->connection->fieldClean($table);
 			$this->connection->fieldClean($f_schema);
@@ -275,7 +277,6 @@ class RowActions extends AbstractActions
 				if (isset($nulls[$key])) {
 					$sql .= 'NULL';
 				} else {
-					$sql .= ',';
 					$sql .= $this->formatValue($types[$key], $functions[$key] ?? null, isset($expr[$key]), $value);
 				}
 				$sep = ',';

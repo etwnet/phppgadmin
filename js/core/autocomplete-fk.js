@@ -52,7 +52,7 @@ class AutocompleteFK {
 			document.querySelector('form[id$="form"]');
 
 		if (!fkbg || !fklist || !form) {
-			console.warn(
+			console.log(
 				`AutocompleteFK: Required elements not found for context '${context}'`
 			);
 			return;

@@ -61,8 +61,10 @@ abstract class AbstractDumper extends AbstractContext implements DumperInterface
      */
     protected function writeHeader($title)
     {
+        $name = AppContainer::getAppName();
+        $version = AppContainer::getAppVersion();
         $this->write("--\n");
-        $this->write("-- phpPgAdmin SQL Dump\n");
+        $this->write("-- $name $version PostgreSQL dump\n");
         $this->write("-- Subject: {$title}\n");
         $this->write("-- Date: " . date('Y-m-d H:i:s') . "\n");
         $this->write("--\n\n");
@@ -110,9 +112,18 @@ abstract class AbstractDumper extends AbstractContext implements DumperInterface
      */
     protected function writeDrop($type, $name, $options)
     {
-        if (!empty($options['clean'])) {
+        if (!empty($options['drop_objects'])) {
             $this->write("DROP {$type} IF EXISTS \"{$name}\" CASCADE;\n");
         }
+    }
+
+    /**
+     * Check if comments should be included in the dump.
+     */
+    protected function shouldIncludeComments($options)
+    {
+        // Default to true (include comments) unless explicitly disabled
+        return !isset($options['include_comments']) || $options['include_comments'];
     }
 
     /**

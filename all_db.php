@@ -402,103 +402,162 @@ function doExport($msg = '')
 	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$databaseActions = new DatabaseActions($pg);
+	$roleActions = new RoleActions($pg);
 
 	$misc->printTrail('server');
 	$misc->printTabs('server', 'export');
 	$misc->printMsg($msg);
 
+	// Get list of databases
+	$databases = $databaseActions->getDatabases();
+	$isSuperUser = $roleActions->isSuperUser();
+	$accessibleDatabases = [];
+
+	// For non-superusers, check which databases they can connect to
+	if (!$isSuperUser) {
+		$serverInfo = $misc->getServerInfo();
+		while ($databases && !$databases->EOF) {
+			$dbName = $databases->fields['datname'];
+			// Try to connect to database to verify access
+			try {
+				$testConn = $misc->getDatabaseAccessor($dbName);
+				if ($testConn) {
+					$accessibleDatabases[] = $dbName;
+				}
+			} catch (Exception $e) {
+				// User cannot access this database
+			}
+			$databases->moveNext();
+		}
+		// Reset to beginning
+		$databases->moveFirst();
+	} else {
+		// Superuser can see all databases
+		while ($databases && !$databases->EOF) {
+			$accessibleDatabases[] = $databases->fields['datname'];
+			$databases->moveNext();
+		}
+		$databases->moveFirst();
+	}
+
 	?>
-	<form action="dbexport.php" method="get">
-		<table>
-			<tr>
-				<th class="data"><?= $lang['strformat']; ?></th>
-				<th class="data"><?= $lang['stroptions']; ?></th>
-			</tr>
-			<!-- Data only -->
-			<tr>
-				<th class="data left" rowspan="<?= $pg->hasServerOids() ? 2 : 1; ?>">
-					<input type="radio" id="what1" name="what" value="dataonly" />
-					<label for="what1"><?= $lang['strdataonly']; ?></label>
-				</th>
-				<td>
-					<?= $lang['strformat']; ?>
-					<select name="d_format">
-						<option value="copy">COPY</option>
-						<option value="sql">SQL</option>
-					</select>
-				</td>
-			</tr>
-			<?php if ($pg->hasServerOids()): ?>
-				<tr>
-					<td>
-						<input type="checkbox" id="d_oids" name="d_oids" />
-						<label for="d_oids"><?= $lang['stroids']; ?></label>
-					</td>
-				</tr>
-			<?php endif; ?>
-			<!-- Structure only -->
-			<tr>
-				<th class="data left">
-					<input type="radio" id="what2" name="what" value="structureonly" />
-					<label for="what2"><?= $lang['strstructureonly']; ?></label>
-				</th>
-				<td>
-					<input type="checkbox" id="s_clean" name="s_clean" />
-					<label for="s_clean"><?= $lang['strdrop']; ?></label>
-				</td>
-			</tr>
-			<!-- Structure and data -->
-			<tr>
-				<th class="data left" rowspan="<?= $pg->hasServerOids() ? 3 : 2; ?>">
-					<input type="radio" id="what3" name="what" value="structureanddata" />
-					<label for="what3"><?= $lang['strstructureanddata']; ?></label>
-				</th>
-				<td>
-					<?= $lang['strformat']; ?>
-					<select name="sd_format">
-						<option value="copy">COPY</option>
-						<option value="sql">SQL</option>
-					</select>
-				</td>
-			</tr>
-			<tr>
-				<td>
-					<input type="checkbox" id="sd_clean" name="sd_clean" />
-					<label for="sd_clean"><?= $lang['strdrop']; ?></label>
-				</td>
-			</tr>
-			<?php if ($pg->hasServerOids()): ?>
-				<tr>
-					<td>
-						<input type="checkbox" id="sd_oids" name="sd_oids" />
-						<label for="sd_oids"><?= $lang['stroids']; ?></label>
-					</td>
-				</tr>
-			<?php endif; ?>
-		</table>
+	<form action="dbexport.php" id="export-form" method="get">
+		<!-- Export Type Selection -->
+		<fieldset>
+			<legend>Export Type</legend>
+			<div>
+				<input type="radio" id="what_both" name="what" value="structureanddata" checked="checked" />
+				<label for="what_both">Structure and Data</label>
+			</div>
+			<div>
+				<input type="radio" id="what_struct" name="what" value="structureonly" />
+				<label for="what_struct">Structure Only</label>
+			</div>
+			<div>
+				<input type="radio" id="what_data" name="what" value="dataonly" />
+				<label for="what_data">Data Only</label>
+			</div>
+		</fieldset>
 
-		<h3><?= $lang['stroptions']; ?></h3>
-		<p>
-			<input type="radio" id="output1" name="output" value="show" checked="checked" />
-			<label for="output1"><?= $lang['strshow']; ?></label>
-			<br />
-			<input type="radio" id="output2" name="output" value="download" />
-			<label for="output2"><?= $lang['strdownload']; ?></label>
-		</p>
+		<!-- Cluster-Level Objects (Server Export Only) -->
+		<fieldset>
+			<legend>Cluster-Level Objects</legend>
+			<div>
+				<input type="checkbox" id="export_roles" name="export_roles" value="true" checked="checked" />
+				<label for="export_roles">Export Roles/Users</label>
+			</div>
+			<div>
+				<input type="checkbox" id="export_tablespaces" name="export_tablespaces" value="true" checked="checked" />
+				<label for="export_tablespaces">Export Tablespaces</label>
+			</div>
+		</fieldset>
 
-		<p>
-			<input type="checkbox" id="s_clean" name="s_clean" value="true" />
-			<label for="s_clean"><?= $lang['strdrop']; ?></label>
-			<br />
-			<input type="checkbox" id="sd_clean" name="sd_clean" value="true" />
-			<label for="sd_clean"><?= $lang['strdrop']; ?> (Structure &amp; Data)</label>
-			<br />
-			<input type="checkbox" id="if_not_exists" name="if_not_exists" value="true" />
-			<label for="if_not_exists">Use IF NOT EXISTS</label>
-			<br />
-			<input type="checkbox" id="use_internal" name="use_internal" value="true" />
-			<label for="use_internal">Force internal PHP dumper</label>
-		</p>
+		<!-- Database Selection -->
+		<fieldset>
+			<legend>Select Databases to Export</legend>
+			<p class="small">Uncheck template databases to exclude them</p>
+			<?php if (!empty($accessibleDatabases)): ?>
+				<?php
+				$databases->moveFirst();
+				while ($databases && !$databases->EOF) {
+					$dbName = $databases->fields['datname'];
+					if (in_array($dbName, $accessibleDatabases)) {
+						// Check by default unless it's a template database
+						$checked = (strpos($dbName, 'template') !== 0) ? 'checked="checked"' : '';
+						?>
+						<div>
+							<input type="checkbox" id="db_<?= htmlspecialchars_nc($dbName); ?>" name="databases[]"
+								value="<?= htmlspecialchars_nc($dbName); ?>" <?= $checked; ?> />
+							<label for="db_<?= htmlspecialchars_nc($dbName); ?>"><?= htmlspecialchars_nc($dbName); ?></label>
+						</div>
+						<?php
+					}
+					$databases->moveNext();
+				}
+				?>
+			<?php else: ?>
+				<p>No accessible databases found.</p>
+			<?php endif; ?>
+		</fieldset>
+
+		<!-- Structure Export Options -->
+		<fieldset id="structure_options">
+			<legend>Structure Options</legend>
+			<div>
+				<input type="checkbox" id="drop_objects" name="drop_objects" value="true" />
+				<label for="drop_objects">Add DROP statements (DROP TABLE IF EXISTS, etc.)</label>
+			</div>
+			<div>
+				<input type="checkbox" id="if_not_exists" name="if_not_exists" value="true" checked="checked" />
+				<label for="if_not_exists">Use IF NOT EXISTS (for safer re-imports)</label>
+			</div>
+			<div>
+				<input type="checkbox" id="include_comments" name="include_comments" value="true" checked="checked" />
+				<label for="include_comments">Include object comments</label>
+			</div>
+			<div>
+				<input type="checkbox" id="use_pgdump" name="use_pgdump" value="true" />
+				<label for="use_pgdump">Use external pg_dump/pg_dumpall (if available)</label>
+			</div>
+		</fieldset>
+
+		<!-- Data Export Options (shown only for data-inclusive exports) -->
+		<fieldset id="data_options" style="display:none;">
+			<legend>Data Export Options</legend>
+			<div>
+				<p class="small">INSERT Format (COPY is fastest for restore):</p>
+				<div>
+					<input type="radio" id="insert_copy" name="insert_format" value="copy" checked="checked" />
+					<label for="insert_copy">COPY format (fastest)</label>
+				</div>
+				<div>
+					<input type="radio" id="insert_multi" name="insert_format" value="multi" />
+					<label for="insert_multi">Multi-row inserts</label>
+				</div>
+				<div>
+					<input type="radio" id="insert_single" name="insert_format" value="single" />
+					<label for="insert_single">Single-row inserts</label>
+				</div>
+			</div>
+			<div>
+				<input type="checkbox" id="truncate_tables" name="truncate_tables" value="true" />
+				<label for="truncate_tables">TRUNCATE tables before insert</label>
+			</div>
+		</fieldset>
+
+		<!-- Output Options -->
+		<fieldset>
+			<legend>Output</legend>
+			<div>
+				<input type="radio" id="output_show" name="output" value="show" checked="checked" />
+				<label for="output_show">Show in browser</label>
+			</div>
+			<div>
+				<input type="radio" id="output_download" name="output" value="download" />
+				<label for="output_download">Download as file</label>
+			</div>
+		</fieldset>
 
 		<p>
 			<input type="hidden" name="action" value="export" />
@@ -507,6 +566,40 @@ function doExport($msg = '')
 			<input type="submit" value="<?= $lang['strexport']; ?>" />
 		</p>
 	</form>
+
+	<script>
+		{
+			// Show/hide options based on export type
+			const form = document.getElementById('export-form');
+			const whatRadios = form.querySelectorAll('input[name="what"]');
+			const structureOptions = document.getElementById('structure_options');
+			const dataOptions = document.getElementById('data_options');
+
+			// Only setup if form elements exist on this page
+			if (whatRadios.length > 0 && structureOptions && dataOptions) {
+				function updateOptions() {
+					const selectedWhat = form.querySelector('input[name="what"]:checked').value;
+
+					// Show/hide structure options based on export type
+					if (selectedWhat === 'dataonly') {
+						structureOptions.style.display = 'none';
+					} else {
+						structureOptions.style.display = 'block';
+					}
+
+					// Show/hide data options based on export type
+					if (selectedWhat === 'dataonly' || selectedWhat === 'structureanddata') {
+						dataOptions.style.display = 'block';
+					} else {
+						dataOptions.style.display = 'none';
+					}
+				}
+
+				whatRadios.forEach(radio => radio.addEventListener('change', updateOptions));
+				updateOptions(); // Initial state
+			}
+		}
+	</script>
 	<?php
 }
 

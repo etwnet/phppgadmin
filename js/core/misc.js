@@ -1,7 +1,9 @@
 (function () {
 	// Multi-form toggle
 	window.toggleAllMf = function (bool) {
-		var inputs = document.getElementById("multi_form").getElementsByTagName("input");
+		var inputs = document
+			.getElementById("multi_form")
+			.getElementsByTagName("input");
 
 		for (var i = 0; i < inputs.length; i++) {
 			if (inputs[i].type == "checkbox") inputs[i].checked = bool;
@@ -114,6 +116,11 @@
 	 * @param {Object} options
 	 */
 	function createDateTimePickerInternal(element, options) {
+		// Check if flatpickr is already initialized
+		if (element._flatpickr) {
+			return;
+		}
+
 		const originalValue = element.value;
 		element.value = "";
 
@@ -123,11 +130,17 @@
 			defaultDate: element.value || null,
 
 			onChange: (selectedDates, dateStr, instance) => {
-				const cbExpr = document.getElementById("cb_expr_" + element.dataset.field);
+				const cbExpr = document.getElementById(
+					"cb_expr_" + element.dataset.field
+				);
 				if (cbExpr) cbExpr.checked = false;
-				const cbNull = document.getElementById("cb_null_" + element.dataset.field);
+				const cbNull = document.getElementById(
+					"cb_null_" + element.dataset.field
+				);
 				if (cbNull) cbNull.checked = false;
-				const selFnc = document.getElementById("sel_fnc_" + element.dataset.field);
+				const selFnc = document.getElementById(
+					"sel_fnc_" + element.dataset.field
+				);
 				if (selFnc) selFnc.value = "";
 			},
 
@@ -140,29 +153,43 @@
 
 		const fp = flatpickr(element, options);
 
-		// Create wrapper container
-		const container = document.createElement("div");
-		container.classList.add("date-picker-input-container");
+		// Check if wrapper already exists (from session state restore)
+		let container = element.parentNode;
+		let button = null;
 
-		// Create button
-		const button = document.createElement("div");
-		button.className = "date-picker-button";
-		button.innerHTML = "📅";
+		if (
+			!container ||
+			!container.classList.contains("date-picker-input-container")
+		) {
+			// Create wrapper container
+			container = document.createElement("div");
+			container.classList.add("date-picker-input-container");
 
-		element.parentNode.insertBefore(container, element);
+			// Create button
+			button = document.createElement("div");
+			button.className = "date-picker-button";
+			button.innerHTML = "📅";
 
-		// Move input into container
-		container.appendChild(element);
-		container.appendChild(button);
+			element.parentNode.insertBefore(container, element);
 
-		button.addEventListener("click", () => {
-			// Make input readonly while picker is open
-			element.readOnly = true;
-			fp.open();
-			fp.config.onClose.push(() => {
-				element.readOnly = false;
+			// Move input into container
+			container.appendChild(element);
+			container.appendChild(button);
+		} else {
+			// Wrapper already exists, find the button
+			button = container.querySelector(".date-picker-button");
+		}
+
+		if (button) {
+			button.addEventListener("click", () => {
+				// Make input readonly while picker is open
+				element.readOnly = true;
+				fp.open();
+				fp.config.onClose.push(() => {
+					element.readOnly = false;
+				});
 			});
-		});
+		}
 
 		element.addEventListener("click", () => fp.close());
 	}
@@ -243,7 +270,9 @@
 				}
 
 				// Reattach timezone and/or BC/AD suffix if present
-				const match = prevDateStr.match(/([+-]\d{2}(:?\d{2})?|Z)?(\s?(BC|AD))?$/);
+				const match = prevDateStr.match(
+					/([+-]\d{2}(:?\d{2})?|Z)?(\s?(BC|AD))?$/
+				);
 				if (match && match[1]) {
 					datestr += match[1];
 				}
@@ -311,9 +340,15 @@
 			// the height that is defined in CSS
 			const lineHeight = editor.renderer.lineHeight;
 			const lineCount = editor.session.getLength();
-			const cssHeight = parseInt(getComputedStyle(editor.container).height, 10);
+			const cssHeight = parseInt(
+				getComputedStyle(editor.container).height,
+				10
+			);
 			const padding = 4;
-			const newHeight = Math.max(cssHeight, lineCount * lineHeight + padding);
+			const newHeight = Math.max(
+				cssHeight,
+				lineCount * lineHeight + padding
+			);
 			editor.container.style.height = newHeight + "px";
 			editor.resize();
 		}
@@ -369,14 +404,18 @@
 	 * @param {HTMLElement} rootElement
 	 */
 	function createDateAndTimePickers(rootElement) {
-		rootElement.querySelectorAll("input[data-type^=timestamp]").forEach((element) => {
-			//console.log(element);
-			createDateTimePicker(element);
-		});
-		rootElement.querySelectorAll("input[data-type^=date]").forEach((element) => {
-			//console.log(element);
-			createDatePicker(element);
-		});
+		rootElement
+			.querySelectorAll("input[data-type^=timestamp]")
+			.forEach((element) => {
+				//console.log(element);
+				createDateTimePicker(element);
+			});
+		rootElement
+			.querySelectorAll("input[data-type^=date]")
+			.forEach((element) => {
+				//console.log(element);
+				createDatePicker(element);
+			});
 	}
 
 	// Tooltips

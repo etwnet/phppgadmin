@@ -50,11 +50,14 @@ class SequenceDumper extends AbstractDumper
             $c_sequence = $sequence;
             $this->connection->clean($c_schema);
             $this->connection->clean($c_sequence);
-            $commentSql = "SELECT pg_catalog.obj_description(s.oid, 'pg_class') AS comment FROM pg_catalog.pg_class s JOIN pg_catalog.pg_namespace n ON n.oid = s.relnamespace WHERE s.relname = '{$c_sequence}' AND n.nspname = '{$c_schema}' AND s.relkind = 'S'";
-            $commentRs = $this->connection->selectSet($commentSql);
-            if ($commentRs && !$commentRs->EOF && !empty($commentRs->fields['comment'])) {
-                $this->connection->clean($commentRs->fields['comment']);
-                $this->write("COMMENT ON SEQUENCE \"" . addslashes($c_schema) . "\".\"" . addslashes($c_sequence) . "\" IS '{$commentRs->fields['comment']}';\\n");
+            // Add comment if present and requested
+            if ($this->shouldIncludeComments($options)) {
+                $commentSql = "SELECT pg_catalog.obj_description(s.oid, 'pg_class') AS comment FROM pg_catalog.pg_class s JOIN pg_catalog.pg_namespace n ON n.oid = s.relnamespace WHERE s.relname = '{$c_sequence}' AND n.nspname = '{$c_schema}' AND s.relkind = 'S'";
+                $commentRs = $this->connection->selectSet($commentSql);
+                if ($commentRs && !$commentRs->EOF && !empty($commentRs->fields['comment'])) {
+                    $this->connection->clean($commentRs->fields['comment']);
+                    $this->write("COMMENT ON SEQUENCE \"" . addslashes($c_schema) . "\".\"" . addslashes($c_sequence) . "\" IS '{$commentRs->fields['comment']}';\\n");
+                }
             }
 
             $this->writePrivileges($sequence, 'sequence', $schema);

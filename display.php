@@ -1351,10 +1351,10 @@ if ($action == 'dobrowsefk') {
 switch ($action) {
 	case 'editrow':
 	case 'insertrow':
-		if (isset($_POST['save']))
-			doEditRow(false);
-		else
+		if (isset($_POST['cancel']))
 			doBrowse();
+		else
+			doEditRow(false);
 		break;
 	case 'confeditrow':
 	case 'confinsertrow':

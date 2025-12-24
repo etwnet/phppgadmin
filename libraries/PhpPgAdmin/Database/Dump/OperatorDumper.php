@@ -63,7 +63,7 @@ class OperatorDumper extends AbstractDumper
 
             $this->write("\n);\n");
 
-            if ($rs->fields['oprcomment'] !== null) {
+            if ($this->shouldIncludeComments($options) && $rs->fields['oprcomment'] !== null) {
                 $this->connection->clean($rs->fields['oprcomment']);
                 $this->write("COMMENT ON OPERATOR \"{$schema}\".\"{$name}\" (" . ($leftType ?: 'NONE') . ", " . ($rightType ?: 'NONE') . ") IS '{$rs->fields['oprcomment']}';\n");
             }

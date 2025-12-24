@@ -53,7 +53,7 @@ class AggregateDumper extends AbstractDumper
 
             $this->write("\n);\n");
 
-            if ($rs->fields['aggrcomment'] !== null) {
+            if ($this->shouldIncludeComments($options) && $rs->fields['aggrcomment'] !== null) {
                 $this->connection->clean($rs->fields['aggrcomment']);
                 $this->write("COMMENT ON AGGREGATE \"{$schema}\".\"{$name}\" (" . (($rs->fields['proargtypes'] === null) ? '*' : $rs->fields['proargtypes']) . ") IS '{$rs->fields['aggrcomment']}';\n");
             }
