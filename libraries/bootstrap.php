@@ -55,11 +55,18 @@ if (!empty($conf['session_path'])) {
 
 	$sessionPath = $conf['session_path'];
 
-	$isRelative = ($sessionPath[0] != '/' && $sessionPath[0] != '\\') &&
-		(strlen($sessionPath) <= 2 || $sessionPath[1] != ':');
-	if ($isRelative) {
-		// Relative path
-		$sessionPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $sessionPath;
+	// Check if path starts with ./ or .\ (project-relative)
+	if (strpos($sessionPath, './') === 0 || strpos($sessionPath, '.\\') === 0) {
+		// Project-relative path - make it relative to the app directory
+		$sessionPath = __DIR__ . '/../' . substr($sessionPath, 2);
+	} else {
+		// Otherwise treat as relative to system temp dir
+		$isRelative = ($sessionPath[0] != '/' && $sessionPath[0] != '\\') &&
+			(strlen($sessionPath) <= 2 || $sessionPath[1] != ':');
+		if ($isRelative) {
+			// Relative path - make it relative to system temp
+			$sessionPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $sessionPath;
+		}
 	}
 
 	if (!is_dir($sessionPath)) {
@@ -112,8 +119,8 @@ if (!isset($_SESSION['config_verified'])) {
 		'show_oids' => null,
 		'max_rows' => null,
 		'max_chars' => null,
-		'session_timeout' => null,
-		'session_path' => null,
+		//'session_timeout' => null,
+		//'session_path' => null,
 		'help_base' => null,
 		'ajax_refresh' => null,
 		'max_get_query_length' => null,

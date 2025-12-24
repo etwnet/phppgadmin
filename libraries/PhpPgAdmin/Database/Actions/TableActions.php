@@ -424,7 +424,8 @@ class TableActions extends AbstractActions
         $first = true;
         while (!$atts->EOF) {
             $this->connection->fieldClean($atts->fields['attname']);
-            if ($atts->fields['attstattarget'] >= 0) {
+            // Only output SET STATISTICS if the value is non-negative and not empty
+            if (isset($atts->fields['attstattarget']) && $atts->fields['attstattarget'] !== '' && $atts->fields['attstattarget'] >= 0) {
                 if ($first) {
                     $sql .= "\n";
                     $first = false;

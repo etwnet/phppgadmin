@@ -63,7 +63,7 @@ class TypeDumper extends AbstractDumper
         // Add comment if present
         $typeActions = new TypeActions($this->connection);
         $typeInfo = $typeActions->getType($typeName);
-        if ($typeInfo && !$typeInfo->EOF && $typeInfo->fields['comment'] !== null) {
+        if ($typeInfo && !$typeInfo->EOF && isset($typeInfo->fields['comment']) && $typeInfo->fields['comment'] !== null) {
             $this->connection->clean($typeInfo->fields['comment']);
             $this->write("COMMENT ON TYPE \"" . addslashes($schema) . "\".\"" . addslashes($typeName) . "\" IS '{$typeInfo->fields['comment']}';\\n");
         }
@@ -92,7 +92,7 @@ class TypeDumper extends AbstractDumper
         // Add comment if present
         $typeActions = new TypeActions($this->connection);
         $typeInfo = $typeActions->getType($typeName);
-        if ($typeInfo && !$typeInfo->EOF && $typeInfo->fields['comment'] !== null) {
+        if ($typeInfo && !$typeInfo->EOF && isset($typeInfo->fields['comment']) && $typeInfo->fields['comment'] !== null) {
             $this->connection->clean($typeInfo->fields['comment']);
             $this->write("COMMENT ON TYPE \"" . addslashes($schema) . "\".\"" . addslashes($typeName) . "\" IS '{$typeInfo->fields['comment']}';\\n");
         }

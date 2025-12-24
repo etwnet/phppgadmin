@@ -83,6 +83,94 @@ function frameSetHandler() {
 		});
 	}
 
+	/**
+	 * Capture all form values from a form element
+	 * @param {HTMLFormElement} form - The form to capture
+	 * @return {Object} Object containing all form field names and values
+	 */
+	function captureFormState(form) {
+		const formState = {};
+		if (!form) return formState;
+
+		const formData = new FormData(form);
+		for (const [key, value] of formData.entries()) {
+			if (!formState[key]) {
+				formState[key] = [];
+			}
+			formState[key].push(value);
+		}
+
+		// Also capture checkbox and radio states explicitly
+		form.querySelectorAll(
+			"input[type=checkbox], input[type=radio]"
+		).forEach((input) => {
+			if (!formState[input.name]) {
+				formState[input.name] = [];
+			}
+			if (input.checked && !formState[input.name].includes(input.value)) {
+				formState[input.name].push(input.value);
+			}
+		});
+
+		// Capture select element values
+		form.querySelectorAll("select").forEach((select) => {
+			formState[select.name] = select.value;
+		});
+
+		// Capture textarea values
+		form.querySelectorAll("textarea").forEach((textarea) => {
+			formState[textarea.name] = textarea.value;
+		});
+
+		return formState;
+	}
+
+	/**
+	 * Restore form values from saved state
+	 * @param {HTMLFormElement} form - The form to restore
+	 * @param {Object} formState - The saved form state
+	 */
+	function restoreFormState(form, formState) {
+		if (!form || !formState) return;
+
+		// Restore text inputs, textareas, and selects
+		form.querySelectorAll(
+			"input[type=text], input[type=hidden], textarea, select"
+		).forEach((field) => {
+			if (formState[field.name] !== undefined) {
+				if (field.tagName === "SELECT") {
+					field.value = formState[field.name];
+				} else if (field.tagName === "TEXTAREA") {
+					field.value = formState[field.name];
+				} else {
+					field.value = Array.isArray(formState[field.name])
+						? formState[field.name][0]
+						: formState[field.name];
+				}
+			}
+		});
+
+		// Restore checkboxes
+		form.querySelectorAll("input[type=checkbox]").forEach((checkbox) => {
+			const savedValues = formState[checkbox.name];
+			if (Array.isArray(savedValues)) {
+				checkbox.checked = savedValues.includes(checkbox.value);
+			} else if (savedValues !== undefined) {
+				checkbox.checked = savedValues === checkbox.value;
+			}
+		});
+
+		// Restore radio buttons
+		form.querySelectorAll("input[type=radio]").forEach((radio) => {
+			const savedValue = formState[radio.name];
+			if (Array.isArray(savedValue)) {
+				radio.checked = savedValue.includes(radio.value);
+			} else if (savedValue !== undefined) {
+				radio.checked = savedValue === radio.value;
+			}
+		});
+	}
+
 	async function loadContent(url, options = {}, addToHistory = true) {
 		url = url.replace(/[&?]$/, "");
 		url += (url.includes("?") ? "&" : "?") + "target=content";
@@ -121,8 +209,10 @@ function frameSetHandler() {
 
 			if (content.querySelector("form")) {
 				// If there was a form, replace current history state
+				const form = content.querySelector("form");
 				const data = {
 					html: content.innerHTML,
+					formState: captureFormState(form),
 				};
 				history.replaceState(data, document.title, location.href);
 				//console.log("Replaced history state for form content");
@@ -149,6 +239,9 @@ function frameSetHandler() {
 				const data = {};
 				if (/post/i.test(options.method ?? "") || form) {
 					data.html = responseText;
+					if (form) {
+						data.formState = captureFormState(form);
+					}
 				}
 				history.pushState(data, document.title, finalUrl);
 				// Scroll back to the top
@@ -272,6 +365,11 @@ function frameSetHandler() {
 
 		if (e.state?.html) {
 			setContent(e.state.html);
+			// Restore form state if available
+			if (e.state?.formState) {
+				const form = content.querySelector("form");
+				restoreFormState(form, e.state.formState);
+			}
 			const event = new CustomEvent("frameLoaded", {
 				detail: { url: url },
 				target: content,

@@ -52,9 +52,9 @@ class RoleDumper extends AbstractDumper
                 $attrs[] = "LOGIN";
             else
                 $attrs[] = "NOLOGIN";
-            if ($this->connection->phpBool($roles->fields['rolreplication']))
+            if (isset($roles->fields['rolreplication']) && $this->connection->phpBool($roles->fields['rolreplication']))
                 $attrs[] = "REPLICATION";
-            if ($this->connection->phpBool($roles->fields['rolbypassrls']))
+            if (isset($roles->fields['rolbypassrls']) && $this->connection->phpBool($roles->fields['rolbypassrls']))
                 $attrs[] = "BYPASSRLS";
 
             if ($roles->fields['rolconnlimit'] != -1) {

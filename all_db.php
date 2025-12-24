@@ -487,6 +487,20 @@ function doExport($msg = '')
 		</p>
 
 		<p>
+			<input type="checkbox" id="s_clean" name="s_clean" value="true" />
+			<label for="s_clean"><?= $lang['strdrop']; ?></label>
+			<br />
+			<input type="checkbox" id="sd_clean" name="sd_clean" value="true" />
+			<label for="sd_clean"><?= $lang['strdrop']; ?> (Structure &amp; Data)</label>
+			<br />
+			<input type="checkbox" id="if_not_exists" name="if_not_exists" value="true" />
+			<label for="if_not_exists">Use IF NOT EXISTS</label>
+			<br />
+			<input type="checkbox" id="use_internal" name="use_internal" value="true" />
+			<label for="use_internal">Force internal PHP dumper</label>
+		</p>
+
+		<p>
 			<input type="hidden" name="action" value="export" />
 			<input type="hidden" name="subject" value="server" />
 			<?= $misc->form; ?>

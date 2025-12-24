@@ -43,7 +43,7 @@ class DomainDumper extends AbstractDumper
 
         $this->write("CREATE DOMAIN \"" . addslashes($c_schema) . "\".\"" . addslashes($c_domain) . "\" AS {$rs->fields['basetype']}");
 
-        if ($rs->fields['typdefault'] !== null) {
+        if (isset($rs->fields['typdefault']) && $rs->fields['typdefault'] !== null) {
             $this->write("\n    DEFAULT {$rs->fields['typdefault']}");
         }
 
@@ -56,7 +56,7 @@ class DomainDumper extends AbstractDumper
 
         $this->write(";\n");
 
-        if ($rs->fields['comment'] !== null) {
+        if (isset($rs->fields['comment']) && $rs->fields['comment'] !== null) {
             $this->connection->clean($rs->fields['comment']);
             $this->write("COMMENT ON DOMAIN \"" . addslashes($c_schema) . "\".\"" . addslashes($c_domain) . "\" IS '{$rs->fields['comment']}';\\n");
         }

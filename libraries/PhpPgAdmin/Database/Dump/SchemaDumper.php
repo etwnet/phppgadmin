@@ -22,7 +22,15 @@ class SchemaDumper extends AbstractDumper
             return;
         }
 
-        $this->writeHeader("Schema: {$schema}");
+        // Save and set schema context for Actions that depend on it
+        $oldSchema = $this->connection->_schema;
+        $this->connection->_schema = $schema;
+
+        // Also save and set database context if provided
+        $oldDatabase = $this->connection->conn->database;
+        if (!empty($params['database']) && $params['database'] !== $oldDatabase) {
+            $this->connection->conn->database = $params['database'];
+        }
 
         $c_schema = $schema;
         $this->connection->clean($c_schema);
@@ -50,6 +58,10 @@ class SchemaDumper extends AbstractDumper
         $this->dumpOtherObjects($schema, $options);
 
         $this->writePrivileges($schema, 'schema');
+
+        // Restore original contexts
+        $this->connection->_schema = $oldSchema;
+        $this->connection->conn->database = $oldDatabase;
     }
 
     protected function dumpTypes($schema, $options)
@@ -71,9 +83,17 @@ class SchemaDumper extends AbstractDumper
 
     protected function dumpSequences($schema, $options)
     {
-        $sequenceActions = new SequenceActions($this->connection);
-        $sequences = $sequenceActions->getSequences();
+        $c_schema = $schema;
+        $this->connection->clean($c_schema);
+
+        $sql = "SELECT sequence_name AS seqname
+                FROM information_schema.sequences
+                WHERE sequence_schema = '{$c_schema}'
+                ORDER BY sequence_name";
+
+        $sequences = $this->connection->selectSet($sql);
         $dumper = DumpFactory::create('sequence', $this->connection);
+
         while ($sequences && !$sequences->EOF) {
             $dumper->dump('sequence', ['sequence' => $sequences->fields['seqname'], 'schema' => $schema], $options);
             $sequences->moveNext();
@@ -82,9 +102,19 @@ class SchemaDumper extends AbstractDumper
 
     protected function dumpTables($schema, $options)
     {
-        $tableActions = new TableActions($this->connection);
-        $tables = $tableActions->getTables();
+        $c_schema = $schema;
+        $this->connection->clean($c_schema);
+
+        $sql = "SELECT c.relname
+                FROM pg_catalog.pg_class c
+                LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+                WHERE c.relkind = 'r'
+                AND n.nspname = '{$c_schema}'
+                ORDER BY c.relname";
+
+        $tables = $this->connection->selectSet($sql);
         $dumper = DumpFactory::create('table', $this->connection);
+
         while ($tables && !$tables->EOF) {
             $dumper->dump('table', ['table' => $tables->fields['relname'], 'schema' => $schema], $options);
             $tables->moveNext();
@@ -93,9 +123,19 @@ class SchemaDumper extends AbstractDumper
 
     protected function dumpViews($schema, $options)
     {
-        $viewActions = new ViewActions($this->connection);
-        $views = $viewActions->getViews();
+        $c_schema = $schema;
+        $this->connection->clean($c_schema);
+
+        $sql = "SELECT c.relname
+                FROM pg_catalog.pg_class c
+                LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+                WHERE c.relkind = 'v'
+                AND n.nspname = '{$c_schema}'
+                ORDER BY c.relname";
+
+        $views = $this->connection->selectSet($sql);
         $dumper = DumpFactory::create('view', $this->connection);
+
         while ($views && !$views->EOF) {
             $dumper->dump('view', ['view' => $views->fields['relname'], 'schema' => $schema], $options);
             $views->moveNext();
@@ -104,9 +144,19 @@ class SchemaDumper extends AbstractDumper
 
     protected function dumpFunctions($schema, $options)
     {
-        $functionActions = new SqlFunctionActions($this->connection);
-        $functions = $functionActions->getFunctions();
+        $c_schema = $schema;
+        $this->connection->clean($c_schema);
+
+        $sql = "SELECT p.oid AS prooid
+                FROM pg_catalog.pg_proc p
+                LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+                WHERE n.nspname = '{$c_schema}'
+                AND p.prokind = 'f'
+                ORDER BY p.proname";
+
+        $functions = $this->connection->selectSet($sql);
         $dumper = DumpFactory::create('function', $this->connection);
+
         while ($functions && !$functions->EOF) {
             $dumper->dump('function', ['function_oid' => $functions->fields['prooid'], 'schema' => $schema], $options);
             $functions->moveNext();
@@ -115,10 +165,20 @@ class SchemaDumper extends AbstractDumper
 
     protected function dumpOtherObjects($schema, $options)
     {
+        $c_schema = $schema;
+        $this->connection->clean($c_schema);
+
         // Aggregates
-        $aggregateActions = new AggregateActions($this->connection);
-        $aggregates = $aggregateActions->getAggregates();
+        $sql = "SELECT p.proname, pg_catalog.pg_get_function_arguments(p.oid) AS proargtypes
+                FROM pg_catalog.pg_proc p
+                LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+                WHERE n.nspname = '{$c_schema}'
+                AND p.prokind = 'a'
+                ORDER BY p.proname";
+
+        $aggregates = $this->connection->selectSet($sql);
         $aggDumper = DumpFactory::create('aggregate', $this->connection);
+
         while ($aggregates && !$aggregates->EOF) {
             $aggDumper->dump('aggregate', [
                 'aggregate' => $aggregates->fields['proname'],
@@ -129,9 +189,15 @@ class SchemaDumper extends AbstractDumper
         }
 
         // Operators
-        $operatorActions = new OperatorActions($this->connection);
-        $operators = $operatorActions->getOperators();
+        $sql = "SELECT o.oid
+                FROM pg_catalog.pg_operator o
+                LEFT JOIN pg_catalog.pg_namespace n ON n.oid = o.oprnamespace
+                WHERE n.nspname = '{$c_schema}'
+                ORDER BY o.oid";
+
+        $operators = $this->connection->selectSet($sql);
         $opDumper = DumpFactory::create('operator', $this->connection);
+
         while ($operators && !$operators->EOF) {
             $opDumper->dump('operator', [
                 'operator_oid' => $operators->fields['oid'],

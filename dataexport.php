@@ -33,6 +33,57 @@ if (!ini_get('safe_mode'))
 $pg = AppContainer::getPostgres();
 $misc = AppContainer::getMisc();
 
+/**
+ * Generate a descriptive filename for the dump.
+ * Shared logic used by both dataexport.php and dbexport.php.
+ */
+function generateDumpFilename($subject, $request)
+{
+	$timestamp = date('Ymd_His');
+	$filename_base = 'dump_' . $timestamp;
+	$filename_parts = [];
+
+	// Add database name if available
+	if (isset($request['database']) && $subject !== 'server') {
+		$filename_parts[] = $request['database'];
+	}
+
+	// Add schema name if available
+	if (isset($request['schema'])) {
+		$filename_parts[] = $request['schema'];
+	}
+
+	// Add table or view name if available
+	if (isset($request['table'])) {
+		$filename_parts[] = $request['table'];
+	} elseif (isset($request['view'])) {
+		$filename_parts[] = $request['view'];
+	}
+
+	// Add export type shorthand if available
+	if (isset($request['what'])) {
+		$what_map = [
+			'dataonly' => 'data',
+			'structureonly' => 'struct',
+			'structureanddata' => 'full'
+		];
+		$what_short = $what_map[$request['what']] ?? 'export';
+		$filename_parts[] = $what_short;
+	}
+
+	// Build final filename
+	if (!empty($filename_parts)) {
+		$filename_base .= '_' . implode('_', array_map(
+			function ($v) {
+				return preg_replace('/[^a-zA-Z0-9_-]/', '', $v);
+			},
+			$filename_parts
+		));
+	}
+
+	return $filename_base;
+}
+
 // if (!isset($_REQUEST['table']) && !isset($_REQUEST['query']))
 // What must we do in this case? Maybe redirect to the homepage?
 
@@ -66,41 +117,38 @@ if (isset($_REQUEST['what'])) {
 			exit;
 	}
 
-	// Use internal dumper for SQL/COPY formats if requested or as fallback
+	// Use internal dumper for SQL/COPY formats
 	if (in_array($format, ['sql', 'copy'])) {
-		$use_internal = isset($_REQUEST['use_internal']) || empty(DumpManager::getDumpExecutable(false));
+		$subject = $_REQUEST['subject'] ?? 'table';
+		$params = [
+			'table' => $_REQUEST['table'] ?? null,
+			'schema' => $_REQUEST['schema'] ?? $pg->_schema,
+			'database' => $_REQUEST['database'] ?? null
+		];
+		$options = [
+			'format' => $format,
+			'oids' => $oids,
+			'clean' => $clean,
+			'if_not_exists' => isset($_REQUEST['if_not_exists']),
+			'structure_only' => ($what === 'structureonly'),
+			'data_only' => ($what === 'dataonly')
+		];
 
-		if ($use_internal) {
-			$subject = $_REQUEST['subject'] ?? 'table';
-			$params = [
-				'table' => $_REQUEST['table'] ?? null,
-				'schema' => $_REQUEST['schema'] ?? $pg->_schema,
-				'database' => $_REQUEST['database'] ?? null
-			];
-			$options = [
-				'format' => $format,
-				'oids' => $oids,
-				'clean' => $clean,
-				'if_not_exists' => isset($_REQUEST['if_not_exists']),
-				'structure_only' => ($what === 'structureonly'),
-				'data_only' => ($what === 'dataonly')
-			];
-
-			// Set headers for download if necessary
-			if ($_REQUEST['output'] == 'download') {
-				header('Content-Type: application/download');
-				header('Content-Disposition: attachment; filename=dump.sql');
-			} else {
-				header('Content-Type: text/plain');
-			}
-
-			$dumper = DumpFactory::create($subject, $pg);
-			$dumper->dump($subject, $params, $options);
-			exit;
+		// Set headers for download if necessary
+		$filename = generateDumpFilename($subject, $_REQUEST);
+		if ($_REQUEST['output'] == 'download') {
+			header('Content-Type: application/download');
+			header('Content-Disposition: attachment; filename=' . $filename . '.sql');
+		} else {
+			header('Content-Type: text/plain');
 		}
+
+		$dumper = DumpFactory::create($subject, $pg);
+		$dumper->dump($subject, $params, $options);
+		exit;
 	}
 
-	// Validate that the requested format is available
+	// All other formats (CSV, TAB, HTML, XML) are handled with PHP-based export
 	$status = $pg->beginDump();
 
 	// If the dump is not dataonly then dump the structure prefix
@@ -317,70 +365,75 @@ if (isset($_REQUEST['what'])) {
 	if (isset($msg))
 		$misc->printMsg($msg);
 
-	// Get available formats based on current dump situation
-	$available_formats = DumpManager::getAvailableFormats(false, 'dataonly');
-	$has_pg_dump = $available_formats['has_pg_dump'];
-	$available_list = $available_formats['available'];
+	?>
+	<form action="dataexport.php" method="post">
+		<table>
+			<tr>
+				<th class="data">Export Type:</th>
+				<td>
+					<select name="what">
+						<option value="dataonly">Data Only</option>
+						<option value="structureonly">Structure Only</option>
+						<option value="structureanddata">Structure and Data</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th class="data"><?= $lang['strformat']; ?>:</th>
+				<td>
+					<select name="d_format">
+						<?php if (isset($_REQUEST['table'])): ?>
+							<option value="sql">SQL</option>
+							<option value="copy">COPY</option>
+						<?php endif; ?>
+						<?php if (in_array('csv', $available_list)): ?>
+							<option value="csv">CSV</option>
+						<?php endif; ?>
+						<?php if (in_array('tab', $available_list)): ?>
+							<option value="tab"><?= $lang['strtabbed']; ?></option>
+						<?php endif; ?>
+						<?php if (in_array('html', $available_list)): ?>
+							<option value="html">XHTML</option>
+						<?php endif; ?>
+						<?php if (in_array('xml', $available_list)): ?>
+							<option value="xml">XML</option>
+						<?php endif; ?>
+					</select>
+				</td>
+			</tr>
+		</table>
 
-	// Show info about dump status
-	$dump_info = DumpManager::getDumpStrategyInfo(false);
-	if (!$has_pg_dump) {
-		echo "<div style=\"background-color: #fff3cd; border: 1px solid #ffc107; padding: 10px; margin-bottom: 15px; border-radius: 4px;\">\n";
-		echo "<strong>Note:</strong> " . htmlspecialchars($dump_info['message']) . "\n";
-		echo "</div>\n";
-	}
+		<h3><?= $lang['stroptions']; ?></h3>
+		<p>
+			<input type="checkbox" id="s_clean" name="s_clean" value="true" />
+			<label for="s_clean"><?= $lang['strdrop']; ?></label>
+			<br />
+			<input type="checkbox" id="if_not_exists" name="if_not_exists" value="true" />
+			<label for="if_not_exists">Use IF NOT EXISTS</label>
+		</p>
 
-	echo "<form action=\"dataexport.php\" method=\"post\">\n";
-	echo "<table>\n";
-	echo "<tr><th class=\"data\">{$lang['strformat']}:</th><td><select name=\"d_format\">\n";
+		<p>
+			<input type="radio" id="output1" name="output" value="show" checked="checked" />
+			<label for="output1"><?= $lang['strshow']; ?></label>
+			<br />
+			<input type="radio" id="output2" name="output" value="download" />
+			<label for="output2"><?= $lang['strdownload']; ?></label>
+		</p>
 
-	// COPY and SQL require a table and pg_dump
-	if (isset($_REQUEST['table'])) {
-		if (in_array('copy', $available_list)) {
-			echo "<option value=\"copy\">COPY</option>\n";
-		}
-		if (in_array('sql', $available_list)) {
-			echo "<option value=\"sql\">SQL</option>\n";
-		}
-	}
-
-	// CSV/TAB/HTML/XML always available
-	if (in_array('csv', $available_list)) {
-		echo "<option value=\"csv\">CSV</option>\n";
-	}
-	if (in_array('tab', $available_list)) {
-		echo "<option value=\"tab\">{$lang['strtabbed']}</option>\n";
-	}
-	if (in_array('html', $available_list)) {
-		echo "<option value=\"html\">XHTML</option>\n";
-	}
-	if (in_array('xml', $available_list)) {
-		echo "<option value=\"xml\">XML</option>\n";
-	}
-
-	echo "</select></td></tr>";
-	echo "</table>\n";
-
-	echo "<h3>{$lang['stroptions']}</h3>\n";
-	echo "<p><input type=\"checkbox\" id=\"s_clean\" name=\"s_clean\" value=\"true\" /><label for=\"s_clean\">{$lang['strdrop']}</label>\n";
-	echo "<br/><input type=\"checkbox\" id=\"if_not_exists\" name=\"if_not_exists\" value=\"true\" /><label for=\"if_not_exists\">Use IF NOT EXISTS</label>\n";
-	echo "<br/><input type=\"checkbox\" id=\"use_internal\" name=\"use_internal\" value=\"true\" /><label for=\"use_internal\">Force internal PHP dumper</label></p>\n";
-
-	echo "<p><input type=\"radio\" id=\"output1\" name=\"output\" value=\"show\" checked=\"checked\" /><label for=\"output1\">{$lang['strshow']}</label>\n";
-	echo "<br/><input type=\"radio\" id=\"output2\" name=\"output\" value=\"download\" /><label for=\"output2\">{$lang['strdownload']}</label></p>\n";
-
-	echo "<p><input type=\"hidden\" name=\"action\" value=\"export\" />\n";
-	echo "<input type=\"hidden\" name=\"what\" value=\"dataonly\" />\n";
-	if (isset($_REQUEST['table'])) {
-		echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
-	}
-	echo "<input type=\"hidden\" name=\"query\" value=\"", htmlspecialchars_nc(urlencode($_REQUEST['query'])), "\" />\n";
-	if (isset($_REQUEST['search_path'])) {
-		echo "<input type=\"hidden\" name=\"search_path\" value=\"", htmlspecialchars_nc($_REQUEST['search_path']), "\" />\n";
-	}
-	echo $misc->form;
-	echo "<input type=\"submit\" value=\"{$lang['strexport']}\" /></p>\n";
-	echo "</form>\n";
+		<p>
+			<input type="hidden" name="action" value="export" />
+			<?php if (isset($_REQUEST['table'])): ?>
+				<input type="hidden" name="table" value="<?= htmlspecialchars_nc($_REQUEST['table']); ?>" />
+			<?php endif; ?>
+			<input type="hidden" name="query" value="<?= htmlspecialchars_nc(urlencode($_REQUEST['query'])); ?>" />
+			<?php if (isset($_REQUEST['search_path'])): ?>
+				<input type="hidden" name="search_path" value="<?= htmlspecialchars_nc($_REQUEST['search_path']); ?>" />
+			<?php endif; ?>
+			<?= $misc->form; ?>
+			<input type="submit" value="<?= $lang['strexport']; ?>" />
+		</p>
+	</form>
+	<?php
 
 	$misc->printFooter();
 }

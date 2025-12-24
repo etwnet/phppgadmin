@@ -4,6 +4,8 @@ namespace PhpPgAdmin\Database\Dump;
 
 use PhpPgAdmin\Core\AppContainer;
 use PhpPgAdmin\Database\Actions\SchemaActions;
+use PhpPgAdmin\Database\Connector;
+use PhpPgAdmin\Database\Postgres;
 
 /**
  * Orchestrator dumper for a PostgreSQL database.
@@ -20,7 +22,10 @@ class DatabaseDumper extends AbstractDumper
         $c_database = $database;
         $this->connection->clean($c_database);
 
-        $this->writeHeader("Database: {$database}");
+        // Begin transaction for data consistency (only if not structure-only)
+        if (empty($options['structure_only'])) {
+            $this->connection->beginDump();
+        }
 
         // Database settings
         $this->write("-- Database settings\n");
@@ -29,6 +34,20 @@ class DatabaseDumper extends AbstractDumper
         }
         $this->write("CREATE DATABASE " . $this->getIfNotExists($options) . "\"" . addslashes($c_database) . "\";\n");
         $this->write("\\c \"" . addslashes($c_database) . "\"\n\n");
+
+        // Save current database and reconnect to target database
+        $originalDatabase = $this->connection->conn->database;
+        $this->connection->conn->close();
+
+        // Reconnect to the target database
+        $serverInfo = AppContainer::getMisc()->getServerInfo();
+        $this->connection->conn->connect(
+            $serverInfo['host'],
+            $serverInfo['username'] ?? '',
+            $serverInfo['password'] ?? '',
+            $database,
+            $serverInfo['port'] ?? 5432
+        );
 
         // Iterate through schemas
         $schemaActions = new SchemaActions($this->connection);
@@ -49,5 +68,20 @@ class DatabaseDumper extends AbstractDumper
         }
 
         $this->writePrivileges($database, 'database');
+
+        // End transaction for this database
+        if (empty($options['structure_only'])) {
+            $this->connection->endDump();
+        }
+
+        // Reconnect to original database
+        $this->connection->conn->close();
+        $this->connection->conn->connect(
+            $serverInfo['host'],
+            $serverInfo['username'] ?? '',
+            $serverInfo['password'] ?? '',
+            $originalDatabase,
+            $serverInfo['port'] ?? 5432
+        );
     }
 }

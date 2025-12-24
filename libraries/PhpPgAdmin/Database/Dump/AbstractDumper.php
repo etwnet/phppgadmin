@@ -80,7 +80,8 @@ abstract class AbstractDumper extends AbstractContext implements DumperInterface
         $aclActions = new AclActions($this->connection);
         $privileges = $aclActions->getPrivileges($objectName, $objectType);
 
-        if (empty($privileges)) {
+        // Handle error codes returned as integers (-1 for unsupported type, -2 for invalid entity)
+        if (!is_array($privileges) || empty($privileges)) {
             return;
         }
 
