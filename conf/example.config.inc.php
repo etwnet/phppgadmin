@@ -1,11 +1,11 @@
 <?php
 
 /**
-	* Central phpPgAdmin configuration.  As a user you may modify the
-	* settings here for your particular configuration.
-	*
-	* $Id: config.inc.php-dist,v 1.55 2008/02/18 21:10:31 xzilla Exp $
-	*/
+ * Central phpPgAdmin configuration.  As a user you may modify the
+ * settings here for your particular configuration.
+ *
+ * $Id: config.inc.php-dist,v 1.55 2008/02/18 21:10:31 xzilla Exp $
+ */
 
 // An example server.  Create as many of these as you wish,
 // indexed from zero upwards.
@@ -49,24 +49,24 @@ $conf['servers'][0]['defaultdb'] = 'template1';
 
 /* Groups definition */
 /* Groups allow administrators to logicaly group servers together under
-	* group nodes in the left browser tree
-	*
-	* The group '0' description
-	*/
+ * group nodes in the left browser tree
+ *
+ * The group '0' description
+ */
 //$conf['srv_groups'][0]['desc'] = 'group one';
 
 /* Add here servers indexes belonging to the group '0' separated by comma */
 //$conf['srv_groups'][0]['servers'] = '0,1,2';
 
 /* A server can belong to multi groups. Here server 1 is referenced in both
-	* 'group one' and 'group two'*/
+ * 'group one' and 'group two'*/
 //$conf['srv_groups'][1]['desc'] = 'group two';
 //$conf['srv_groups'][1]['servers'] = '3,1';
 
 /* A group can be nested in one or more existing groups using the 'parents'
-	* parameter. Here the group 'group three' contains only one server and will
-	* appear as a subgroup in both 'group one' and 'group two':
-	*/
+ * parameter. Here the group 'group three' contains only one server and will
+ * appear as a subgroup in both 'group one' and 'group two':
+ */
 //$conf['srv_groups'][2]['desc'] = 'group three';
 //$conf['srv_groups'][2]['servers'] = '4';
 //$conf['srv_groups'][2]['parents'] = '0,1';
@@ -74,11 +74,11 @@ $conf['servers'][0]['defaultdb'] = 'template1';
 /* Warning: Only groups with no parents appears at the root of the tree. */
 
 /* You can apply specific theme depending on servers, users and databases
-	* The priority order is :
-	*   * the theme defined for a server
-	*   * the theme defined for a database apply over the server one
-	*   * the theme defined for a user apply over the database one
-	*/
+ * The priority order is :
+ *   * the theme defined for a server
+ *   * the theme defined for a database apply over the server one
+ *   * the theme defined for a user apply over the database one
+ */
 /* Example for servers */
 //$conf['servers'][0]['theme']['default'] = 'default';
 /* Example for users */
@@ -147,8 +147,13 @@ $conf['max_chars'] = 50;
 // Session timeout duration in seconds
 // $conf['session_timeout'] = 3600;
 
-// Custom session file path, absolute or relative to system temp dir.
-// $conf['session_path'] = 'phppgadmin_sessions';
+// Session file storage path.
+// Specify an explicit full path. Examples:
+//   System temp directory:  sys_get_temp_dir() . '/phppgadmin_sessions'
+//   Project directory:      __DIR__ . '/../sessions'
+//   Absolute path:          '/var/lib/phppgadmin/sessions'
+// The directory will be created if it doesn't exist, but must be writable by the web server.
+// $conf['session_path'] = sys_get_temp_dir() . '/phppgadmin_sessions';
 
 // Base URL for PostgreSQL documentation.
 // '%s', if present, will be replaced with the PostgreSQL version
@@ -164,13 +169,13 @@ $conf['ajax_refresh'] = 3;
 $conf['max_get_query_length'] = 5000;
 
 /** Plugins management
-	* Add plugin names to the following array to activate them
-	* Example:
-	*   $conf['plugins'] = array(
-	*     'Example',
-	*     'Slony'
-	*   );
-	*/
+ * Add plugin names to the following array to activate them
+ * Example:
+ *   $conf['plugins'] = array(
+ *     'Example',
+ *     'Slony'
+ *   );
+ */
 $conf['plugins'] = array();
 
 return $conf;

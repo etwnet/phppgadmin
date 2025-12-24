@@ -55,31 +55,18 @@ if (!empty($conf['session_path'])) {
 
 	$sessionPath = $conf['session_path'];
 
-	// Check if path starts with ./ or .\ (project-relative)
-	if (strpos($sessionPath, './') === 0 || strpos($sessionPath, '.\\') === 0) {
-		// Project-relative path - make it relative to the app directory
-		$sessionPath = __DIR__ . '/../' . substr($sessionPath, 2);
-	} else {
-		// Otherwise treat as relative to system temp dir
-		$isRelative = ($sessionPath[0] != '/' && $sessionPath[0] != '\\') &&
-			(strlen($sessionPath) <= 2 || $sessionPath[1] != ':');
-		if ($isRelative) {
-			// Relative path - make it relative to system temp
-			$sessionPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $sessionPath;
-		}
-	}
-
+	// Ensure directory exists
 	if (!is_dir($sessionPath)) {
 		@mkdir($sessionPath, 0755, true);
 	}
 
-	// Configure session storage
-	if (is_dir($sessionPath) && is_writable($sessionPath)) {
-		ini_set('session.save_path', $sessionPath);
-	} else {
-		die("Configuration error: Session path '$sessionPath' is not writable.");
+	// Validate path is writable
+	if (!is_dir($sessionPath) || !is_writable($sessionPath)) {
+		die("Configuration error: Session path '$sessionPath' does not exist or is not writable. " .
+			"Please create the directory and ensure write permissions, or update \$conf['session_path'] in config.inc.php");
 	}
 
+	ini_set('session.save_path', $sessionPath);
 	ini_set('session.save_handler', 'files');
 }
 
