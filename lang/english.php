@@ -407,6 +407,34 @@ $lang['strconfvacuumdatabase'] = 'Are you sure you want to vacuum all tables in 
 $lang['strconfreindexdatabase'] = 'Are you sure you want to reindex all tables in database "%s"?';
 $lang['strconfclusterdatabase'] = 'Are you sure you want to cluster all tables in database "%s"?';
 
+// Export dialog strings
+$lang['strexporttype'] = 'Export Type';
+$lang['strexportmethod'] = 'Export Method';
+$lang['strexportmethod_internal'] = 'Internal PHP Dumper';
+$lang['strexportmethod_pgdump'] = 'External pg_dump/pg_dumpall (depending on selection)';
+$lang['strexportmethod_pgdumpall'] = 'External pg_dumpall (full cluster, all databases, roles, tablespaces)';
+$lang['strclusterlevelobjects'] = 'Cluster-Level Objects';
+$lang['strexportroles'] = 'Export Roles/Users';
+$lang['strexportformat'] = 'Export Data Format';
+$lang['strexporttablespaces'] = 'Export Tablespaces';
+$lang['strselectdatabasestoexport'] = 'Select Databases to Export';
+$lang['strunchecktemplatedatabases'] = 'Uncheck template databases to exclude them';
+$lang['strstructureoptions'] = 'Structure Options';
+$lang['stradddropstatements'] = 'Add DROP statements (DROP TABLE IF EXISTS, etc.)';
+$lang['struseifnotexists'] = 'Use IF NOT EXISTS (for safer re-imports)';
+$lang['strincludeobjectcomments'] = 'Include object comments';
+$lang['strdataexportoptions'] = 'Data Export Options';
+$lang['strinsertformat'] = 'INSERT Format';
+$lang['strinsertformat_desc'] = 'INSERT Format (COPY is fastest for restore):';
+$lang['strcopyformat'] = 'COPY format (fastest)';
+$lang['strmultirowinserts'] = 'Multi-row inserts (slower)';
+$lang['strsingleinserts'] = 'Single-row inserts (slowest)';
+$lang['strtruncatebeforeinsert'] = 'TRUNCATE tables before insert';
+$lang['stroutput'] = 'Output';
+$lang['strshowinbrowser'] = 'Show in browser';
+$lang['strdownloadasfile'] = 'Download as file';
+$lang['strdownloadasgzipped'] = 'Download as gzipped file';
+
 // Views
 $lang['strview'] = 'View';
 $lang['strviews'] = 'Views';

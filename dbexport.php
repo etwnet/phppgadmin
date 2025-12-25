@@ -3,10 +3,12 @@
 use PhpPgAdmin\Core\AppContainer;
 use PhpPgAdmin\Database\DumpManager;
 use PhpPgAdmin\Database\Dump\DumpFactory;
-
+use PhpPgAdmin\Database\Actions\DatabaseActions;
+use PhpPgAdmin\Database\Export\FormatterFactory;
+use PhpPgAdmin\Gui\ExportOutputRenderer;
 /**
  * Does an export of a database, schema, table, or view (via internal PHP dumper or pg_dump fallback).
- * Uses DumpFactory internally; pg_dump is used only if explicitly requested via $_REQUEST['use_pgdump'].
+ * Uses DumpFactory internally; pg_dump is used only if explicitly requested via $_REQUEST['dumper'].
  * Streams output to screen or downloads file.
  *
  * $Id: dbexport.php,v 1.22 2007/03/25 03:15:09 xzilla Exp $
@@ -24,14 +26,20 @@ AppContainer::setSkipHtmlFrame(true);
 $pg = AppContainer::getPostgres();
 $misc = AppContainer::getMisc();
 
-// Are we doing a cluster-wide dump or just a per-database dump
-$dumpall = $_REQUEST['subject'] == 'server';
-$output_method = $_REQUEST['output'] ?? 'show';
+// Parameter handling
+// DumpRenderer uses output_format (sql/csv/tab/html/xml/json) and insert_format (copy/multi/single for SQL only)
+$output_format = $_REQUEST['output_format'] ?? 'sql';
+$insert_format = $_REQUEST['insert_format'] ?? 'copy';
 
-// Determine whether to use internal dumper or pg_dump
-// Default: use internal dumper (preferred for cluster exports with full object support)
-// Use pg_dump only if explicitly selected via dumper radio button
-$use_internal = ($_REQUEST['dumper'] ?? 'internal') !== 'pgdump' || empty(DumpManager::getDumpExecutable($dumpall));
+// Are we doing a cluster-wide dump or just a per-database dump
+//$dumpall = $_REQUEST['subject'] == 'server';
+$output_method = $_REQUEST['output'] ?? 'download';
+
+// Determine dumper selection
+$dumper = $_REQUEST['dumper'] ?? 'internal';
+$use_pg_dumpall = ($dumper === 'pg_dumpall');
+$use_pgdump = ($dumper === 'pgdump');
+$use_internal = ($dumper === 'internal');
 $filename_base = generateDumpFilename($_REQUEST['subject'], $_REQUEST);
 
 // ============================================================================
@@ -45,9 +53,9 @@ if ($use_internal) {
 		'schema' => $_REQUEST['schema'] ?? null,
 		'database' => $_REQUEST['database'] ?? null
 	];
-	// Determine the actual export format based on insert_format
-	// For server dumps with data, use insert_format to decide COPY vs SQL
-	$insert_format = $_REQUEST['insert_format'] ?? 'copy';
+	// Determine the actual export format based on output_format and insert_format
+	// output_format = sql/csv/tab/html/xml/json
+	// insert_format = copy/multi/single (only for SQL format)
 	$export_format = ($insert_format === 'copy') ? 'copy' : 'sql';
 
 	$options = [
@@ -66,20 +74,11 @@ if ($use_internal) {
 
 	// Set response headers
 	if ($output_method === 'download') {
-		header('Content-Type: application/download');
-		header('Content-Disposition: attachment; filename=' . $filename_base . '.sql');
+		ExportOutputRenderer::setOutputHeaders('download', $filename_base, 'application/sql', 'sql');
 	} elseif ($output_method === 'gzipped') {
-		header('Content-Type: application/gzip');
-		header('Content-Encoding: gzip');
-		header('Content-Disposition: attachment; filename=' . $filename_base . '.sql.gz');
-		ob_start('ob_gzhandler');
+		ExportOutputRenderer::setOutputHeaders('gzipped', $filename_base, 'application/gzip', 'sql.gz');
 	} else {
-		header('Content-Type: text/html; charset=utf-8');
-	}
-
-	// Display UI for show mode
-	if ($output_method === 'show') {
-		beginHtmlOutput(null, null);
+		ExportOutputRenderer::beginHtmlOutput(null, null);
 	}
 
 	// Output dump header
@@ -91,15 +90,15 @@ if ($use_internal) {
 	$dumper = DumpFactory::create($subject, $pg);
 	$dumper->dump($subject, $params, $options);
 
-	// Close textarea for show mode and finalize gzip
+	// Close HTML output for show mode
 	if ($output_method === 'show') {
-		finishHtmlOutput();
-	} elseif ($output_method === 'gzipped') {
-		ob_end_flush();
+		ExportOutputRenderer::finishHtmlOutput();
 	}
+	// For gzipped output, ob_gzhandler auto-flushes on script end—no manual flush needed
 
 	exit;
 }
+
 
 // ============================================================================
 // EXTERNAL PG_DUMP/PG_DUMPALL PATH (fallback only)
@@ -107,104 +106,148 @@ if ($use_internal) {
 
 // Handle database selection for server exports
 $selected_databases = [];
-$use_pg_dumpall = $dumpall;
 
 // Clear cached dump executable detection to force re-check
 unset($_SESSION['dump_executable_pg_dump']);
 unset($_SESSION['dump_executable_pg_dumpall']);
 
-if ($dumpall && !empty($_REQUEST['databases'])) {
-	// If databases were selected in a server export, use pg_dump for each
-	// instead of pg_dumpall (which cannot be filtered)
-	$selected_databases = (array) $_REQUEST['databases'];
-	$use_pg_dumpall = false;  // Switch to per-database dumps
-}
-
-// Get the appropriate executable path
-$exe_path = DumpManager::getDumpExecutable($use_pg_dumpall);
-if (!$exe_path) {
-	echo "Error: Could not find pg_dump or pg_dumpall executable.\n";
-	exit;
-}
-
-$exe = $misc->escapeShellCmd($exe_path);
-
-// Obtain the pg_dump version number
-$version = [];
-// Use shell_exec for better error capture on Windows
-$version_output = shell_exec("$exe --version 2>&1");
-if (!$version_output) {
-	echo "Error: Could not execute " . htmlspecialchars($exe_path) . "\n";
-	echo "The executable exists but could not be run. Please check permissions.\n";
-	exit;
-}
-
-preg_match("/(\d+(?:\.\d+)?)(?:\.\d+)?.*$/", trim($version_output), $version);
-
-if (empty($version)) {
-	echo "Error: Could not determine pg_dump version.\n";
-	echo "Output: " . htmlspecialchars($version_output) . "\n";
-	exit;
-}
-
-// Get server connection info for version checking
-$server_info = $misc->getServerInfo();
-
-// Check for version mismatch and warn user if applicable
-$version_mismatch = false;
-if (!empty($server_info['pgVersion'])) {
-	$dump_version = floatval($version[1]);
-	$server_version = floatval($server_info['pgVersion']);
-	if ($dump_version < $server_version) {
-		$version_mismatch = true;
-		echo "<!-- WARNING: pg_dump version ($dump_version) is older than PostgreSQL server version ($server_version) -->\n";
-		echo "<!-- Some advanced features may be limited. Consider using the internal dumper. -->\n\n";
+// ============================================================================
+// HANDLE PG_DUMPALL (full cluster mode)
+// ============================================================================
+if ($use_pg_dumpall) {
+	// pg_dumpall: always full cluster, no options
+	$pg_dumpall_path = DumpManager::getDumpExecutable(true);
+	if (!$pg_dumpall_path) {
+		echo "Error: Could not find pg_dumpall executable.\n";
+		exit;
 	}
+	$pg_dumpall = $misc->escapeShellCmd($pg_dumpall_path);
+	$server_info = $misc->getServerInfo();
+	putenv('PGPASSWORD=' . $server_info['password']);
+	putenv('PGUSER=' . $server_info['username']);
+	if ($server_info['host'] !== null && $server_info['host'] !== '') {
+		putenv('PGHOST=' . $server_info['host']);
+	}
+	if ($server_info['port'] !== null && $server_info['port'] !== '') {
+		putenv('PGPORT=' . $server_info['port']);
+	}
+	$cmd = $pg_dumpall;
+	if ($server_info['host'] !== null && $server_info['host'] !== '') {
+		$cmd .= ' -h ' . $misc->escapeShellArg($server_info['host']);
+	}
+	if ($server_info['port'] !== null && $server_info['port'] !== '') {
+		$cmd .= ' -p ' . intval($server_info['port']);
+	}
+	if ($server_info['username'] !== null && $server_info['username'] !== '') {
+		$cmd .= ' -U ' . $misc->escapeShellArg($server_info['username']);
+	}
+
+	// Set headers for gzipped/download/show and execute
+	if ($output_method === 'gzipped') {
+		header('Content-Type: application/gzip');
+		header('Content-Encoding: gzip');
+		header('Content-Disposition: attachment; filename=' . $filename_base . '.sql.gz');
+		ob_start('ob_gzhandler');
+	} elseif ($output_method === 'download') {
+		header('Content-Type: application/download');
+		header('Content-Disposition: attachment; filename=' . $filename_base . '.sql');
+	} else {
+		header('Content-Type: text/html; charset=utf-8');
+	}
+	if ($output_method === 'show') {
+		ExportOutputRenderer::beginHtmlOutput($pg_dumpall_path, '');
+		execute_dump_command($cmd, 'show');
+		ExportOutputRenderer::finishHtmlOutput();
+	} else {
+		execute_dump_command($cmd, $output_method);
+		if ($output_method === 'gzipped') {
+			ob_end_flush();
+		}
+	}
+	exit;
 }
 
-// Set environmental variables for pg_dump connection
-putenv('PGPASSWORD=' . $server_info['password']);
-putenv('PGUSER=' . $server_info['username']);
+// If not pg_dumpall, handle pg_dump logic
+// Smart: if pg_dump selected AND all databases selected AND roles/tablespaces AND structure+data
+// then use pg_dumpall instead for efficiency
+if ($use_pgdump) {
+	$selected_dbs = isset($_REQUEST['databases']) ? (array) $_REQUEST['databases'] : [];
+	$what = $_REQUEST['what'] ?? 'structureanddata';
+	$export_roles = isset($_REQUEST['export_roles']);
+	$export_tablespaces = isset($_REQUEST['export_tablespaces']);
 
-if ($server_info['host'] !== null && $server_info['host'] !== '') {
-	putenv('PGHOST=' . $server_info['host']);
+	// Check if all non-template databases are selected
+	$databaseActions = new DatabaseActions($pg);
+	$all_dbs = $databaseActions->getDatabases(null, true);
+	$all_dbs->moveFirst();
+	$all_db_list = [];
+	while ($all_dbs && !$all_dbs->EOF) {
+		$dname = $all_dbs->fields['datname'];
+		if (strpos($dname, 'template') !== 0) {
+			$all_db_list[] = $dname;
+		}
+		$all_dbs->moveNext();
+	}
+	sort($selected_dbs);
+	sort($all_db_list);
+	$allDbsSelected = ($selected_dbs === $all_db_list && !empty($selected_dbs));
+
+	// Smart logic: use pg_dumpall if all DBs + roles + tablespaces + structure+data
+	if ($allDbsSelected && $export_roles && $export_tablespaces && $what === 'structureanddata') {
+		// Switch to pg_dumpall for efficiency
+		$pg_dumpall_path = DumpManager::getDumpExecutable(true);
+		if ($pg_dumpall_path) {
+			$use_pgdump = false;
+			$use_pg_dumpall = true;
+			// Re-run the pg_dumpall block
+			goto pg_dumpall_export;
+		}
+	}
+
+	// Otherwise, continue with pg_dump for filtered databases
+	$selected_databases = $selected_dbs;
 }
 
-if ($server_info['port'] !== null && $server_info['port'] !== '') {
-	putenv('PGPORT=' . $server_info['port']);
-}
+// If databases were selected in a server export, use pg_dump for each
+// instead of pg_dumpall (which cannot be filtered)
+if ($use_pgdump && !empty($selected_databases)) {
+	$exe_path_pgdump = DumpManager::getDumpExecutable(false);
+	if (!$exe_path_pgdump) {
+		echo "Error: Could not find pg_dump executable.\n";
+		exit;
+	}
 
-// Build base pg_dump/pg_dumpall command with connection parameters
-$base_cmd = $exe;
+	$exe = $misc->escapeShellCmd($exe_path_pgdump);
+	$server_info = $misc->getServerInfo();
+	putenv('PGPASSWORD=' . $server_info['password']);
+	putenv('PGUSER=' . $server_info['username']);
+	if ($server_info['host'] !== null && $server_info['host'] !== '') {
+		putenv('PGHOST=' . $server_info['host']);
+	}
+	if ($server_info['port'] !== null && $server_info['port'] !== '') {
+		putenv('PGPORT=' . $server_info['port']);
+	}
 
-// Add explicit host if specified (prevents defaulting to Unix socket)
-if ($server_info['host'] !== null && $server_info['host'] !== '') {
-	$base_cmd .= ' -h ' . $misc->escapeShellArg($server_info['host']);
-}
+	$base_cmd = $exe;
+	if ($server_info['host'] !== null && $server_info['host'] !== '') {
+		$base_cmd .= ' -h ' . $misc->escapeShellArg($server_info['host']);
+	}
+	if ($server_info['port'] !== null && $server_info['port'] !== '') {
+		$base_cmd .= ' -p ' . intval($server_info['port']);
+	}
+	if ($server_info['username'] !== null && $server_info['username'] !== '') {
+		$base_cmd .= ' -U ' . $misc->escapeShellArg($server_info['username']);
+	}
 
-// Add explicit port if specified (non-default)
-if ($server_info['port'] !== null && $server_info['port'] !== '') {
-	$base_cmd .= ' -p ' . intval($server_info['port']);
-}
-
-// Add explicit username
-if ($server_info['username'] !== null && $server_info['username'] !== '') {
-	$base_cmd .= ' -U ' . $misc->escapeShellArg($server_info['username']);
-}
-
-// Build per-database commands if using filtered databases, otherwise single command
-if (!$use_pg_dumpall && !empty($selected_databases)) {
-	// Build separate pg_dump commands for each selected database
+	// Build per-database pg_dump commands
 	$db_commands = [];
 	foreach ($selected_databases as $db_name) {
 		$pg->fieldClean($db_name);
 		$db_cmd = $base_cmd . ' ' . $misc->escapeShellArg($db_name);
-
-		// Add format options for each database dump
 		switch ($_REQUEST['what'] ?? 'structureanddata') {
 			case 'dataonly':
 				$db_cmd .= ' -a';
-				if (($_REQUEST['d_format'] ?? 'sql') === 'sql') {
+				if ($insert_format !== 'copy') {
 					$db_cmd .= ' --inserts';
 				}
 				break;
@@ -215,7 +258,7 @@ if (!$use_pg_dumpall && !empty($selected_databases)) {
 				}
 				break;
 			case 'structureanddata':
-				if (($_REQUEST['sd_format'] ?? 'sql') === 'sql') {
+				if ($insert_format !== 'copy') {
 					$db_cmd .= ' --inserts';
 				}
 				if (isset($_REQUEST['sd_clean'])) {
@@ -223,19 +266,121 @@ if (!$use_pg_dumpall && !empty($selected_databases)) {
 				}
 				break;
 		}
-
 		$db_commands[] = $db_cmd;
 	}
-	$cmd = $db_commands;  // Array of commands
-} else {
-	// Single command mode (pg_dumpall or single database)
+	$cmd = $db_commands;
+
+	// Set headers and execute
+	if ($output_method === 'gzipped') {
+		header('Content-Type: application/gzip');
+		header('Content-Encoding: gzip');
+		header('Content-Disposition: attachment; filename=' . $filename_base . '.sql.gz');
+		ob_start('ob_gzhandler');
+	} elseif ($output_method === 'download') {
+		header('Content-Type: application/download');
+		header('Content-Disposition: attachment; filename=' . $filename_base . '.sql');
+	} else {
+		ExportOutputRenderer::beginHtmlOutput($exe_path_pgdump, floatval($version[1] ?? ''));
+	}
+
+	if ($output_method === 'show') {
+		foreach ($cmd as $db_cmd) {
+			execute_dump_command($db_cmd, 'show');
+		}
+		ExportOutputRenderer::finishHtmlOutput();
+	} else {
+		foreach ($cmd as $db_cmd) {
+			execute_dump_command($db_cmd, $output_method);
+		}
+		if ($output_method === 'gzipped') {
+			ob_end_flush();
+		}
+	}
+	exit;
+}
+
+pg_dumpall_export:
+
+// Fallback: handle single database or table/view export with pg_dump
+if ($use_pgdump) {
+	$exe_path = DumpManager::getDumpExecutable(false);
+	if (!$exe_path) {
+		echo "Error: Could not find pg_dump executable.\n";
+		exit;
+	}
+
+	$exe = $misc->escapeShellCmd($exe_path);
+
+	// Obtain the pg_dump version number
+	$version = [];
+	$version_output = shell_exec("$exe --version 2>&1");
+	if (!$version_output) {
+		echo "Error: Could not execute " . htmlspecialchars($exe_path) . "\n";
+		echo "The executable exists but could not be run. Please check permissions.\n";
+		exit;
+	}
+
+	preg_match("/(\d+(?:\.\d+)?)(?:\.\d+)?.*$/", trim($version_output), $version);
+
+	if (empty($version)) {
+		echo "Error: Could not determine pg_dump version.\n";
+		echo "Output: " . htmlspecialchars($version_output) . "\n";
+		exit;
+	}
+
+	// Get server connection info for version checking
+	$server_info = $misc->getServerInfo();
+
+	// Check for version mismatch and warn user if applicable
+	$version_mismatch = false;
+	if (!empty($server_info['pgVersion'])) {
+		$dump_version = floatval($version[1]);
+		$server_version = floatval($server_info['pgVersion']);
+		if ($dump_version < $server_version) {
+			$version_mismatch = true;
+			echo "<!-- WARNING: pg_dump version ($dump_version) is older than PostgreSQL server version ($server_version) -->\n";
+			echo "<!-- Some advanced features may be limited. Consider using the internal dumper. -->\n\n";
+		}
+	}
+
+	// Set environmental variables for pg_dump connection
+	putenv('PGPASSWORD=' . $server_info['password']);
+	putenv('PGUSER=' . $server_info['username']);
+
+	if ($server_info['host'] !== null && $server_info['host'] !== '') {
+		putenv('PGHOST=' . $server_info['host']);
+	}
+
+	if ($server_info['port'] !== null && $server_info['port'] !== '') {
+		putenv('PGPORT=' . $server_info['port']);
+	}
+
+	// Build base pg_dump command with connection parameters
+	$base_cmd = $exe;
+
+	// Add explicit host if specified (prevents defaulting to Unix socket)
+	if ($server_info['host'] !== null && $server_info['host'] !== '') {
+		$base_cmd .= ' -h ' . $misc->escapeShellArg($server_info['host']);
+	}
+
+	// Add explicit port if specified (non-default)
+	if ($server_info['port'] !== null && $server_info['port'] !== '') {
+		$base_cmd .= ' -p ' . intval($server_info['port']);
+	}
+
+	// Add explicit username
+	if ($server_info['username'] !== null && $server_info['username'] !== '') {
+		$base_cmd .= ' -U ' . $misc->escapeShellArg($server_info['username']);
+	}
+
+	// Single command mode for single database/table/schema
 	$cmd = $base_cmd;
 
-	// Schema/table handling (for non-cluster, non-filtered dumps)
+	// Schema/table handling
 	$f_schema = '';
 	$f_object = '';
 
-	if (!$use_pg_dumpall && isset($_REQUEST['schema'])) {
+	if (isset($_REQUEST['schema'])) {
 		$f_schema = $_REQUEST['schema'];
 		$pg->fieldClean($f_schema);
 	}
@@ -255,11 +400,11 @@ if (!$use_pg_dumpall && !empty($selected_databases)) {
 			break;
 	}
 
-	// Add format/compression options based on request
+	// Add format options based on request
 	switch ($_REQUEST['what'] ?? 'structureanddata') {
 		case 'dataonly':
 			$cmd .= ' -a';
-			if (($_REQUEST['d_format'] ?? 'sql') === 'sql') {
+			if ($insert_format !== 'copy') {
 				$cmd .= ' --inserts';
 			}
 			break;
@@ -270,7 +415,7 @@ if (!$use_pg_dumpall && !empty($selected_databases)) {
 			}
 			break;
 		case 'structureanddata':
-			if (($_REQUEST['sd_format'] ?? 'sql') === 'sql') {
+			if ($insert_format !== 'copy') {
 				$cmd .= ' --inserts';
 			}
 			if (isset($_REQUEST['sd_clean'])) {
@@ -279,10 +424,34 @@ if (!$use_pg_dumpall && !empty($selected_databases)) {
 			break;
 	}
 
-	// Set database for non-cluster, non-filtered dumps
-	if (!$use_pg_dumpall && isset($_REQUEST['database'])) {
+	// Set database for single database export
+	if (isset($_REQUEST['database'])) {
 		putenv('PGDATABASE=' . $_REQUEST['database']);
 	}
+
+	// Set headers for gzipped/download/show and execute
+	if ($output_method === 'gzipped') {
+		header('Content-Type: application/gzip');
+		header('Content-Encoding: gzip');
+		header('Content-Disposition: attachment; filename=' . $filename_base . '.sql.gz');
+		ob_start('ob_gzhandler');
+	} elseif ($output_method === 'download') {
+		header('Content-Type: application/download');
+		header('Content-Disposition: attachment; filename=' . $filename_base . '.sql');
+	} else {
+		ExportOutputRenderer::beginHtmlOutput($exe_path, $version[1]);
+	}
+
+	if ($output_method === 'show') {
+		execute_dump_command($cmd, 'show');
+		ExportOutputRenderer::finishHtmlOutput();
+	} else {
+		execute_dump_command($cmd, $output_method);
+		if ($output_method === 'gzipped') {
+			ob_end_flush();
+		}
+	}
+	exit;
 }
 
 // Set headers for gzipped downloads
@@ -295,7 +464,7 @@ if ($output_method === 'gzipped') {
 
 // For show mode, stream output and escape HTML
 if ($output_method === 'show') {
-	beginHtmlOutput($exe_path, $version[1]);
+	ExportOutputRenderer::beginHtmlOutput($exe_path, $version[1]);
 
 	// Execute command(s)
 	if (is_array($cmd)) {
@@ -309,7 +478,7 @@ if ($output_method === 'show') {
 		execute_dump_command($cmd, 'show');
 	}
 
-	finishHtmlOutput();
+	ExportOutputRenderer::finishHtmlOutput();
 } else {
 	// For downloads (plain and gzipped), execute command(s)
 	if (is_array($cmd)) {
@@ -402,60 +571,3 @@ function generateDumpFilename($subject, $request)
 	return $filename_base;
 }
 
-/**
- * Output opening HTML structure for show mode export (styles, controls, textarea).
- */
-function beginHtmlOutput($exe_path, $version)
-{
-	// Include application functions
-	AppContainer::setSkipHtmlFrame(false);
-	$misc = AppContainer::getMisc();
-	$misc->printHeader("Database Export", null);
-	$misc->printBody();
-	$misc->printTrail('server');
-	$misc->printTabs('server', 'export');
-	?>
-	<style>
-		.export-controls {
-			margin-bottom: 15px;
-		}
-
-		.export-controls a {
-			margin-right: 15px;
-			padding: 5px 10px;
-			background: #f0f0f0;
-			border: 1px solid #ccc;
-			text-decoration: none;
-			border-radius: 3px;
-		}
-
-		.export-controls a:hover {
-			background: #e0e0e0;
-		}
-	</style>
-	<div class="export-controls">
-		<a href="javascript:history.back()">← Back</a>
-		<a href="javascript:location.reload()">↻ Reload</a>
-	</div>
-	<?php
-	echo "<textarea class=\"dbexport\" readonly>";
-	if ($exe_path && $version) {
-		echo "-- Dumping with " . htmlspecialchars($exe_path) . " version " . $version . "\n\n";
-	}
-}
-
-/**
- * Output closing HTML structure for show mode export (closing textarea and controls).
- */
-function finishHtmlOutput()
-{
-	echo "</textarea>\n";
-	?>
-	<div class="export-controls" style="margin-top: 15px;">
-		<a href="javascript:history.back()">← Back</a>
-		<a href="javascript:location.reload()">↻ Reload</a>
-	</div>
-	<?php
-	$misc = AppContainer::getMisc();
-	$misc->printFooter();
-}

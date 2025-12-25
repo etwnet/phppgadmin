@@ -3,6 +3,7 @@
 namespace PhpPgAdmin\Database\Dump;
 
 use PhpPgAdmin\Database\Actions\TableActions;
+use PhpPgAdmin\Database\Export\SqlFormatter;
 
 /**
  * Dumper for PostgreSQL tables (structure and data).
@@ -52,94 +53,47 @@ class TableDumper extends AbstractDumper
     {
         $this->write("\n-- Data for table \"{$schema}\".\"{$table}\"\n");
 
-        $format = $options['format'] ?? 'copy';
+        $insertFormat = $options['insert_format'] ?? 'copy'; // 'copy', 'single', or 'multi'
         $oids = !empty($options['oids']);
-        $insertFormat = $options['insert_format'] ?? 'single'; // 'single' or 'multi'
-        $batchSize = 1000; // Rows per INSERT statement for multi-row format
 
         // Set fetch mode to NUM for data dumping
         $this->connection->conn->setFetchMode(ADODB_FETCH_NUM);
 
         $rs = $this->connection->dumpRelation($table, $oids);
 
-        if ($format === 'copy') {
-            $this->write("COPY \"{$schema}\".\"{$table}\" FROM stdin;\n");
-            while ($rs && !$rs->EOF) {
-                $line = [];
-                foreach ($rs->fields as $v) {
-                    if ($v === null) {
-                        $line[] = '\\N';
-                    } else {
-                        // Basic escaping for COPY format
-                        $v = str_replace(["\\", "\t", "\n", "\r"], ["\\\\", "\\t", "\\n", "\\r"], $v);
-                        $line[] = $v;
-                    }
-                }
-                $this->write(implode("\t", $line) . "\n");
-                $rs->moveNext();
-            }
-            $this->write("\\.\n");
-        } else if ($insertFormat === 'multi') {
-            // Multi-row INSERT format (batched by batchSize)
-            $fields = null;
-            $fieldStr = null;
-            $valuesList = [];
-            $rowCount = 0;
+        if (!$rs) {
+            // No recordset at all
+            return;
+        }
 
-            while ($rs && !$rs->EOF) {
-                // Get field names from first row
-                if ($fields === null) {
-                    $fields = [];
-                    $j = 0;
-                    foreach ($rs->fields as $v) {
-                        $finfo = $rs->fetchField($j++);
-                        $fields[] = "\"{$finfo->name}\"";
-                    }
-                    $fieldStr = implode(', ', $fields);
-                }
+        // Move to first record (recordset may be positioned at EOF after initial select)
+        if (is_callable([$rs, 'moveFirst'])) {
+            $rs->moveFirst();
+        }
 
-                // Build values tuple for this row
-                $values = [];
-                $j = 0;
-                foreach ($rs->fields as $v) {
-                    if ($v === null) {
-                        $values[] = 'NULL';
-                    } else {
-                        $this->connection->clean($v);
-                        $values[] = "'{$v}'";
-                    }
-                }
-                $valuesList[] = "(" . implode(', ', $values) . ")";
-                $rowCount++;
+        // Check if there's actually data after moving to first record
+        if ($rs->EOF) {
+            // No data to export
+            return;
+        }
 
-                // Write statement when batch is full or at end
-                if ($rowCount >= $batchSize || ($rs->EOF && $rowCount > 0)) {
-                    $this->write("INSERT INTO \"{$schema}\".\"{$table}\" ({$fieldStr}) VALUES " . implode(', ', $valuesList) . ";\n");
-                    $valuesList = [];
-                }
+        // Use SqlFormatter to generate SQL output
+        $formatter = new SqlFormatter();
 
-                $rs->moveNext();
-            }
-        } else {
-            // Single-row INSERT format
-            while ($rs && !$rs->EOF) {
-                $fields = [];
-                $values = [];
-                $j = 0;
-                foreach ($rs->fields as $v) {
-                    $finfo = $rs->fetchField($j++);
-                    $fields[] = "\"{$finfo->name}\"";
+        // Set formatter to use dumper's output stream
+        $formatter->setOutputStream($this->outputStream);
 
-                    if ($v === null) {
-                        $values[] = 'NULL';
-                    } else {
-                        $this->connection->clean($v);
-                        $values[] = "'{$v}'";
-                    }
-                }
-                $this->write("INSERT INTO \"{$schema}\".\"{$table}\" (" . implode(', ', $fields) . ") VALUES (" . implode(', ', $values) . ");\n");
-                $rs->moveNext();
-            }
+        // Format the recordset and write to output
+        $metadata = [
+            'table' => "\"{$schema}\".\"{$table}\"",
+            'insert_format' => $insertFormat
+        ];
+
+        $sql = $formatter->format($rs, $metadata);
+
+        // If formatter didn't write to stream (no outputStream set), write the accumulated string
+        if ($sql) {
+            $this->write($sql);
         }
 
         // Restore fetch mode
@@ -155,5 +109,27 @@ class TableDumper extends AbstractDumper
         }
 
         $this->writePrivileges($table, 'table', $schema);
+    }
+
+    /**
+     * Get table data as an ADORecordSet for export formatting.
+     *
+     * @param array $params Table parameters (schema, table)
+     * @return mixed ADORecordSet or null if table cannot be read
+     */
+    public function getTableData($params)
+    {
+        $table = $params['table'] ?? null;
+        $schema = $params['schema'] ?? $this->connection->_schema;
+
+        if (!$table) {
+            return null;
+        }
+
+        // Use existing dumpRelation method from connection to get table data
+        $this->connection->conn->setFetchMode(ADODB_FETCH_NUM);
+        $recordset = $this->connection->dumpRelation($table, false);
+
+        return $recordset;
     }
 }

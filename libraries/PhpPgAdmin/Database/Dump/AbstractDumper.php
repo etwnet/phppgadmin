@@ -133,4 +133,18 @@ abstract class AbstractDumper extends AbstractContext implements DumperInterface
     {
         return (!empty($options['if_not_exists'])) ? "IF NOT EXISTS " : "";
     }
+
+    /**
+     * Get table/view data as ADORecordSet.
+     * Default implementation returns null.
+     * Subclasses should override if they support data export.
+     * 
+     * @param array $params Parameters with 'table' or 'view' key
+     * @return mixed ADORecordSet or null if not supported
+     */
+    public function getTableData(array $params)
+    {
+        // Default: not supported by this dumper type
+        return null;
+    }
 }

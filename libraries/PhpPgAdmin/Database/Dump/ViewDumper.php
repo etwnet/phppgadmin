@@ -112,4 +112,29 @@ class ViewDumper extends AbstractDumper
             $rs->moveNext();
         }
     }
+
+    /**
+     * Get view data as an ADORecordSet for export formatting.
+     * Views are usually read-only, so this executes SELECT * FROM view.
+     *
+     * @param array $params View parameters (schema, view)
+     * @return mixed ADORecordSet or null if view cannot be read
+     */
+    public function getTableData($params)
+    {
+        $view = $params['view'] ?? $params['table'] ?? null;  // Support 'table' param for compatibility
+        $schema = $params['schema'] ?? $this->connection->_schema;
+
+        if (!$view) {
+            return null;
+        }
+
+        // Use a simple SELECT * FROM view to get data
+        $sql = "SELECT * FROM \"" . str_replace('"', '""', $schema) . "\".\"" . str_replace('"', '""', $view) . "\"";
+
+        $this->connection->conn->setFetchMode(ADODB_FETCH_NUM);
+        $recordset = $this->connection->selectSet($sql);
+
+        return $recordset;
+    }
 }

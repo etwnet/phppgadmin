@@ -271,7 +271,7 @@ if (isset($_SESSION['sqlquery']) && isset($rs) && is_object($rs) && $rs->recordC
 		'attr' => array(
 			'href' => array(
 				'url' => 'dataexport.php',
-				'urlvars' => $fields
+				'urlvars' => array_merge($fields, ['query' => $_SESSION['sqlquery']])
 			)
 		),
 		'icon' => $misc->icon('Download'),

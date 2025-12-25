@@ -370,7 +370,7 @@ function frameSetHandler() {
 		const params = new URLSearchParams(url.search);
 
 		if (post) {
-			// add hidden input fields to search query
+			// add hidden input fields and important form fields to search query
 			const hiddenInputs = form.querySelectorAll("input[type=hidden]");
 			hiddenInputs.forEach((input) => {
 				if (input.name) {

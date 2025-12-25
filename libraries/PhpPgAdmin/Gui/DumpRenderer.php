@@ -1,0 +1,421 @@
+<?php
+
+namespace PhpPgAdmin\Gui;
+
+use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\Actions\DatabaseActions;
+use PhpPgAdmin\Database\Export\FormatterFactory;
+
+/**
+ * DumpRenderer - Renders database export forms for all subject types
+ * Unifies export form rendering across server, database, schema, table, and view contexts
+ */
+class DumpRenderer
+{
+    private $pg;
+    private $misc;
+    private $lang;
+
+    public function __construct()
+    {
+        $this->pg = AppContainer::getPostgres();
+        $this->misc = AppContainer::getMisc();
+        $this->lang = AppContainer::getLang();
+    }
+
+    /**
+     * Render export form for a specific subject
+     *
+     * @param string $subject The export subject: 'server', 'database', 'schema', 'table', or 'view'
+     * @param array $params Optional parameters (database, schema, table, view names)
+     */
+    public function renderExportForm(string $subject, array $params = []): void
+    {
+        $subject = strtolower(trim($subject));
+
+        // Get list of databases for database selection fieldset (only for server exports)
+        $databases = [];
+        if ($subject === 'server') {
+            $databaseActions = new DatabaseActions($this->pg);
+            $databases = $databaseActions->getDatabases(null, true);
+        }
+
+        ?>
+        <style>
+        </style>
+        <form action="dbexport.php" id="export-form" method="get">
+
+            <!-- Export Method -->
+            <fieldset>
+                <legend><?= $this->lang['strexportmethod']; ?></legend>
+                <div class="flex-row flex-wrap">
+                    <div class="mx-1">
+                        <input type="radio" id="dumper_internal" name="dumper" value="internal" checked="checked" />
+                        <label for="dumper_internal"><?= $this->lang['strexportmethod_internal']; ?></label>
+                    </div>
+                    <div class="mx-1">
+                        <input type="radio" id="dumper_pgdump" name="dumper" value="pgdump" />
+                        <label for="dumper_pgdump"><?= $this->lang['strexportmethod_pgdump']; ?></label>
+                    </div>
+                    <?php if ($subject === 'server'): ?>
+                        <div class="mx-1">
+                            <input type="radio" id="dumper_pg_dumpall" name="dumper" value="pg_dumpall" />
+                            <label for="dumper_pg_dumpall"><?= $this->lang['strexportmethod_pgdumpall']; ?></label>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </fieldset>
+
+            <!-- Export Type Selection -->
+            <fieldset>
+                <legend><?= $this->lang['strexporttype']; ?></legend>
+                <div class="flex-row flex-wrap">
+                    <div class="mx-1">
+                        <input type="radio" id="what_both" name="what" value="structureanddata" checked="checked" />
+                        <label for="what_both"><?= $this->lang['strstructureanddata']; ?></label>
+                    </div>
+                    <div class="mx-1">
+                        <input type="radio" id="what_struct" name="what" value="structureonly" />
+                        <label for="what_struct"><?= $this->lang['strstructureonly']; ?></label>
+                    </div>
+                    <div class="mx-1">
+                        <input type="radio" id="what_data" name="what" value="dataonly" />
+                        <label for="what_data"><?= $this->lang['strdataonly']; ?></label>
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Cluster-Level Objects (Server Export Only) -->
+            <?php if ($subject === 'server'): ?>
+                <fieldset>
+                    <legend><?= $this->lang['strclusterlevelobjects']; ?></legend>
+                    <div class="flex-row flex-wrap">
+                        <div class="mx-1">
+                            <input type="checkbox" id="export_roles" name="export_roles" value="true" checked="checked" />
+                            <label for="export_roles">
+                                <img src="<?= $this->misc->icon('Roles') ?>" class="icon">
+                                <?= $this->lang['strexportroles']; ?>
+                            </label>
+                        </div>
+                        <div class="mx-1">
+                            <input type="checkbox" id="export_tablespaces" name="export_tablespaces" value="true"
+                                checked="checked" />
+                            <label for="export_tablespaces">
+                                <img src="<?= $this->misc->icon('Tablespaces') ?>" class="icon">
+                                <?= $this->lang['strexporttablespaces']; ?>
+                            </label>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Database Selection -->
+                <fieldset id="database_selection">
+                    <legend><?= $this->lang['strselectdatabasestoexport']; ?></legend>
+                    <p class="small"><?= $this->lang['strunchecktemplatedatabases']; ?></p>
+                    <?php
+                    $databases->moveFirst();
+                    while ($databases && !$databases->EOF) {
+                        $dbName = $databases->fields['datname'];
+                        // Check by default unless it's a template database
+                        $checked = (strpos($dbName, 'template') !== 0) ? 'checked="checked"' : '';
+                        ?>
+                        <div>
+                            <input type="checkbox" id="db_<?= htmlspecialchars_nc($dbName); ?>" name="databases[]"
+                                value="<?= htmlspecialchars_nc($dbName); ?>" <?= $checked; ?> />
+                            <label for="db_<?= htmlspecialchars_nc($dbName); ?>">
+                                <img src="<?= $this->misc->icon('Database') ?>" class="icon">
+                                <?= htmlspecialchars_nc($dbName); ?>
+                            </label>
+                        </div>
+                        <?php
+                        $databases->moveNext();
+                    }
+                    ?>
+                </fieldset>
+            <?php endif; ?>
+
+            <!-- Structure Export Options -->
+            <fieldset id="structure_options">
+                <legend><?= $this->lang['strstructureoptions']; ?></legend>
+                <div>
+                    <input type="checkbox" id="drop_objects" name="drop_objects" value="true" />
+                    <label for="drop_objects"><?= $this->lang['stradddropstatements']; ?></label>
+                </div>
+                <div>
+                    <input type="checkbox" id="if_not_exists" name="if_not_exists" value="true" checked="checked" />
+                    <label for="if_not_exists"><?= $this->lang['struseifnotexists']; ?></label>
+                </div>
+                <div>
+                    <input type="checkbox" id="include_comments" name="include_comments" value="true" checked="checked" />
+                    <label for="include_comments"><?= $this->lang['strincludeobjectcomments']; ?></label>
+                </div>
+            </fieldset>
+
+            <!-- Output Format Selection (Unified with INSERT options for SQL) -->
+            <fieldset id="format_options">
+                <legend><?= $this->lang['strexportformat']; ?></legend>
+
+                <!-- Format Selection -->
+                <div class="flex-row flex-wrap" id="format_selection">
+                    <div class="mx-1">
+                        <input type="radio" id="format_sql" name="output_format" value="sql" checked="checked" />
+                        <label for="format_sql">SQL</label>
+                    </div>
+                    <?php if (in_array($subject, ['table', 'view'])): ?>
+                        <div class="mx-1">
+                            <input type="radio" id="format_csv" name="output_format" value="csv" />
+                            <label for="format_csv">CSV</label>
+                        </div>
+                        <div class="mx-1">
+                            <input type="radio" id="format_tab" name="output_format" value="tab" />
+                            <label for="format_tab">Tab-Delimited</label>
+                        </div>
+                        <div class="mx-1">
+                            <input type="radio" id="format_html" name="output_format" value="html" />
+                            <label for="format_html">XHTML</label>
+                        </div>
+                        <div class="mx-1">
+                            <input type="radio" id="format_xml" name="output_format" value="xml" />
+                            <label for="format_xml">XML</label>
+                        </div>
+                        <div class="mx-1">
+                            <input type="radio" id="format_json" name="output_format" value="json" />
+                            <label for="format_json">JSON</label>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- INSERT Format Options (only shown when SQL format is selected and data is included) -->
+                <div id="insert_format_options"
+                    style="display:none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #ccc;">
+                    <p class="small"><strong><?= $this->lang['strinsertformat']; ?></strong>
+                        <?= $this->lang['strinsertformat_desc']; ?></p>
+                    <div style="margin-left: 20px;">
+                        <div>
+                            <input type="radio" id="insert_copy" name="insert_format" value="copy" checked="checked" />
+                            <label for="insert_copy"><?= $this->lang['strcopyformat']; ?></label>
+                        </div>
+                        <div>
+                            <input type="radio" id="insert_multi" name="insert_format" value="multi" />
+                            <label for="insert_multi"><?= $this->lang['strmultirowinserts']; ?></label>
+                        </div>
+                        <div>
+                            <input type="radio" id="insert_single" name="insert_format" value="single" />
+                            <label for="insert_single"><?= $this->lang['strsingleinserts']; ?></label>
+                        </div>
+                    </div>
+
+                    <!-- TRUNCATE option -->
+                    <div style="margin-top: 10px; margin-left: 20px;">
+                        <input type="checkbox" id="truncate_tables" name="truncate_tables" value="true" />
+                        <label for="truncate_tables"><?= $this->lang['strtruncatebeforeinsert']; ?></label>
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Output Options -->
+            <fieldset>
+                <legend><?= $this->lang['stroutput']; ?></legend>
+                <div>
+                    <input type="radio" id="output_show" name="output" value="show" checked="checked" />
+                    <label for="output_show"><?= $this->lang['strshowinbrowser']; ?></label>
+                </div>
+                <div>
+                    <input type="radio" id="output_download" name="output" value="download" />
+                    <label for="output_download"><?= $this->lang['strdownloadasfile']; ?></label>
+                </div>
+                <div>
+                    <input type="radio" id="output_gzipped" name="output" value="gzipped" />
+                    <label for="output_gzipped"><?= $this->lang['strdownloadasgzipped']; ?></label>
+                </div>
+            </fieldset>
+
+            <p>
+                <input type="hidden" name="action" value="export" />
+                <input type="hidden" name="subject" value="<?= htmlspecialchars_nc($subject); ?>" />
+                <?php foreach ($params as $key => $value): ?>
+                    <?php if (!in_array($key, ['action', 'subject'])): ?>
+                        <input type="hidden" name="<?= htmlspecialchars_nc($key); ?>" value="<?= htmlspecialchars_nc($value); ?>" />
+                    <?php endif; ?>
+                <?php endforeach; ?>
+                <?= $this->misc->form; ?>
+                <input type="submit" value="<?= $this->lang['strexport']; ?>" />
+            </p>
+        </form>
+
+        <script>
+            {
+                // Show/hide options based on export type and dumper selection
+                const form = document.getElementById('export-form');
+                const whatRadios = form.querySelectorAll('input[name="what"]');
+                const dumperRadios = form.querySelectorAll('input[name="dumper"]');
+                const outputFormatRadios = form.querySelectorAll('input[name="output_format"]');
+                const structureOptions = document.getElementById('structure_options');
+                const formatOptions = document.getElementById('format_options');
+                const insertFormatOptions = document.getElementById('insert_format_options');
+                const insertMulti = document.getElementById('insert_multi');
+                const ifNotExists = document.getElementById('if_not_exists');
+                const includeComments = document.getElementById('include_comments');
+                const truncateTables = document.getElementById('truncate_tables');
+                const dbSelection = document.getElementById('database_selection');
+                const exportRoles = document.getElementById('export_roles');
+                const exportTablespaces = document.getElementById('export_tablespaces');
+
+                // Only setup if form elements exist on this page
+                if (whatRadios.length > 0 && structureOptions) {
+                    function updateOptions() {
+                        const selectedWhat = form.querySelector('input[name="what"]:checked').value;
+                        const dumperValue = form.querySelector('input[name="dumper"]:checked').value;
+                        const selectedFormat = form.querySelector('input[name="output_format"]:checked').value;
+                        const pgdumpSelected = dumperValue === 'pgdump';
+                        const pgdumpallSelected = dumperValue === 'pg_dumpall';
+                        const isSqlFormat = selectedFormat === 'sql';
+                        const hasData = selectedWhat === 'dataonly' || selectedWhat === 'structureanddata';
+
+                        // Show/hide structure options based on export type
+                        if (selectedWhat === 'dataonly') {
+                            structureOptions.style.display = 'none';
+                        } else {
+                            structureOptions.style.display = 'block';
+                        }
+
+                        // Show/hide INSERT format options only when:
+                        // - SQL format is selected (INSERT options only apply to SQL)
+                        if (isSqlFormat && insertFormatOptions) {
+                            insertFormatOptions.style.display = 'block';
+                        } else {
+                            insertFormatOptions.style.display = 'none';
+                        }
+
+                        // Show/hide format options fieldset based on data export mode
+                        if (formatOptions) {
+                            if (selectedWhat === 'structureonly' && !pgdumpallSelected) {
+                                formatOptions.style.display = 'none';
+                            } else {
+                                formatOptions.style.display = 'block';
+                            }
+                        }
+
+                        // For pg_dumpall: hide structure options and DB selection
+                        if (pgdumpallSelected) {
+                            structureOptions.style.display = 'none';
+                            if (dbSelection) dbSelection.style.display = 'none';
+                        } else {
+                            // For internal and pg_dump: show structure based on what
+                            if (selectedWhat === 'dataonly') {
+                                structureOptions.style.display = 'none';
+                            } else {
+                                structureOptions.style.display = 'block';
+                            }
+                            if (dbSelection) dbSelection.style.display = 'block';
+                        }
+
+                        // Count selected databases for pg_dump smart logic
+                        const dbCheckboxes = form.querySelectorAll('input[name="databases[]"]');
+                        const checkedCount = Array.from(dbCheckboxes).filter(cb => cb.checked).length;
+                        const totalCount = dbCheckboxes.length;
+                        const allDbsSelected = checkedCount === totalCount && totalCount > 0;
+
+                        // Control cluster object checkboxes depending on dumper
+                        if (exportRoles) {
+                            if (pgdumpallSelected) {
+                                exportRoles.checked = true;
+                                exportRoles.disabled = true;
+                            } else if (pgdumpSelected && allDbsSelected) {
+                                // Enable for pg_dump only if all DBs selected
+                                exportRoles.disabled = false;
+                            } else if (pgdumpSelected) {
+                                exportRoles.checked = false;
+                                exportRoles.disabled = true;
+                            } else {
+                                // internal: always enabled
+                                exportRoles.disabled = false;
+                            }
+                        }
+                        if (exportTablespaces) {
+                            if (pgdumpallSelected) {
+                                exportTablespaces.checked = true;
+                                exportTablespaces.disabled = true;
+                            } else if (pgdumpSelected && allDbsSelected) {
+                                // Enable for pg_dump only if all DBs selected
+                                exportTablespaces.disabled = false;
+                            } else if (pgdumpSelected) {
+                                exportTablespaces.checked = false;
+                                exportTablespaces.disabled = true;
+                            } else {
+                                // internal: always enabled
+                                exportTablespaces.disabled = false;
+                            }
+                        }
+
+                        // Disable INSERT format options that pg_dump doesn't support
+                        if (insertMulti) {
+                            insertMulti.disabled = pgdumpSelected || pgdumpallSelected;
+                            // If multi-row is selected and pg_dump/pg_dumpall is enabled, switch to COPY
+                            if ((pgdumpSelected || pgdumpallSelected) && insertMulti.checked) {
+                                document.getElementById('insert_copy').checked = true;
+                            }
+                        }
+
+                        if (ifNotExists) {
+                            ifNotExists.disabled = pgdumpSelected || pgdumpallSelected;
+                            // If IF NOT EXISTS is checked and pg_dump/pg_dumpall is enabled, uncheck it
+                            if ((pgdumpSelected || pgdumpallSelected) && ifNotExists.checked) {
+                                ifNotExists.checked = false;
+                            }
+                        }
+
+                        if (truncateTables) {
+                            truncateTables.disabled = pgdumpSelected || pgdumpallSelected;
+                            // If TRUNCATE is checked and pg_dump/pg_dumpall is enabled, uncheck it
+                            if ((pgdumpSelected || pgdumpallSelected) && truncateTables.checked) {
+                                truncateTables.checked = false;
+                            }
+                        }
+
+                        // pg_dump and pg_dumpall always include comments, so check and disable the option
+                        if (includeComments && (pgdumpSelected || pgdumpallSelected)) {
+                            includeComments.checked = true;
+                        }
+                    }
+
+                    // Prevent unchecking include_comments when pg_dump or pg_dumpall is selected
+                    if (includeComments) {
+                        includeComments.addEventListener('change', function (e) {
+                            const dumperValue = form.querySelector('input[name="dumper"]:checked').value;
+                            if ((dumperValue === 'pgdump' || dumperValue === 'pg_dumpall') && !this.checked) {
+                                // User tried to uncheck while pg_dump/pg_dumpall is active - re-check it
+                                this.checked = true;
+                            }
+                        });
+                    }
+
+                    // Disable "what" radio buttons for pg_dumpall since it always does full dump
+                    function updateWhatRadios() {
+                        const dumperValue = form.querySelector('input[name="dumper"]:checked').value;
+                        const pgdumpallSelected = dumperValue === 'pg_dumpall';
+                        whatRadios.forEach(radio => {
+                            radio.disabled = pgdumpallSelected;
+                            // For pg_dumpall, force structureanddata selection
+                            if (pgdumpallSelected && radio.value === 'structureanddata') {
+                                radio.checked = true;
+                            }
+                        });
+                    }
+
+                    whatRadios.forEach(radio => radio.addEventListener('change', updateOptions));
+                    dumperRadios.forEach(radio => {
+                        radio.addEventListener('change', updateOptions);
+                        radio.addEventListener('change', updateWhatRadios);
+                    });
+                    outputFormatRadios.forEach(radio => radio.addEventListener('change', updateOptions));
+                    const dbCheckboxes = form.querySelectorAll('input[name="databases[]"]');
+                    dbCheckboxes.forEach(cb => cb.addEventListener('change', updateOptions));
+                    updateOptions(); // Initial state
+                    updateWhatRadios(); // Set initial what radio state
+                }
+            }
+        </script>
+        <?php
+    }
+}

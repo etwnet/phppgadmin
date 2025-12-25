@@ -6,6 +6,7 @@ use PhpPgAdmin\Database\Actions\RoleActions;
 use PhpPgAdmin\Database\Actions\SchemaActions;
 use PhpPgAdmin\Database\Actions\TableActions;
 use PhpPgAdmin\Database\Actions\ViewActions;
+use PhpPgAdmin\Gui\DumpRenderer;
 
 /**
  * List views in a database
@@ -90,50 +91,9 @@ function doExport($msg = '')
 	$misc->printTabs('view', 'export');
 	$misc->printMsg($msg);
 
-	echo "<form action=\"dataexport.php\" method=\"post\">\n";
-	echo "<table>\n";
-	echo "<tr><th class=\"data\">{$lang['strformat']}</th><th class=\"data\" colspan=\"2\">{$lang['stroptions']}</th></tr>\n";
-	// Data only
-	echo "<!--\n";
-	echo "<tr><th class=\"data left\">";
-	echo "<input type=\"radio\" id=\"what1\" name=\"what\" value=\"dataonly\" /><label for=\"what1\">{$lang['strdataonly']}</label></th>\n";
-	echo "<td>{$lang['strformat']}</td>\n";
-	echo "<td><select name=\"d_format\" >\n";
-	echo "<option value=\"copy\">COPY</option>\n";
-	echo "<option value=\"sql\">SQL</option>\n";
-	echo "<option value=\"csv\">CSV</option>\n";
-	echo "<option value=\"tab\">{$lang['strtabbed']}</option>\n";
-	echo "<option value=\"html\">XHTML</option>\n";
-	echo "<option value=\"xml\">XML</option>\n";
-	echo "</select>\n</td>\n</tr>\n";
-	echo "-->\n";
-
-	// Structure only
-	echo "<tr><th class=\"data left\"><input type=\"radio\" id=\"what2\" name=\"what\" value=\"structureonly\" checked=\"checked\" /><label for=\"what2\">{$lang['strstructureonly']}</label></th>\n";
-	echo "<td><label for=\"s_clean\">{$lang['strdrop']}</label></td><td><input type=\"checkbox\" id=\"s_clean\" name=\"s_clean\" /></td>\n</tr>\n";
-	// Structure and data
-	echo "<!--\n";
-	echo "<tr><th class=\"data left\" rowspan=\"2\">";
-	echo "<input type=\"radio\" id=\"what3\" name=\"what\" value=\"structureanddata\" /><label for=\"what3\">{$lang['strstructureanddata']}</label></th>\n";
-	echo "<td>{$lang['strformat']}</td>\n";
-	echo "<td><select name=\"sd_format\">\n";
-	echo "<option value=\"copy\">COPY</option>\n";
-	echo "<option value=\"sql\">SQL</option>\n";
-	echo "</select>\n</td>\n</tr>\n";
-	echo "<td><label for=\"sd_clean\">{$lang['strdrop']}</label></td><td><input type=\"checkbox\" id=\"sd_clean\" name=\"sd_clean\" /></td>\n</tr>\n";
-	echo "-->\n";
-	echo "</table>\n";
-
-	echo "<h3>{$lang['stroptions']}</h3>\n";
-	echo "<p><input type=\"radio\" id=\"output1\" name=\"output\" value=\"show\" checked=\"checked\" /><label for=\"output1\">{$lang['strshow']}</label>\n";
-	echo "<br/><input type=\"radio\" id=\"output2\" name=\"output\" value=\"download\" /><label for=\"output2\">{$lang['strdownload']}</label></p>\n";
-
-	echo "<p><input type=\"hidden\" name=\"action\" value=\"export\" />\n";
-	echo $misc->form;
-	echo "<input type=\"hidden\" name=\"subject\" value=\"view\" />\n";
-	echo "<input type=\"hidden\" name=\"view\" value=\"", htmlspecialchars_nc($_REQUEST['view']), "\" />\n";
-	echo "<input type=\"submit\" value=\"{$lang['strexport']}\" /></p>\n";
-	echo "</form>\n";
+	// Use the unified DumpRenderer for the export form
+	$dumpRenderer = new \PhpPgAdmin\Gui\DumpRenderer();
+	$dumpRenderer->renderExportForm('view', []);
 }
 
 /**

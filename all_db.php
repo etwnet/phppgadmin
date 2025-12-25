@@ -4,6 +4,7 @@ use PhpPgAdmin\Core\AppContainer;
 use PhpPgAdmin\Database\Actions\RoleActions;
 use PhpPgAdmin\Database\Actions\DatabaseActions;
 use PhpPgAdmin\Database\Actions\TablespaceActions;
+use PhpPgAdmin\Gui\DumpRenderer;
 
 /**
  * Manage databases within a server
@@ -399,238 +400,16 @@ function doSaveCreate()
  */
 function doExport($msg = '')
 {
-	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
-	$databaseActions = new DatabaseActions($pg);
 
 	$misc->printTrail('server');
 	$misc->printTabs('server', 'export');
 	$misc->printMsg($msg);
 
-	// Get list of accessible databases (filters by CONNECT privilege for non-superusers)
-	$databases = $databaseActions->getDatabases(null, true);
-
-	?>
-	<style>
-	</style>
-	<form action="dbexport.php" id="export-form" method="get">
-		<!-- Export Type Selection -->
-		<fieldset>
-			<legend>Export Type</legend>
-			<div>
-				<input type="radio" id="what_both" name="what" value="structureanddata" checked="checked" />
-				<label for="what_both">Structure and Data</label>
-			</div>
-			<div>
-				<input type="radio" id="what_struct" name="what" value="structureonly" />
-				<label for="what_struct">Structure Only</label>
-			</div>
-			<div>
-				<input type="radio" id="what_data" name="what" value="dataonly" />
-				<label for="what_data">Data Only</label>
-			</div>
-		</fieldset>
-
-		<!-- Export Method -->
-		<fieldset>
-			<legend>Export Method</legend>
-			<div>
-				<input type="radio" id="dumper_internal" name="dumper" value="internal" checked="checked" />
-				<label for="dumper_internal">Internal PHP Dumper</label>
-			</div>
-			<div>
-				<input type="radio" id="dumper_pgdump" name="dumper" value="pgdump" />
-				<label for="dumper_pgdump">External pg_dump/pg_dumpall (if available)</label>
-			</div>
-		</fieldset>
-
-		<!-- Cluster-Level Objects (Server Export Only) -->
-		<fieldset>
-			<legend>Cluster-Level Objects</legend>
-			<div>
-				<input type="checkbox" id="export_roles" name="export_roles" value="true" checked="checked" />
-				<label for="export_roles">Export Roles/Users</label>
-			</div>
-			<div>
-				<input type="checkbox" id="export_tablespaces" name="export_tablespaces" value="true" checked="checked" />
-				<label for="export_tablespaces">Export Tablespaces</label>
-			</div>
-		</fieldset>
-
-		<!-- Database Selection -->
-		<fieldset>
-			<legend><img src="<?= $misc->icon('Database') ?>" class="icon"> Select Databases to Export</legend>
-			<p class="small">Uncheck template databases to exclude them</p>
-			<?php
-			$databases->moveFirst();
-			while ($databases && !$databases->EOF) {
-				$dbName = $databases->fields['datname'];
-				// Check by default unless it's a template database
-				$checked = (strpos($dbName, 'template') !== 0) ? 'checked="checked"' : '';
-				?>
-				<div>
-					<input type="checkbox" id="db_<?= htmlspecialchars_nc($dbName); ?>" name="databases[]"
-						value="<?= htmlspecialchars_nc($dbName); ?>" <?= $checked; ?> />
-					<label for="db_<?= htmlspecialchars_nc($dbName); ?>">
-						<img src="<?= $misc->icon('Database') ?>" class="icon">
-						<?= htmlspecialchars_nc($dbName); ?>
-					</label>
-				</div>
-				<?php
-				$databases->moveNext();
-			}
-			?>
-		</fieldset>
-
-		<!-- Structure Export Options -->
-		<fieldset id="structure_options">
-			<legend>Structure Options</legend>
-			<div>
-				<input type="checkbox" id="drop_objects" name="drop_objects" value="true" />
-				<label for="drop_objects">Add DROP statements (DROP TABLE IF EXISTS, etc.)</label>
-			</div>
-			<div>
-				<input type="checkbox" id="if_not_exists" name="if_not_exists" value="true" checked="checked" />
-				<label for="if_not_exists">Use IF NOT EXISTS (for safer re-imports)</label>
-			</div>
-			<div>
-				<input type="checkbox" id="include_comments" name="include_comments" value="true" checked="checked" />
-				<label for="include_comments">Include object comments</label>
-			</div>
-		</fieldset>
-
-		<!-- Data Export Options (shown only for data-inclusive exports) -->
-		<fieldset id="data_options" style="display:none;">
-			<legend>Data Export Options</legend>
-			<div>
-				<p class="small">INSERT Format (COPY is fastest for restore):</p>
-				<div>
-					<input type="radio" id="insert_copy" name="insert_format" value="copy" checked="checked" />
-					<label for="insert_copy">COPY format (fastest)</label>
-				</div>
-				<div>
-					<input type="radio" id="insert_multi" name="insert_format" value="multi" />
-					<label for="insert_multi">Multi-row inserts (slower)</label>
-				</div>
-				<div>
-					<input type="radio" id="insert_single" name="insert_format" value="single" />
-					<label for="insert_single">Single-row inserts (slowest)</label>
-				</div>
-			</div>
-			<div>
-				<input type="checkbox" id="truncate_tables" name="truncate_tables" value="true" />
-				<label for="truncate_tables">TRUNCATE tables before insert</label>
-			</div>
-		</fieldset>
-
-		<!-- Output Options -->
-		<fieldset>
-			<legend>Output</legend>
-			<div>
-				<input type="radio" id="output_show" name="output" value="show" checked="checked" />
-				<label for="output_show">Show in browser</label>
-			</div>
-			<div>
-				<input type="radio" id="output_download" name="output" value="download" />
-				<label for="output_download">Download as file</label>
-			</div>
-			<div>
-				<input type="radio" id="output_gzipped" name="output" value="gzipped" />
-				<label for="output_gzipped">Download as gzipped file</label>
-			</div>
-		</fieldset>
-
-		<p>
-			<input type="hidden" name="action" value="export" />
-			<input type="hidden" name="subject" value="server" />
-			<?= $misc->form; ?>
-			<input type="submit" value="<?= $lang['strexport']; ?>" />
-		</p>
-	</form>
-
-	<script>
-		{
-			// Show/hide options based on export type and dumper selection
-			const form = document.getElementById('export-form');
-			const whatRadios = form.querySelectorAll('input[name="what"]');
-			const dumperRadios = form.querySelectorAll('input[name="dumper"]');
-			const structureOptions = document.getElementById('structure_options');
-			const dataOptions = document.getElementById('data_options');
-			const insertMulti = document.getElementById('insert_multi');
-			const ifNotExists = document.getElementById('if_not_exists');
-			const includeComments = document.getElementById('include_comments');
-			const truncateTables = document.getElementById('truncate_tables');
-
-			// Only setup if form elements exist on this page
-			if (whatRadios.length > 0 && structureOptions && dataOptions) {
-				function updateOptions() {
-					const selectedWhat = form.querySelector('input[name="what"]:checked').value;
-					const pgdumpSelected = form.querySelector('input[name="dumper"]:checked').value === 'pgdump';
-
-					// Show/hide structure options based on export type
-					if (selectedWhat === 'dataonly') {
-						structureOptions.style.display = 'none';
-					} else {
-						structureOptions.style.display = 'block';
-					}
-
-					// Show/hide data options based on export type
-					if (selectedWhat === 'dataonly' || selectedWhat === 'structureanddata') {
-						dataOptions.style.display = 'block';
-					} else {
-						dataOptions.style.display = 'none';
-					}
-
-					// Disable options that pg_dump doesn't support
-					if (insertMulti) {
-						insertMulti.disabled = pgdumpSelected;
-						// If multi-row is selected and pg_dump is enabled, switch to COPY
-						if (pgdumpSelected && insertMulti.checked) {
-							document.getElementById('insert_copy').checked = true;
-						}
-					}
-
-					if (ifNotExists) {
-						ifNotExists.disabled = pgdumpSelected;
-						// If IF NOT EXISTS is checked and pg_dump is enabled, uncheck it
-						if (pgdumpSelected && ifNotExists.checked) {
-							ifNotExists.checked = false;
-						}
-					}
-
-					if (truncateTables) {
-						truncateTables.disabled = pgdumpSelected;
-						// If TRUNCATE is checked and pg_dump is enabled, uncheck it
-						if (pgdumpSelected && truncateTables.checked) {
-							truncateTables.checked = false;
-						}
-					}
-
-					// pg_dump always includes comments, so check and disable the option
-					if (includeComments && pgdumpSelected) {
-						includeComments.checked = true;
-					}
-				}
-
-				// Prevent unchecking include_comments when pg_dump is selected
-				if (includeComments) {
-					includeComments.addEventListener('change', function (e) {
-						const pgdumpSelected = form.querySelector('input[name="dumper"]:checked').value === 'pgdump';
-						if (pgdumpSelected && !this.checked) {
-							// User tried to uncheck while pg_dump is active - re-check it
-							this.checked = true;
-						}
-					});
-				}
-
-				whatRadios.forEach(radio => radio.addEventListener('change', updateOptions));
-				dumperRadios.forEach(radio => radio.addEventListener('change', updateOptions));
-				updateOptions(); // Initial state
-			}
-		}
-	</script>
-	<?php
+	// Use the unified DumpRenderer for the export form
+	$dumpRenderer = new \PhpPgAdmin\Gui\DumpRenderer();
+	$dumpRenderer->renderExportForm('server', []);
 }
 
 /**

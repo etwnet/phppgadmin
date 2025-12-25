@@ -702,8 +702,6 @@ function doBrowse($msg = '')
 		//$misc->printTitle($lang['strqueryresults']);
 		$type = 'QUERY';
 	}
-	// save the sql query in session for further use
-	$_SESSION['sqlquery'] = $_REQUEST['query'] ?? '';
 
 	// get or build sql query
 	if (!empty($_REQUEST['query'])) {
@@ -867,6 +865,10 @@ function doBrowse($msg = '')
 			}
 		}
 	}
+
+	$_REQUEST['query'] = $query;
+	// save the sql query in session for further use
+	$_SESSION['sqlquery'] = $query;
 
 	// Retrieve page from query.  $max_pages is returned by reference.
 	$rs = $rowActions->browseQuery(
@@ -1236,7 +1238,7 @@ function doBrowse($msg = '')
 			'attr' => [
 				'href' => [
 					'url' => 'dataexport.php',
-					'urlvars' => array_merge($fields, $urlvars)
+					'urlvars' => array_merge($fields, $urlvars, ['query' => $_REQUEST['query']])
 				]
 			],
 			'icon' => $misc->icon('Download'),
