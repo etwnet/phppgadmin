@@ -153,43 +153,29 @@
 
 		const fp = flatpickr(element, options);
 
-		// Check if wrapper already exists (from session state restore)
-		let container = element.parentNode;
-		let button = null;
+		// Create wrapper container
+		let container = document.createElement("div");
+		container.classList.add("date-picker-input-container");
 
-		if (
-			!container ||
-			!container.classList.contains("date-picker-input-container")
-		) {
-			// Create wrapper container
-			container = document.createElement("div");
-			container.classList.add("date-picker-input-container");
+		// Create button
+		let button = document.createElement("div");
+		button.className = "date-picker-button";
+		button.innerHTML = "📅";
 
-			// Create button
-			button = document.createElement("div");
-			button.className = "date-picker-button";
-			button.innerHTML = "📅";
+		element.parentNode.insertBefore(container, element);
 
-			element.parentNode.insertBefore(container, element);
+		// Move input into container
+		container.appendChild(element);
+		container.appendChild(button);
 
-			// Move input into container
-			container.appendChild(element);
-			container.appendChild(button);
-		} else {
-			// Wrapper already exists, find the button
-			button = container.querySelector(".date-picker-button");
-		}
-
-		if (button) {
-			button.addEventListener("click", () => {
-				// Make input readonly while picker is open
-				element.readOnly = true;
-				fp.open();
-				fp.config.onClose.push(() => {
-					element.readOnly = false;
-				});
+		button.addEventListener("click", () => {
+			// Make input readonly while picker is open
+			element.readOnly = true;
+			fp.open();
+			fp.config.onClose.push(() => {
+				element.readOnly = false;
 			});
-		}
+		});
 
 		element.addEventListener("click", () => fp.close());
 	}

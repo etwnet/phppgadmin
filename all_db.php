@@ -403,45 +403,17 @@ function doExport($msg = '')
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
 	$databaseActions = new DatabaseActions($pg);
-	$roleActions = new RoleActions($pg);
 
 	$misc->printTrail('server');
 	$misc->printTabs('server', 'export');
 	$misc->printMsg($msg);
 
-	// Get list of databases
-	$databases = $databaseActions->getDatabases();
-	$isSuperUser = $roleActions->isSuperUser();
-	$accessibleDatabases = [];
-
-	// For non-superusers, check which databases they can connect to
-	if (!$isSuperUser) {
-		$serverInfo = $misc->getServerInfo();
-		while ($databases && !$databases->EOF) {
-			$dbName = $databases->fields['datname'];
-			// Try to connect to database to verify access
-			try {
-				$testConn = $misc->getDatabaseAccessor($dbName);
-				if ($testConn) {
-					$accessibleDatabases[] = $dbName;
-				}
-			} catch (Exception $e) {
-				// User cannot access this database
-			}
-			$databases->moveNext();
-		}
-		// Reset to beginning
-		$databases->moveFirst();
-	} else {
-		// Superuser can see all databases
-		while ($databases && !$databases->EOF) {
-			$accessibleDatabases[] = $databases->fields['datname'];
-			$databases->moveNext();
-		}
-		$databases->moveFirst();
-	}
+	// Get list of accessible databases (filters by CONNECT privilege for non-superusers)
+	$databases = $databaseActions->getDatabases(null, true);
 
 	?>
+	<style>
+	</style>
 	<form action="dbexport.php" id="export-form" method="get">
 		<!-- Export Type Selection -->
 		<fieldset>
@@ -460,6 +432,19 @@ function doExport($msg = '')
 			</div>
 		</fieldset>
 
+		<!-- Export Method -->
+		<fieldset>
+			<legend>Export Method</legend>
+			<div>
+				<input type="radio" id="dumper_internal" name="dumper" value="internal" checked="checked" />
+				<label for="dumper_internal">Internal PHP Dumper</label>
+			</div>
+			<div>
+				<input type="radio" id="dumper_pgdump" name="dumper" value="pgdump" />
+				<label for="dumper_pgdump">External pg_dump/pg_dumpall (if available)</label>
+			</div>
+		</fieldset>
+
 		<!-- Cluster-Level Objects (Server Export Only) -->
 		<fieldset>
 			<legend>Cluster-Level Objects</legend>
@@ -475,30 +460,27 @@ function doExport($msg = '')
 
 		<!-- Database Selection -->
 		<fieldset>
-			<legend>Select Databases to Export</legend>
+			<legend><img src="<?= $misc->icon('Database') ?>" class="icon"> Select Databases to Export</legend>
 			<p class="small">Uncheck template databases to exclude them</p>
-			<?php if (!empty($accessibleDatabases)): ?>
-				<?php
-				$databases->moveFirst();
-				while ($databases && !$databases->EOF) {
-					$dbName = $databases->fields['datname'];
-					if (in_array($dbName, $accessibleDatabases)) {
-						// Check by default unless it's a template database
-						$checked = (strpos($dbName, 'template') !== 0) ? 'checked="checked"' : '';
-						?>
-						<div>
-							<input type="checkbox" id="db_<?= htmlspecialchars_nc($dbName); ?>" name="databases[]"
-								value="<?= htmlspecialchars_nc($dbName); ?>" <?= $checked; ?> />
-							<label for="db_<?= htmlspecialchars_nc($dbName); ?>"><?= htmlspecialchars_nc($dbName); ?></label>
-						</div>
-						<?php
-					}
-					$databases->moveNext();
-				}
+			<?php
+			$databases->moveFirst();
+			while ($databases && !$databases->EOF) {
+				$dbName = $databases->fields['datname'];
+				// Check by default unless it's a template database
+				$checked = (strpos($dbName, 'template') !== 0) ? 'checked="checked"' : '';
 				?>
-			<?php else: ?>
-				<p>No accessible databases found.</p>
-			<?php endif; ?>
+				<div>
+					<input type="checkbox" id="db_<?= htmlspecialchars_nc($dbName); ?>" name="databases[]"
+						value="<?= htmlspecialchars_nc($dbName); ?>" <?= $checked; ?> />
+					<label for="db_<?= htmlspecialchars_nc($dbName); ?>">
+						<img src="<?= $misc->icon('Database') ?>" class="icon">
+						<?= htmlspecialchars_nc($dbName); ?>
+					</label>
+				</div>
+				<?php
+				$databases->moveNext();
+			}
+			?>
 		</fieldset>
 
 		<!-- Structure Export Options -->
@@ -516,10 +498,6 @@ function doExport($msg = '')
 				<input type="checkbox" id="include_comments" name="include_comments" value="true" checked="checked" />
 				<label for="include_comments">Include object comments</label>
 			</div>
-			<div>
-				<input type="checkbox" id="use_pgdump" name="use_pgdump" value="true" />
-				<label for="use_pgdump">Use external pg_dump/pg_dumpall (if available)</label>
-			</div>
 		</fieldset>
 
 		<!-- Data Export Options (shown only for data-inclusive exports) -->
@@ -533,11 +511,11 @@ function doExport($msg = '')
 				</div>
 				<div>
 					<input type="radio" id="insert_multi" name="insert_format" value="multi" />
-					<label for="insert_multi">Multi-row inserts</label>
+					<label for="insert_multi">Multi-row inserts (slower)</label>
 				</div>
 				<div>
 					<input type="radio" id="insert_single" name="insert_format" value="single" />
-					<label for="insert_single">Single-row inserts</label>
+					<label for="insert_single">Single-row inserts (slowest)</label>
 				</div>
 			</div>
 			<div>
@@ -557,6 +535,10 @@ function doExport($msg = '')
 				<input type="radio" id="output_download" name="output" value="download" />
 				<label for="output_download">Download as file</label>
 			</div>
+			<div>
+				<input type="radio" id="output_gzipped" name="output" value="gzipped" />
+				<label for="output_gzipped">Download as gzipped file</label>
+			</div>
 		</fieldset>
 
 		<p>
@@ -569,16 +551,22 @@ function doExport($msg = '')
 
 	<script>
 		{
-			// Show/hide options based on export type
+			// Show/hide options based on export type and dumper selection
 			const form = document.getElementById('export-form');
 			const whatRadios = form.querySelectorAll('input[name="what"]');
+			const dumperRadios = form.querySelectorAll('input[name="dumper"]');
 			const structureOptions = document.getElementById('structure_options');
 			const dataOptions = document.getElementById('data_options');
+			const insertMulti = document.getElementById('insert_multi');
+			const ifNotExists = document.getElementById('if_not_exists');
+			const includeComments = document.getElementById('include_comments');
+			const truncateTables = document.getElementById('truncate_tables');
 
 			// Only setup if form elements exist on this page
 			if (whatRadios.length > 0 && structureOptions && dataOptions) {
 				function updateOptions() {
 					const selectedWhat = form.querySelector('input[name="what"]:checked').value;
+					const pgdumpSelected = form.querySelector('input[name="dumper"]:checked').value === 'pgdump';
 
 					// Show/hide structure options based on export type
 					if (selectedWhat === 'dataonly') {
@@ -593,9 +581,51 @@ function doExport($msg = '')
 					} else {
 						dataOptions.style.display = 'none';
 					}
+
+					// Disable options that pg_dump doesn't support
+					if (insertMulti) {
+						insertMulti.disabled = pgdumpSelected;
+						// If multi-row is selected and pg_dump is enabled, switch to COPY
+						if (pgdumpSelected && insertMulti.checked) {
+							document.getElementById('insert_copy').checked = true;
+						}
+					}
+
+					if (ifNotExists) {
+						ifNotExists.disabled = pgdumpSelected;
+						// If IF NOT EXISTS is checked and pg_dump is enabled, uncheck it
+						if (pgdumpSelected && ifNotExists.checked) {
+							ifNotExists.checked = false;
+						}
+					}
+
+					if (truncateTables) {
+						truncateTables.disabled = pgdumpSelected;
+						// If TRUNCATE is checked and pg_dump is enabled, uncheck it
+						if (pgdumpSelected && truncateTables.checked) {
+							truncateTables.checked = false;
+						}
+					}
+
+					// pg_dump always includes comments, so check and disable the option
+					if (includeComments && pgdumpSelected) {
+						includeComments.checked = true;
+					}
+				}
+
+				// Prevent unchecking include_comments when pg_dump is selected
+				if (includeComments) {
+					includeComments.addEventListener('change', function (e) {
+						const pgdumpSelected = form.querySelector('input[name="dumper"]:checked').value === 'pgdump';
+						if (pgdumpSelected && !this.checked) {
+							// User tried to uncheck while pg_dump is active - re-check it
+							this.checked = true;
+						}
+					});
 				}
 
 				whatRadios.forEach(radio => radio.addEventListener('change', updateOptions));
+				dumperRadios.forEach(radio => radio.addEventListener('change', updateOptions));
 				updateOptions(); // Initial state
 			}
 		}

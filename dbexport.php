@@ -30,8 +30,8 @@ $output_method = $_REQUEST['output'] ?? 'show';
 
 // Determine whether to use internal dumper or pg_dump
 // Default: use internal dumper (preferred for cluster exports with full object support)
-// Only use pg_dump if explicitly requested via checkbox
-$use_internal = !isset($_REQUEST['use_pgdump']) || empty(DumpManager::getDumpExecutable($dumpall));
+// Use pg_dump only if explicitly selected via dumper radio button
+$use_internal = ($_REQUEST['dumper'] ?? 'internal') !== 'pgdump' || empty(DumpManager::getDumpExecutable($dumpall));
 $filename_base = generateDumpFilename($_REQUEST['subject'], $_REQUEST);
 
 // ============================================================================
@@ -68,6 +68,11 @@ if ($use_internal) {
 	if ($output_method === 'download') {
 		header('Content-Type: application/download');
 		header('Content-Disposition: attachment; filename=' . $filename_base . '.sql');
+	} elseif ($output_method === 'gzipped') {
+		header('Content-Type: application/gzip');
+		header('Content-Encoding: gzip');
+		header('Content-Disposition: attachment; filename=' . $filename_base . '.sql.gz');
+		ob_start('ob_gzhandler');
 	} else {
 		header('Content-Type: text/html; charset=utf-8');
 	}
@@ -86,9 +91,11 @@ if ($use_internal) {
 	$dumper = DumpFactory::create($subject, $pg);
 	$dumper->dump($subject, $params, $options);
 
-	// Close textarea for show mode
+	// Close textarea for show mode and finalize gzip
 	if ($output_method === 'show') {
 		finishHtmlOutput();
+	} elseif ($output_method === 'gzipped') {
+		ob_end_flush();
 	}
 
 	exit;
@@ -278,6 +285,14 @@ if (!$use_pg_dumpall && !empty($selected_databases)) {
 	}
 }
 
+// Set headers for gzipped downloads
+if ($output_method === 'gzipped') {
+	header('Content-Type: application/gzip');
+	header('Content-Encoding: gzip');
+	header('Content-Disposition: attachment; filename=' . $filename_base . '.sql.gz');
+	ob_start('ob_gzhandler');
+}
+
 // For show mode, stream output and escape HTML
 if ($output_method === 'show') {
 	beginHtmlOutput($exe_path, $version[1]);
@@ -296,15 +311,20 @@ if ($output_method === 'show') {
 
 	finishHtmlOutput();
 } else {
-	// For downloads, execute command(s)
+	// For downloads (plain and gzipped), execute command(s)
 	if (is_array($cmd)) {
 		// Multiple database dumps
 		foreach ($cmd as $db_cmd) {
-			execute_dump_command($db_cmd, 'download');
+			execute_dump_command($db_cmd, $output_method);
 		}
 	} else {
 		// Single command
-		execute_dump_command($cmd, 'download');
+		execute_dump_command($cmd, $output_method);
+	}
+
+	// Finalize gzip compression if active
+	if ($output_method === 'gzipped') {
+		ob_end_flush();
 	}
 }
 

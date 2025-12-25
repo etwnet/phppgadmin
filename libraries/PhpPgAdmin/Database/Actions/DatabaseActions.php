@@ -20,8 +20,10 @@ class DatabaseActions extends AbstractActions
 
     /**
      * Return all databases available on the server, honoring owned_only/show_system.
+     * @param string $currentdatabase database name that should be on top of the resultset
+     * @param bool $accessible_only if true, only return databases the current user can CONNECT to
      */
-    public function getDatabases($currentdatabase = null)
+    public function getDatabases($currentdatabase = null, $accessible_only = true)
     {
         $conf = $this->conf();
         $misc = $this->misc();
@@ -50,6 +52,13 @@ class DatabaseActions extends AbstractActions
             $where = ' AND pdb.datallowconn';
         }
 
+        // Filter by CONNECT privilege if requested and user is not superuser
+        if ($accessible_only && !$roleActions->isSuperUser()) {
+            $accessible_clause = " AND pg_catalog.has_database_privilege(current_user, pdb.oid, 'CONNECT')";
+        } else {
+            $accessible_clause = '';
+        }
+
         $sql = "
             SELECT pdb.datname AS datname, pr.rolname AS datowner, pg_encoding_to_char(encoding) AS datencoding,
                 (SELECT description FROM pg_catalog.pg_shdescription pd WHERE pdb.oid=pd.objoid AND pd.classoid='pg_database'::regclass) AS datcomment,
@@ -63,6 +72,7 @@ class DatabaseActions extends AbstractActions
             WHERE true
                 {$where}
                 {$clause}
+                {$accessible_clause}
             {$orderby}";
 
         return $this->connection->selectSet($sql);

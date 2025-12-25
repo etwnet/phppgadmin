@@ -512,6 +512,18 @@ textarea.dbexport {
 	box-sizing: border-box;
 }
 
+fieldset {
+	margin-bottom: 1em;
+	padding: 0.5em;
+	border: 1px solid #ccc;
+}
+
+legend {
+	font-size: 1.1em;
+	font-weight: bold;
+	padding: 0 5px;
+}
+
 /* Helper Classes */
 
 .text-start {
