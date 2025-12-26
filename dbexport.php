@@ -4,7 +4,6 @@ use PhpPgAdmin\Core\AppContainer;
 use PhpPgAdmin\Database\DumpManager;
 use PhpPgAdmin\Database\Dump\DumpFactory;
 use PhpPgAdmin\Database\Actions\DatabaseActions;
-use PhpPgAdmin\Database\Export\FormatterFactory;
 use PhpPgAdmin\Gui\ExportOutputRenderer;
 /**
  * Does an export of a database, schema, table, or view (via internal PHP dumper or pg_dump fallback).
@@ -248,11 +247,13 @@ if ($use_pgdump && !empty($selected_databases)) {
 
 	// Build per-database pg_dump commands
 	$db_commands = [];
+	$db_names = [];
 	foreach ($selected_databases as $db_name) {
 		$pg->fieldClean($db_name);
 		$db_cmd = $base_cmd . ' ' . $misc->escapeShellArg($db_name);
 		$db_cmd = addPgDumpFormatOptions($db_cmd, $_REQUEST['what'] ?? 'structureanddata', $insert_format, isset($_REQUEST['drop_objects']));
 		$db_commands[] = $db_cmd;
+		$db_names[] = $db_name;
 	}
 	$cmd = $db_commands;
 
@@ -262,20 +263,44 @@ if ($use_pgdump && !empty($selected_databases)) {
 		if ($output_stream === null) {
 			die('Error: Could not initialize gzipped output stream');
 		}
-		foreach ($cmd as $db_cmd) {
+		foreach ($cmd as $idx => $db_cmd) {
+			$dbName = $db_names[$idx] ?? null;
+			if ($dbName !== null) {
+				$header = "--\n-- Dumping database: \"" . addslashes($dbName) . "\"\n--\n\\connect \"" . addslashes($dbName) . "\"\n\\encoding UTF8\nSET client_encoding = 'UTF8';\nSET session_replication_role = 'replica';\n\n";
+				fwrite($output_stream, $header);
+			}
 			execute_dump_command_streaming($db_cmd, $output_stream);
+			// Reset replication role after this database stream
+			fwrite($output_stream, "SET session_replication_role = 'origin';\n\n");
+			fflush($output_stream);
 		}
 		ExportOutputRenderer::endOutputStream($output_stream);
 	} elseif ($output_method === 'download') {
 		$output_stream = ExportOutputRenderer::beginDownloadStream($filename_base, 'application/sql', 'sql');
-		foreach ($cmd as $db_cmd) {
+		foreach ($cmd as $idx => $db_cmd) {
+			$dbName = $db_names[$idx] ?? null;
+			if ($dbName !== null) {
+				$header = "--\n-- Dumping database: \"" . addslashes($dbName) . "\"\n--\n\\connect \"" . addslashes($dbName) . "\"\n\\encoding UTF8\nSET client_encoding = 'UTF8';\nSET session_replication_role = 'replica';\n\n";
+				fwrite($output_stream, $header);
+			}
 			execute_dump_command_streaming($db_cmd, $output_stream);
+			// Reset replication role after this database stream
+			fwrite($output_stream, "SET session_replication_role = 'origin';\n\n");
+			fflush($output_stream);
 		}
 		ExportOutputRenderer::endOutputStream($output_stream);
 	} elseif ($output_method === 'show') {
 		ExportOutputRenderer::beginHtmlOutput($exe_path_pgdump, floatval($version[1] ?? ''));
-		foreach ($cmd as $db_cmd) {
+		foreach ($cmd as $idx => $db_cmd) {
+			$dbName = $db_names[$idx] ?? null;
+			if ($dbName !== null) {
+				$header = "--\n-- Dumping database: \"" . addslashes($dbName) . "\"\n--\n\\connect \"" . addslashes($dbName) . "\"\n\\encoding UTF8\nSET client_encoding = 'UTF8';\nSET session_replication_role = 'replica';\n\n";
+				echo htmlspecialchars($header);
+			}
 			execute_dump_command($db_cmd, 'show');
+			if ($dbName !== null) {
+				echo htmlspecialchars("SET session_replication_role = 'origin';\n\n");
+			}
 		}
 		ExportOutputRenderer::endHtmlOutput();
 	} else {
@@ -366,15 +391,40 @@ if ($use_pgdump) {
 		if ($output_stream === null) {
 			die('Error: Could not initialize gzipped output stream');
 		}
+		// If we know the target database (from request), emit header + connect
+		$targetDb = $_REQUEST['database'] ?? null;
+		if ($targetDb) {
+			$header = "--\n-- Dumping database: \"" . addslashes($targetDb) . "\"\n--\n\\connect \"" . addslashes($targetDb) . "\"\n\\encoding UTF8\nSET client_encoding = 'UTF8';\nSET session_replication_role = 'replica';\n\n";
+			fwrite($output_stream, $header);
+		}
 		execute_dump_command_streaming($cmd, $output_stream);
+		// Reset replication role after this database stream
+		fwrite($output_stream, "SET session_replication_role = 'origin';\n\n");
+		fflush($output_stream);
 		ExportOutputRenderer::endOutputStream($output_stream);
 	} elseif ($output_method === 'download') {
 		$output_stream = ExportOutputRenderer::beginDownloadStream($filename_base, 'application/sql', 'sql');
+		$targetDb = $_REQUEST['database'] ?? null;
+		if ($targetDb) {
+			$header = "--\n-- Dumping database: \"" . addslashes($targetDb) . "\"\n--\n\\connect \"" . addslashes($targetDb) . "\"\n\\encoding UTF8\nSET client_encoding = 'UTF8';\nSET session_replication_role = 'replica';\n\n";
+			fwrite($output_stream, $header);
+		}
 		execute_dump_command_streaming($cmd, $output_stream);
+		// Reset replication role after this database stream
+		fwrite($output_stream, "SET session_replication_role = 'origin';\n\n");
+		fflush($output_stream);
 		ExportOutputRenderer::endOutputStream($output_stream);
 	} elseif ($output_method === 'show') {
 		ExportOutputRenderer::beginHtmlOutput($exe_path, $version[1]);
+		$targetDb = $_REQUEST['database'] ?? null;
+		if ($targetDb) {
+			$header = "--\n-- Dumping database: \"" . addslashes($targetDb) . "\"\n--\n\\connect \"" . addslashes($targetDb) . "\"\n\\encoding UTF8\nSET client_encoding = 'UTF8';\nSET session_replication_role = 'replica';\n\n";
+			echo htmlspecialchars($header);
+		}
 		execute_dump_command($cmd, 'show');
+		if ($targetDb) {
+			echo htmlspecialchars("SET session_replication_role = 'origin';\n\n");
+		}
 		ExportOutputRenderer::endHtmlOutput();
 	} else {
 		execute_dump_command($cmd, $output_method);

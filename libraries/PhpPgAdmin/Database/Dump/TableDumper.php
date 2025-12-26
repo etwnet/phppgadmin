@@ -56,6 +56,13 @@ class TableDumper extends AbstractDumper
         $insertFormat = $options['insert_format'] ?? 'copy'; // 'copy', 'single', or 'multi'
         $oids = !empty($options['oids']);
 
+        // Optionally set session_replication_role to replica to avoid firing triggers during restore
+        $replication_role_set = false;
+        if (empty($options['suppress_replication_role'])) {
+            $this->write("SET session_replication_role = 'replica';\n\n");
+            $replication_role_set = true;
+        }
+
         // Set fetch mode to NUM for data dumping
         $this->connection->conn->setFetchMode(ADODB_FETCH_NUM);
 
@@ -63,6 +70,9 @@ class TableDumper extends AbstractDumper
 
         if (!$rs) {
             // No recordset at all
+            if ($replication_role_set) {
+                $this->write("SET session_replication_role = 'origin';\n\n");
+            }
             return;
         }
 
@@ -74,6 +84,9 @@ class TableDumper extends AbstractDumper
         // Check if there's actually data after moving to first record
         if ($rs->EOF) {
             // No data to export
+            if ($replication_role_set) {
+                $this->write("SET session_replication_role = 'origin';\n\n");
+            }
             return;
         }
 
@@ -98,6 +111,11 @@ class TableDumper extends AbstractDumper
 
         // Restore fetch mode
         $this->connection->conn->setFetchMode(ADODB_FETCH_ASSOC);
+
+        // Reset session replication role if we set it earlier
+        if ($replication_role_set) {
+            $this->write("SET session_replication_role = 'origin';\n\n");
+        }
     }
 
     protected function dumpConstraintsAndIndexes($table, $schema, $options)

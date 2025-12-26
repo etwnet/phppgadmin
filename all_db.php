@@ -408,7 +408,7 @@ function doExport($msg = '')
 	$misc->printMsg($msg);
 
 	// Use the unified DumpRenderer for the export form
-	$dumpRenderer = new \PhpPgAdmin\Gui\DumpRenderer();
+	$dumpRenderer = new DumpRenderer();
 	$dumpRenderer->renderExportForm('server', []);
 }
 

@@ -27,13 +27,43 @@ class DatabaseDumper extends AbstractDumper
             $this->connection->beginDump();
         }
 
-        // Database settings
-        $this->write("-- Database settings\n");
-        if (!empty($options['clean'])) {
-            $this->write("DROP DATABASE IF EXISTS \"" . addslashes($c_database) . "\" CASCADE;\n");
+        // Emit global preliminaries (ON_ERROR_STOP) unless suppressed
+        if (empty($options['suppress_preliminaries'])) {
+            $this->write("\\set ON_ERROR_STOP on\n\n");
         }
-        $this->write("CREATE DATABASE " . $this->getIfNotExists($options) . "\"" . addslashes($c_database) . "\";\n");
-        $this->write("\\c \"" . addslashes($c_database) . "\"\n\n");
+
+        // Database settings
+        // Optionally suppress creation and/or connect markers when orchestrated by ServerDumper
+        if (empty($options['suppress_create_database'])) {
+            $this->write("-- Database settings\n");
+            if (!empty($options['clean'])) {
+                $this->write("DROP DATABASE IF EXISTS \"" . addslashes($c_database) . "\" CASCADE;\n");
+            }
+            $this->write("CREATE DATABASE " . $this->getIfNotExists($options) . "\"" . addslashes($c_database) . "\";\n");
+        }
+
+        if (empty($options['suppress_connect'])) {
+            // Use full \connect command for clarity and append encoding + pg_dump-like preliminaries
+            $this->write("\\connect \"" . addslashes($c_database) . "\"\n");
+            $this->write("\\encoding UTF8\n");
+            $this->write("SET client_encoding = 'UTF8';\n");
+            // pg_dump session settings for reliable restores
+            $this->write("SET statement_timeout = 0;\n");
+            $this->write("SET lock_timeout = 0;\n");
+            $this->write("SET idle_in_transaction_session_timeout = 0;\n");
+            $this->write("SET transaction_timeout = 0;\n");
+            $this->write("SET standard_conforming_strings = on;\n");
+            $this->write("SELECT pg_catalog.set_config('search_path', '', false);\n");
+            $this->write("SET check_function_bodies = false;\n");
+            $this->write("SET xmloption = content;\n");
+            $this->write("SET client_min_messages = warning;\n");
+            $this->write("SET row_security = off;\n");
+            // Leave a blank line before objects
+            $this->write("\n");
+        } else {
+            // Keep spacing consistent
+            $this->write("\n");
+        }
 
         // Save current database and reconnect to target database
         $originalDatabase = $this->connection->conn->database;
