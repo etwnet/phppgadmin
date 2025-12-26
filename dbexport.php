@@ -151,28 +151,23 @@ if ($use_pg_dumpall) {
 		echo "Error: Could not find pg_dumpall executable.\n";
 		exit;
 	}
-	$pg_dumpall = $misc->escapeShellCmd($pg_dumpall_path);
+
 	$server_info = $misc->getServerInfo();
-	putenv('PGPASSWORD=' . $server_info['password']);
-	putenv('PGUSER=' . $server_info['username']);
-	if ($server_info['host'] !== null && $server_info['host'] !== '') {
-		putenv('PGHOST=' . $server_info['host']);
-	}
-	if ($server_info['port'] !== null && $server_info['port'] !== '') {
-		putenv('PGPORT=' . $server_info['port']);
-	}
-	$cmd = $pg_dumpall;
-	if ($server_info['host'] !== null && $server_info['host'] !== '') {
-		$cmd .= ' -h ' . $misc->escapeShellArg($server_info['host']);
-	}
-	if ($server_info['port'] !== null && $server_info['port'] !== '') {
-		$cmd .= ' -p ' . intval($server_info['port']);
-	}
-	if ($server_info['username'] !== null && $server_info['username'] !== '') {
-		$cmd .= ' -U ' . $misc->escapeShellArg($server_info['username']);
+	setupPgEnvironment($server_info);
+
+	// Build command with connection parameters
+	$pg_dumpall = $misc->escapeShellCmd($pg_dumpall_path);
+	$cmd = buildDumpCommandWithConnectionParams($pg_dumpall, $server_info);
+
+	// Check version and warn if needed
+	if ($output_method === 'show') {
+		ExportOutputRenderer::beginHtmlOutput($pg_dumpall_path, '');
+		checkAndWarnVersionMismatch($pg_dumpall, 'pg_dumpall', $server_info);
+	} else {
+		checkAndWarnVersionMismatch($pg_dumpall, 'pg_dumpall', $server_info);
 	}
 
-	// Set headers and execute
+	// Execute based on output method
 	if ($output_method === 'gzipped') {
 		$output_stream = ExportOutputRenderer::beginGzipStream($filename_base);
 		if ($output_stream === null) {
@@ -185,7 +180,6 @@ if ($use_pg_dumpall) {
 		execute_dump_command_streaming($cmd, $output_stream);
 		ExportOutputRenderer::endOutputStream($output_stream);
 	} elseif ($output_method === 'show') {
-		ExportOutputRenderer::beginHtmlOutput($pg_dumpall_path, '');
 		execute_dump_command($cmd, 'show');
 		ExportOutputRenderer::endHtmlOutput();
 	}
@@ -244,53 +238,20 @@ if ($use_pgdump && !empty($selected_databases)) {
 
 	$exe = $misc->escapeShellCmd($exe_path_pgdump);
 	$server_info = $misc->getServerInfo();
-	putenv('PGPASSWORD=' . $server_info['password']);
-	putenv('PGUSER=' . $server_info['username']);
-	if ($server_info['host'] !== null && $server_info['host'] !== '') {
-		putenv('PGHOST=' . $server_info['host']);
-	}
-	if ($server_info['port'] !== null && $server_info['port'] !== '') {
-		putenv('PGPORT=' . $server_info['port']);
-	}
+	setupPgEnvironment($server_info);
 
-	$base_cmd = $exe;
-	if ($server_info['host'] !== null && $server_info['host'] !== '') {
-		$base_cmd .= ' -h ' . $misc->escapeShellArg($server_info['host']);
-	}
-	if ($server_info['port'] !== null && $server_info['port'] !== '') {
-		$base_cmd .= ' -p ' . intval($server_info['port']);
-	}
-	if ($server_info['username'] !== null && $server_info['username'] !== '') {
-		$base_cmd .= ' -U ' . $misc->escapeShellArg($server_info['username']);
-	}
+	// Build base command with connection parameters
+	$base_cmd = buildDumpCommandWithConnectionParams($exe, $server_info);
+
+	// Check version and warn if needed
+	$pg_version = checkAndWarnVersionMismatch($exe, 'pg_dump', $server_info);
 
 	// Build per-database pg_dump commands
 	$db_commands = [];
 	foreach ($selected_databases as $db_name) {
 		$pg->fieldClean($db_name);
 		$db_cmd = $base_cmd . ' ' . $misc->escapeShellArg($db_name);
-		switch ($_REQUEST['what'] ?? 'structureanddata') {
-			case 'dataonly':
-				$db_cmd .= ' -a';
-				if ($insert_format !== 'copy') {
-					$db_cmd .= ' --inserts';
-				}
-				break;
-			case 'structureonly':
-				$db_cmd .= ' -s';
-				if (isset($_REQUEST['s_clean'])) {
-					$db_cmd .= ' -c';
-				}
-				break;
-			case 'structureanddata':
-				if ($insert_format !== 'copy') {
-					$db_cmd .= ' --inserts';
-				}
-				if (isset($_REQUEST['sd_clean'])) {
-					$db_cmd .= ' -c';
-				}
-				break;
-		}
+		$db_cmd = addPgDumpFormatOptions($db_cmd, $_REQUEST['what'] ?? 'structureanddata', $insert_format, isset($_REQUEST['drop_objects']));
 		$db_commands[] = $db_cmd;
 	}
 	$cmd = $db_commands;
@@ -354,50 +315,15 @@ if ($use_pgdump) {
 		exit;
 	}
 
-	// Get server connection info for version checking
+	// Get server connection info
 	$server_info = $misc->getServerInfo();
 
-	// Check for version mismatch and warn user if applicable
-	$version_mismatch = false;
-	if (!empty($server_info['pgVersion'])) {
-		$dump_version = floatval($version[1]);
-		$server_version = floatval($server_info['pgVersion']);
-		if ($dump_version < $server_version) {
-			$version_mismatch = true;
-			echo "<!-- WARNING: pg_dump version ($dump_version) is older than PostgreSQL server version ($server_version) -->\n";
-			echo "<!-- Some advanced features may be limited. Consider using the internal dumper. -->\n\n";
-		}
-	}
+	// Setup environment and build command
+	setupPgEnvironment($server_info);
+	$base_cmd = buildDumpCommandWithConnectionParams($exe, $server_info);
 
-	// Set environmental variables for pg_dump connection
-	putenv('PGPASSWORD=' . $server_info['password']);
-	putenv('PGUSER=' . $server_info['username']);
-
-	if ($server_info['host'] !== null && $server_info['host'] !== '') {
-		putenv('PGHOST=' . $server_info['host']);
-	}
-
-	if ($server_info['port'] !== null && $server_info['port'] !== '') {
-		putenv('PGPORT=' . $server_info['port']);
-	}
-
-	// Build base pg_dump command with connection parameters
-	$base_cmd = $exe;
-
-	// Add explicit host if specified (prevents defaulting to Unix socket)
-	if ($server_info['host'] !== null && $server_info['host'] !== '') {
-		$base_cmd .= ' -h ' . $misc->escapeShellArg($server_info['host']);
-	}
-
-	// Add explicit port if specified (non-default)
-	if ($server_info['port'] !== null && $server_info['port'] !== '') {
-		$base_cmd .= ' -p ' . intval($server_info['port']);
-	}
-
-	// Add explicit username
-	if ($server_info['username'] !== null && $server_info['username'] !== '') {
-		$base_cmd .= ' -U ' . $misc->escapeShellArg($server_info['username']);
-	}
+	// Check version and warn if needed
+	checkAndWarnVersionMismatch($exe, 'pg_dump', $server_info);
 
 	// Single command mode for single database/table/schema
 	$cmd = $base_cmd;
@@ -427,28 +353,7 @@ if ($use_pgdump) {
 	}
 
 	// Add format options based on request
-	switch ($_REQUEST['what'] ?? 'structureanddata') {
-		case 'dataonly':
-			$cmd .= ' -a';
-			if ($insert_format !== 'copy') {
-				$cmd .= ' --inserts';
-			}
-			break;
-		case 'structureonly':
-			$cmd .= ' -s';
-			if (isset($_REQUEST['s_clean'])) {
-				$cmd .= ' -c';
-			}
-			break;
-		case 'structureanddata':
-			if ($insert_format !== 'copy') {
-				$cmd .= ' --inserts';
-			}
-			if (isset($_REQUEST['sd_clean'])) {
-				$cmd .= ' -c';
-			}
-			break;
-	}
+	$cmd = addPgDumpFormatOptions($cmd, $_REQUEST['what'] ?? 'structureanddata', $insert_format, isset($_REQUEST['drop_objects']));
 
 	// Set database for single database export
 	if (isset($_REQUEST['database'])) {
@@ -551,6 +456,102 @@ function execute_dump_command($command, $output_method)
 			echo "-- ERROR: Could not execute command\n";
 		}
 	}
+}
+
+/**
+ * Set up PostgreSQL environment variables for connection.
+ * Called by both pg_dump and pg_dumpall.
+ */
+function setupPgEnvironment($server_info)
+{
+	putenv('PGPASSWORD=' . $server_info['password']);
+	putenv('PGUSER=' . $server_info['username']);
+	if ($server_info['host'] !== null && $server_info['host'] !== '') {
+		putenv('PGHOST=' . $server_info['host']);
+	}
+	if ($server_info['port'] !== null && $server_info['port'] !== '') {
+		putenv('PGPORT=' . $server_info['port']);
+	}
+}
+
+/**
+ * Build connection parameters for pg_dump/pg_dumpall command.
+ * Returns the base command with host, port, and user flags.
+ */
+function buildDumpCommandWithConnectionParams($exe_path, $server_info)
+{
+	$cmd = $exe_path;
+	if ($server_info['host'] !== null && $server_info['host'] !== '') {
+		$cmd .= ' -h ' . AppContainer::getMisc()->escapeShellArg($server_info['host']);
+	}
+	if ($server_info['port'] !== null && $server_info['port'] !== '') {
+		$cmd .= ' -p ' . intval($server_info['port']);
+	}
+	if ($server_info['username'] !== null && $server_info['username'] !== '') {
+		$cmd .= ' -U ' . AppContainer::getMisc()->escapeShellArg($server_info['username']);
+	}
+	return $cmd;
+}
+
+/**
+ * Add format and structure options to pg_dump command.
+ * Appends flags for data-only, structure-only, INSERT format, and DROP IF EXISTS.
+ */
+function addPgDumpFormatOptions($cmd, $what, $insert_format, $drop_objects = false)
+{
+	switch ($what) {
+		case 'dataonly':
+			$cmd .= ' -a';
+			if ($insert_format !== 'copy') {
+				$cmd .= ' --inserts';
+			}
+			break;
+		case 'structureonly':
+			$cmd .= ' -s';
+			if ($drop_objects) {
+				$cmd .= ' -c';
+			}
+			break;
+		case 'structureanddata':
+			if ($insert_format !== 'copy') {
+				$cmd .= ' --inserts';
+			}
+			if ($drop_objects) {
+				$cmd .= ' -c';
+			}
+			break;
+	}
+	return $cmd;
+}
+
+/**
+ * Check pg_dump/pg_dumpall version and warn if older than server version.
+ * Outputs SQL comment warning if version mismatch detected.
+ * Warning appears in the actual dump (both in browser and downloaded file).
+ */
+function checkAndWarnVersionMismatch($exe_path, $exe_name, $server_info)
+{
+	$version_output = shell_exec($exe_path . ' --version 2>&1');
+	if (!$version_output) {
+		return null;
+	}
+
+	$version = [];
+	preg_match("/(\d+(?:\.\d+)?)(?:\.\d+)?.*$/", trim($version_output), $version);
+
+	if (empty($version)) {
+		return null;
+	}
+
+	$dump_version = floatval($version[1]);
+	$server_version = floatval($server_info['pgVersion'] ?? 0);
+
+	if ($server_version > 0 && $dump_version < $server_version) {
+		echo "-- WARNING: $exe_name version ($dump_version) is older than PostgreSQL server version ($server_version)\n";
+		echo "-- Some advanced features may be limited or the dump may be incomplete. Consider using the internal dumper.\n\n";
+	}
+
+	return $version[1] ?? '';
 }
 
 /**
