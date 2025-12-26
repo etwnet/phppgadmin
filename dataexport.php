@@ -78,10 +78,19 @@ if (isset($_REQUEST['action']) && $_REQUEST['action'] === 'export') {
 	if ($output === 'show') {
 		// For browser display, use unified HTML wrapper
 		ExportOutputRenderer::beginHtmlOutput();
+		$output_stream = null; // HTML mode uses echo directly
+	} elseif ($output === 'gzipped') {
+		// For gzipped download, use streaming instead of buffering
+		$output_stream = ExportOutputRenderer::beginGzipStream($filename);
+		if ($output_stream === null) {
+			die('Error: Could not initialize gzipped output stream');
+		}
 	} else {
-		// For download/gzipped, set appropriate headers
-		ExportOutputRenderer::setOutputHeaders($output, $filename, $mime_type, $file_extension);
+		// For regular download, set headers and use php://output
+		ExportOutputRenderer::setDownloadHeaders($filename, $mime_type, $file_extension);
+		$output_stream = fopen('php://output', 'w');
 	}
+	;
 
 	// Reset recordset to beginning for formatter
 	$rs->moveFirst();
@@ -92,22 +101,19 @@ if (isset($_REQUEST['action']) && $_REQUEST['action'] === 'export') {
 		'insert_format' => $insert_format
 	];
 
-	// Stream output directly to output buffer for memory efficiency
-	// Set formatter to write directly instead of collecting as string
-	$formatter->setOutputStream(fopen('php://output', 'w'));
+	// Stream output directly using the formatter
+	// Pass stream to formatter for memory-efficient processing
+	if ($output_stream !== null) {
+		$formatter->setOutputStream($output_stream);
+	}
 	$formatter->format($rs, $metadata);
 
-	// Handle gzipped output if needed
+	// Close streams for gzipped output
 	if ($output === 'gzipped') {
-		ob_end_flush();
+		ExportOutputRenderer::endGzipStream($output_stream);
+	} elseif ($output !== 'show' && $output_stream !== null) {
+		fclose($output_stream);
 	}
-
-	// For browser display, close the HTML wrapper
-	if ($output === 'show') {
-		ExportOutputRenderer::finishHtmlOutput();
-	}
-
-	exit;
 }
 
 // If not an export action, display the export form

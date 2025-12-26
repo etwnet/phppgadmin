@@ -214,6 +214,7 @@ function frameSetHandler() {
 		const output = urlObj.searchParams.get("output");
 		if (output === "download" || output === "gzipped") {
 			// For actual file downloads, open in new window and let browser handle it
+			console.log("Opening download in new window:", url);
 			window.open(url, "_blank");
 			return;
 		}

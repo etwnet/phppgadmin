@@ -48,7 +48,7 @@ class DumpRenderer
             <!-- Export Method -->
             <fieldset>
                 <legend><?= $this->lang['strexportmethod']; ?></legend>
-                <div class="flex-row flex-wrap">
+                <div>
                     <div class="mx-1">
                         <input type="radio" id="dumper_internal" name="dumper" value="internal" checked="checked" />
                         <label for="dumper_internal"><?= $this->lang['strexportmethod_internal']; ?></label>
@@ -188,8 +188,7 @@ class DumpRenderer
                 <!-- INSERT Format Options (only shown when SQL format is selected and data is included) -->
                 <div id="insert_format_options"
                     style="display:none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #ccc;">
-                    <p class="small"><strong><?= $this->lang['strinsertformat']; ?></strong>
-                        <?= $this->lang['strinsertformat_desc']; ?></p>
+                    <p><strong><?= $this->lang['strinsertformat_desc']; ?></strong></p>
                     <div style="margin-left: 20px;">
                         <div>
                             <input type="radio" id="insert_copy" name="insert_format" value="copy" checked="checked" />

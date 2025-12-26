@@ -16,13 +16,13 @@ class ServerDumper extends AbstractDumper
 
         // 1. Roles (if enabled)
         if (!isset($options['export_roles']) || $options['export_roles']) {
-            $roleDumper = DumpFactory::create('role', $this->connection);
+            $roleDumper = $this->createSubDumper('role');
             $roleDumper->dump('role', [], $options);
         }
 
         // 2. Tablespaces (if enabled)
         if (!isset($options['export_tablespaces']) || $options['export_tablespaces']) {
-            $tablespaceDumper = DumpFactory::create('tablespace', $this->connection);
+            $tablespaceDumper = $this->createSubDumper('tablespace');
             $tablespaceDumper->dump('tablespace', [], $options);
         }
 
@@ -33,7 +33,7 @@ class ServerDumper extends AbstractDumper
         // Get list of selected databases (if any)
         $selectedDatabases = !empty($options['databases']) ? $options['databases'] : [];
 
-        $dbDumper = DumpFactory::create('database', $this->connection);
+        $dbDumper = $this->createSubDumper('database');
         while ($databases && !$databases->EOF) {
             $dbName = $databases->fields['datname'];
 

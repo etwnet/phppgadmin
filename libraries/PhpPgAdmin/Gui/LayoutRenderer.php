@@ -311,7 +311,7 @@ EOT;
 	/**
 	 * Print out the page heading and help link
 	 * @param string $title Title, already escaped
-	 * @param $help (optional) The identifier for the help link
+	 * @param string $help (optional) The identifier for the help link
 	 */
 	function printTitle($title, $help = null)
 	{

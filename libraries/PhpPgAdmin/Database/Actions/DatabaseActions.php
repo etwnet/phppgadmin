@@ -224,4 +224,36 @@ class DatabaseActions extends AbstractActions
         return $this->connection->endTransaction();
     }
 
+    /**
+     * Returns table locks information in the current database
+     * @return \ADORecordSet A recordset
+     */
+
+    function getLocks()
+    {
+        global $conf;
+
+        if (!$conf['show_system'])
+            $where = 'AND pn.nspname NOT LIKE $$pg\_%$$';
+        else
+            $where = "AND nspname !~ '^pg_t(emp_[0-9]+|oast)$'";
+
+        $sql = "
+			SELECT
+				pn.nspname, pc.relname AS tablename, pl.pid, pl.mode, pl.granted, pl.virtualtransaction,
+				(select transactionid from pg_catalog.pg_locks l2 where l2.locktype='transactionid'
+					and l2.mode='ExclusiveLock' and l2.virtualtransaction=pl.virtualtransaction) as transaction
+			FROM
+				pg_catalog.pg_locks pl,
+				pg_catalog.pg_class pc,
+				pg_catalog.pg_namespace pn
+			WHERE
+				pl.relation = pc.oid AND pc.relnamespace=pn.oid
+			{$where}
+			ORDER BY pid,nspname,tablename";
+
+        return $this->connection->selectSet($sql);
+    }
+
+
 }

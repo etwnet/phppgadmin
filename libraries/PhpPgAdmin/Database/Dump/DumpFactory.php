@@ -14,7 +14,7 @@ class DumpFactory
      * 
      * @param string $subject
      * @param Postgres|null $connection
-     * @return DumperInterface
+     * @return AbstractDumper
      * @throws \Exception If subject is not supported
      */
     public static function create($subject, Postgres $connection = null)

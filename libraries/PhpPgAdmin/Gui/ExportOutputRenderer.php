@@ -74,26 +74,67 @@ class ExportOutputRenderer
     }
 
     /**
-     * Set appropriate HTTP headers for different export output modes.
+     * Set HTTP headers for regular file download (non-gzipped).
+     * Used for 'download' mode only (show and gzipped modes have dedicated methods).
      *
-     * @param string $output_mode 'show', 'download', or 'gzipped'
      * @param string $filename Base filename (without extension)
      * @param string $mime_type MIME type for the output
      * @param string $file_extension File extension (without dot)
      */
-    public static function setOutputHeaders($output_mode, $filename, $mime_type, $file_extension)
+    public static function setDownloadHeaders($filename, $mime_type, $file_extension)
     {
-        if ($output_mode === 'download') {
-            header('Content-Type: application/octet-stream');
-            header("Content-Disposition: attachment; filename={$filename}.{$file_extension}");
-        } elseif ($output_mode === 'gzipped') {
-            header('Content-Type: application/gzip');
-            header('Content-Encoding: gzip');
-            header("Content-Disposition: attachment; filename={$filename}.{$file_extension}.gz");
-            ob_start('ob_gzhandler');
-        } else {
-            // 'show' mode - display in browser
-            header("Content-Type: {$mime_type}; charset=utf-8");
+        header('Content-Type: application/octet-stream');
+        header("Content-Disposition: attachment; filename={$filename}.{$file_extension}");
+    }
+
+    /**
+     * Begin gzipped stream output using zlib.deflate filter.
+     * This provides true streaming compression without buffering the entire dump in memory.
+     *
+     * @param string $filename Base filename for the download (without extension)
+     * @return resource|null The output stream resource, or null on error
+     */
+    public static function beginGzipStream($filename)
+    {
+        // Clear any existing output buffers
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        // Disable output buffering to allow direct streaming
+        ini_set('output_buffering', 'Off');
+        ini_set('zlib.output_compression', 'Off');
+
+        // Set headers for gzipped stream
+        header('Content-Type: application/gzip');
+        header("Content-Disposition: attachment; filename={$filename}.sql.gz");
+
+        // Open output stream and attach zlib.deflate filter for compression
+        // window=31 adds gzip format headers automatically
+        $output_stream = fopen('php://output', 'wb');
+        if ($output_stream === false) {
+            return null;
+        }
+
+        $filter = stream_filter_append($output_stream, 'zlib.deflate', STREAM_FILTER_WRITE, ['window' => 31]);
+        if ($filter === false) {
+            fclose($output_stream);
+            return null;
+        }
+
+        return $output_stream;
+    }
+
+    /**
+     * End gzipped stream output.
+     * Closes the stream and flushes any remaining data.
+     *
+     * @param resource $output_stream The stream resource from beginGzipStream()
+     */
+    public static function endGzipStream($output_stream)
+    {
+        if (is_resource($output_stream)) {
+            fclose($output_stream);
         }
     }
 }

@@ -536,8 +536,7 @@ class Postgres extends AbstractConnection
 	/**
 	 * Checks to see whether or not a table has a unique id column
 	 * @param string $table The table name
-	 * @return bool True if it has a unique id, false otherwise
-	 * @return null error
+	 * @return bool|null True if it has a unique id, false otherwise or null on error
 	 **/
 	function hasObjectID($table)
 	{

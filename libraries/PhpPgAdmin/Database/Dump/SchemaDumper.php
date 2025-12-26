@@ -68,8 +68,8 @@ class SchemaDumper extends AbstractDumper
     {
         $typeActions = new TypeActions($this->connection);
         $types = $typeActions->getTypes(false, false, true); // include domains
-        $typeDumper = DumpFactory::create('type', $this->connection);
-        $domainDumper = DumpFactory::create('domain', $this->connection);
+        $typeDumper = $this->createSubDumper('type');
+        $domainDumper = $this->createSubDumper('domain');
 
         while ($types && !$types->EOF) {
             if ($types->fields['typtype'] === 'd') {
@@ -92,7 +92,7 @@ class SchemaDumper extends AbstractDumper
                 ORDER BY sequence_name";
 
         $sequences = $this->connection->selectSet($sql);
-        $dumper = DumpFactory::create('sequence', $this->connection);
+        $dumper = $this->createSubDumper('sequence');
 
         while ($sequences && !$sequences->EOF) {
             $dumper->dump('sequence', ['sequence' => $sequences->fields['seqname'], 'schema' => $schema], $options);
@@ -113,7 +113,7 @@ class SchemaDumper extends AbstractDumper
                 ORDER BY c.relname";
 
         $tables = $this->connection->selectSet($sql);
-        $dumper = DumpFactory::create('table', $this->connection);
+        $dumper = $this->createSubDumper('table');
 
         while ($tables && !$tables->EOF) {
             $dumper->dump('table', ['table' => $tables->fields['relname'], 'schema' => $schema], $options);
@@ -134,7 +134,7 @@ class SchemaDumper extends AbstractDumper
                 ORDER BY c.relname";
 
         $views = $this->connection->selectSet($sql);
-        $dumper = DumpFactory::create('view', $this->connection);
+        $dumper = $this->createSubDumper('view');
 
         while ($views && !$views->EOF) {
             $dumper->dump('view', ['view' => $views->fields['relname'], 'schema' => $schema], $options);
@@ -155,7 +155,7 @@ class SchemaDumper extends AbstractDumper
                 ORDER BY p.proname";
 
         $functions = $this->connection->selectSet($sql);
-        $dumper = DumpFactory::create('function', $this->connection);
+        $dumper = $this->createSubDumper('function');
 
         while ($functions && !$functions->EOF) {
             $dumper->dump('function', ['function_oid' => $functions->fields['prooid'], 'schema' => $schema], $options);
@@ -177,7 +177,7 @@ class SchemaDumper extends AbstractDumper
                 ORDER BY p.proname";
 
         $aggregates = $this->connection->selectSet($sql);
-        $aggDumper = DumpFactory::create('aggregate', $this->connection);
+        $aggDumper = $this->createSubDumper('aggregate');
 
         while ($aggregates && !$aggregates->EOF) {
             $aggDumper->dump('aggregate', [
@@ -196,7 +196,7 @@ class SchemaDumper extends AbstractDumper
                 ORDER BY o.oid";
 
         $operators = $this->connection->selectSet($sql);
-        $opDumper = DumpFactory::create('operator', $this->connection);
+        $opDumper = $this->createSubDumper('operator');
 
         while ($operators && !$operators->EOF) {
             $opDumper->dump('operator', [

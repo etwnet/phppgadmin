@@ -38,11 +38,14 @@ class SqlFormatter extends OutputFormatter
             $columns[] = $finfo->name ?? "column_$i";
         }
 
+        // Helper to escape SQL identifiers (field names, table names)
+        $escapeIdentifier = function ($name) {
+            return '"' . str_replace('"', '""', $name) . '"';
+        };
+
         if ($insert_format === 'copy') {
             // COPY format
-            $line = "COPY \"{$table_name}\" (" . implode(', ', array_map(function ($col) {
-                return '"' . $col . '"';
-            }, $columns)) . ") FROM stdin;\n";
+            $line = "COPY " . $escapeIdentifier($table_name) . " (" . implode(', ', array_map($escapeIdentifier, $columns)) . ") FROM stdin;\n";
             $output .= $this->write($line);
 
             while (!$recordset->EOF) {
@@ -83,9 +86,7 @@ class SqlFormatter extends OutputFormatter
                 }
 
                 if ($insert_format === 'single') {
-                    $line = "INSERT INTO \"{$table_name}\" (" . implode(', ', array_map(function ($col) {
-                        return '"' . $col . '"';
-                    }, $columns)) . ") VALUES (" . implode(', ', $values) . ");\n";
+                    $line = "INSERT INTO " . $escapeIdentifier($table_name) . " (" . implode(', ', array_map($escapeIdentifier, $columns)) . ") VALUES (" . implode(', ', $values) . ");\n";
                     $output .= $this->write($line);
                 } else {
                     // multi: collect rows for batch INSERT
@@ -97,9 +98,7 @@ class SqlFormatter extends OutputFormatter
 
             // Output multi-row INSERT statements
             if ($insert_format === 'multi' && !empty($rows_for_batch)) {
-                $line = "INSERT INTO \"{$table_name}\" (" . implode(', ', array_map(function ($col) {
-                    return '"' . $col . '"';
-                }, $columns)) . ") VALUES\n";
+                $line = "INSERT INTO " . $escapeIdentifier($table_name) . " (" . implode(', ', array_map($escapeIdentifier, $columns)) . ") VALUES\n";
                 $output .= $this->write($line);
                 $output .= $this->write(implode(",\n", $rows_for_batch) . ";\n");
             }

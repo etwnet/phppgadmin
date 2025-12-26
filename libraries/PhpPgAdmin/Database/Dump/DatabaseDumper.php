@@ -53,7 +53,7 @@ class DatabaseDumper extends AbstractDumper
         $schemaActions = new SchemaActions($this->connection);
         $schemas = $schemaActions->getSchemas();
 
-        $dumper = DumpFactory::create('schema', $this->connection);
+        $dumper = $this->createSubDumper('schema');
         while ($schemas && !$schemas->EOF) {
             $schemaName = $schemas->fields['nspname'];
 

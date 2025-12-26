@@ -10,7 +10,7 @@ use PhpPgAdmin\Database\Postgres;
 /**
  * Base class for all dumpers providing shared utilities.
  */
-abstract class AbstractDumper extends AbstractContext implements DumperInterface
+abstract class AbstractDumper extends AbstractContext
 {
     /**
      * @var Postgres
@@ -35,6 +35,22 @@ abstract class AbstractDumper extends AbstractContext implements DumperInterface
     public function setOutputStream($stream)
     {
         $this->outputStream = $stream;
+    }
+
+    /**
+     * Helper to create a sub-dumper with the same output stream
+     * 
+     * @param string $subject
+     * @param Postgres $connection
+     * @return AbstractDumper
+     */
+    protected function createSubDumper($subject, $connection = null)
+    {
+        $dumper = DumpFactory::create($subject, $connection ?? $this->connection);
+        if ($this->outputStream) {
+            $dumper->setOutputStream($this->outputStream);
+        }
+        return $dumper;
     }
 
     /**
@@ -146,5 +162,21 @@ abstract class AbstractDumper extends AbstractContext implements DumperInterface
     {
         // Default: not supported by this dumper type
         return null;
+    }
+
+    /**
+     * Performs the traditional dump - outputs complete SQL structure + data.
+     * Used for full database/schema/table exports with complete control.
+     * Output is written to output stream (if set) or echoed directly.
+     * 
+     * @param string $subject The subject to dump (e.g., 'table', 'schema', 'database')
+     * @param array $params Parameters for the dump (e.g., ['table' => 'my_table', 'schema' => 'public'])
+     * @param array $options Options for the dump (e.g., ['clean' => true, 'if_not_exists' => true, 'data_only' => false])
+     * @return void
+     */
+    public function dump($subject, array $params, array $options = [])
+    {
+        // Default: not implemented by this dumper type
+        return;
     }
 }
