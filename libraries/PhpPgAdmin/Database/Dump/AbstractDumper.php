@@ -161,7 +161,7 @@ abstract class AbstractDumper extends AbstractContext
     public function getTableData(array $params)
     {
         // Default: not supported by this dumper type
-        return null;
+        throw new \Exception("getTableData method not implemented in " . get_class($this));
     }
 
     /**
@@ -176,7 +176,7 @@ abstract class AbstractDumper extends AbstractContext
      */
     public function dump($subject, array $params, array $options = [])
     {
-        // Default: not implemented by this dumper type
-        return;
+        // Default: not supported by this dumper type
+        throw new \Exception("Dump method not implemented in " . get_class($this));
     }
 }

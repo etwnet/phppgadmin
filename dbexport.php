@@ -72,7 +72,7 @@ if ($use_internal) {
 		'truncate_tables' => isset($_REQUEST['truncate_tables'])
 	];
 
-	// Set response headers
+	// Set response headers and open output stream
 	if ($output_method === 'gzipped') {
 		// Use the centralized gzip stream handling
 		$output_stream = ExportOutputRenderer::beginGzipStream($filename_base);
@@ -85,19 +85,21 @@ if ($use_internal) {
 		$dumper->setOutputStream($output_stream);
 	} elseif ($output_method === 'show') {
 		ExportOutputRenderer::beginHtmlOutput(null, null);
+		$output_stream = null; // Show mode uses echo directly
 	} else {
-		// 'download' mode
-		ExportOutputRenderer::setDownloadHeaders($filename_base, 'application/sql', 'sql');
+		// 'download' mode - use streaming to php://output for memory efficiency
+		$output_stream = ExportOutputRenderer::beginDownloadStream($filename_base, 'application/sql', 'sql');
 	}
 
 	// Output dump header
 	//echo "-- ", AppContainer::getAppName(), " ", AppContainer::getAppVersion(), " PostgreSQL dump\n";
 	//echo "-- Generated: " . date('Y-m-d H:i:s') . "\n\n";
 
-	// Execute dump via internal dumper (already created above for gzipped mode)
+	// Execute dump via internal dumper
 	// Note: Dumpers handle their own transaction management (beginDump/endDump)
-	if ($output_method !== 'gzipped') {
-		$dumper = DumpFactory::create($subject, $pg);
+	$dumper = DumpFactory::create($subject, $pg);
+	if ($output_stream !== null) {
+		$dumper->setOutputStream($output_stream);
 	}
 
 	// If multiple databases are requested, iterate through each
@@ -116,12 +118,12 @@ if ($use_internal) {
 		$dumper->dump($subject, $params, $options);
 	}
 
-	// Handle gzipped output closing
-	if ($output_method === 'gzipped') {
-		ExportOutputRenderer::endGzipStream($output_stream);
+	// Handle output stream closing
+	if ($output_method === 'gzipped' || $output_method === 'download') {
+		ExportOutputRenderer::endOutputStream($output_stream);
 	} elseif ($output_method === 'show') {
 		// Close HTML output for show mode
-		ExportOutputRenderer::finishHtmlOutput();
+		ExportOutputRenderer::endHtmlOutput();
 	}
 
 	exit;
@@ -177,15 +179,15 @@ if ($use_pg_dumpall) {
 			die('Error: Could not initialize gzipped output stream');
 		}
 		execute_dump_command_streaming($cmd, $output_stream);
-		ExportOutputRenderer::endGzipStream($output_stream);
+		ExportOutputRenderer::endOutputStream($output_stream);
 	} elseif ($output_method === 'download') {
-		header('Content-Type: application/download');
-		header('Content-Disposition: attachment; filename=' . $filename_base . '.sql');
-		execute_dump_command($cmd, $output_method);
+		$output_stream = ExportOutputRenderer::beginDownloadStream($filename_base, 'application/sql', 'sql');
+		execute_dump_command_streaming($cmd, $output_stream);
+		ExportOutputRenderer::endOutputStream($output_stream);
 	} elseif ($output_method === 'show') {
 		ExportOutputRenderer::beginHtmlOutput($pg_dumpall_path, '');
 		execute_dump_command($cmd, 'show');
-		ExportOutputRenderer::finishHtmlOutput();
+		ExportOutputRenderer::endHtmlOutput();
 	}
 	exit;
 }
@@ -302,19 +304,19 @@ if ($use_pgdump && !empty($selected_databases)) {
 		foreach ($cmd as $db_cmd) {
 			execute_dump_command_streaming($db_cmd, $output_stream);
 		}
-		ExportOutputRenderer::endGzipStream($output_stream);
+		ExportOutputRenderer::endOutputStream($output_stream);
 	} elseif ($output_method === 'download') {
-		header('Content-Type: application/download');
-		header('Content-Disposition: attachment; filename=' . $filename_base . '.sql');
+		$output_stream = ExportOutputRenderer::beginDownloadStream($filename_base, 'application/sql', 'sql');
 		foreach ($cmd as $db_cmd) {
-			execute_dump_command($db_cmd, $output_method);
+			execute_dump_command_streaming($db_cmd, $output_stream);
 		}
+		ExportOutputRenderer::endOutputStream($output_stream);
 	} elseif ($output_method === 'show') {
 		ExportOutputRenderer::beginHtmlOutput($exe_path_pgdump, floatval($version[1] ?? ''));
 		foreach ($cmd as $db_cmd) {
 			execute_dump_command($db_cmd, 'show');
 		}
-		ExportOutputRenderer::finishHtmlOutput();
+		ExportOutputRenderer::endHtmlOutput();
 	} else {
 		foreach ($cmd as $db_cmd) {
 			execute_dump_command($db_cmd, $output_method);
@@ -460,15 +462,15 @@ if ($use_pgdump) {
 			die('Error: Could not initialize gzipped output stream');
 		}
 		execute_dump_command_streaming($cmd, $output_stream);
-		ExportOutputRenderer::endGzipStream($output_stream);
+		ExportOutputRenderer::endOutputStream($output_stream);
 	} elseif ($output_method === 'download') {
-		header('Content-Type: application/download');
-		header('Content-Disposition: attachment; filename=' . $filename_base . '.sql');
-		execute_dump_command($cmd, $output_method);
+		$output_stream = ExportOutputRenderer::beginDownloadStream($filename_base, 'application/sql', 'sql');
+		execute_dump_command_streaming($cmd, $output_stream);
+		ExportOutputRenderer::endOutputStream($output_stream);
 	} elseif ($output_method === 'show') {
 		ExportOutputRenderer::beginHtmlOutput($exe_path, $version[1]);
 		execute_dump_command($cmd, 'show');
-		ExportOutputRenderer::finishHtmlOutput();
+		ExportOutputRenderer::endHtmlOutput();
 	} else {
 		execute_dump_command($cmd, $output_method);
 	}

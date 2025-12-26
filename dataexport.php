@@ -1,10 +1,6 @@
 <?php
 
 use PhpPgAdmin\Core\AppContainer;
-use PhpPgAdmin\Database\Actions\DatabaseActions;
-use PhpPgAdmin\Database\DumpManager;
-use PhpPgAdmin\Database\Dump\DumpFactory;
-use PhpPgAdmin\Database\Actions\TableActions;
 use PhpPgAdmin\Database\Export\FormatterFactory;
 use PhpPgAdmin\Gui\ExportOutputRenderer;
 use PhpPgAdmin\Gui\QueryDataRenderer;
@@ -86,11 +82,9 @@ if (isset($_REQUEST['action']) && $_REQUEST['action'] === 'export') {
 			die('Error: Could not initialize gzipped output stream');
 		}
 	} else {
-		// For regular download, set headers and use php://output
-		ExportOutputRenderer::setDownloadHeaders($filename, $mime_type, $file_extension);
-		$output_stream = fopen('php://output', 'w');
+		// For regular download, use streaming to php://output for memory efficiency
+		$output_stream = ExportOutputRenderer::beginDownloadStream($filename, $mime_type, $file_extension);
 	}
-	;
 
 	// Reset recordset to beginning for formatter
 	$rs->moveFirst();
@@ -108,11 +102,11 @@ if (isset($_REQUEST['action']) && $_REQUEST['action'] === 'export') {
 	}
 	$formatter->format($rs, $metadata);
 
-	// Close streams for gzipped output
-	if ($output === 'gzipped') {
-		ExportOutputRenderer::endGzipStream($output_stream);
-	} elseif ($output !== 'show' && $output_stream !== null) {
-		fclose($output_stream);
+	// Close streams for download and gzipped output
+	if ($output === 'gzipped' || $output === 'download') {
+		ExportOutputRenderer::endOutputStream($output_stream);
+	} elseif ($output === 'show') {
+		ExportOutputRenderer::endHtmlOutput();
 	}
 }
 

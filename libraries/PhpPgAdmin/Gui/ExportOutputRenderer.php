@@ -60,7 +60,7 @@ class ExportOutputRenderer
      * End HTML output for "show in browser" mode.
      * Closes textarea and renders footer controls.
      */
-    public static function finishHtmlOutput()
+    public static function endHtmlOutput()
     {
         echo "</textarea>\n";
         ?>
@@ -74,17 +74,20 @@ class ExportOutputRenderer
     }
 
     /**
-     * Set HTTP headers for regular file download (non-gzipped).
-     * Used for 'download' mode only (show and gzipped modes have dedicated methods).
+     * Begin regular file download stream output.
+     * Opens php://output stream for non-gzipped downloads.
+     * Used for 'download' mode (show and gzipped modes have dedicated methods).
      *
      * @param string $filename Base filename (without extension)
      * @param string $mime_type MIME type for the output
      * @param string $file_extension File extension (without dot)
+     * @return resource The output stream resource
      */
-    public static function setDownloadHeaders($filename, $mime_type, $file_extension)
+    public static function beginDownloadStream($filename, $mime_type, $file_extension)
     {
         header('Content-Type: application/octet-stream');
         header("Content-Disposition: attachment; filename={$filename}.{$file_extension}");
+        return fopen('php://output', 'wb');
     }
 
     /**
@@ -126,12 +129,12 @@ class ExportOutputRenderer
     }
 
     /**
-     * End gzipped stream output.
+     * End output stream (for both gzipped and regular downloads).
      * Closes the stream and flushes any remaining data.
      *
-     * @param resource $output_stream The stream resource from beginGzipStream()
+     * @param resource $output_stream The stream resource from beginGzipStream() or beginDownloadStream()
      */
-    public static function endGzipStream($output_stream)
+    public static function endOutputStream($output_stream)
     {
         if (is_resource($output_stream)) {
             fclose($output_stream);
