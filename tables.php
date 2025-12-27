@@ -1048,9 +1048,10 @@ require('./admin.php');
 function doTree()
 {
 	$misc = AppContainer::getMisc();
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
+	$tableActions = new TableActions($pg);
 
-	$tables = $data->getTables();
+	$tables = $tableActions->getTables();
 
 	$reqvars = $misc->getRequestVars('table');
 

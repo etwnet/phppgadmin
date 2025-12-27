@@ -130,7 +130,7 @@ class TabsRenderer extends AbstractContext
                         'title' => $lang['strimport'],
                         'url' => 'all_db.php',
                         'urlvars' => ['subject' => 'server', 'action' => 'import'],
-                        'hide' => (!$this->misc()->isDumpEnabled()),
+                        'hide' => empty($conf['import']['enabled']),
                         'icon' => 'Import',
                     ],
                 ]);

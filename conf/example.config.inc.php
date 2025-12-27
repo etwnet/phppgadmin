@@ -171,11 +171,37 @@ $conf['max_get_query_length'] = 5000;
 /** Plugins management
  * Add plugin names to the following array to activate them
  * Example:
- *   $conf['plugins'] = array(
+ *   $conf['plugins'] = [
  *     'Example',
  *     'Slony'
- *   );
+ *   ];
  */
-$conf['plugins'] = array();
+$conf['plugins'] = [];
+
+// Example import configuration. Adjust as needed for your environment.
+$conf['import'] = [];
+// Enable or disable the import subsystem
+$conf['import']['enabled'] = true;
+// Directory to store per-import job temporary files. Must be writable by webserver.
+$conf['import']['temp_dir'] = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'phppgadmin_imports';
+// Locking mode for import processing: 'pg_advisory' (cluster-safe Postgres advisory locks, default) or 'file' as fallback or 'disabled' to disable locking.
+$conf['import']['lock_mode'] = 'pg_advisory';
+// Age in seconds after which a lock file is considered stale and may be reclaimed (only for file locks).
+$conf['import']['stale_lock_age'] = 3600;
+// Maximum allowed upload size in bytes (0 = unlimited).
+$conf['import']['upload_max_size'] = 0;
+// Default chunk size used by uploads (bytes).
+$conf['import']['chunk_size'] = 5 * 1024 * 1024;
+// Maximum number of parser chunks processed per request for compressed inputs.
+$conf['import']['max_chunks_per_request'] = 3;
+// How long (seconds) before an inactive job is considered eligible for GC.
+$conf['import']['job_lifetime'] = 24 * 3600; // 24 hours
+// Whether compressed uploads (gzip/bzip2/zip) are accepted.
+$conf['import']['allow_compressed'] = true;
+// ZIP handling limits
+$conf['import']['max_zip_entries'] = 1000; // maximum number of entries enumerated
+$conf['import']['max_zip_entry_uncompressed_size'] = 10 * 1024 * 1024 * 1024; // 10 GB per entry
+// How many random job dirs to probe during lazy GC.
+$conf['import']['lazy_gc_probe'] = 2;
 
 return $conf;

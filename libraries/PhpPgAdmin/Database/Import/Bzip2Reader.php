@@ -1,8 +1,6 @@
 <?php
 namespace PhpPgAdmin\Database\Import;
 
-require_once __DIR__ . '/ReaderInterface.php';
-
 class Bzip2Reader implements ReaderInterface
 {
     protected $bz;

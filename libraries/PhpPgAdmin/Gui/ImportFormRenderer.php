@@ -20,6 +20,13 @@ class ImportFormRenderer extends AbstractContext
         $chunkAttr = $chunkSize > 0 ? 'data-import-chunk-size="' . htmlspecialchars((string) $chunkSize) . '"' : '';
 
         $caps = CompressionReader::capabilities();
+        $capsPrintable = array_filter($caps, function ($v) {
+            return $v;
+        });
+        $capsPrintable = array_keys($capsPrintable);
+        if (empty($capsPrintable)) {
+            $capsPrintable = ['none'];
+        }
         $capsAttr = sprintf(
             'data-cap-gzip="%s" data-cap-zip="%s" data-cap-bzip2="%s"',
             $caps['gzip'] ? '1' : '0',
@@ -32,75 +39,69 @@ class ImportFormRenderer extends AbstractContext
         $isSuper = $roleActions->isSuperUser();
         ?>
         <form id="importForm" method="post" enctype="multipart/form-data" action="dbimport.php?action=upload">
-            <div class="form-group">
-                <label for="file"><?= $lang['struploadfile'] ?></label>
-                <input type="file" name="file" id="file" <?= $capsAttr ?>         <?= $maxAttr ?>         <?= $chunkAttr ?> />
-                <div id="importCompressionCaps" style="margin-top:6px">
-                    <strong><?= $lang['strimportcompressioncaps'] ?? 'Compression support' ?>:</strong>
-                    <?= ($caps['zip'] ? ($lang['strsupported'] ?? 'Supported') : ($lang['strunsupported'] ?? 'Unsupported')) ?>
-                    ZIP,
-                    <?= ($caps['gzip'] ? ($lang['strsupported'] ?? 'Supported') : ($lang['strunsupported'] ?? 'Unsupported')) ?>
-                    gzip,
-                    <?= ($caps['bzip2'] ? ($lang['strsupported'] ?? 'Supported') : ($lang['strunsupported'] ?? 'Unsupported')) ?>
-                    bzip2
-                </div>
-            </div>
-
             <input type="hidden" name="scope" id="import_scope" value="<?= htmlspecialchars($scope) ?>" />
             <input type="hidden" name="scope_ident" id="import_scope_ident"
                 value="<?= htmlspecialchars($options['scope_ident'] ?? '') ?>" />
+            <input type="hidden" name="server" id="import_server" value="<?= htmlspecialchars($_REQUEST['server'] ?? '') ?>" />
 
-            <div class="form-group">
-                <label><?= $lang['stroptions'] ?></label>
-                <ul>
-                    <?php if ($scope === 'server'): ?>
-                        <li><label><input type="checkbox" name="opt_roles" checked /> <?= $lang['strimportroles'] ?></label></li>
-                        <li><label><input type="checkbox" name="opt_tablespaces" checked />
-                                <?= $lang['strimporttablespaces'] ?></label></li>
-                        <li><label><input type="checkbox" name="opt_databases" checked />
-                                <?= $lang['strimportdatabases'] ?? 'Import databases' ?></label></li>
-                    <?php endif; ?>
-                    <?php if ($scope === 'database' || $scope === 'server'): ?>
-                        <li><label><input type="checkbox" name="opt_schema_create" checked />
-                                <?= $lang['strcreateschema'] ?></label></li>
-                    <?php endif; ?>
-                    <li><label><input type="checkbox" name="opt_data" checked />
-                            <?= $lang['strimportdata'] ?? 'Import data (COPY/INSERT)' ?></label></li>
-                    <?php if ($scope === 'schema' || $scope === 'table'): ?>
-                        <li><label><input type="checkbox" name="opt_truncate" /> <?= $lang['strtruncatebefore'] ?></label></li>
-                    <?php endif; ?>
-                    <li><label><input type="checkbox" name="opt_ownership" checked />
-                            <?= $lang['strimportownership'] ?? 'Apply ownership (ALTER ... OWNER)' ?></label></li>
-                    <li><label><input type="checkbox" name="opt_rights" checked />
-                            <?= $lang['strimportrights'] ?? 'Apply rights (GRANT/REVOKE)' ?></label></li>
-                    <li><label><input type="checkbox" name="opt_defer_self" checked /> <?= $lang['strdeferself'] ?></label></li>
-                    <li><label><input type="checkbox" name="opt_allow_drops" />
-                            <?= $lang['strimportallowdrops'] ?? 'Allow DROP statements' ?></label></li>
-                </ul>
-            </div>
+            <fieldset>
+                <legend><?= $lang['struploadfile'] ?></legend>
+                <input type="file" name="file" id="file" <?= $capsAttr ?>         <?= $maxAttr ?>         <?= $chunkAttr ?> />
+                <div id="importCompressionCaps" style="margin-top:6px">
+                    <strong><?= $lang['strimportcompressioncaps'] ?? 'Compression support' ?>:</strong>
+                    <?= implode(', ', $capsPrintable) ?>
+                </div>
+            </fieldset>
 
-            <div class="form-group">
-                <label><?= $lang['strerrorhandling'] ?? 'Error handling' ?>:</label>
-                <ul>
-                    <li><label><input type="radio" name="opt_error_mode" value="abort" checked />
-                            <?= $lang['strimporterrorabort'] ?? 'Abort on first error' ?></label></li>
-                    <li><label><input type="radio" name="opt_error_mode" value="log" />
-                            <?= $lang['strimporterrorlog'] ?? 'Log errors and continue' ?></label></li>
-                    <li><label><input type="radio" name="opt_error_mode" value="ignore" />
-                            <?= $lang['strimporterrorignore'] ?? 'Ignore errors (not recommended)' ?></label></li>
-                </ul>
-            </div>
+            <fieldset>
+                <legend><?= $lang['stroptions'] ?></legend>
+                <?php if ($scope === 'server'): ?>
+                    <div><label><input type="checkbox" name="opt_roles" checked /> <?= $lang['strimportroles'] ?></label></div>
+                    <div><label><input type="checkbox" name="opt_tablespaces" checked />
+                            <?= $lang['strimporttablespaces'] ?></label></div>
+                    <div><label><input type="checkbox" name="opt_databases" checked />
+                            <?= $lang['strimportdatabases'] ?? 'Import databases' ?></label></div>
+                <?php endif; ?>
+                <?php if ($scope === 'database' || $scope === 'server'): ?>
+                    <div><label><input type="checkbox" name="opt_schema_create" checked />
+                            <?= $lang['strcreateschema'] ?></label></div>
+                <?php endif; ?>
+                <div><label><input type="checkbox" name="opt_data" checked />
+                        <?= $lang['strimportdata'] ?? 'Import data (COPY/INSERT)' ?></label></div>
+                <?php if ($scope === 'schema' || $scope === 'table'): ?>
+                    <div><label><input type="checkbox" name="opt_truncate" /> <?= $lang['strtruncatebefore'] ?></label></div>
+                <?php endif; ?>
+                <div><label><input type="checkbox" name="opt_ownership" checked />
+                        <?= $lang['strimportownership'] ?? 'Apply ownership (ALTER ... OWNER)' ?></label></div>
+                <div><label><input type="checkbox" name="opt_rights" checked />
+                        <?= $lang['strimportrights'] ?? 'Apply rights (GRANT/REVOKE)' ?></label></div>
+                <div><label><input type="checkbox" name="opt_defer_self" checked /> <?= $lang['strdeferself'] ?></label></div>
+                <div><label><input type="checkbox" name="opt_allow_drops" />
+                        <?= $lang['strimportallowdrops'] ?? 'Allow DROP statements' ?></label></div>
+            </fieldset>
 
-            <div class="form-group">
+            <fieldset>
+                <legend><?= $lang['strerrorhandling'] ?? 'Error handling' ?></legend>
+                <div><label><input type="radio" name="opt_error_mode" value="abort" checked />
+                        <?= $lang['strimporterrorabort'] ?? 'Abort on first error' ?></label></div>
+                <div><label><input type="radio" name="opt_error_mode" value="log" />
+                        <?= $lang['strimporterrorlog'] ?? 'Log errors and continue' ?></label></div>
+                <div><label><input type="radio" name="opt_error_mode" value="ignore" />
+                        <?= $lang['strimporterrorignore'] ?? 'Ignore errors (not recommended)' ?></label></div>
+            </fieldset>
+
+            <fieldset>
+                <legend><?= $lang['strautostart'] ?? 'Auto-start import after upload' ?></legend>
                 <label><input type="checkbox" name="opt_auto_start" id="opt_auto_start" <?= ($importCfg['auto_start_default'] ?? false) ? 'checked' : '' ?> /> <?= $lang['strautostart'] ?? 'Auto-start import after upload' ?></label>
-            </div>
+            </fieldset>
 
             <div class="form-group">
                 <button type="button" id="importStart"><?= $lang['strupload'] ?></button>
             </div>
         </form>
 
-        <div id="importUI" style="display:none;margin-top:16px">
+        <div id="importUI" data-server="<?= htmlspecialchars($_REQUEST['server'] ?? '') ?>"
+            style="display:none;margin-top:16px">
             <div id="uploadPhase">
                 <h4><?= $lang['strupload'] ?>         <?= $lang['strprogress'] ?? 'Progress' ?></h4>
                 <progress id="uploadProgress" value="0" max="100" style="width:100%"></progress>

@@ -23,12 +23,11 @@
 			try {
 				const xhr = await new Promise((resolve, reject) => {
 					const xhr = new XMLHttpRequest();
-					xhr.open(
-						"POST",
-						`dbimport.php?action=upload_chunk&job_id=${encodeURIComponent(
-							jobId
-						)}&offset=${offset}`
-					);
+					let _url = `dbimport.php?action=upload_chunk&job_id=${encodeURIComponent(
+						jobId
+					)}&offset=${offset}`;
+					_url = appendServerToUrl(_url);
+					xhr.open("POST", _url);
 					xhr.setRequestHeader("X-Checksum", checksum);
 					xhr.setRequestHeader(
 						"Content-Type",
@@ -72,6 +71,44 @@
 
 	function el(id) {
 		return document.getElementById(id);
+	}
+
+	// Read server context emitted by server-side renderer.
+	const SERVER_ID = (function () {
+		const inp = document.getElementById("import_server");
+		if (inp && inp.value) return inp.value;
+		const ui = document.getElementById("importUI");
+		if (ui && ui.dataset && ui.dataset.server) return ui.dataset.server;
+		return "";
+	})();
+
+	function appendServerToUrl(url) {
+		if (!SERVER_ID) return url;
+		return (
+			url +
+			(url.indexOf("?") === -1 ? "?" : "&") +
+			"server=" +
+			encodeURIComponent(SERVER_ID)
+		);
+	}
+
+	function appendServerToParams(params) {
+		if (!SERVER_ID) return params;
+		try {
+			if (
+				params instanceof URLSearchParams ||
+				params instanceof FormData
+			) {
+				params.append("server", SERVER_ID);
+				return params;
+			}
+		} catch (e) {
+			// ignore
+		}
+		if (typeof params === "string") {
+			return params + "&server=" + encodeURIComponent(SERVER_ID);
+		}
+		return params;
 	}
 
 	function formatBytes(bytes) {
@@ -239,10 +276,14 @@
 				}
 			}
 
-			const initRes = await fetch("dbimport.php?action=init_upload", {
-				method: "POST",
-				body: formData,
-			});
+			appendServerToParams(formData);
+			const initRes = await fetch(
+				appendServerToUrl("dbimport.php?action=init_upload"),
+				{
+					method: "POST",
+					body: formData,
+				}
+			);
 
 			if (!initRes.ok) {
 				const err = await initRes.json();
@@ -260,11 +301,12 @@
 			);
 
 			// 2. Check for resume capability
-			const statusRes = await fetch(
+			const statusUrl = appendServerToUrl(
 				`dbimport.php?action=upload_status&job_id=${encodeURIComponent(
 					jobId
 				)}`
 			);
+			const statusRes = await fetch(statusUrl);
 			const statusData = await statusRes.json();
 			let uploaded = statusData.uploaded_bytes || 0;
 
@@ -302,12 +344,12 @@
 				uploadStatus.textContent = `Finalizing upload...`;
 			}
 
-			const finalRes = await fetch(
+			const finalUrl = appendServerToUrl(
 				`dbimport.php?action=finalize_upload&job_id=${encodeURIComponent(
 					jobId
-				)}`,
-				{ method: "POST" }
+				)}`
 			);
+			const finalRes = await fetch(finalUrl, { method: "POST" });
 
 			if (!finalRes.ok) {
 				const err = await finalRes.json();
@@ -334,11 +376,12 @@
 
 			if (auto) {
 				// Check for ZIP entries
-				const entriesRes = await fetch(
+				const entriesUrl = appendServerToUrl(
 					`dbimport.php?action=list_entries&job_id=${encodeURIComponent(
 						jobId
 					)}`
 				);
+				const entriesRes = await fetch(entriesUrl);
 				const entriesData = await entriesRes.json();
 
 				if (entriesData.entries && entriesData.entries.length > 0) {
@@ -399,11 +442,11 @@
 		let lastOffset = 0;
 		async function step() {
 			try {
-				const resp = await fetch(
+				const procUrl = appendServerToUrl(
 					"dbimport.php?action=process&job_id=" +
-						encodeURIComponent(jobId),
-					{ method: "POST" }
+						encodeURIComponent(jobId)
 				);
+				const resp = await fetch(procUrl, { method: "POST" });
 				if (!resp.ok) {
 					log("Process request failed: " + resp.status);
 					return false;
@@ -497,7 +540,8 @@
 				params.append("job_id", jobId);
 				if (importAll) params.append("import_all", "1");
 				else params.append("entry", sel.value);
-				fetch("dbimport.php?action=select_entry", {
+				appendServerToParams(params);
+				fetch(appendServerToUrl("dbimport.php?action=select_entry"), {
 					method: "POST",
 					body: params,
 				})
@@ -528,7 +572,7 @@
 			document.getElementById("opt_show_all").checked
 				? "&show_all=1"
 				: "";
-		fetch("dbimport.php?action=list_jobs" + showAllParam)
+		fetch(appendServerToUrl("dbimport.php?action=list_jobs" + showAllParam))
 			.then((r) => r.json())
 			.then((data) => {
 				const jobs = data && data.jobs ? data.jobs : [];
@@ -554,8 +598,10 @@
 						cancel.style.marginRight = "8px";
 						cancel.addEventListener("click", () => {
 							fetch(
-								"dbimport.php?action=cancel_job&job_id=" +
-									encodeURIComponent(j.job_id),
+								appendServerToUrl(
+									"dbimport.php?action=cancel_job&job_id=" +
+										encodeURIComponent(j.job_id)
+								),
 								{ method: "POST" }
 							).then(() => openJobList());
 						});
@@ -563,8 +609,10 @@
 						resume.textContent = "Resume";
 						resume.addEventListener("click", () => {
 							fetch(
-								"dbimport.php?action=resume_job&job_id=" +
-									encodeURIComponent(j.job_id),
+								appendServerToUrl(
+									"dbimport.php?action=resume_job&job_id=" +
+										encodeURIComponent(j.job_id)
+								),
 								{ method: "POST" }
 							).then(() => openJobList());
 						});
@@ -589,7 +637,9 @@
 			document.getElementById("opt_show_all").checked
 				? "&show_all=1"
 				: "";
-		fetch("dbimport.php?action=list_jobs" + showAllParam2)
+		fetch(
+			appendServerToUrl("dbimport.php?action=list_jobs" + showAllParam2)
+		)
 			.then((r) => r.json())
 			.then((data) => {
 				const jobs = data && data.jobs ? data.jobs : [];
@@ -620,8 +670,10 @@
 					cancel.style.marginRight = "8px";
 					cancel.addEventListener("click", () => {
 						fetch(
-							"dbimport.php?action=cancel_job&job_id=" +
-								encodeURIComponent(j.job_id),
+							appendServerToUrl(
+								"dbimport.php?action=cancel_job&job_id=" +
+									encodeURIComponent(j.job_id)
+							),
 							{ method: "POST" }
 						).then(() => refreshEmbeddedJobList());
 					});
@@ -629,8 +681,10 @@
 					resume.textContent = "Resume";
 					resume.addEventListener("click", () => {
 						fetch(
-							"dbimport.php?action=resume_job&job_id=" +
-								encodeURIComponent(j.job_id),
+							appendServerToUrl(
+								"dbimport.php?action=resume_job&job_id=" +
+									encodeURIComponent(j.job_id)
+							),
 							{ method: "POST" }
 						).then(() => refreshEmbeddedJobList());
 					});
@@ -644,6 +698,7 @@
 			})
 			.catch((e) => {
 				container.textContent = "Failed to load jobs";
+				console.error(e);
 			});
 	}
 })();

@@ -1,8 +1,6 @@
 <?php
 namespace PhpPgAdmin\Database\Import;
 
-require_once __DIR__ . '/ReaderInterface.php';
-
 class ZipEntryReader implements ReaderInterface
 {
     protected $zipPath;
