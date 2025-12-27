@@ -208,41 +208,23 @@ function lazy_gc(): void
     }
 }
 
-function handle_upload()
+function handle_init_upload()
 {
     $misc = AppContainer::getMisc();
     $conf = AppContainer::getConf();
-    $pg = AppContainer::getPostgres();
 
     header('Content-Type: application/json');
-    $uploadMax = $conf['import']['upload_max_size'] ?? 0;
-    if (!empty($_SERVER['CONTENT_LENGTH']) && $uploadMax > 0 && $_SERVER['CONTENT_LENGTH'] > $uploadMax) {
-        http_response_code(413);
-        echo json_encode(['error' => 'Upload exceeds configured maximum']);
-        exit;
-    }
 
-    if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
-        http_response_code(400);
-        echo json_encode(['error' => 'No file uploaded or upload error']);
-        exit;
-    }
-
-    $jobId = 'import_' . bin2hex(random_bytes(16));
-    $jobDir = get_job_dir($jobId);
-    if (!is_dir($jobDir)) {
-        mkdir($jobDir, 0700, true);
-    }
-
-    $dest = $jobDir . DIRECTORY_SEPARATOR . 'upload.dump';
-    if (!move_uploaded_file($_FILES['file']['tmp_name'], $dest)) {
-        http_response_code(500);
-        echo json_encode(['error' => 'Failed to move uploaded file']);
-        exit;
-    }
-
+    $filename = $_REQUEST['filename'] ?? 'upload.dump';
+    $filesize = intval($_REQUEST['filesize'] ?? 0);
     $scope = $_REQUEST['scope'] ?? 'database';
     $scope_ident = $_REQUEST['scope_ident'] ?? '';
+
+    if ($filesize <= 0) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid filesize']);
+        exit;
+    }
 
     // Collect boolean options from the form (presence means checked)
     $opts = [];
@@ -256,18 +238,26 @@ function handle_upload()
     $opts['rights'] = isset($_REQUEST['opt_rights']);
     $opts['defer_self'] = isset($_REQUEST['opt_defer_self']);
     $opts['allow_drops'] = isset($_REQUEST['opt_allow_drops']);
-    $opts['error_mode'] = $_REQUEST['opt_error_mode'] ?? 'abort'; // abort, log, ignore
+    $opts['error_mode'] = $_REQUEST['opt_error_mode'] ?? 'abort';
+
+    $jobId = 'import_' . bin2hex(random_bytes(16));
+    $jobDir = get_job_dir($jobId);
+    if (!is_dir($jobDir)) {
+        mkdir($jobDir, 0700, true);
+    }
 
     $state = [
         'job_id' => $jobId,
+        'filename' => basename($filename),
         'created' => time(),
         'last_activity' => time(),
+        'uploaded_bytes' => 0,
+        'expected_size' => $filesize,
         'offset' => 0,
-        'size' => filesize($dest),
-        'status' => 'uploaded',
+        'size' => 0,
+        'status' => 'uploading',
         'scope' => $scope,
         'scope_ident' => $scope_ident,
-        // Persist server/login info so jobs can be resumed after session loss
         'server_info' => (function () use ($misc) {
             $si = $misc->getServerInfo();
             if (!is_array($si)) {
@@ -285,20 +275,198 @@ function handle_upload()
         'rights_queue' => [],
         'buffer' => '',
     ];
-    // Attach database only when it is unambiguous.
+
     if (!empty($state['server_info']) && is_array($state['server_info'])) {
-        if (empty($state['server_info']['database']) && (($scope ?? '') === 'database')) {
+        if (empty($state['server_info']['database']) && $scope === 'database') {
             if (!empty($scope_ident)) {
                 $state['server_info']['database'] = $scope_ident;
             }
         }
     }
+
     write_json_locked($jobDir . DIRECTORY_SEPARATOR . 'state.json', $state);
 
-    // Run a tiny lazy GC pass to avoid leaving many temp dirs
     lazy_gc();
 
-    echo json_encode(['job_id' => $jobId, 'size' => $state['size']]);
+    $chunkSize = $conf['import']['chunk_size'] ?? (5 * 1024 * 1024);
+    echo json_encode([
+        'job_id' => $jobId,
+        'chunk_size' => $chunkSize,
+        'expected_size' => $filesize
+    ]);
+}
+
+function handle_upload_chunk()
+{
+    header('Content-Type: application/json');
+
+    $jobId = $_REQUEST['job_id'] ?? '';
+    $offset = intval($_REQUEST['offset'] ?? 0);
+    $clientChecksum = strtolower($_SERVER['HTTP_X_CHECKSUM'] ?? '');
+
+    if (!$jobId) {
+        http_response_code(400);
+        echo json_encode(['error' => 'job_id required']);
+        exit;
+    }
+
+    try {
+        $jobDir = get_job_dir($jobId);
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode(['error' => 'invalid job_id']);
+        exit;
+    }
+
+    $stateFile = $jobDir . DIRECTORY_SEPARATOR . 'state.json';
+    if (!is_file($stateFile)) {
+        http_response_code(404);
+        echo json_encode(['error' => 'job not found']);
+        exit;
+    }
+
+    $state = read_json_locked($stateFile);
+    if ($state['status'] !== 'uploading') {
+        http_response_code(400);
+        echo json_encode(['error' => 'job not in uploading state']);
+        exit;
+    }
+
+    $tmpFile = $jobDir . DIRECTORY_SEPARATOR . 'chunk.tmp';
+    $targetFile = $jobDir . DIRECTORY_SEPARATOR . 'upload.dump';
+
+    // Read chunk from php://input
+    $in = fopen('php://input', 'rb');
+    $out = fopen($tmpFile, 'wb');
+    if (!$in || !$out) {
+        http_response_code(500);
+        echo json_encode(['error' => 'failed to open streams']);
+        exit;
+    }
+    stream_copy_to_stream($in, $out);
+    fclose($in);
+    fclose($out);
+
+    // Verify checksum
+    $chunkData = file_get_contents($tmpFile);
+    $serverChecksum = hash('fnv1a64', $chunkData);
+
+    if ($serverChecksum !== $clientChecksum) {
+        @unlink($tmpFile);
+        echo json_encode(['status' => 'BAD_CHECKSUM']);
+        exit;
+    }
+
+    // Append to target file
+    $target = fopen($targetFile, $offset === 0 ? 'wb' : 'ab');
+    if (!$target) {
+        @unlink($tmpFile);
+        http_response_code(500);
+        echo json_encode(['error' => 'failed to open target']);
+        exit;
+    }
+    $tmp = fopen($tmpFile, 'rb');
+    stream_copy_to_stream($tmp, $target);
+    fclose($tmp);
+    fclose($target);
+    @unlink($tmpFile);
+
+    // Update state
+    $chunkSize = strlen($chunkData);
+    $state['uploaded_bytes'] = $offset + $chunkSize;
+    $state['last_activity'] = time();
+    write_json_locked($stateFile, $state);
+
+    echo json_encode(['status' => 'OK', 'uploaded_bytes' => $state['uploaded_bytes']]);
+}
+
+function handle_upload_status()
+{
+    header('Content-Type: application/json');
+
+    $jobId = $_REQUEST['job_id'] ?? '';
+    if (!$jobId) {
+        http_response_code(400);
+        echo json_encode(['error' => 'job_id required']);
+        exit;
+    }
+
+    try {
+        $jobDir = get_job_dir($jobId);
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode(['error' => 'invalid job_id']);
+        exit;
+    }
+
+    $stateFile = $jobDir . DIRECTORY_SEPARATOR . 'state.json';
+    if (!is_file($stateFile)) {
+        echo json_encode(['uploaded_bytes' => 0]);
+        exit;
+    }
+
+    $state = read_json_locked($stateFile);
+    echo json_encode(['uploaded_bytes' => $state['uploaded_bytes'] ?? 0]);
+}
+
+function handle_finalize_upload()
+{
+    header('Content-Type: application/json');
+
+    $jobId = $_REQUEST['job_id'] ?? '';
+    if (!$jobId) {
+        http_response_code(400);
+        echo json_encode(['error' => 'job_id required']);
+        exit;
+    }
+
+    try {
+        $jobDir = get_job_dir($jobId);
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode(['error' => 'invalid job_id']);
+        exit;
+    }
+
+    $stateFile = $jobDir . DIRECTORY_SEPARATOR . 'state.json';
+    if (!is_file($stateFile)) {
+        http_response_code(404);
+        echo json_encode(['error' => 'job not found']);
+        exit;
+    }
+
+    $state = read_json_locked($stateFile);
+    $targetFile = $jobDir . DIRECTORY_SEPARATOR . 'upload.dump';
+
+    if (!is_file($targetFile)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'upload file not found']);
+        exit;
+    }
+
+    $actualSize = filesize($targetFile);
+    $expectedSize = $state['expected_size'] ?? 0;
+
+    if ($actualSize !== $expectedSize) {
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'size mismatch',
+            'expected' => $expectedSize,
+            'actual' => $actualSize
+        ]);
+        exit;
+    }
+
+    $state['size'] = $actualSize;
+    $state['status'] = 'uploaded';
+    $state['last_activity'] = time();
+    write_json_locked($stateFile, $state);
+
+    echo json_encode([
+        'job_id' => $jobId,
+        'size' => $actualSize,
+        'status' => 'uploaded'
+    ]);
 }
 
 function handle_status(): void
@@ -1111,11 +1279,20 @@ function handle_resume_job(): void
 
 // Main action dispatcher
 
-$action = $_REQUEST['action'] ?? 'upload';
+$action = $_REQUEST['action'] ?? 'init_upload';
 
 switch ($action) {
-    case 'upload':
-        handle_upload();
+    case 'init_upload':
+        handle_init_upload();
+        break;
+    case 'upload_chunk':
+        handle_upload_chunk();
+        break;
+    case 'upload_status':
+        handle_upload_status();
+        break;
+    case 'finalize_upload':
+        handle_finalize_upload();
         break;
     case 'list_entries':
         handle_list_entries();

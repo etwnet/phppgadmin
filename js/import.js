@@ -1,5 +1,75 @@
 // Simple uploader + chunked import controller
 (function () {
+	// FNV-1a 64-bit hash - optimized with pre-computed BigInt table
+	const FNV_TABLE = Array.from({ length: 256 }, (_, i) => BigInt(i));
+
+	function fnv1a64(buf) {
+		let hash = 0xcbf29ce484222325n;
+		const prime = 0x100000001b3n;
+
+		for (let i = 0; i < buf.length; i++) {
+			hash ^= FNV_TABLE[buf[i]];
+			hash = (hash * prime) & 0xffffffffffffffffn;
+		}
+
+		return hash.toString(16).padStart(16, "0");
+	}
+
+	async function uploadChunkWithRetry(jobId, offset, chunk, maxRetries = 3) {
+		const buf = new Uint8Array(await chunk.arrayBuffer());
+		const checksum = fnv1a64(buf);
+
+		for (let attempt = 1; attempt <= maxRetries; attempt++) {
+			try {
+				const xhr = await new Promise((resolve, reject) => {
+					const xhr = new XMLHttpRequest();
+					xhr.open(
+						"POST",
+						`dbimport.php?action=upload_chunk&job_id=${encodeURIComponent(
+							jobId
+						)}&offset=${offset}`
+					);
+					xhr.setRequestHeader("X-Checksum", checksum);
+					xhr.setRequestHeader(
+						"Content-Type",
+						"application/octet-stream"
+					);
+
+					xhr.onload = () => resolve(xhr);
+					xhr.onerror = () => reject(new Error("Network error"));
+					xhr.ontimeout = () => reject(new Error("Timeout"));
+
+					xhr.send(buf);
+				});
+
+				if (xhr.status >= 200 && xhr.status < 300) {
+					const res = JSON.parse(xhr.responseText);
+					if (res.status === "OK") {
+						return res.uploaded_bytes;
+					}
+					if (res.status === "BAD_CHECKSUM") {
+						console.warn(
+							`Chunk @${offset} checksum mismatch (attempt ${attempt})`
+						);
+						continue;
+					}
+					throw new Error(res.error || "Upload failed");
+				}
+				throw new Error(`HTTP ${xhr.status}`);
+			} catch (e) {
+				if (attempt === maxRetries) {
+					throw new Error(
+						`Chunk failed after ${maxRetries} retries: ${e.message}`
+					);
+				}
+				console.warn(
+					`Retry ${attempt}/${maxRetries} for chunk @${offset}`
+				);
+				await new Promise((r) => setTimeout(r, 500 * attempt));
+			}
+		}
+	}
+
 	function el(id) {
 		return document.getElementById(id);
 	}
@@ -78,19 +148,7 @@
 		}
 		const file = fileInput.files[0];
 
-		// client-side check for configured max upload size (if provided by renderer)
-		const maxAttr = fileInput.dataset
-			? fileInput.dataset.importMaxSize
-			: null;
-		if (maxAttr) {
-			const maxSize = parseInt(maxAttr, 10) || 0;
-			if (maxSize > 0 && file.size > maxSize) {
-				alert("Selected file exceeds maximum allowed upload size.");
-				return;
-			}
-		}
-
-		// sniff magic bytes client-side to prevent uploading unsupported compressed files
+		// Sniff magic bytes client-side to prevent uploading unsupported compressed files
 		const caps = getServerCaps(fileInput);
 		const detectedType = await sniffMagicType(file);
 		if (detectedType === "zip" && !caps.zip) {
@@ -111,6 +169,7 @@
 			);
 			return;
 		}
+
 		const scope = el("import_scope")
 			? el("import_scope").value
 			: "database";
@@ -128,122 +187,192 @@
 
 		const uploadStatus = el("uploadStatus");
 		if (uploadStatus) {
-			uploadStatus.textContent = `Uploading ${file.name} (${formatBytes(
-				file.size
-			)})...`;
+			uploadStatus.textContent = `Initializing upload for ${
+				file.name
+			} (${formatBytes(file.size)})...`;
 		}
 
-		const fd = new FormData();
-		fd.append("file", file);
-		fd.append("scope", scope);
-		fd.append("scope_ident", scope_ident);
+		try {
+			// 1. Initialize upload and get job_id + chunk_size
+			const formData = new URLSearchParams();
+			formData.append("filename", file.name);
+			formData.append("filesize", file.size);
+			formData.append("scope", scope);
+			formData.append("scope_ident", scope_ident);
 
-		const xhr = new XMLHttpRequest();
-		xhr.open("POST", "dbimport.php?action=upload", true);
+			// Collect options
+			const opts = [
+				"opt_roles",
+				"opt_tablespaces",
+				"opt_databases",
+				"opt_schema_create",
+				"opt_data",
+				"opt_truncate",
+				"opt_ownership",
+				"opt_rights",
+				"opt_defer_self",
+				"opt_allow_drops",
+			];
+			opts.forEach((opt) => {
+				const chk = document.getElementById(opt);
+				if (chk && chk.checked) {
+					formData.append(opt, "1");
+				}
+			});
+			const errorModeRadios =
+				document.getElementsByName("opt_error_mode");
+			for (let radio of errorModeRadios) {
+				if (radio.checked) {
+					formData.append("opt_error_mode", radio.value);
+					break;
+				}
+			}
 
-		xhr.upload.onprogress = function (ev) {
-			if (ev.lengthComputable) {
-				const pct = Math.floor((ev.loaded / ev.total) * 100);
-				if (el("uploadProgress")) el("uploadProgress").value = pct;
-				const uploadStatus = el("uploadStatus");
+			const initRes = await fetch("dbimport.php?action=init_upload", {
+				method: "POST",
+				body: formData,
+			});
+
+			if (!initRes.ok) {
+				const err = await initRes.json();
+				throw new Error(err.error || "Init failed");
+			}
+
+			const initData = await initRes.json();
+			const jobId = initData.job_id;
+			const chunkSize = initData.chunk_size || 5 * 1024 * 1024;
+
+			log(
+				`Upload initialized: job_id=${jobId}, chunk_size=${formatBytes(
+					chunkSize
+				)}`
+			);
+
+			// 2. Check for resume capability
+			const statusRes = await fetch(
+				`dbimport.php?action=upload_status&job_id=${encodeURIComponent(
+					jobId
+				)}`
+			);
+			const statusData = await statusRes.json();
+			let uploaded = statusData.uploaded_bytes || 0;
+
+			if (uploaded > 0) {
+				log(`Resuming from offset ${formatBytes(uploaded)}`);
+			}
+
+			// 3. Upload chunks with progress
+			const uploadProgress = el("uploadProgress");
+			while (uploaded < file.size) {
+				const chunk = file.slice(uploaded, uploaded + chunkSize);
+
+				// Update progress before sending
+				const pct = Math.floor((uploaded / file.size) * 100);
+				if (uploadProgress) uploadProgress.value = pct;
 				if (uploadStatus) {
 					uploadStatus.textContent = `Uploading ${
 						file.name
-					} - ${pct}% (${formatBytes(ev.loaded)} / ${formatBytes(
-						ev.total
+					} - ${pct}% (${formatBytes(uploaded)} / ${formatBytes(
+						file.size
 					)})`;
 				}
+
+				// Upload with retry
+				const newUploaded = await uploadChunkWithRetry(
+					jobId,
+					uploaded,
+					chunk
+				);
+				uploaded = newUploaded;
 			}
-		};
 
-		xhr.onload = function () {
-			if (xhr.status >= 200 && xhr.status < 300) {
-				let res;
-				try {
-					res = JSON.parse(xhr.responseText);
-				} catch (e) {
-					alert("Invalid response");
-					return;
-				}
-				if (res.job_id) {
-					log("Upload finished, job_id=" + res.job_id);
-					const uploadStatus = el("uploadStatus");
-					if (uploadStatus) {
-						uploadStatus.textContent = `Upload complete (${formatBytes(
-							res.size || 0
-						)}) - Job ID: ${res.job_id}`;
-					}
-					// Switch to import phase
-					const uploadPhase = el("uploadPhase");
-					const importPhase = el("importPhase");
-					if (importPhase) importPhase.style.display = "block";
+			// 4. Finalize upload
+			if (uploadStatus) {
+				uploadStatus.textContent = `Finalizing upload...`;
+			}
 
-					const auto = document.getElementById("opt_auto_start")
-						? document.getElementById("opt_auto_start").checked
-						: false;
-					if (auto) {
-						// try to list entries and start immediately if needed
-						fetch(
-							"dbimport.php?action=list_entries&job_id=" +
-								encodeURIComponent(res.job_id)
-						)
-							.then((r) => r.json())
-							.then((info) => {
-								if (
-									info &&
-									info.entries &&
-									info.entries.length > 0
-								) {
-									showEntrySelector(
-										res.job_id,
-										res.size,
-										info.entries
-									);
-								} else {
-									runImportLoop(res.job_id, res.size);
-								}
-							})
-							.catch(() => runImportLoop(res.job_id, res.size));
-					} else {
-						// refresh embedded job list for manual control
-						refreshEmbeddedJobList();
-					}
-				} else if (res.error) {
-					alert("Upload error: " + res.error);
+			const finalRes = await fetch(
+				`dbimport.php?action=finalize_upload&job_id=${encodeURIComponent(
+					jobId
+				)}`,
+				{ method: "POST" }
+			);
+
+			if (!finalRes.ok) {
+				const err = await finalRes.json();
+				throw new Error(err.error || "Finalize failed");
+			}
+
+			const finalData = await finalRes.json();
+			log(`Upload complete: ${formatBytes(finalData.size)}`);
+
+			if (uploadStatus) {
+				uploadStatus.textContent = `Upload complete (${formatBytes(
+					finalData.size
+				)}) - Job ID: ${jobId}`;
+			}
+			if (uploadProgress) uploadProgress.value = 100;
+
+			// Switch to import phase
+			if (importPhase) importPhase.style.display = "block";
+
+			// 5. Auto-start or show job list
+			const auto = document.getElementById("opt_auto_start")
+				? document.getElementById("opt_auto_start").checked
+				: false;
+
+			if (auto) {
+				// Check for ZIP entries
+				const entriesRes = await fetch(
+					`dbimport.php?action=list_entries&job_id=${encodeURIComponent(
+						jobId
+					)}`
+				);
+				const entriesData = await entriesRes.json();
+
+				if (entriesData.entries && entriesData.entries.length > 0) {
+					showEntrySelector(
+						jobId,
+						finalData.size,
+						entriesData.entries
+					);
+				} else {
+					runImportLoop(jobId, finalData.size);
 				}
 			} else {
-				alert("Upload failed: " + xhr.status);
+				refreshEmbeddedJobList();
 			}
-		};
-
-		function showEntrySelector(jobId, totalSize, entries) {
-			// Populate static modal and show it
-			const modal = document.getElementById("entrySelectorModal");
-			const sel = document.getElementById("entrySelect");
-			const importAllChk = document.getElementById("import_all_chk");
-			if (!modal || !sel) {
-				// fallback to dynamic overlay if static modal missing
-				console.warn("Static entry selector modal not found");
-				return;
+		} catch (error) {
+			alert("Upload error: " + error.message);
+			console.error(error);
+			if (uploadStatus) {
+				uploadStatus.textContent = "Upload failed: " + error.message;
 			}
-			sel.innerHTML = "";
-			entries.forEach(function (e) {
-				const opt = document.createElement("option");
-				opt.value = e.name;
-				opt.textContent = e.name + " (" + e.size + " bytes)";
-				sel.appendChild(opt);
-			});
-			// store jobId/totalSize on modal dataset for handler to pick up
-			modal.dataset.jobId = jobId;
-			modal.dataset.totalSize = totalSize;
-			importAllChk.checked = false;
-			modal.style.display = "block";
 		}
+	}
 
-		xhr.onerror = function () {
-			alert("Upload error");
-		};
-		xhr.send(fd);
+	function showEntrySelector(jobId, totalSize, entries) {
+		// Populate static modal and show it
+		const modal = document.getElementById("entrySelectorModal");
+		const sel = document.getElementById("entrySelect");
+		const importAllChk = document.getElementById("import_all_chk");
+		if (!modal || !sel) {
+			// fallback to dynamic overlay if static modal missing
+			console.warn("Static entry selector modal not found");
+			return;
+		}
+		sel.innerHTML = "";
+		entries.forEach(function (e) {
+			const opt = document.createElement("option");
+			opt.value = e.name;
+			opt.textContent = e.name + " (" + e.size + " bytes)";
+			sel.appendChild(opt);
+		});
+		// store jobId/totalSize on modal dataset for handler to pick up
+		modal.dataset.jobId = jobId;
+		modal.dataset.totalSize = totalSize;
+		importAllChk.checked = false;
+		modal.style.display = "block";
 	}
 
 	function log(msg) {
