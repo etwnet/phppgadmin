@@ -9,7 +9,7 @@ class TabsRenderer extends AbstractContext
 {
 
     /**
-     * @param array $tabs
+     * @param array|string $tabs
      * @param string $activeTab
      */
     public function printTabs($tabs, $activeTab): void

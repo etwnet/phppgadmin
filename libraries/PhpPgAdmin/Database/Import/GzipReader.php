@@ -10,7 +10,11 @@ class GzipReader implements ReaderInterface
 
     public function __construct($path)
     {
-        $this->gz = gzopen($path, 'rb');
+        if (!function_exists('gzopen')) {
+            throw new \Exception('gzip support is not available (PHP ext-zlib)');
+        }
+        $gzopen = 'gzopen';
+        $this->gz = $gzopen($path, 'rb');
         if ($this->gz === false) {
             throw new \Exception("Unable to open gzip file: $path");
         }
@@ -18,14 +22,16 @@ class GzipReader implements ReaderInterface
 
     public function read($length)
     {
-        $data = gzread($this->gz, $length);
+        $gzread = 'gzread';
+        $data = $gzread($this->gz, $length);
         $this->pos += ($data === false) ? 0 : strlen($data);
         return $data;
     }
 
     public function eof()
     {
-        return gzeof($this->gz);
+        $gzeof = 'gzeof';
+        return $gzeof($this->gz);
     }
 
     public function tell()
@@ -52,7 +58,10 @@ class GzipReader implements ReaderInterface
     public function close()
     {
         if ($this->gz !== null) {
-            @gzclose($this->gz);
+            if (function_exists('gzclose')) {
+                $gzclose = 'gzclose';
+                @$gzclose($this->gz);
+            }
         }
     }
 }

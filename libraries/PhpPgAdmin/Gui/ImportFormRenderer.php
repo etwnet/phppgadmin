@@ -4,6 +4,7 @@ namespace PhpPgAdmin\Gui;
 
 use PhpPgAdmin\Core\AbstractContext;
 use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\Import\CompressionReader;
 use PhpPgAdmin\Database\Actions\RoleActions;
 
 class ImportFormRenderer extends AbstractContext
@@ -17,6 +18,14 @@ class ImportFormRenderer extends AbstractContext
         $chunkSize = (int) ($importCfg['chunk_size'] ?? 0);
         $maxAttr = $maxSize > 0 ? 'data-import-max-size="' . htmlspecialchars((string) $maxSize) . '"' : '';
         $chunkAttr = $chunkSize > 0 ? 'data-import-chunk-size="' . htmlspecialchars((string) $chunkSize) . '"' : '';
+
+        $caps = CompressionReader::capabilities();
+        $capsAttr = sprintf(
+            'data-cap-gzip="%s" data-cap-zip="%s" data-cap-bzip2="%s"',
+            $caps['gzip'] ? '1' : '0',
+            $caps['zip'] ? '1' : '0',
+            $caps['bzip2'] ? '1' : '0'
+        );
         // determine if current user is superuser to show admin controls
         $pg = $this->postgres();
         $roleActions = new RoleActions($pg);
@@ -25,7 +34,16 @@ class ImportFormRenderer extends AbstractContext
         <form id="importForm" method="post" enctype="multipart/form-data" action="dbimport.php?action=upload">
             <div class="form-group">
                 <label for="file"><?= $lang['struploadfile'] ?></label>
-                <input type="file" name="file" id="file" <?= $maxAttr ?>         <?= $chunkAttr ?> />
+                <input type="file" name="file" id="file" <?= $capsAttr ?>         <?= $maxAttr ?>         <?= $chunkAttr ?> />
+                <div id="importCompressionCaps" style="margin-top:6px">
+                    <strong><?= $lang['strimportcompressioncaps'] ?? 'Compression support' ?>:</strong>
+                    <?= ($caps['zip'] ? ($lang['strsupported'] ?? 'Supported') : ($lang['strunsupported'] ?? 'Unsupported')) ?>
+                    ZIP,
+                    <?= ($caps['gzip'] ? ($lang['strsupported'] ?? 'Supported') : ($lang['strunsupported'] ?? 'Unsupported')) ?>
+                    gzip,
+                    <?= ($caps['bzip2'] ? ($lang['strsupported'] ?? 'Supported') : ($lang['strunsupported'] ?? 'Unsupported')) ?>
+                    bzip2
+                </div>
             </div>
 
             <input type="hidden" name="scope" id="import_scope" value="<?= htmlspecialchars($scope) ?>" />
@@ -36,17 +54,40 @@ class ImportFormRenderer extends AbstractContext
                 <label><?= $lang['stroptions'] ?></label>
                 <ul>
                     <?php if ($scope === 'server'): ?>
-                        <li><label><input type="checkbox" name="opt_roles" /> <?= $lang['strimportroles'] ?></label></li>
-                        <li><label><input type="checkbox" name="opt_tablespaces" /> <?= $lang['strimporttablespaces'] ?></label>
-                        </li>
+                        <li><label><input type="checkbox" name="opt_roles" checked /> <?= $lang['strimportroles'] ?></label></li>
+                        <li><label><input type="checkbox" name="opt_tablespaces" checked />
+                                <?= $lang['strimporttablespaces'] ?></label></li>
+                        <li><label><input type="checkbox" name="opt_databases" checked />
+                                <?= $lang['strimportdatabases'] ?? 'Import databases' ?></label></li>
                     <?php endif; ?>
                     <?php if ($scope === 'database' || $scope === 'server'): ?>
-                        <li><label><input type="checkbox" name="opt_schema_create" /> <?= $lang['strcreateschema'] ?></label></li>
+                        <li><label><input type="checkbox" name="opt_schema_create" checked />
+                                <?= $lang['strcreateschema'] ?></label></li>
                     <?php endif; ?>
+                    <li><label><input type="checkbox" name="opt_data" checked />
+                            <?= $lang['strimportdata'] ?? 'Import data (COPY/INSERT)' ?></label></li>
                     <?php if ($scope === 'schema' || $scope === 'table'): ?>
                         <li><label><input type="checkbox" name="opt_truncate" /> <?= $lang['strtruncatebefore'] ?></label></li>
                     <?php endif; ?>
+                    <li><label><input type="checkbox" name="opt_ownership" checked />
+                            <?= $lang['strimportownership'] ?? 'Apply ownership (ALTER ... OWNER)' ?></label></li>
+                    <li><label><input type="checkbox" name="opt_rights" checked />
+                            <?= $lang['strimportrights'] ?? 'Apply rights (GRANT/REVOKE)' ?></label></li>
                     <li><label><input type="checkbox" name="opt_defer_self" checked /> <?= $lang['strdeferself'] ?></label></li>
+                    <li><label><input type="checkbox" name="opt_allow_drops" />
+                            <?= $lang['strimportallowdrops'] ?? 'Allow DROP statements' ?></label></li>
+                </ul>
+            </div>
+
+            <div class="form-group">
+                <label><?= $lang['strerrorhandling'] ?? 'Error handling' ?>:</label>
+                <ul>
+                    <li><label><input type="radio" name="opt_error_mode" value="abort" checked />
+                            <?= $lang['strimporterrorabort'] ?? 'Abort on first error' ?></label></li>
+                    <li><label><input type="radio" name="opt_error_mode" value="log" />
+                            <?= $lang['strimporterrorlog'] ?? 'Log errors and continue' ?></label></li>
+                    <li><label><input type="radio" name="opt_error_mode" value="ignore" />
+                            <?= $lang['strimporterrorignore'] ?? 'Ignore errors (not recommended)' ?></label></li>
                 </ul>
             </div>
 
@@ -59,12 +100,19 @@ class ImportFormRenderer extends AbstractContext
             </div>
         </form>
 
-        <div id="importUI">
-            <label><?= $lang['strupload'] ?> progress</label>
-            <progress id="uploadProgress" value="0" max="100" style="width:100%"></progress>
-            <label>Import progress</label>
-            <progress id="importProgress" value="0" max="100" style="width:100%"></progress>
-            <pre id="importLog" style="height:200px;overflow:auto;border:1px solid #ccc;padding:6px"></pre>
+        <div id="importUI" style="display:none;margin-top:16px">
+            <div id="uploadPhase">
+                <h4><?= $lang['strupload'] ?>         <?= $lang['strprogress'] ?? 'Progress' ?></h4>
+                <progress id="uploadProgress" value="0" max="100" style="width:100%"></progress>
+                <div id="uploadStatus" style="margin-top:4px;font-size:0.9em;color:#666"></div>
+            </div>
+            <div id="importPhase" style="display:none;margin-top:16px">
+                <h4><?= $lang['strimport'] ?>         <?= $lang['strprogress'] ?? 'Progress' ?></h4>
+                <progress id="importProgress" value="0" max="100" style="width:100%"></progress>
+                <div id="importStatus" style="margin-top:4px;font-size:0.9em;color:#666"></div>
+                <pre id="importLog"
+                    style="height:200px;overflow:auto;border:1px solid #ccc;padding:6px;margin-top:8px;background:#f9f9f9"></pre>
+            </div>
         </div>
 
         <div id="uploadedJobs" style="margin-top:12px">

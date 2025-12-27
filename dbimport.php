@@ -16,11 +16,162 @@ use PhpPgAdmin\Database\Actions\RoleActions;
 
 require_once __DIR__ . '/libraries/bootstrap.php';
 
-function get_job_dir(string $jobId): string
+function validate_job_id(string $jobId): bool
+{
+    if ($jobId === '' || strlen($jobId) > 128) {
+        return false;
+    }
+    // Disallow path separators and traversal outright.
+    if (strpos($jobId, '/') !== false || strpos($jobId, '\\') !== false || strpos($jobId, '..') !== false) {
+        return false;
+    }
+
+    // Accept legacy uniqid('import_', true) format and new random hex format.
+    // - import_<hex>
+    // - import_<hex>.<digits>
+    // - UUID (optional, in case we ever switch)
+    if (preg_match('/^import_[0-9a-f]{13,}(?:\.[0-9]+)?$/i', $jobId)) {
+        return true;
+    }
+    if (preg_match('/^import_[0-9a-f]{32}$/i', $jobId)) {
+        return true;
+    }
+    if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $jobId)) {
+        return true;
+    }
+
+    return false;
+}
+
+function get_import_base_dir(): string
 {
     $conf = AppContainer::getConf();
     $base = $conf['import']['temp_dir'] ?? (sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'phppgadmin_imports');
-    return rtrim($base, '/\\') . DIRECTORY_SEPARATOR . $jobId;
+    return rtrim($base, '/\\');
+}
+
+function get_job_dir(string $jobId): string
+{
+    if (!validate_job_id($jobId)) {
+        throw new Exception('invalid job id');
+    }
+    $base = get_import_base_dir();
+    $baseReal = realpath($base);
+    if ($baseReal === false) {
+        $baseReal = $base;
+    }
+    $jobDir = $baseReal . DIRECTORY_SEPARATOR . $jobId;
+    // Ensure the computed directory stays under base.
+    $prefix = rtrim($baseReal, '/\\') . DIRECTORY_SEPARATOR;
+    if (strpos($jobDir, $prefix) !== 0) {
+        throw new Exception('invalid job dir');
+    }
+    return $jobDir;
+}
+
+/**
+ * Acquire a per-job lock to prevent concurrent writers (e.g., multiple tabs calling process).
+ * Returns an open file handle that must be kept open until release.
+ */
+function acquire_job_lock(string $jobDir)
+{
+    $lockFile = $jobDir . DIRECTORY_SEPARATOR . '.lock';
+    $fh = @fopen($lockFile, 'c');
+    if ($fh === false) {
+        return false;
+    }
+    if (!flock($fh, LOCK_EX | LOCK_NB)) {
+        fclose($fh);
+        return false;
+    }
+    return $fh;
+}
+
+function release_job_lock($fh): void
+{
+    if (is_resource($fh)) {
+        @flock($fh, LOCK_UN);
+        @fclose($fh);
+    }
+}
+
+function read_json_locked(string $path)
+{
+    $fh = @fopen($path, 'rb');
+    if ($fh === false) {
+        return null;
+    }
+    flock($fh, LOCK_SH);
+    $contents = stream_get_contents($fh);
+    flock($fh, LOCK_UN);
+    fclose($fh);
+    if ($contents === false || $contents === '') {
+        return null;
+    }
+    return json_decode($contents, true);
+}
+
+function write_json_locked(string $path, array $data): bool
+{
+    $fh = @fopen($path, 'c+');
+    if ($fh === false) {
+        return false;
+    }
+    if (!flock($fh, LOCK_EX)) {
+        fclose($fh);
+        return false;
+    }
+    ftruncate($fh, 0);
+    rewind($fh);
+    $json = json_encode($data);
+    if ($json === false) {
+        $json = '{}';
+    }
+    $ok = fwrite($fh, $json) !== false;
+    fflush($fh);
+    flock($fh, LOCK_UN);
+    fclose($fh);
+    return $ok;
+}
+
+function get_valid_zip_entries(string $zipPath, int $maxEntries, int $maxEntrySize): array
+{
+    if (!CompressionReader::isSupported('zip')) {
+        throw new Exception('zip support is not available');
+    }
+    $zip = new ZipArchive();
+    $entries = [];
+    $tooMany = false;
+    if ($zip->open($zipPath) === true) {
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $name = $zip->getNameIndex($i);
+            if ($name === false || substr($name, -1) === '/') {
+                continue;
+            }
+            $norm = str_replace('\\', '/', $name);
+            if (strpos($norm, '../') !== false || strpos($norm, '/..') !== false || strpos($norm, '/') === 0) {
+                continue;
+            }
+            $stat = $zip->statIndex($i);
+            $usize = isset($stat['size']) ? (int) $stat['size'] : 0;
+            if ($usize > $maxEntrySize) {
+                continue;
+            }
+            $entries[] = ['name' => $name, 'size' => $usize];
+            if (count($entries) > $maxEntries) {
+                $tooMany = true;
+                break;
+            }
+        }
+        $zip->close();
+    }
+    if ($tooMany) {
+        throw new Exception('too_many_entries');
+    }
+    usort($entries, function ($a, $b) {
+        return strcasecmp($a['name'], $b['name']);
+    });
+    return $entries;
 }
 
 function lazy_gc(): void
@@ -77,7 +228,7 @@ function handle_upload()
         exit;
     }
 
-    $jobId = uniqid('import_', true);
+    $jobId = 'import_' . bin2hex(random_bytes(16));
     $jobDir = get_job_dir($jobId);
     if (!is_dir($jobDir)) {
         mkdir($jobDir, 0700, true);
@@ -97,10 +248,15 @@ function handle_upload()
     $opts = [];
     $opts['roles'] = isset($_REQUEST['opt_roles']);
     $opts['tablespaces'] = isset($_REQUEST['opt_tablespaces']);
+    $opts['databases'] = isset($_REQUEST['opt_databases']);
     $opts['schema_create'] = isset($_REQUEST['opt_schema_create']);
+    $opts['data'] = isset($_REQUEST['opt_data']);
     $opts['truncate'] = isset($_REQUEST['opt_truncate']);
-    // defer_self defaults to true
-    $opts['defer_self'] = isset($_REQUEST['opt_defer_self']) ? true : true;
+    $opts['ownership'] = isset($_REQUEST['opt_ownership']);
+    $opts['rights'] = isset($_REQUEST['opt_rights']);
+    $opts['defer_self'] = isset($_REQUEST['opt_defer_self']);
+    $opts['allow_drops'] = isset($_REQUEST['opt_allow_drops']);
+    $opts['error_mode'] = $_REQUEST['opt_error_mode'] ?? 'abort'; // abort, log, ignore
 
     $state = [
         'job_id' => $jobId,
@@ -120,20 +276,24 @@ function handle_upload()
             if (isset($si['password'])) {
                 unset($si['password']);
             }
-            // attach current database if provided in request or scope_ident
-            $dbName = $_REQUEST['database'] ?? $_REQUEST['scope_ident'] ?? null;
-            if ($dbName) {
-                $si['database'] = $dbName;
-            }
             return $si;
         })(),
         'options' => $opts,
         'truncated_tables' => [],
         'deferred' => [],
+        'ownership_queue' => [],
         'rights_queue' => [],
         'buffer' => '',
     ];
-    file_put_contents($jobDir . DIRECTORY_SEPARATOR . 'state.json', json_encode($state));
+    // Attach database only when it is unambiguous.
+    if (!empty($state['server_info']) && is_array($state['server_info'])) {
+        if (empty($state['server_info']['database']) && (($scope ?? '') === 'database')) {
+            if (!empty($scope_ident)) {
+                $state['server_info']['database'] = $scope_ident;
+            }
+        }
+    }
+    write_json_locked($jobDir . DIRECTORY_SEPARATOR . 'state.json', $state);
 
     // Run a tiny lazy GC pass to avoid leaving many temp dirs
     lazy_gc();
@@ -154,14 +314,20 @@ function handle_status(): void
         echo json_encode(['error' => 'job_id required']);
         exit;
     }
-    $jobDir = get_job_dir($jobId);
+    try {
+        $jobDir = get_job_dir($jobId);
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode(['error' => 'invalid job_id']);
+        exit;
+    }
     $stateFile = $jobDir . DIRECTORY_SEPARATOR . 'state.json';
     if (!is_file($stateFile)) {
         http_response_code(404);
         echo json_encode(['error' => 'job not found']);
         exit;
     }
-    $state = json_decode(file_get_contents($stateFile), true);
+    $state = read_json_locked($stateFile);
     // If job was cancelled, return current state without processing
     if (isset($state['status']) && $state['status'] === 'cancelled') {
         echo json_encode($state);
@@ -183,7 +349,13 @@ function handle_process()
         echo json_encode(['error' => 'job_id required']);
         exit;
     }
-    $jobDir = get_job_dir($jobId);
+    try {
+        $jobDir = get_job_dir($jobId);
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode(['error' => 'invalid job_id']);
+        exit;
+    }
     $stateFile = $jobDir . DIRECTORY_SEPARATOR . 'state.json';
     $uploadFile = $jobDir . DIRECTORY_SEPARATOR . 'upload.dump';
     if (!is_file($stateFile) || !is_file($uploadFile)) {
@@ -191,36 +363,58 @@ function handle_process()
         echo json_encode(['error' => 'job not found']);
         exit;
     }
-    $state = json_decode(file_get_contents($stateFile), true);
+    $lock = acquire_job_lock($jobDir);
+    if ($lock === false) {
+        http_response_code(409);
+        echo json_encode(['error' => 'job_busy']);
+        exit;
+    }
+
+    $state = read_json_locked($stateFile);
     $chunkSize = $conf['import']['chunk_size'] ?? (4 * 1024 * 1024); // 4MB default
+
+    if (isset($state['status']) && $state['status'] === 'cancelled') {
+        release_job_lock($lock);
+        echo json_encode($state);
+        exit;
+    }
 
     $existing = $state['buffer'] ?? '';
     $opts = $state['options'] ?? ['roles' => false, 'tablespaces' => false, 'schema_create' => false, 'truncate' => false, 'defer_self' => true];
 
+    $type = CompressionReader::detect($uploadFile);
+    if (!CompressionReader::isSupported($type)) {
+        $state['status'] = 'error';
+        $state['error'] = 'unsupported_compression';
+        $state['compression'] = $type;
+        $state['last_activity'] = time();
+        write_json_locked($stateFile, $state);
+        release_job_lock($lock);
+        http_response_code(400);
+        echo json_encode(['error' => 'unsupported_compression', 'type' => $type]);
+        exit;
+    }
+
     // Prefer reader-based parsing (supports zip/gzip/bzip2 via stream readers).
     $res = null;
+    $reader = null;
     try {
-        $type = CompressionReader::detect($uploadFile);
         switch ($type) {
             case 'zip':
-                // Determine which entry to open: user-selected, or first, or import-all iteration
+                $maxEntries = (int) ($conf['import']['max_zip_entries'] ?? 1000);
+                $maxEntrySize = (int) ($conf['import']['max_zip_entry_uncompressed_size'] ?? (10 * 1024 * 1024 * 1024));
+                $validEntries = get_valid_zip_entries($uploadFile, $maxEntries, $maxEntrySize);
+                if (empty($validEntries)) {
+                    throw new Exception('No suitable entry found in zip archive');
+                }
+
+                // Determine which entry to open: user-selected, or import-all iteration, or first safe entry
                 $entry = null;
                 if (!empty($state['import_all_entries'])) {
-                    // ensure we have the entries list in state
                     if (empty($state['zip_entries'])) {
-                        $zip = new ZipArchive();
-                        $entries = [];
-                        if ($zip->open($uploadFile) === true) {
-                            for ($i = 0; $i < $zip->numFiles; $i++) {
-                                $name = $zip->getNameIndex($i);
-                                if (substr($name, -1) === '/')
-                                    continue;
-                                $entries[] = $name;
-                            }
-                            $zip->close();
-                        }
-                        usort($entries, 'strcasecmp');
-                        $state['zip_entries'] = $entries;
+                        $state['zip_entries'] = array_map(function ($e) {
+                            return $e['name'];
+                        }, $validEntries);
                         $state['current_entry_index'] = $state['current_entry_index'] ?? 0;
                         $state['offset'] = $state['offset'] ?? 0;
                     }
@@ -232,23 +426,21 @@ function handle_process()
                 } else {
                     if (!empty($state['selected_entry'])) {
                         $entry = $state['selected_entry'];
-                    } else {
-                        $zip = new ZipArchive();
-                        if ($zip->open($uploadFile) === true) {
-                            for ($i = 0; $i < $zip->numFiles; $i++) {
-                                $name = $zip->getNameIndex($i);
-                                if (substr($name, -1) !== '/') { // skip directories
-                                    $entry = $name;
-                                    break;
-                                }
+                        $ok = false;
+                        foreach ($validEntries as $ve) {
+                            if ($ve['name'] === $entry) {
+                                $ok = true;
+                                break;
                             }
-                            $zip->close();
                         }
+                        if (!$ok) {
+                            throw new Exception('selected entry is not allowed');
+                        }
+                    } else {
+                        $entry = $validEntries[0]['name'];
                     }
                 }
-                if ($entry === null) {
-                    throw new Exception('No suitable entry found in zip archive');
-                }
+
                 $reader = new ZipEntryReader($uploadFile, $entry);
                 break;
             case 'gzip':
@@ -261,14 +453,67 @@ function handle_process()
                 $reader = new LocalFileReader($uploadFile);
                 break;
         }
-        // Move reader to the persisted offset (may be emulated)
-        if ($state['offset'] > 0) {
+
+        // Optimization: do multiple parse+execute chunks per request for compressed formats,
+        // reducing expensive seek/reopen cycles.
+        $maxChunks = (int) ($conf['import']['max_chunks_per_request'] ?? (($type === 'plain') ? 1 : 3));
+        $deadline = microtime(true) + 2.0; // avoid long-running requests
+        $combinedStatements = [];
+        $combinedEof = false;
+        $totalConsumed = 0;
+
+        if (($state['offset'] ?? 0) > 0) {
             $reader->seek((int) $state['offset']);
         }
-        $res = SqlParser::parseFromReader($reader, $chunkSize, $existing);
+
+        for ($i = 0; $i < max(1, $maxChunks); $i++) {
+            if (microtime(true) >= $deadline) {
+                break;
+            }
+            $chunkRes = SqlParser::parseFromReader($reader, $chunkSize, $existing);
+            $consumed2 = (int) ($chunkRes['consumed'] ?? 0);
+            $stmts2 = $chunkRes['statements'] ?? [];
+            $existing = $chunkRes['remainder'] ?? '';
+            $combinedEof = (bool) ($chunkRes['eof'] ?? false);
+            $totalConsumed += $consumed2;
+
+            if (!empty($stmts2)) {
+                $combinedStatements = array_merge($combinedStatements, $stmts2);
+            }
+            // Stop if EOF reached or no progress (avoid tight loop)
+            if ($combinedEof || ($consumed2 === 0 && empty($stmts2))) {
+                break;
+            }
+        }
+
+        $res = [
+            'consumed' => $totalConsumed,
+            'statements' => $combinedStatements,
+            'remainder' => $existing,
+            'eof' => $combinedEof,
+        ];
+
         $reader->close();
     } catch (Exception $e) {
-        // Fallback to existing file-based parser on any error
+        if ($reader !== null) {
+            try {
+                $reader->close();
+            } catch (Exception $e2) {
+                // ignore
+            }
+        }
+        if ($type !== 'plain') {
+            $state['status'] = 'error';
+            $state['error'] = ($e->getMessage() === 'too_many_entries') ? 'too_many_entries' : 'reader_error';
+            $state['error_detail'] = $e->getMessage();
+            $state['last_activity'] = time();
+            write_json_locked($stateFile, $state);
+            release_job_lock($lock);
+            http_response_code(500);
+            echo json_encode(['error' => $state['error'], 'detail' => $e->getMessage()]);
+            exit;
+        }
+        // Fallback to existing file-based parser only for plain inputs
         $res = SqlParser::parseChunk($uploadFile, $state['offset'], $chunkSize, $existing);
     }
 
@@ -363,8 +608,35 @@ function handle_process()
             continue;
         }
 
+        // Data statements - skip if data import disabled
+        if ($cat === 'data' && empty($opts['data'])) {
+            $logs[] = ['time' => time(), 'skipped' => true, 'reason' => 'data_disabled', 'statement' => substr($stmtTrim, 0, 200)];
+            continue;
+        }
+
+        // DROP statements - block unless explicitly allowed
+        if ($cat === 'drop' && empty($opts['allow_drops'])) {
+            $logs[] = ['time' => time(), 'blocked' => true, 'reason' => 'drops_not_allowed', 'statement' => substr($stmtTrim, 0, 200)];
+            continue;
+        }
+
+        // Ownership-changing statements queued to run after object creation but before rights
+        if ($cat === 'ownership_change') {
+            if (empty($opts['ownership'])) {
+                $logs[] = ['time' => time(), 'skipped' => true, 'reason' => 'ownership_disabled', 'statement' => substr($stmtTrim, 0, 200)];
+                continue;
+            }
+            $state['ownership_queue'][] = $stmtTrim;
+            $logs[] = ['time' => time(), 'queued_ownership' => true, 'statement' => substr($stmtTrim, 0, 200)];
+            continue;
+        }
+
         // Rights statements queued as before
         if ($cat === 'rights') {
+            if (empty($opts['rights'])) {
+                $logs[] = ['time' => time(), 'skipped' => true, 'reason' => 'rights_disabled', 'statement' => substr($stmtTrim, 0, 200)];
+                continue;
+            }
             $state['rights_queue'][] = $stmtTrim;
             $logs[] = ['time' => time(), 'queued_rights' => true, 'statement' => substr($stmtTrim, 0, 200)];
             continue;
@@ -440,6 +712,22 @@ function handle_process()
         if ($err !== 0) {
             $errors++;
             $logs[] = ['time' => time(), 'error' => $err, 'statement' => substr($stmtTrim, 0, 200)];
+            // Handle error based on error_mode option
+            $errorMode = $opts['error_mode'] ?? 'abort';
+            if ($errorMode === 'abort') {
+                $state['status'] = 'error';
+                $state['error'] = 'statement_failed';
+                $state['error_detail'] = "Statement failed with error: $err";
+                $state['log'] = $logs;
+                $state['errors'] = $errors;
+                $state['last_activity'] = time();
+                write_json_locked($stateFile, $state);
+                release_job_lock($lock);
+                http_response_code(500);
+                echo json_encode(['error' => 'statement_failed', 'detail' => $err, 'offset' => $state['offset'], 'errors' => $errors]);
+                exit;
+            }
+            // log and ignore modes: continue processing
         } else {
             $logs[] = ['time' => time(), 'ok' => true, 'statement' => substr($stmtTrim, 0, 200)];
         }
@@ -449,11 +737,27 @@ function handle_process()
     $state['log'] = $logs;
     $state['errors'] = $errors;
 
-    // If finished, run deferred rights/self-affecting statements according to scope/superuser
+    // If finished, run queued statements in order: ownership → rights → self-affecting deferred
     if ($state['status'] === 'finished') {
-        // execute rights queue if allowed
+        // 1. Execute ownership changes first (so objects have correct owners before grants)
+        $ownership = $state['ownership_queue'] ?? [];
+        if (!empty($ownership) && !empty($opts['ownership'])) {
+            foreach ($ownership as $ostmt) {
+                $err = $pg->execute($ostmt);
+                if ($err !== 0) {
+                    $state['errors'] = ($state['errors'] ?? 0) + 1;
+                    $state['log'][] = ['time' => time(), 'error' => $err, 'ownership' => true, 'statement' => substr($ostmt, 0, 200)];
+                } else {
+                    $state['log'][] = ['time' => time(), 'ok' => true, 'ownership' => true, 'statement' => substr($ostmt, 0, 200)];
+                }
+            }
+        } elseif (!empty($ownership)) {
+            $state['log'][] = ['time' => time(), 'skipped_ownership' => true, 'count' => count($ownership)];
+        }
+
+        // 2. Execute rights queue if allowed
         $rights = $state['rights_queue'] ?? [];
-        if (!empty($rights) && $allowCategory('rights')) {
+        if (!empty($rights) && !empty($opts['rights']) && $allowCategory('rights')) {
             foreach ($rights as $rstmt) {
                 $err = $pg->execute($rstmt);
                 if ($err !== 0) {
@@ -467,7 +771,7 @@ function handle_process()
             $state['log'][] = ['time' => time(), 'skipped_rights' => true, 'count' => count($rights)];
         }
 
-        // execute deferred self-affecting only if superuser or server-scope
+        // 3. Execute deferred self-affecting last (only if superuser or server-scope)
         $deferred = $state['deferred'] ?? [];
         if (!empty($deferred)) {
             if ($isSuper || ($state['scope'] ?? '') === 'server') {
@@ -486,11 +790,13 @@ function handle_process()
         }
 
         // clear queues after attempted execution
+        $state['ownership_queue'] = [];
         $state['rights_queue'] = [];
         $state['deferred'] = [];
     }
 
-    file_put_contents($stateFile, json_encode($state));
+    write_json_locked($stateFile, $state);
+    release_job_lock($lock);
 
     // small lazy GC probe as we process
     lazy_gc();
@@ -544,7 +850,13 @@ function handle_list_entries(): void
         echo json_encode(['error' => 'job_id required']);
         exit;
     }
-    $jobDir = get_job_dir($jobId);
+    try {
+        $jobDir = get_job_dir($jobId);
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode(['error' => 'invalid job_id']);
+        exit;
+    }
     $uploadFile = $jobDir . DIRECTORY_SEPARATOR . 'upload.dump';
     if (!is_file($uploadFile)) {
         http_response_code(404);
@@ -556,46 +868,25 @@ function handle_list_entries(): void
         echo json_encode(['entries' => []]);
         exit;
     }
-    $maxEntries = (int) ($conf['import']['max_zip_entries'] ?? 1000);
-    $maxEntrySize = (int) ($conf['import']['max_zip_entry_uncompressed_size'] ?? (10 * 1024 * 1024 * 1024));
-
-    $zip = new ZipArchive();
-    $entries = [];
-    $skipped = [];
-    if ($zip->open($uploadFile) === true) {
-        for ($i = 0; $i < $zip->numFiles; $i++) {
-            $name = $zip->getNameIndex($i);
-            if (substr($name, -1) === '/')
-                continue; // skip directories
-            $norm = str_replace('\\', '/', $name);
-            if (strpos($norm, '../') !== false || strpos($norm, '/..') !== false || strpos($norm, '/') === 0) {
-                $skipped[] = ['name' => $name, 'reason' => 'path_traversal'];
-                continue;
-            }
-            $stat = $zip->statIndex($i);
-            $usize = isset($stat['size']) ? (int) $stat['size'] : 0;
-            if ($usize > $maxEntrySize) {
-                $skipped[] = ['name' => $name, 'reason' => 'too_large', 'size' => $usize];
-                continue;
-            }
-            $entries[] = ['name' => $name, 'size' => $usize];
-            if (count($entries) >= $maxEntries) {
-                break;
-            }
-        }
-        $zip->close();
-    }
-
-    if (count($entries) >= $maxEntries) {
-        http_response_code(413);
-        echo json_encode(['error' => 'too_many_entries', 'max' => $maxEntries]);
+    if (!CompressionReader::isSupported('zip')) {
+        http_response_code(400);
+        echo json_encode(['error' => 'unsupported_compression', 'type' => 'zip']);
         exit;
     }
-
-    usort($entries, function ($a, $b) {
-        return strcasecmp($a['name'], $b['name']);
-    });
-    echo json_encode(['entries' => $entries, 'skipped' => $skipped]);
+    $maxEntries = (int) ($conf['import']['max_zip_entries'] ?? 1000);
+    $maxEntrySize = (int) ($conf['import']['max_zip_entry_uncompressed_size'] ?? (10 * 1024 * 1024 * 1024));
+    try {
+        $entries = get_valid_zip_entries($uploadFile, $maxEntries, $maxEntrySize);
+        echo json_encode(['entries' => $entries, 'skipped' => []]);
+    } catch (Exception $e) {
+        if ($e->getMessage() === 'too_many_entries') {
+            http_response_code(413);
+            echo json_encode(['error' => 'too_many_entries', 'max' => $maxEntries]);
+            exit;
+        }
+        http_response_code(500);
+        echo json_encode(['error' => 'zip_error', 'detail' => $e->getMessage()]);
+    }
 }
 
 function handle_select_entry(): void
@@ -607,14 +898,26 @@ function handle_select_entry(): void
         echo json_encode(['error' => 'job_id required']);
         exit;
     }
-    $jobDir = get_job_dir($jobId);
+    try {
+        $jobDir = get_job_dir($jobId);
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode(['error' => 'invalid job_id']);
+        exit;
+    }
     $stateFile = $jobDir . DIRECTORY_SEPARATOR . 'state.json';
     if (!is_file($stateFile)) {
         http_response_code(404);
         echo json_encode(['error' => 'job not found']);
         exit;
     }
-    $state = json_decode(file_get_contents($stateFile), true);
+    $lock = acquire_job_lock($jobDir);
+    if ($lock === false) {
+        http_response_code(409);
+        echo json_encode(['error' => 'job_busy']);
+        exit;
+    }
+    $state = read_json_locked($stateFile);
     $sel = $_REQUEST['entry'] ?? null;
     $importAll = isset($_REQUEST['import_all']) && ($_REQUEST['import_all'] === '1' || $_REQUEST['import_all'] === 'true');
     if ($importAll) {
@@ -624,37 +927,25 @@ function handle_select_entry(): void
         $state['current_entry_index'] = 0;
         $state['offset'] = 0;
     } elseif ($sel) {
+        if (!CompressionReader::isSupported('zip')) {
+            http_response_code(400);
+            echo json_encode(['error' => 'unsupported_compression', 'type' => 'zip']);
+            exit;
+        }
         $uploadFile2 = $jobDir . DIRECTORY_SEPARATOR . 'upload.dump';
         $conf = AppContainer::getConf();
+        $maxEntries = (int) ($conf['import']['max_zip_entries'] ?? 1000);
         $maxEntrySize = (int) ($conf['import']['max_zip_entry_uncompressed_size'] ?? (10 * 1024 * 1024 * 1024));
-        $zip2 = new ZipArchive();
+        $entries = get_valid_zip_entries($uploadFile2, $maxEntries, $maxEntrySize);
         $found = false;
-        if ($zip2->open($uploadFile2) === true) {
-            for ($i = 0; $i < $zip2->numFiles; $i++) {
-                $name = $zip2->getNameIndex($i);
-                if ($name === $sel) {
-                    $stat = $zip2->statIndex($i);
-                    $usize = isset($stat['size']) ? (int) $stat['size'] : 0;
-                    $norm = str_replace('\\', '/', $name);
-                    if (strpos($norm, '../') !== false || strpos($norm, '/..') !== false || strpos($norm, '/') === 0) {
-                        http_response_code(400);
-                        echo json_encode(['error' => 'unsafe_entry']);
-                        $zip2->close();
-                        exit;
-                    }
-                    if ($usize > $maxEntrySize) {
-                        http_response_code(413);
-                        echo json_encode(['error' => 'entry_too_large', 'size' => $usize]);
-                        $zip2->close();
-                        exit;
-                    }
-                    $found = true;
-                    break;
-                }
+        foreach ($entries as $e) {
+            if ($e['name'] === $sel) {
+                $found = true;
+                break;
             }
-            $zip2->close();
         }
         if (!$found) {
+            release_job_lock($lock);
             http_response_code(404);
             echo json_encode(['error' => 'entry_not_found']);
             exit;
@@ -663,12 +954,14 @@ function handle_select_entry(): void
         $state['import_all_entries'] = false;
         $state['offset'] = 0;
     } else {
+        release_job_lock($lock);
         http_response_code(400);
         echo json_encode(['error' => 'entry or import_all required']);
         exit;
     }
     $state['last_activity'] = time();
-    file_put_contents($stateFile, json_encode($state));
+    write_json_locked($stateFile, $state);
+    release_job_lock($lock);
     echo json_encode(['ok' => true]);
 }
 
@@ -748,17 +1041,30 @@ function handle_cancel_job(): void
         echo json_encode(['error' => 'job_id required']);
         exit;
     }
-    $jobDir = get_job_dir($jobId);
+    try {
+        $jobDir = get_job_dir($jobId);
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode(['error' => 'invalid job_id']);
+        exit;
+    }
     $sf = $jobDir . DIRECTORY_SEPARATOR . 'state.json';
     if (!is_file($sf)) {
         http_response_code(404);
         echo json_encode(['error' => 'not found']);
         exit;
     }
-    $s = json_decode(file_get_contents($sf), true);
+    $lock = acquire_job_lock($jobDir);
+    if ($lock === false) {
+        http_response_code(409);
+        echo json_encode(['error' => 'job_busy']);
+        exit;
+    }
+    $s = read_json_locked($sf);
     $s['status'] = 'cancelled';
     $s['last_activity'] = time();
-    file_put_contents($sf, json_encode($s));
+    write_json_locked($sf, $s);
+    release_job_lock($lock);
     echo json_encode(['ok' => true]);
 }
 
@@ -771,20 +1077,34 @@ function handle_resume_job(): void
         echo json_encode(['error' => 'job_id required']);
         exit;
     }
-    $jobDir = get_job_dir($jobId);
+    try {
+        $jobDir = get_job_dir($jobId);
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode(['error' => 'invalid job_id']);
+        exit;
+    }
     $sf = $jobDir . DIRECTORY_SEPARATOR . 'state.json';
     if (!is_file($sf)) {
         http_response_code(404);
         echo json_encode(['error' => 'not found']);
         exit;
     }
-    $s = json_decode(file_get_contents($sf), true);
+    $lock = acquire_job_lock($jobDir);
+    if ($lock === false) {
+        http_response_code(409);
+        echo json_encode(['error' => 'job_busy']);
+        exit;
+    }
+    $s = read_json_locked($sf);
     if (isset($s['status']) && $s['status'] === 'cancelled') {
         $s['status'] = 'running';
         $s['last_activity'] = time();
-        file_put_contents($sf, json_encode($s));
+        write_json_locked($sf, $s);
+        release_job_lock($lock);
         echo json_encode(['ok' => true]);
     } else {
+        release_job_lock($lock);
         echo json_encode(['ok' => false, 'reason' => 'not_cancelled']);
     }
 }

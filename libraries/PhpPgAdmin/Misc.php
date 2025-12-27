@@ -301,7 +301,7 @@ class Misc extends AbstractContext
 
 	/**
 	 * Print the tab bar
-	 * @param $tabs An array defining the tabs. See TabsRenderer::printTabs for details.
+	 * @param array|string $tabs An array defining the tabs. See TabsRenderer::printTabs for details.
 	 * @param string $activetab The id of the active tab
 	 */
 	function printTabs($tabs, $activetab)

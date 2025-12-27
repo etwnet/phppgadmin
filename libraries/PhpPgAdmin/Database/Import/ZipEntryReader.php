@@ -20,6 +20,9 @@ class ZipEntryReader implements ReaderInterface
 
     protected function openStream()
     {
+        if (!class_exists('ZipArchive')) {
+            throw new \Exception('zip support is not available (PHP ext-zip / ZipArchive)');
+        }
         $this->zip = new \ZipArchive();
         if ($this->zip->open($this->zipPath) !== true) {
             throw new \Exception("Unable to open zip: {$this->zipPath}");

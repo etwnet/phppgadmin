@@ -8,11 +8,16 @@ class Bzip2Reader implements ReaderInterface
     protected $bz;
     protected $path;
     protected $pos = 0;
+    protected $eof = false;
 
     public function __construct($path)
     {
         $this->path = $path;
-        $this->bz = bzopen($path, 'r');
+        if (!function_exists('bzopen')) {
+            throw new \Exception('bzip2 support is not available (PHP ext-bz2)');
+        }
+        $bzopen = 'bzopen';
+        $this->bz = $bzopen($path, 'r');
         if ($this->bz === false) {
             throw new \Exception("Unable to open bzip2 file: $path");
         }
@@ -20,14 +25,22 @@ class Bzip2Reader implements ReaderInterface
 
     public function read($length)
     {
-        $data = bzread($this->bz, $length);
-        $this->pos += ($data === false) ? 0 : strlen($data);
+        if ($this->eof) {
+            return '';
+        }
+        $bzread = 'bzread';
+        $data = $bzread($this->bz, $length);
+        if ($data === false || $data === '') {
+            $this->eof = true;
+            return '';
+        }
+        $this->pos += strlen($data);
         return $data;
     }
 
     public function eof()
     {
-        return feof($this->bz);
+        return $this->eof;
     }
 
     public function tell()
@@ -40,17 +53,25 @@ class Bzip2Reader implements ReaderInterface
         if ($offset === $this->pos) {
             return true;
         }
-        bzclose($this->bz);
-        $this->bz = bzopen($this->path, 'r');
+
+        $bzclose = 'bzclose';
+        $bzopen = 'bzopen';
+        $bzread = 'bzread';
+
+        $bzclose($this->bz);
+        $this->bz = $bzopen($this->path, 'r');
         if ($this->bz === false) {
             return false;
         }
+        $this->eof = false;
+
         $remaining = $offset;
         $buf = 8192;
-        while ($remaining > 0 && !feof($this->bz)) {
+        while ($remaining > 0 && !$this->eof) {
             $toRead = ($remaining > $buf) ? $buf : $remaining;
-            $data = bzread($this->bz, $toRead);
+            $data = $bzread($this->bz, $toRead);
             if ($data === false || $data === '') {
+                $this->eof = true;
                 break;
             }
             $remaining -= strlen($data);
@@ -62,7 +83,10 @@ class Bzip2Reader implements ReaderInterface
     public function close()
     {
         if ($this->bz !== null) {
-            @bzclose($this->bz);
+            if (function_exists('bzclose')) {
+                $bzclose = 'bzclose';
+                @$bzclose($this->bz);
+            }
         }
     }
 }

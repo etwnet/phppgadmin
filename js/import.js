@@ -4,6 +4,72 @@
 		return document.getElementById(id);
 	}
 
+	function formatBytes(bytes) {
+		if (bytes === 0) return "0 B";
+		const k = 1024;
+		const sizes = ["B", "KB", "MB", "GB", "TB"];
+		const i = Math.floor(Math.log(bytes) / Math.log(k));
+		return (
+			Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i]
+		);
+	}
+
+	function getServerCaps(fileInput) {
+		const ds = fileInput && fileInput.dataset ? fileInput.dataset : {};
+		return {
+			gzip: ds.capGzip === "1",
+			zip: ds.capZip === "1",
+			bzip2: ds.capBzip2 === "1",
+		};
+	}
+
+	function detectZipSignature(bytes) {
+		// ZIP signatures:
+		// 50 4B 03 04 local file header
+		// 50 4B 05 06 end of central directory (empty archive)
+		// 50 4B 07 08 spanned archive
+		return (
+			bytes.length >= 4 &&
+			bytes[0] === 0x50 &&
+			bytes[1] === 0x4b &&
+			((bytes[2] === 0x03 && bytes[3] === 0x04) ||
+				(bytes[2] === 0x05 && bytes[3] === 0x06) ||
+				(bytes[2] === 0x07 && bytes[3] === 0x08))
+		);
+	}
+
+	async function sniffMagicType(file) {
+		// Returns: 'gzip' | 'bzip2' | 'zip' | 'plain' | 'unknown'
+		try {
+			const blob = file.slice(0, 8);
+			let buf;
+			if (blob.arrayBuffer) {
+				buf = await blob.arrayBuffer();
+			} else {
+				buf = await new Promise((resolve, reject) => {
+					const reader = new FileReader();
+					reader.onload = () => resolve(reader.result);
+					reader.onerror = () => reject(reader.error);
+					reader.readAsArrayBuffer(blob);
+				});
+			}
+			const bytes = new Uint8Array(buf || []);
+			if (bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b)
+				return "gzip";
+			if (
+				bytes.length >= 3 &&
+				bytes[0] === 0x42 &&
+				bytes[1] === 0x5a &&
+				bytes[2] === 0x68
+			)
+				return "bzip2";
+			if (detectZipSignature(bytes)) return "zip";
+			return bytes.length > 0 ? "plain" : "unknown";
+		} catch (e) {
+			return "unknown";
+		}
+	}
+
 	async function startUpload() {
 		const fileInput = el("file");
 		if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
@@ -23,12 +89,49 @@
 				return;
 			}
 		}
+
+		// sniff magic bytes client-side to prevent uploading unsupported compressed files
+		const caps = getServerCaps(fileInput);
+		const detectedType = await sniffMagicType(file);
+		if (detectedType === "zip" && !caps.zip) {
+			alert(
+				"This file appears to be a ZIP archive, but ZIP support is not available on the server (PHP ext-zip / ZipArchive)."
+			);
+			return;
+		}
+		if (detectedType === "gzip" && !caps.gzip) {
+			alert(
+				"This file appears to be gzip-compressed, but gzip support is not available on the server (PHP ext-zlib)."
+			);
+			return;
+		}
+		if (detectedType === "bzip2" && !caps.bzip2) {
+			alert(
+				"This file appears to be bzip2-compressed, but bzip2 support is not available on the server (PHP ext-bz2)."
+			);
+			return;
+		}
 		const scope = el("import_scope")
 			? el("import_scope").value
 			: "database";
 		const scope_ident = el("import_scope_ident")
 			? el("import_scope_ident").value
 			: "";
+
+		// Show upload UI
+		const importUI = el("importUI");
+		const uploadPhase = el("uploadPhase");
+		const importPhase = el("importPhase");
+		if (importUI) importUI.style.display = "block";
+		if (uploadPhase) uploadPhase.style.display = "block";
+		if (importPhase) importPhase.style.display = "none";
+
+		const uploadStatus = el("uploadStatus");
+		if (uploadStatus) {
+			uploadStatus.textContent = `Uploading ${file.name} (${formatBytes(
+				file.size
+			)})...`;
+		}
 
 		const fd = new FormData();
 		fd.append("file", file);
@@ -42,6 +145,14 @@
 			if (ev.lengthComputable) {
 				const pct = Math.floor((ev.loaded / ev.total) * 100);
 				if (el("uploadProgress")) el("uploadProgress").value = pct;
+				const uploadStatus = el("uploadStatus");
+				if (uploadStatus) {
+					uploadStatus.textContent = `Uploading ${
+						file.name
+					} - ${pct}% (${formatBytes(ev.loaded)} / ${formatBytes(
+						ev.total
+					)})`;
+				}
 			}
 		};
 
@@ -56,6 +167,17 @@
 				}
 				if (res.job_id) {
 					log("Upload finished, job_id=" + res.job_id);
+					const uploadStatus = el("uploadStatus");
+					if (uploadStatus) {
+						uploadStatus.textContent = `Upload complete (${formatBytes(
+							res.size || 0
+						)}) - Job ID: ${res.job_id}`;
+					}
+					// Switch to import phase
+					const uploadPhase = el("uploadPhase");
+					const importPhase = el("importPhase");
+					if (importPhase) importPhase.style.display = "block";
+
 					const auto = document.getElementById("opt_auto_start")
 						? document.getElementById("opt_auto_start").checked
 						: false;
@@ -86,7 +208,6 @@
 						// refresh embedded job list for manual control
 						refreshEmbeddedJobList();
 					}
-				} else if (res.error) {
 				} else if (res.error) {
 					alert("Upload error: " + res.error);
 				}
@@ -151,17 +272,32 @@
 				if (data.offset && totalSize) {
 					const pct = Math.floor((data.offset / totalSize) * 100);
 					if (el("importProgress")) el("importProgress").value = pct;
+					const importStatus = el("importStatus");
+					if (importStatus) {
+						let statusText = `Processing: ${pct}% (${formatBytes(
+							data.offset
+						)} / ${formatBytes(totalSize)})`;
+						if (data.current_db) {
+							statusText += ` - DB: ${data.current_db}`;
+						}
+						if (data.errors) {
+							statusText += ` - Errors: ${data.errors}`;
+						}
+						importStatus.textContent = statusText;
+					}
 					log(
-						"Processed " +
-							data.offset +
-							" / " +
-							totalSize +
-							" (" +
-							pct +
-							"%)"
+						`Processed ${formatBytes(data.offset)} / ${formatBytes(
+							totalSize
+						)} (${pct}%)`
 					);
 				}
 				if (data.status === "finished") {
+					const importStatus = el("importStatus");
+					if (importStatus) {
+						importStatus.textContent = `Import complete - Errors: ${
+							data.errors || 0
+						}`;
+					}
 					log(
 						"Import finished for job " +
 							jobId +

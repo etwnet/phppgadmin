@@ -6,8 +6,8 @@ class StatementClassifier
 {
     /**
      * Classify a single SQL statement. Returns one of:
-     * cluster_object, db_object, schema_object, data, rights, self_affecting,
-     * connection_change, drop, unknown
+     * cluster_object, db_object, schema_object, data, rights, ownership_change,
+     * self_affecting, connection_change, drop, unknown
      */
     public static function classify(string $sql, string $currentUser = ''): string
     {
@@ -17,6 +17,14 @@ class StatementClassifier
         // connection change: psql meta-command like \connect or \c
         if (preg_match('/^\\\\?c(onnect)?\b/i', $s) || preg_match('/^\\c\b/i', $s)) {
             return 'connection_change';
+        }
+
+        // Ownership changes (must execute after object creation but before rights)
+        if (preg_match('/^\s*ALTER\s+(TABLE|SEQUENCE|VIEW|MATERIALIZED\s+VIEW|FUNCTION|PROCEDURE|SCHEMA|DATABASE|TABLESPACE|TYPE|DOMAIN|AGGREGATE)\s+.*\s+OWNER\s+TO\b/i', $s)) {
+            return 'ownership_change';
+        }
+        if (preg_match('/^\s*REASSIGN\s+OWNED\s+BY\b/i', $s)) {
+            return 'ownership_change';
         }
 
         // DROP statements
