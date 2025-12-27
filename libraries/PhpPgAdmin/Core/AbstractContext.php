@@ -9,7 +9,8 @@ use PhpPgAdmin\PluginManager;
 use PhpPgAdmin\Database\Postgres as PostgresNew;
 use Postgres as PostgresLegacy;
 
-abstract class AbstractContext {
+abstract class AbstractContext
+{
 
 	protected function lang(): array
 	{
@@ -21,6 +22,10 @@ abstract class AbstractContext {
 		return AppContainer::getConf();
 	}
 
+	/**
+	 * @deprecated please use postgres() instead
+	 * @return PostgresLegacy|null
+	 */
 	protected function data(): ?PostgresLegacy
 	{
 		return AppContainer::getData();

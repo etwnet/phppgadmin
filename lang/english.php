@@ -136,6 +136,19 @@ $lang['struploadscript'] = 'or upload a SQL script:';
 $lang['strstarttime'] = 'Start Time';
 $lang['strfile'] = 'File';
 $lang['strfileimported'] = 'File imported.';
+$lang['struploadfile'] = 'Upload file';
+$lang['strupload'] = 'Upload';
+
+# Import form labels
+$lang['strimportroles'] = 'Import roles';
+$lang['strimporttablespaces'] = 'Import tablespaces';
+$lang['strtruncatebefore'] = 'Truncate table(s) before import';
+$lang['strdeferself'] = 'Defer self-affecting statements';
+$lang['strselectzipentry'] = 'Select file from ZIP to import';
+$lang['strfilename'] = 'Filename';
+$lang['strimportall'] = 'Import all entries alphabetically';
+$lang['strimportjobs'] = 'Import Jobs';
+$lang['strclose'] = 'Close';
 $lang['strtrycred'] = 'Use these credentials for all servers';
 $lang['strconfdropcred'] = 'For security reason, disconnecting will destroy your shared login information. Are you sure you want to disconnect ?';
 $lang['stractionsonmultiplelines'] = 'Actions on multiple lines';

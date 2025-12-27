@@ -5,6 +5,7 @@ use PhpPgAdmin\Database\Actions\RoleActions;
 use PhpPgAdmin\Database\Actions\DatabaseActions;
 use PhpPgAdmin\Database\Actions\TablespaceActions;
 use PhpPgAdmin\Gui\DumpRenderer;
+use PhpPgAdmin\Gui\ImportFormRenderer;
 
 /**
  * Manage databases within a server
@@ -350,6 +351,28 @@ function doCreate($msg = '')
 }
 
 /**
+ * Render import form for server scope
+ */
+function doImport($msg = '')
+{
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
+
+	$misc->printTrail('server');
+	$misc->printTabs('server', 'import');
+	$misc->printMsg($msg);
+
+	// Check file uploads enabled
+	if (!ini_get('file_uploads')) {
+		echo "<p>{$lang['strnouploads']}</p>\n";
+		return;
+	}
+
+	$import = new ImportFormRenderer();
+	$import->renderImportForm('server', []);
+}
+
+/**
  * Actually creates the new view in the database
  */
 function doSaveCreate()
@@ -601,6 +624,9 @@ $misc->printBody();
 switch ($action) {
 	case 'export':
 		doExport();
+		break;
+	case 'import':
+		doImport();
 		break;
 	case 'save_create':
 		if (isset($_POST['cancel']))

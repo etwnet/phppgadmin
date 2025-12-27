@@ -2,6 +2,92 @@
 
 use PhpPgAdmin\Core\AppContainer;
 
+// ------------------------------------------------------------
+// str_starts_with
+// ------------------------------------------------------------
+if (!function_exists('str_starts_with')) {
+	function str_starts_with($haystack, $needle)
+	{
+		if ($needle === '') {
+			return false;
+		}
+		return substr_compare($haystack, $needle, 0, strlen($needle)) === 0;
+	}
+}
+
+// ------------------------------------------------------------
+// str_ends_with
+// ------------------------------------------------------------
+if (!function_exists('str_ends_with')) {
+	function str_ends_with($haystack, $needle)
+	{
+		if ($needle === '') {
+			return false;
+		}
+		return substr_compare($haystack, $needle, -strlen($needle), strlen($needle)) === 0;
+	}
+}
+
+// ------------------------------------------------------------
+// str_contains
+// ------------------------------------------------------------
+if (!function_exists('str_contains')) {
+	function str_contains($haystack, $needle)
+	{
+		if ($needle === '') {
+			return false;
+		}
+		return strpos($haystack, $needle) !== false;
+	}
+}
+
+// ------------------------------------------------------------
+// fdiv — PHP 8 floating‑point division with INF/NaN behavior
+// ------------------------------------------------------------
+if (!function_exists('fdiv')) {
+	function fdiv($dividend, $divisor)
+	{
+		// Match PHP 8 behavior exactly
+		if ($divisor == 0) {
+			if ($dividend == 0) {
+				return NAN;
+			}
+			return ($dividend > 0 ? INF : -INF);
+		}
+		return $dividend / $divisor;
+	}
+}
+
+// ------------------------------------------------------------
+// get_debug_type — PHP 8 type inspection
+// ------------------------------------------------------------
+if (!function_exists('get_debug_type')) {
+	function get_debug_type($value)
+	{
+		switch (true) {
+			case is_null($value):
+				return 'null';
+			case is_bool($value):
+				return 'bool';
+			case is_int($value):
+				return 'int';
+			case is_float($value):
+				return 'float';
+			case is_string($value):
+				return 'string';
+			case is_array($value):
+				return 'array';
+			case is_object($value):
+				return get_class($value);
+			case is_resource($value):
+				$type = get_resource_type($value);
+				return $type === 'unknown type' ? 'resource' : "resource ($type)";
+			default:
+				return 'unknown';
+		}
+	}
+}
+
 function pg_escape_id($id = ''): string
 {
 	$pg = AppContainer::getPostgres();
@@ -205,20 +291,20 @@ function isSqlReadQuery($sql)
 			return false;
 		}
 
-		$isRead = substr_compare($upper, "SELECT", 0, 6) === 0 ||
-			substr_compare($upper, "WITH", 0, 4) === 0 ||
-			substr_compare($upper, "SET", 0, 3) === 0 ||
-			substr_compare($upper, "SHOW", 0, 4) === 0;
+		$isRead = str_starts_with($upper, "SELECT") ||
+			str_starts_with($upper, "WITH") ||
+			str_starts_with($upper, "SET") ||
+			str_starts_with($upper, "SHOW");
 
 		if ($isRead) {
 			continue;
 		}
 
-		$isRead = substr_compare($upper, "EXPLAIN", 0, 7) === 0;
+		$isRead = str_starts_with($upper, "EXPLAIN");
 		if ($isRead) {
 			$rest = trim(substr($upper, 7));
-			$isRead = substr_compare($rest, "SELECT", 0, 6) === 0 ||
-				substr_compare($rest, "WITH", 0, 4) === 0;
+			$isRead = str_starts_with($rest, "SELECT") ||
+				str_starts_with($rest, "WITH");
 			if ($isRead) {
 				continue;
 			}

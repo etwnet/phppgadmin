@@ -4,6 +4,7 @@ use PhpPgAdmin\Core\AppContainer;
 use PhpPgAdmin\Database\Actions\RoleActions;
 use PhpPgAdmin\Database\Actions\DatabaseActions;
 use PhpPgAdmin\Gui\DumpRenderer;
+use PhpPgAdmin\Gui\ImportFormRenderer;
 
 /**
  * Manage schemas within a database
@@ -764,6 +765,13 @@ switch ($action) {
 		break;
 	case 'export':
 		doExport();
+		break;
+	case 'import':
+		// Render database-scoped import form
+		$misc->printTrail('database');
+		$misc->printTabs('database', 'import');
+		$import = new ImportFormRenderer();
+		$import->renderImportForm('database', ['scope_ident' => $_REQUEST['database'] ?? '']);
 		break;
 	case 'signal':
 		doSignal();

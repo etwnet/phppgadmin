@@ -126,6 +126,13 @@ class TabsRenderer extends AbstractContext
                         'hide' => (!$this->misc()->isDumpEnabled()),
                         'icon' => 'Export',
                     ],
+                    'import' => [
+                        'title' => $lang['strimport'],
+                        'url' => 'all_db.php',
+                        'urlvars' => ['subject' => 'server', 'action' => 'import'],
+                        'hide' => (!$this->misc()->isDumpEnabled()),
+                        'icon' => 'Import',
+                    ],
                 ]);
                 break;
             case 'database':
@@ -215,6 +222,14 @@ class TabsRenderer extends AbstractContext
                         'hide' => (!$this->misc()->isDumpEnabled()),
                         'tree' => false,
                         'icon' => 'Export',
+                    ],
+                    'import' => [
+                        'title' => $lang['strimport'],
+                        'url' => 'database.php',
+                        'urlvars' => ['subject' => 'database', 'action' => 'import'],
+                        'hide' => false,
+                        'tree' => false,
+                        'icon' => 'Import',
                     ],
                 ];
                 break;
@@ -319,6 +334,14 @@ class TabsRenderer extends AbstractContext
                         'hide' => (!$this->misc()->isDumpEnabled()),
                         'tree' => false,
                         'icon' => 'Export',
+                    ],
+                    'import' => [
+                        'title' => $lang['strimport'],
+                        'url' => 'schemas.php',
+                        'urlvars' => ['subject' => 'schema', 'action' => 'import'],
+                        'hide' => false,
+                        'tree' => false,
+                        'icon' => 'Import',
                     ],
                 ];
                 if (!$pg->hasFTS()) {
