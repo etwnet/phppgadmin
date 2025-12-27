@@ -436,10 +436,149 @@
 		p.textContent = line + p.textContent;
 	}
 
+	async function showJobStatus(jobId, totalSize) {
+		try {
+			const statusResp = await fetch(
+				appendServerToUrl(
+					"dbimport.php?action=status&job_id=" +
+						encodeURIComponent(jobId)
+				)
+			);
+			if (!statusResp.ok) {
+				alert("Failed to load job status");
+				return;
+			}
+			const data = await statusResp.json();
+			// Show UI
+			const importUI = el("importUI");
+			if (importUI) importUI.style.display = "block";
+			const uploadPhase = el("uploadPhase");
+			const importPhase = el("importPhase");
+			if (uploadPhase) uploadPhase.style.display = "none";
+			if (importPhase) importPhase.style.display = "block";
+
+			// Populate progress
+			if (data.offset && totalSize) {
+				const pct = Math.floor((data.offset / totalSize) * 100);
+				if (el("importProgress")) el("importProgress").value = pct;
+			}
+			const importStatus = el("importStatus");
+			if (importStatus)
+				importStatus.textContent = `${data.status || ""} - Errors: ${
+					data.errors || 0
+				}`;
+
+			// Populate log
+			if (data.log && Array.isArray(data.log)) {
+				const importLog = el("importLog");
+				if (importLog) {
+					importLog.textContent = data.log
+						.map((l) => {
+							if (l.time && (l.statement || l.info || l.error)) {
+								let parts = [];
+								if (l.info) parts.push(l.info);
+								if (l.statement) parts.push(l.statement);
+								if (l.error) parts.push("ERROR: " + l.error);
+								return (
+									"[" +
+									new Date(l.time * 1000).toISOString() +
+									"] " +
+									parts.join(" - ")
+								);
+							}
+							return JSON.stringify(l);
+						})
+						.reverse()
+						.join("\n");
+				}
+			}
+		} catch (e) {
+			console.error(e);
+			alert("Failed to fetch job status");
+		}
+	}
+
 	async function runImportLoop(jobId, totalSize) {
 		// Poll: call process endpoint repeatedly until finished
 		let running = true;
 		let lastOffset = 0;
+
+		// Load existing job status/log before starting so UI shows prior progress
+		try {
+			const statusResp = await fetch(
+				appendServerToUrl(
+					"dbimport.php?action=status&job_id=" +
+						encodeURIComponent(jobId)
+				)
+			);
+			if (statusResp.ok) {
+				const sdata = await statusResp.json();
+				// If the job is cancelled on server, attempt to resume it first
+				if (sdata.status === "cancelled") {
+					try {
+						const resumeResp = await fetch(
+							appendServerToUrl(
+								"dbimport.php?action=resume_job&job_id=" +
+									encodeURIComponent(jobId)
+							)
+						);
+						if (resumeResp.ok) {
+							// refresh job list so UI reflects resumed state
+							try {
+								refreshEmbeddedJobList();
+							} catch (e) {}
+							// reload status
+							const newStatus = await (
+								await fetch(
+									appendServerToUrl(
+										"dbimport.php?action=status&job_id=" +
+											encodeURIComponent(jobId)
+									)
+								)
+							).json();
+							Object.assign(sdata, newStatus);
+						}
+					} catch (e) {
+						// ignore resume failure, proceed with existing state which may be 'cancelled'
+					}
+				}
+				const importLog = el("importLog");
+				if (importLog && sdata.log && Array.isArray(sdata.log)) {
+					importLog.textContent = sdata.log
+						.map((l) => {
+							if (l.time && (l.statement || l.info || l.error)) {
+								let parts = [];
+								if (l.info) parts.push(l.info);
+								if (l.statement) parts.push(l.statement);
+								if (l.error) parts.push("ERROR: " + l.error);
+								return (
+									"[" +
+									new Date(l.time * 1000).toISOString() +
+									"] " +
+									parts.join(" - ")
+								);
+							}
+
+							return JSON.stringify(l);
+						})
+						.reverse()
+						.join("\n");
+				}
+				if (sdata.offset && totalSize) {
+					const pct = Math.floor((sdata.offset / totalSize) * 100);
+					if (el("importProgress")) el("importProgress").value = pct;
+				}
+			}
+		} catch (e) {
+			// ignore
+		}
+
+		// Refresh embedded job list to reflect the job entering processing
+		try {
+			refreshEmbeddedJobList();
+		} catch (e) {
+			// ignore
+		}
 		async function step() {
 			try {
 				const procUrl = appendServerToUrl(
@@ -474,7 +613,41 @@
 						)} (${pct}%)`
 					);
 				}
-				if (data.status === "finished") {
+				// Update visible log (server returns full log array)
+				if (data.log && Array.isArray(data.log)) {
+					const importLog = el("importLog");
+					if (importLog) {
+						importLog.textContent = data.log
+							.map((l) => {
+								if (
+									l.time &&
+									(l.statement || l.info || l.error)
+								) {
+									let parts = [];
+									if (l.info) parts.push(l.info);
+									if (l.statement) parts.push(l.statement);
+									if (l.error)
+										parts.push("ERROR: " + l.error);
+									return (
+										"[" +
+										new Date(l.time * 1000).toISOString() +
+										"] " +
+										parts.join(" - ")
+									);
+								}
+								return JSON.stringify(l);
+							})
+							.reverse()
+							.join("\n");
+					}
+				}
+
+				// Stop conditions: finished, error, or offset >= size
+				if (
+					data.status === "finished" ||
+					data.status === "error" ||
+					(totalSize && data.offset >= totalSize)
+				) {
 					const importStatus = el("importStatus");
 					if (importStatus) {
 						importStatus.textContent = `Import complete - Errors: ${
@@ -501,6 +674,13 @@
 			const cont = await step();
 			if (!cont) break;
 			await new Promise((r) => setTimeout(r, 700));
+		}
+
+		// Update job list after processing completes/stops
+		try {
+			refreshEmbeddedJobList();
+		} catch (e) {
+			// ignore
 		}
 	}
 
@@ -659,6 +839,12 @@
 						j.offset || 0
 					}/${j.size || 0}`;
 					const actions = document.createElement("div");
+					const view = document.createElement("button");
+					view.textContent = "View";
+					view.style.marginRight = "8px";
+					view.addEventListener("click", () =>
+						showJobStatus(j.job_id, j.size)
+					);
 					const start = document.createElement("button");
 					start.textContent = "Start";
 					start.style.marginRight = "8px";
@@ -688,6 +874,7 @@
 							{ method: "POST" }
 						).then(() => refreshEmbeddedJobList());
 					});
+					actions.appendChild(view);
 					actions.appendChild(start);
 					actions.appendChild(cancel);
 					actions.appendChild(resume);

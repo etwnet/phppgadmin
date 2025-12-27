@@ -75,9 +75,12 @@ class ImportJob
                 if ($jobId === null) {
                     $jobId = basename($jobDir);
                 }
-                // derive two 32-bit keys from crc32
-                $a = sprintf('%u', crc32($jobId));
-                $b = sprintf('%u', crc32($jobId . '::pg'));
+                // derive two 32-bit keys from crc32 (convert to signed 32-bit ints)
+                $ua = (int) sprintf('%u', crc32($jobId));
+                $ub = (int) sprintf('%u', crc32($jobId . '::pg'));
+                // convert unsigned 32-bit to signed 32-bit for pg int4 parameters
+                $a = ($ua > 0x7fffffff) ? ($ua - 0x100000000) : $ua;
+                $b = ($ub > 0x7fffffff) ? ($ub - 0x100000000) : $ub;
                 $res = $pg->selectField("SELECT pg_try_advisory_lock({$a}, {$b}) AS locked", 'locked');
                 if ($res === -1 || $res === false) {
                     return false;

@@ -394,6 +394,10 @@ function handle_process()
     header('Content-Type: application/json');
     $jobId = $_REQUEST['job_id'] ?? '';
 
+    // Capture any incidental HTML output from lower layers (DB adapters,
+    // error handlers) so we can always return clean JSON to the client.
+    ob_start();
+
     // Validate and lock
     list($jobDir, $uploadFile, $stateFile, $state, $lock) = validate_job_and_acquire_lock($jobId);
 
@@ -432,6 +436,8 @@ function handle_process()
             $state['last_activity'] = time();
             ImportJob::writeState($jobDir, $state);
             ImportJob::releaseLock($lock);
+            if (ob_get_level())
+                ob_end_clean();
             http_response_code(500);
             echo json_encode(['error' => $state['error'], 'detail' => $e->getMessage()]);
             exit;
@@ -493,9 +499,14 @@ function handle_process()
         }
     };
 
+    // Silence global ADODB error output while running import statements
+    $GLOBALS['phppgadmin_import_quiet'] = true;
     try {
         ImportExecutor::executeStatementsBatch($statements, $opts, $state, $pg, $scope, $isSuper, $allowCategory, $logs, $errors);
     } catch (Exception $e) {
+        // Ensure quiet flag is cleared before we exit the request
+        unset($GLOBALS['phppgadmin_import_quiet']);
+
         $state['status'] = 'error';
         $state['error'] = 'statement_failed';
         $state['error_detail'] = $e->getMessage();
@@ -504,9 +515,22 @@ function handle_process()
         $state['last_activity'] = time();
         ImportJob::writeState($jobDir, $state);
         ImportJob::releaseLock($lock);
+        if (ob_get_level())
+            ob_end_clean();
         http_response_code(500);
         echo json_encode(['error' => 'statement_failed', 'detail' => $e->getMessage(), 'offset' => $state['offset'], 'errors' => $errors]);
         exit;
+    }
+    // Clear quiet flag after successful execution
+    unset($GLOBALS['phppgadmin_import_quiet']);
+
+    // If error_mode is 'abort' we expect the executor to throw; however
+    // as a safety-net, if errors were recorded and error_mode is 'abort',
+    // mark the job as errored so it is not reported as still-running/finished.
+    if (!empty($errors) && (($opts['error_mode'] ?? '') === 'abort')) {
+        $state['status'] = 'error';
+        $state['error'] = 'statement_failed';
+        $state['error_detail'] = 'One or more statements failed during import';
     }
 
     $state['log'] = $logs;
@@ -515,13 +539,33 @@ function handle_process()
     // Flush deferred queues if finished
     ImportExecutor::flushDeferredQueuesIfFinished($state, $opts, $pg, $isSuper, $scope, $allowCategory);
 
+    // Persist finished state if we've consumed the whole upload
+    if (!empty($state['size']) && isset($state['offset']) && $state['offset'] >= $state['size']) {
+        // Do not overwrite explicit error state
+        if (!isset($state['status']) || $state['status'] !== 'error') {
+            $state['status'] = 'finished';
+        }
+    }
+
     ImportJob::writeState($jobDir, $state);
     ImportJob::releaseLock($lock);
 
     // small lazy GC probe as we process
     ImportJob::lazyGc();
-
-    echo json_encode(['job_id' => $jobId, 'offset' => $state['offset'], 'size' => $state['size'], 'status' => $state['status'], 'errors' => $errors]);
+    if (ob_get_level())
+        ob_end_clean();
+    $reportedStatus = $state['status'];
+    if (!empty($state['size']) && isset($state['offset']) && $state['offset'] >= $state['size']) {
+        $reportedStatus = 'finished';
+    }
+    echo json_encode([
+        'job_id' => $jobId,
+        'offset' => $state['offset'],
+        'size' => $state['size'],
+        'status' => $reportedStatus,
+        'errors' => $errors,
+        'log' => $state['log'] ?? []
+    ]);
 }
 
 function handle_gc(): void

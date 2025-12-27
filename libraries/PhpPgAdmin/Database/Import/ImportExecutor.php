@@ -152,6 +152,19 @@ class ImportExecutor
             $currentUser = pg_parameter_status($pg->conn->_connectionID, 'user');
         }
 
+        // If importing into a specific schema, ensure search_path is set so
+        // unqualified object references resolve correctly.
+        if (($scope ?? '') === 'schema' && !empty($state['scope_ident'])) {
+            $schema = $state['scope_ident'];
+            // Quote identifier safely
+            $schema = str_replace('"', '""', $schema);
+            try {
+                $pg->execute('SET search_path TO "' . $schema . '"');
+            } catch (Exception $e) {
+                // ignore errors; execution will fail later if schema missing
+            }
+        }
+
         foreach ($statements as $stmt) {
             $stmtTrim = trim($stmt);
             if ($stmtTrim === '')
