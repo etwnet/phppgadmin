@@ -148,6 +148,17 @@
 		}
 		const file = fileInput.files[0];
 
+		const maxAttr = fileInput.dataset
+			? fileInput.dataset.importMaxSize
+			: null;
+		if (maxAttr) {
+			const maxSize = parseInt(maxAttr, 10) || 0;
+			if (maxSize > 0 && file.size > maxSize) {
+				alert("Selected file exceeds maximum allowed upload size.");
+				return;
+			}
+		}
+
 		// Sniff magic bytes client-side to prevent uploading unsupported compressed files
 		const caps = getServerCaps(fileInput);
 		const detectedType = await sniffMagicType(file);
