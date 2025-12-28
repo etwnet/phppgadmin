@@ -15,7 +15,7 @@ class ImportFormRenderer extends AbstractContext
         $conf = $this->conf();
         $importCfg = $conf['import'] ?? [];
         $maxSize = (int) ($importCfg['upload_max_size'] ?? 0);
-        $chunkSize = (int) ($importCfg['chunk_size'] ?? 0);
+        $chunkSize = (int) ($importCfg['upload_chunk_size'] ?? ($importCfg['chunk_size'] ?? 0));
         $maxAttr = $maxSize > 0 ? 'data-import-max-size="' . htmlspecialchars((string) $maxSize) . '"' : '';
         $chunkAttr = $chunkSize > 0 ? 'data-import-chunk-size="' . htmlspecialchars((string) $chunkSize) . '"' : '';
 
@@ -105,10 +105,18 @@ class ImportFormRenderer extends AbstractContext
             <div id="uploadPhase">
                 <h4><?= $lang['strupload'] ?>         <?= $lang['strprogress'] ?? 'Progress' ?></h4>
                 <progress id="uploadProgress" value="0" max="100" style="width:100%"></progress>
-                <div id="uploadStatus" style="margin-top:4px;font-size:0.9em;color:#666"></div>
+                <div style="margin-top:8px">
+                    <button id="uploadPauseBtn" type="button" style="display:none">Pause</button>
+                    <button id="uploadCancelBtn" type="button" style="display:none;margin-left:4px">Cancel</button>
+                    <span id="uploadStatus" style="margin-left:8px;font-size:0.9em;color:#666"></span>
+                </div>
+                <pre id="uploadLog"
+                    style="height:100px;overflow:auto;border:1px solid #ccc;padding:6px;margin-top:8px;background:#f9f9f9;display:none"></pre>
             </div>
             <div id="importPhase" style="display:none;margin-top:16px">
-                <h4><?= $lang['strimport'] ?>         <?= $lang['strprogress'] ?? 'Progress' ?></h4>
+                <h4><?= $lang['strimport'] ?> <span id="importJobTitle"
+                        style="font-weight:normal;font-size:0.9em;color:#555"></span> -
+                    <?= $lang['strprogress'] ?? 'Progress' ?></h4>
                 <progress id="importProgress" value="0" max="100" style="width:100%"></progress>
                 <div id="importStatus" style="margin-top:4px;font-size:0.9em;color:#666"></div>
                 <pre id="importLog"
@@ -135,6 +143,7 @@ class ImportFormRenderer extends AbstractContext
                     <button class="job-btn start">Start</button>
                     <button class="job-btn cancel">Cancel</button>
                     <button class="job-btn resume">Resume</button>
+                    <button class="job-btn delete">Delete</button>
                 </div>
             </div>
         </template>
@@ -155,13 +164,6 @@ class ImportFormRenderer extends AbstractContext
                 <button id="entryImportBtn"><?= $lang['strimport'] ?? 'Import' ?></button>
                 <button id="entryCancelBtn" style="margin-left:8px"><?= $lang['strcancel'] ?? 'Cancel' ?></button>
             </div>
-        </div>
-
-        <div id="jobListModal" class="import-panel"
-            style="display:none;margin-top:12px;border:1px solid #ddd;padding:10px;background:#fff;">
-            <h3 style="margin-top:0;"><?= $lang['strimportjobs'] ?? 'Import Jobs' ?></h3>
-            <div id="jobListContainer" style="max-height:400px;overflow:auto;margin-top:8px"></div>
-            <div style="margin-top:8px"><button id="jobListClose"><?= $lang['strclose'] ?? 'Close' ?></button></div>
         </div>
 
         <script src="js/import.js"></script>

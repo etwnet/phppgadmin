@@ -121,7 +121,7 @@ function handle_init_upload()
 
     ImportJob::lazyGc();
 
-    $chunkSize = $conf['import']['chunk_size'] ?? (5 * 1024 * 1024);
+    $chunkSize = $conf['import']['upload_chunk_size'] ?? ($conf['import']['chunk_size'] ?? (5 * 1024 * 1024));
     echo json_encode([
         'job_id' => $jobId,
         'chunk_size' => $chunkSize,
@@ -401,7 +401,8 @@ function handle_process()
     // Validate and lock
     list($jobDir, $uploadFile, $stateFile, $state, $lock) = validate_job_and_acquire_lock($jobId);
 
-    $chunkSize = $conf['import']['chunk_size'] ?? (4 * 1024 * 1024);
+    $chunkSize = $conf['import']['chunk_size'] ?? (2 * 1024 * 1024);
+    $timeLimit = (float) ($conf['import']['process_time_limit'] ?? 2.0);
 
     $existing = $state['buffer'] ?? '';
     $opts = $state['options'] ?? ['roles' => false, 'tablespaces' => false, 'schema_create' => false, 'truncate' => false, 'defer_self' => true];
@@ -418,7 +419,7 @@ function handle_process()
         }
 
         $maxChunks = (int) ($conf['import']['max_chunks_per_request'] ?? (($type === 'plain') ? 1 : 3));
-        $deadline = microtime(true) + 2.0;
+        $deadline = microtime(true) + $timeLimit;
         $res = ImportExecutor::parseStatementsFromReader($reader, $chunkSize, $existing, $maxChunks, $deadline);
         $reader->close();
     } catch (Exception $e) {

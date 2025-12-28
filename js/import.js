@@ -1,15 +1,19 @@
 // Simple uploader + chunked import controller
 (function () {
-	// FNV-1a 64-bit hash - optimized with pre-computed BigInt table
+	// FNV-1a 64-bit constants (no BigInt literals)
+	const FNV_OFFSET_BASIS = BigInt("0xcbf29ce484222325");
+	const FNV_PRIME = BigInt("0x100000001b3");
+	const FNV_MASK = BigInt("0xffffffffffffffff");
+
+	// Precomputed BigInt table for all byte values
 	const FNV_TABLE = Array.from({ length: 256 }, (_, i) => BigInt(i));
 
 	function fnv1a64(buf) {
-		let hash = 0xcbf29ce484222325n;
-		const prime = 0x100000001b3n;
+		let hash = FNV_OFFSET_BASIS;
 
 		for (let i = 0; i < buf.length; i++) {
 			hash ^= FNV_TABLE[buf[i]];
-			hash = (hash * prime) & 0xffffffffffffffffn;
+			hash = (hash * FNV_PRIME) & FNV_MASK;
 		}
 
 		return hash.toString(16).padStart(16, "0");
@@ -177,130 +181,241 @@
 		}
 	}
 
+	let isUploadPaused = false;
+	let currentUploadJobId = null;
+	let uploadResolveResume = null;
+	let activeImportJobId = null;
+
 	async function startUpload() {
-		const fileInput = el("file");
-		if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-			alert("No file selected");
+		if (activeImportJobId) {
+			alert("Cannot start upload while an import is running.");
 			return;
-		}
-		const file = fileInput.files[0];
-
-		const maxAttr = fileInput.dataset
-			? fileInput.dataset.importMaxSize
-			: null;
-		if (maxAttr) {
-			const maxSize = parseInt(maxAttr, 10) || 0;
-			if (maxSize > 0 && file.size > maxSize) {
-				alert("Selected file exceeds maximum allowed upload size.");
-				return;
-			}
-		}
-
-		// Sniff magic bytes client-side to prevent uploading unsupported compressed files
-		const caps = getServerCaps(fileInput);
-		const detectedType = await sniffMagicType(file);
-		if (detectedType === "zip" && !caps.zip) {
-			alert(
-				"This file appears to be a ZIP archive, but ZIP support is not available on the server (PHP ext-zip / ZipArchive)."
-			);
-			return;
-		}
-		if (detectedType === "gzip" && !caps.gzip) {
-			alert(
-				"This file appears to be gzip-compressed, but gzip support is not available on the server (PHP ext-zlib)."
-			);
-			return;
-		}
-		if (detectedType === "bzip2" && !caps.bzip2) {
-			alert(
-				"This file appears to be bzip2-compressed, but bzip2 support is not available on the server (PHP ext-bz2)."
-			);
-			return;
-		}
-
-		const scope = el("import_scope")
-			? el("import_scope").value
-			: "database";
-		const scope_ident = el("import_scope_ident")
-			? el("import_scope_ident").value
-			: "";
-
-		// Show upload UI
-		const importUI = el("importUI");
-		const uploadPhase = el("uploadPhase");
-		const importPhase = el("importPhase");
-		if (importUI) importUI.style.display = "block";
-		if (uploadPhase) uploadPhase.style.display = "block";
-		if (importPhase) importPhase.style.display = "none";
-
-		const uploadStatus = el("uploadStatus");
-		if (uploadStatus) {
-			uploadStatus.textContent = `Initializing upload for ${
-				file.name
-			} (${formatBytes(file.size)})...`;
 		}
 
 		try {
+			const fileInput = el("file");
+			if (
+				!fileInput ||
+				!fileInput.files ||
+				fileInput.files.length === 0
+			) {
+				alert("No file selected");
+				return;
+			}
+			const file = fileInput.files[0];
+
+			// Reset pause state
+			isUploadPaused = false;
+			currentUploadJobId = null;
+			if (uploadResolveResume) {
+				uploadResolveResume(false); // cancel any pending wait
+				uploadResolveResume = null;
+			}
+
+			const maxAttr = fileInput.dataset
+				? fileInput.dataset.importMaxSize
+				: null;
+			if (maxAttr) {
+				const maxSize = parseInt(maxAttr, 10) || 0;
+				if (maxSize > 0 && file.size > maxSize) {
+					alert("Selected file exceeds maximum allowed upload size.");
+					return;
+				}
+			}
+
+			// Sniff magic bytes client-side to prevent uploading unsupported compressed files
+			const caps = getServerCaps(fileInput);
+			const detectedType = await sniffMagicType(file);
+			if (detectedType === "zip" && !caps.zip) {
+				alert(
+					"This file appears to be a ZIP archive, but ZIP support is not available on the server (PHP ext-zip / ZipArchive)."
+				);
+				return;
+			}
+			if (detectedType === "gzip" && !caps.gzip) {
+				alert(
+					"This file appears to be gzip-compressed, but gzip support is not available on the server (PHP ext-zlib)."
+				);
+				return;
+			}
+			if (detectedType === "bzip2" && !caps.bzip2) {
+				alert(
+					"This file appears to be bzip2-compressed, but bzip2 support is not available on the server (PHP ext-bz2)."
+				);
+				return;
+			}
+
+			const scope = el("import_scope")
+				? el("import_scope").value
+				: "database";
+			const scope_ident = el("import_scope_ident")
+				? el("import_scope_ident").value
+				: "";
+
+			// Show upload UI
+			const importUI = el("importUI");
+			const uploadPhase = el("uploadPhase");
+			const importPhase = el("importPhase");
+			if (importUI) importUI.style.display = "block";
+			if (uploadPhase) uploadPhase.style.display = "block";
+			if (importPhase) importPhase.style.display = "none";
+
+			const uploadStatus = el("uploadStatus");
+			const pauseBtn = el("uploadPauseBtn");
+			const cancelBtn = el("uploadCancelBtn");
+
+			if (uploadStatus) {
+				uploadStatus.textContent = `Initializing upload for ${
+					file.name
+				} (${formatBytes(file.size)})...`;
+			}
+			if (pauseBtn) {
+				pauseBtn.style.display = "inline-block";
+				pauseBtn.textContent = "Pause";
+				pauseBtn.onclick = function () {
+					if (isUploadPaused) {
+						// Resume
+						isUploadPaused = false;
+						pauseBtn.textContent = "Pause";
+						if (uploadResolveResume) {
+							uploadResolveResume(true);
+							uploadResolveResume = null;
+						}
+					} else {
+						// Pause
+						isUploadPaused = true;
+						pauseBtn.textContent = "Resume";
+						if (uploadStatus)
+							uploadStatus.textContent += " (Paused)";
+					}
+				};
+			}
+			if (cancelBtn) {
+				cancelBtn.style.display = "inline-block";
+				cancelBtn.onclick = function () {
+					if (!confirm("Cancel upload?")) return;
+					// Signal stop
+					isUploadPaused = true; // pause loop
+					if (uploadResolveResume) {
+						uploadResolveResume(false); // abort wait
+						uploadResolveResume = null;
+					}
+					// Clear local storage
+					const fileKey = `upload_job_${file.name}_${file.size}_${file.lastModified}`;
+					localStorage.removeItem(fileKey);
+					// Hide UI
+					if (importUI) importUI.style.display = "none";
+					alert("Upload cancelled");
+					// Reload job list to show partial/cancelled job
+					refreshEmbeddedJobList();
+				};
+			}
+
 			// 1. Initialize upload and get job_id + chunk_size
-			const formData = new URLSearchParams();
-			formData.append("filename", file.name);
-			formData.append("filesize", file.size);
-			formData.append("scope", scope);
-			formData.append("scope_ident", scope_ident);
+			// Check local storage for existing job
+			const fileKey = `upload_job_${file.name}_${file.size}_${file.lastModified}`;
+			let jobId = localStorage.getItem(fileKey);
+			let chunkSize = 5 * 1024 * 1024;
+			let resuming = false;
 
-			// Collect options
-			const opts = [
-				"opt_roles",
-				"opt_tablespaces",
-				"opt_databases",
-				"opt_schema_create",
-				"opt_data",
-				"opt_truncate",
-				"opt_ownership",
-				"opt_rights",
-				"opt_defer_self",
-				"opt_allow_drops",
-			];
-			opts.forEach((opt) => {
-				const chk = document.getElementById(opt);
-				if (chk && chk.checked) {
-					formData.append(opt, "1");
-				}
-			});
-			const errorModeRadios =
-				document.getElementsByName("opt_error_mode");
-			for (let radio of errorModeRadios) {
-				if (radio.checked) {
-					formData.append("opt_error_mode", radio.value);
-					break;
+			if (jobId) {
+				// Verify if job is valid on server
+				try {
+					const statusUrl = appendServerToUrl(
+						`dbimport.php?action=upload_status&job_id=${encodeURIComponent(
+							jobId
+						)}`
+					);
+					const statusRes = await fetch(statusUrl);
+					const statusData = await statusRes.json();
+					if (
+						statusData.uploaded_bytes !== undefined &&
+						statusData.uploaded_bytes < file.size
+					) {
+						resuming = true;
+						log(
+							`Found existing job ${jobId}, checking status...`,
+							"upload"
+						);
+					} else {
+						jobId = null; // invalid or finished
+					}
+				} catch (e) {
+					jobId = null;
 				}
 			}
 
-			appendServerToParams(formData);
-			const initRes = await fetch(
-				appendServerToUrl("dbimport.php?action=init_upload"),
-				{
-					method: "POST",
-					body: formData,
-				}
-			);
+			if (!jobId) {
+				const formData = new URLSearchParams();
+				formData.append("filename", file.name);
+				formData.append("filesize", file.size);
+				formData.append("scope", scope);
+				formData.append("scope_ident", scope_ident);
 
-			if (!initRes.ok) {
-				const err = await initRes.json();
-				throw new Error(err.error || "Init failed");
+				// Collect options
+				const opts = [
+					"opt_roles",
+					"opt_tablespaces",
+					"opt_databases",
+					"opt_schema_create",
+					"opt_data",
+					"opt_truncate",
+					"opt_ownership",
+					"opt_rights",
+					"opt_defer_self",
+					"opt_allow_drops",
+				];
+				opts.forEach((opt) => {
+					const chk = document.getElementById(opt);
+					if (chk && chk.checked) {
+						formData.append(opt, "1");
+					}
+				});
+				const errorModeRadios =
+					document.getElementsByName("opt_error_mode");
+				for (let radio of errorModeRadios) {
+					if (radio.checked) {
+						formData.append("opt_error_mode", radio.value);
+						break;
+					}
+				}
+
+				appendServerToParams(formData);
+				const initRes = await fetch(
+					appendServerToUrl("dbimport.php?action=init_upload"),
+					{
+						method: "POST",
+						body: formData,
+					}
+				);
+
+				if (!initRes.ok) {
+					const err = await initRes.json();
+					throw new Error(err.error || "Init failed");
+				}
+
+				const initData = await initRes.json();
+				jobId = initData.job_id;
+				chunkSize = initData.chunk_size || 5 * 1024 * 1024;
+				localStorage.setItem(fileKey, jobId);
+
+				log(
+					`Upload initialized: job_id=${jobId}, chunk_size=${formatBytes(
+						chunkSize
+					)}`,
+					"upload"
+				);
+			} else {
+				// If resuming, we need to fetch chunk size from config or assume default?
+				// Ideally init_upload returns it, but we skipped it.
+				// We can assume standard chunk size or fetch it via a new action,
+				// but for now let's assume 5MB or what we stored?
+				// Better: just proceed, server handles chunks.
 			}
 
-			const initData = await initRes.json();
-			const jobId = initData.job_id;
-			const chunkSize = initData.chunk_size || 5 * 1024 * 1024;
+			currentUploadJobId = jobId;
 
-			log(
-				`Upload initialized: job_id=${jobId}, chunk_size=${formatBytes(
-					chunkSize
-				)}`
-			);
-
-			// 2. Check for resume capability
+			// 2. Check for resume capability (get offset)
 			const statusUrl = appendServerToUrl(
 				`dbimport.php?action=upload_status&job_id=${encodeURIComponent(
 					jobId
@@ -311,12 +426,24 @@
 			let uploaded = statusData.uploaded_bytes || 0;
 
 			if (uploaded > 0) {
-				log(`Resuming from offset ${formatBytes(uploaded)}`);
+				log(`Resuming from offset ${formatBytes(uploaded)}`, "upload");
 			}
 
 			// 3. Upload chunks with progress
 			const uploadProgress = el("uploadProgress");
 			while (uploaded < file.size) {
+				// Check pause
+				if (isUploadPaused) {
+					log("Upload paused. Waiting for resume...", "upload");
+					const shouldResume = await new Promise((resolve) => {
+						uploadResolveResume = resolve;
+					});
+					if (!shouldResume) {
+						throw new Error("Upload cancelled by user");
+					}
+					log("Upload resumed", "upload");
+				}
+
 				const chunk = file.slice(uploaded, uploaded + chunkSize);
 
 				// Update progress before sending
@@ -339,6 +466,11 @@
 				uploaded = newUploaded;
 			}
 
+			// Clear local storage on completion
+			localStorage.removeItem(fileKey);
+			if (pauseBtn) pauseBtn.style.display = "none";
+			if (cancelBtn) cancelBtn.style.display = "none";
+
 			// 4. Finalize upload
 			if (uploadStatus) {
 				uploadStatus.textContent = `Finalizing upload...`;
@@ -357,7 +489,7 @@
 			}
 
 			const finalData = await finalRes.json();
-			log(`Upload complete: ${formatBytes(finalData.size)}`);
+			log(`Upload complete: ${formatBytes(finalData.size)}`, "upload");
 
 			if (uploadStatus) {
 				uploadStatus.textContent = `Upload complete (${formatBytes(
@@ -402,6 +534,8 @@
 			if (uploadStatus) {
 				uploadStatus.textContent = "Upload failed: " + error.message;
 			}
+		} finally {
+			currentUploadJobId = null;
 		}
 	}
 
@@ -429,11 +563,41 @@
 		modal.style.display = "block";
 	}
 
-	function log(msg) {
-		const p = el("importLog");
+	function log(msg, type = "import") {
+		const id = type + "Log";
+		const p = el(id);
 		if (!p) return;
+		if (type === "upload") p.style.display = "block";
 		const line = "[" + new Date().toISOString() + "] " + msg + "\n";
 		p.textContent = line + p.textContent;
+	}
+
+	function populateLog(log) {
+		if (!Array.isArray(log)) {
+			console.warn("Invalid log data", log);
+			return;
+		}
+		const importLog = el("importLog");
+		if (importLog) {
+			importLog.textContent = log
+				.map((l) => {
+					if (l.time && (l.statement || l.info || l.error)) {
+						let parts = [];
+						if (l.info) parts.push(l.info);
+						if (l.statement) parts.push(l.statement);
+						if (l.error) parts.push("ERROR: " + l.error);
+						return (
+							"[" +
+							new Date(l.time * 1000).toISOString() +
+							"] " +
+							parts.join(" - ")
+						);
+					}
+					return JSON.stringify(l);
+				})
+				.reverse()
+				.join("\n");
+		}
 	}
 
 	// Template helper: ensure a <template id="job-row-template"> exists
@@ -441,6 +605,9 @@
 		let tpl = document.getElementById("job-row-template");
 
 		const frag = tpl.content.cloneNode(true);
+		const row = frag.querySelector(".import-job-row");
+		if (row) row.dataset.jobId = j.job_id;
+
 		frag.querySelector(".job-info").textContent = `${j.job_id} — ${
 			j.status
 		} — ${j.offset || 0}/${j.size || 0}`;
@@ -449,6 +616,38 @@
 		const startBtn = frag.querySelector(".start");
 		const cancelBtn = frag.querySelector(".cancel");
 		const resumeBtn = frag.querySelector(".resume");
+		const deleteBtn = frag.querySelector(".delete");
+
+		// Update button labels/visibility based on status
+		if (j.status === "uploading") {
+			if (startBtn) startBtn.style.display = "none";
+			if (resumeBtn) resumeBtn.style.display = "none";
+			if (viewBtn) viewBtn.textContent = "View Upload";
+			if (deleteBtn) deleteBtn.style.display = "inline-block";
+		} else if (j.status === "uploaded" || j.status === "running") {
+			if (startBtn) {
+				startBtn.style.display = "inline-block";
+				startBtn.textContent =
+					j.status === "running" ? "Continue" : "Start Import";
+			}
+			if (resumeBtn) resumeBtn.style.display = "none";
+			if (j.status === "running") {
+				if (deleteBtn) deleteBtn.style.display = "none"; // Cannot delete running job
+			}
+		} else if (j.status === "cancelled" || j.status === "error") {
+			if (startBtn) startBtn.style.display = "none";
+			if (resumeBtn) {
+				resumeBtn.style.display = "inline-block";
+				resumeBtn.textContent = "Retry / Resume";
+			}
+			if (deleteBtn) deleteBtn.style.display = "inline-block";
+		} else if (j.status === "finished") {
+			if (startBtn) startBtn.style.display = "none";
+			if (cancelBtn) cancelBtn.style.display = "none";
+			if (resumeBtn) resumeBtn.style.display = "none";
+			if (viewBtn) viewBtn.textContent = "View Log";
+			if (deleteBtn) deleteBtn.style.display = "inline-block";
+		}
 
 		if (viewBtn)
 			viewBtn.addEventListener("click", () =>
@@ -460,6 +659,8 @@
 			);
 		if (cancelBtn)
 			cancelBtn.addEventListener("click", () => {
+				if (!confirm("Are you sure you want to cancel this job?"))
+					return;
 				fetch(
 					appendServerToUrl(
 						"dbimport.php?action=cancel_job&job_id=" +
@@ -480,14 +681,62 @@
 					{ method: "POST" }
 				).then(() => {
 					if (typeof updater === "function") updater();
+					// Auto-start after resume
+					runImportLoop(j.job_id, j.size);
 				});
+			});
+		if (deleteBtn)
+			deleteBtn.addEventListener("click", () => {
+				if (
+					!confirm(
+						"Are you sure you want to delete this job? This cannot be undone."
+					)
+				)
+					return;
+				fetch(
+					appendServerToUrl(
+						"dbimport.php?action=delete_job&job_id=" +
+							encodeURIComponent(j.job_id)
+					),
+					{ method: "POST" }
+				)
+					.then((r) => r.json())
+					.then((res) => {
+						if (res.error) {
+							alert("Delete failed: " + res.error);
+						} else {
+							if (typeof updater === "function") updater();
+						}
+					})
+					.catch((e) => alert("Delete failed: " + e));
 			});
 
 		return frag;
 	}
 
+	function highlightActiveJob(jobId) {
+		document.querySelectorAll(".import-job-row").forEach((row) => {
+			if (row.dataset.jobId === jobId) {
+				row.style.backgroundColor = "#e6f7ff";
+				row.style.borderLeft = "4px solid #1890ff";
+			} else {
+				row.style.backgroundColor = "";
+				row.style.borderLeft = "";
+			}
+		});
+		const titleEl = document.getElementById("importJobTitle");
+		if (titleEl) titleEl.textContent = jobId || "Import Job";
+	}
+
 	async function showJobStatus(jobId, totalSize) {
+		if (activeImportJobId && activeImportJobId !== jobId) {
+			alert("Cannot view other jobs while an import is running.");
+			return;
+		}
+
 		try {
+			highlightActiveJob(jobId);
+
 			const statusResp = await fetch(
 				appendServerToUrl(
 					"dbimport.php?action=status&job_id=" +
@@ -519,29 +768,7 @@
 				}`;
 
 			// Populate log
-			if (data.log && Array.isArray(data.log)) {
-				const importLog = el("importLog");
-				if (importLog) {
-					importLog.textContent = data.log
-						.map((l) => {
-							if (l.time && (l.statement || l.info || l.error)) {
-								let parts = [];
-								if (l.info) parts.push(l.info);
-								if (l.statement) parts.push(l.statement);
-								if (l.error) parts.push("ERROR: " + l.error);
-								return (
-									"[" +
-									new Date(l.time * 1000).toISOString() +
-									"] " +
-									parts.join(" - ")
-								);
-							}
-							return JSON.stringify(l);
-						})
-						.reverse()
-						.join("\n");
-				}
-			}
+			populateLog(data.log);
 		} catch (e) {
 			console.error(e);
 			alert("Failed to fetch job status");
@@ -549,188 +776,163 @@
 	}
 
 	async function runImportLoop(jobId, totalSize) {
-		// Poll: call process endpoint repeatedly until finished
-		let running = true;
-		let lastOffset = 0;
-
-		// Load existing job status/log before starting so UI shows prior progress
-		try {
-			const statusResp = await fetch(
-				appendServerToUrl(
-					"dbimport.php?action=status&job_id=" +
-						encodeURIComponent(jobId)
-				)
+		if (activeImportJobId === jobId) return; // Already running
+		if (activeImportJobId && activeImportJobId !== jobId) {
+			alert(
+				"Another import is currently running. Please wait for it to finish."
 			);
-			if (statusResp.ok) {
-				const sdata = await statusResp.json();
-				// If the job is cancelled on server, attempt to resume it first
-				if (sdata.status === "cancelled") {
-					try {
-						const resumeResp = await fetch(
-							appendServerToUrl(
-								"dbimport.php?action=resume_job&job_id=" +
-									encodeURIComponent(jobId)
-							)
-						);
-						if (resumeResp.ok) {
-							// refresh job list so UI reflects resumed state
-							try {
-								refreshEmbeddedJobList();
-							} catch (e) {}
-							// reload status
-							const newStatus = await (
-								await fetch(
-									appendServerToUrl(
-										"dbimport.php?action=status&job_id=" +
-											encodeURIComponent(jobId)
-									)
+			return;
+		}
+		if (currentUploadJobId) {
+			alert("Cannot start import while an upload is in progress.");
+			return;
+		}
+		activeImportJobId = jobId;
+		highlightActiveJob(jobId);
+
+		try {
+			// Poll: call process endpoint repeatedly until finished
+			let running = true;
+			let lastOffset = 0;
+
+			// Load existing job status/log before starting so UI shows prior progress
+			try {
+				const statusResp = await fetch(
+					appendServerToUrl(
+						"dbimport.php?action=status&job_id=" +
+							encodeURIComponent(jobId)
+					)
+				);
+				if (statusResp.ok) {
+					const sdata = await statusResp.json();
+					// If the job is cancelled on server, attempt to resume it first
+					if (sdata.status === "cancelled") {
+						try {
+							const resumeResp = await fetch(
+								appendServerToUrl(
+									"dbimport.php?action=resume_job&job_id=" +
+										encodeURIComponent(jobId)
 								)
-							).json();
-							Object.assign(sdata, newStatus);
+							);
+							if (resumeResp.ok) {
+								// refresh job list so UI reflects resumed state
+								try {
+									refreshEmbeddedJobList();
+								} catch (e) {}
+								// reload status
+								const newStatus = await (
+									await fetch(
+										appendServerToUrl(
+											"dbimport.php?action=status&job_id=" +
+												encodeURIComponent(jobId)
+										)
+									)
+								).json();
+								Object.assign(sdata, newStatus);
+							}
+						} catch (e) {
+							// ignore resume failure, proceed with existing state which may be 'cancelled'
 						}
-					} catch (e) {
-						// ignore resume failure, proceed with existing state which may be 'cancelled'
+					}
+					populateLog(sdata.log);
+					if (sdata.offset && totalSize) {
+						const pct = Math.floor(
+							(sdata.offset / totalSize) * 100
+						);
+						if (el("importProgress"))
+							el("importProgress").value = pct;
 					}
 				}
-				const importLog = el("importLog");
-				if (importLog && sdata.log && Array.isArray(sdata.log)) {
-					importLog.textContent = sdata.log
-						.map((l) => {
-							if (l.time && (l.statement || l.info || l.error)) {
-								let parts = [];
-								if (l.info) parts.push(l.info);
-								if (l.statement) parts.push(l.statement);
-								if (l.error) parts.push("ERROR: " + l.error);
-								return (
-									"[" +
-									new Date(l.time * 1000).toISOString() +
-									"] " +
-									parts.join(" - ")
-								);
-							}
-
-							return JSON.stringify(l);
-						})
-						.reverse()
-						.join("\n");
-				}
-				if (sdata.offset && totalSize) {
-					const pct = Math.floor((sdata.offset / totalSize) * 100);
-					if (el("importProgress")) el("importProgress").value = pct;
-				}
+			} catch (e) {
+				// ignore
 			}
-		} catch (e) {
-			// ignore
-		}
 
-		// Refresh embedded job list to reflect the job entering processing
-		try {
-			refreshEmbeddedJobList();
-		} catch (e) {
-			// ignore
-		}
-		async function step() {
+			// Refresh embedded job list to reflect the job entering processing
 			try {
-				const procUrl = appendServerToUrl(
-					"dbimport.php?action=process&job_id=" +
-						encodeURIComponent(jobId)
-				);
-				const resp = await fetch(procUrl, { method: "POST" });
-				if (!resp.ok) {
-					log("Process request failed: " + resp.status);
+				refreshEmbeddedJobList();
+			} catch (e) {
+				// ignore
+			}
+			async function step() {
+				try {
+					const procUrl = appendServerToUrl(
+						"dbimport.php?action=process&job_id=" +
+							encodeURIComponent(jobId)
+					);
+					const resp = await fetch(procUrl, { method: "POST" });
+					if (!resp.ok) {
+						log("Process request failed: " + resp.status);
+						return false;
+					}
+					const data = await resp.json();
+					if (data.offset && totalSize) {
+						const pct = Math.floor((data.offset / totalSize) * 100);
+						if (el("importProgress"))
+							el("importProgress").value = pct;
+						const importStatus = el("importStatus");
+						if (importStatus) {
+							let statusText = `Processing: ${pct}% (${formatBytes(
+								data.offset
+							)} / ${formatBytes(totalSize)})`;
+							if (data.current_db) {
+								statusText += ` - DB: ${data.current_db}`;
+							}
+							if (data.errors) {
+								statusText += ` - Errors: ${data.errors}`;
+							}
+							importStatus.textContent = statusText;
+						}
+						log(
+							`Processed ${formatBytes(
+								data.offset
+							)} / ${formatBytes(totalSize)} (${pct}%)`
+						);
+					}
+					// Update visible log (server returns full log array)
+					populateLog(data.log);
+
+					// Stop conditions: finished, error, or offset >= size
+					if (
+						data.status === "finished" ||
+						data.status === "error" ||
+						(totalSize && data.offset >= totalSize)
+					) {
+						const importStatus = el("importStatus");
+						if (importStatus) {
+							importStatus.textContent = `Import complete - Errors: ${
+								data.errors || 0
+							}`;
+						}
+						log(
+							"Import finished for job " +
+								jobId +
+								" with errors: " +
+								(data.errors || 0)
+						);
+						return false; // stop
+					}
+					return true; // continue
+				} catch (e) {
+					log("Process error: " + e);
 					return false;
 				}
-				const data = await resp.json();
-				if (data.offset && totalSize) {
-					const pct = Math.floor((data.offset / totalSize) * 100);
-					if (el("importProgress")) el("importProgress").value = pct;
-					const importStatus = el("importStatus");
-					if (importStatus) {
-						let statusText = `Processing: ${pct}% (${formatBytes(
-							data.offset
-						)} / ${formatBytes(totalSize)})`;
-						if (data.current_db) {
-							statusText += ` - DB: ${data.current_db}`;
-						}
-						if (data.errors) {
-							statusText += ` - Errors: ${data.errors}`;
-						}
-						importStatus.textContent = statusText;
-					}
-					log(
-						`Processed ${formatBytes(data.offset)} / ${formatBytes(
-							totalSize
-						)} (${pct}%)`
-					);
-				}
-				// Update visible log (server returns full log array)
-				if (data.log && Array.isArray(data.log)) {
-					const importLog = el("importLog");
-					if (importLog) {
-						importLog.textContent = data.log
-							.map((l) => {
-								if (
-									l.time &&
-									(l.statement || l.info || l.error)
-								) {
-									let parts = [];
-									if (l.info) parts.push(l.info);
-									if (l.statement) parts.push(l.statement);
-									if (l.error)
-										parts.push("ERROR: " + l.error);
-									return (
-										"[" +
-										new Date(l.time * 1000).toISOString() +
-										"] " +
-										parts.join(" - ")
-									);
-								}
-								return JSON.stringify(l);
-							})
-							.reverse()
-							.join("\n");
-					}
-				}
-
-				// Stop conditions: finished, error, or offset >= size
-				if (
-					data.status === "finished" ||
-					data.status === "error" ||
-					(totalSize && data.offset >= totalSize)
-				) {
-					const importStatus = el("importStatus");
-					if (importStatus) {
-						importStatus.textContent = `Import complete - Errors: ${
-							data.errors || 0
-						}`;
-					}
-					log(
-						"Import finished for job " +
-							jobId +
-							" with errors: " +
-							(data.errors || 0)
-					);
-					return false; // stop
-				}
-				return true; // continue
-			} catch (e) {
-				log("Process error: " + e);
-				return false;
 			}
-		}
 
-		// loop with small delay to avoid hammering
-		while (running) {
-			const cont = await step();
-			if (!cont) break;
-			await new Promise((r) => setTimeout(r, 700));
-		}
+			// loop with small delay to avoid hammering
+			while (running) {
+				const cont = await step();
+				if (!cont) break;
+				await new Promise((r) => setTimeout(r, 700));
+			}
 
-		// Update job list after processing completes/stops
-		try {
-			refreshEmbeddedJobList();
-		} catch (e) {
-			// ignore
+			// Update job list after processing completes/stops
+			try {
+				refreshEmbeddedJobList();
+			} catch (e) {
+				// ignore
+			}
+		} finally {
+			activeImportJobId = null;
 		}
 	}
 
@@ -738,25 +940,18 @@
 		const btn = el("importStart");
 		if (btn) btn.addEventListener("click", startUpload);
 
-		// add a small Jobs button to open job list
-		let jobsBtn = document.getElementById("importJobsBtn");
-		if (!jobsBtn) {
-			jobsBtn = document.createElement("button");
-			jobsBtn.id = "importJobsBtn";
-			jobsBtn.textContent = "Import Jobs";
-			jobsBtn.style.marginLeft = "8px";
-			if (btn && btn.parentNode)
-				btn.parentNode.insertBefore(jobsBtn, btn.nextSibling);
-			jobsBtn.addEventListener("click", openJobList);
-		}
-
 		// populate embedded uploaded-jobs list on load
 		refreshEmbeddedJobList();
+
+		// Auto-refresh list when "Show all" is toggled
+		const showAllChk = document.getElementById("opt_show_all");
+		if (showAllChk) {
+			showAllChk.addEventListener("change", refreshEmbeddedJobList);
+		}
 
 		// Attach handlers for static modals (if present)
 		const entryImportBtn = document.getElementById("entryImportBtn");
 		const entryCancelBtn = document.getElementById("entryCancelBtn");
-		const jobListClose = document.getElementById("jobListClose");
 		if (entryImportBtn) {
 			entryImportBtn.addEventListener("click", function () {
 				const modal = document.getElementById("entrySelectorModal");
@@ -789,38 +984,7 @@
 					"none";
 			});
 		}
-		if (jobListClose) {
-			jobListClose.addEventListener("click", function () {
-				document.getElementById("jobListModal").style.display = "none";
-			});
-		}
 	});
-
-	function openJobList() {
-		const showAllParam =
-			document.getElementById("opt_show_all") &&
-			document.getElementById("opt_show_all").checked
-				? "&show_all=1"
-				: "";
-		fetch(appendServerToUrl("dbimport.php?action=list_jobs" + showAllParam))
-			.then((r) => r.json())
-			.then((data) => {
-				const jobs = data && data.jobs ? data.jobs : [];
-				const container = document.getElementById("jobListContainer");
-				if (!container) return;
-				container.innerHTML = "";
-				if (jobs.length === 0) {
-					container.textContent = "No jobs";
-				} else {
-					jobs.forEach((j) => {
-						const node = createJobRowFromTemplate(j, openJobList);
-						container.appendChild(node);
-					});
-				}
-				document.getElementById("jobListModal").style.display = "block";
-			})
-			.catch((e) => alert("Failed to list jobs: " + e));
-	}
 
 	function refreshEmbeddedJobList() {
 		const container = document.getElementById("uploadedJobsList");
@@ -849,6 +1013,7 @@
 					);
 					container.appendChild(node);
 				});
+				if (activeImportJobId) highlightActiveJob(activeImportJobId);
 			})
 			.catch((e) => {
 				container.textContent = "Failed to load jobs";
