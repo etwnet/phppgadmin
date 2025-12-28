@@ -1,8 +1,10 @@
+import { el } from "./utils.js";
+
 // Server parameter helpers
 export const SERVER_ID = (function () {
-	const inp = document.getElementById("import_server");
+	const inp = el("import_server");
 	if (inp && inp.value) return inp.value;
-	const ui = document.getElementById("importUI");
+	const ui = el("importUI");
 	if (ui && ui.dataset && ui.dataset.server) return ui.dataset.server;
 	return "";
 })();

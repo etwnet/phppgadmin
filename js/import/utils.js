@@ -32,24 +32,24 @@ const FNV_PRIME = BigInt("0x100000001b3");
 const FNV_MASK = BigInt("0xffffffffffffffff");
 const FNV_TABLE = Array.from({ length: 256 }, (_, i) => BigInt(i));
 
-export function fnv1a64(buf) {
+export const fnv1a64 = (buf) => {
 	let hash = FNV_OFFSET_BASIS;
 	for (let i = 0; i < buf.length; i++) {
 		hash ^= FNV_TABLE[buf[i]];
 		hash = (hash * FNV_PRIME) & FNV_MASK;
 	}
 	return hash.toString(16).padStart(16, "0");
-}
+};
 
-export function formatBytes(bytes) {
+export const formatBytes = (bytes) => {
 	if (bytes === 0) return "0 B";
 	const k = 1024;
 	const sizes = ["B", "KB", "MB", "GB", "TB"];
 	const i = Math.floor(Math.log(bytes) / Math.log(k));
 	return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
-}
+};
 
-export function detectZipSignature(bytes) {
+export const detectZipSignature = (bytes) => {
 	return (
 		bytes.length >= 4 &&
 		bytes[0] === 0x50 &&
@@ -58,9 +58,9 @@ export function detectZipSignature(bytes) {
 			(bytes[2] === 0x05 && bytes[3] === 0x06) ||
 			(bytes[2] === 0x07 && bytes[3] === 0x08))
 	);
-}
+};
 
-export async function sniffMagicType(file) {
+export const sniffMagicType = async (file) => {
 	try {
 		const blob = file.slice(0, 8);
 		let buf;
@@ -89,18 +89,18 @@ export async function sniffMagicType(file) {
 	} catch (e) {
 		return "unknown";
 	}
-}
+};
 
-export function getServerCaps(fileInput) {
+export const getServerCaps = (fileInput) => {
 	const ds = fileInput && fileInput.dataset ? fileInput.dataset : {};
 	return {
 		gzip: ds.capGzip === "1",
 		zip: ds.capZip === "1",
 		bzip2: ds.capBzip2 === "1",
 	};
-}
+};
 
-export function populateLog(log) {
+export const populateLog = (log) => {
 	if (!Array.isArray(log)) {
 		console.warn("Invalid log data", log);
 		return;
@@ -126,17 +126,17 @@ export function populateLog(log) {
 			.reverse()
 			.join("\n");
 	}
-}
+};
 
-export function log(msg, type = "import") {
+export const log = (msg, type = "import") => {
 	const p = el(type + "Log");
 	if (!p) return;
 	if (type === "upload") p.style.display = "block";
 	const line = "[" + new Date().toISOString() + "] " + msg + "\n";
 	p.textContent = line + p.textContent;
-}
+};
 
-export function highlightActiveJob(jobId) {
+export const highlightActiveJob = (jobId) => {
 	document.querySelectorAll(".import-job-row").forEach((row) => {
 		if (row.dataset.jobId === jobId) {
 			row.style.backgroundColor = "#e6f7ff";
@@ -146,6 +146,6 @@ export function highlightActiveJob(jobId) {
 			row.style.borderLeft = "";
 		}
 	});
-	const titleEl = document.getElementById("importJobTitle");
+	const titleEl = el("importJobTitle");
 	if (titleEl) titleEl.textContent = jobId || "Import Job";
-}
+};

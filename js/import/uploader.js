@@ -4,6 +4,8 @@ import {
 	sniffMagicType,
 	getServerCaps,
 	el,
+	val,
+	qsa,
 	log,
 } from "./utils.js";
 import { appendServerToUrl, appendServerToParams } from "./api.js";
@@ -70,9 +72,9 @@ export async function uploadChunkWithRetry(
 }
 
 function showEntrySelector(jobId, totalSize, entries) {
-	const modal = document.getElementById("entrySelectorModal");
-	const sel = document.getElementById("entrySelect");
-	const importAllChk = document.getElementById("import_all_chk");
+	const modal = el("entrySelectorModal");
+	const sel = el("entrySelect");
+	const importAllChk = el("import_all_chk");
 	if (!modal || !sel) {
 		console.warn("Static entry selector modal not found");
 		return;
@@ -147,12 +149,8 @@ export async function startUpload() {
 			return;
 		}
 
-		const scope = el("import_scope")
-			? el("import_scope").value
-			: "database";
-		const scope_ident = el("import_scope_ident")
-			? el("import_scope_ident").value
-			: "";
+		const scope = val("import_scope") || "database";
+		const scope_ident = val("import_scope_ident");
 
 		const importUI = el("importUI");
 		const uploadPhase = el("uploadPhase");
@@ -254,11 +252,10 @@ export async function startUpload() {
 				"opt_allow_drops",
 			];
 			opts.forEach((opt) => {
-				const chk = document.getElementById(opt);
+				const chk = el(opt);
 				if (chk && chk.checked) formData.append(opt, "1");
 			});
-			const errorModeRadios =
-				document.getElementsByName("opt_error_mode");
+			const errorModeRadios = qsa('[name="opt_error_mode"]');
 			for (let radio of errorModeRadios) {
 				if (radio.checked) {
 					formData.append("opt_error_mode", radio.value);
@@ -357,9 +354,7 @@ export async function startUpload() {
 
 		if (el("importPhase")) el("importPhase").style.display = "block";
 
-		const auto = document.getElementById("opt_auto_start")
-			? document.getElementById("opt_auto_start").checked
-			: false;
+		const auto = el("opt_auto_start")?.checked || false;
 		if (auto) {
 			const entriesUrl = appendServerToUrl(
 				`dbimport.php?action=list_entries&job_id=${encodeURIComponent(

@@ -2,7 +2,7 @@ import { el, log } from "./utils.js";
 import { appendServerToUrl } from "./api.js";
 
 export function createJobRowFromTemplate(j, updater) {
-	let tpl = document.getElementById("job-row-template");
+	let tpl = el("job-row-template");
 	const frag = tpl.content.cloneNode(true);
 	const row = frag.querySelector(".import-job-row");
 	if (row) row.dataset.jobId = j.job_id;
@@ -123,14 +123,10 @@ export function createJobRowFromTemplate(j, updater) {
 }
 
 export function refreshEmbeddedJobList() {
-	const container = document.getElementById("uploadedJobsList");
+	const container = el("uploadedJobsList");
 	if (!container) return;
 	container.textContent = "Loading...";
-	const showAllParam2 =
-		document.getElementById("opt_show_all") &&
-		document.getElementById("opt_show_all").checked
-			? "&show_all=1"
-			: "";
+	const showAllParam2 = el("opt_show_all")?.checked ? "&show_all=1" : "";
 	fetch(appendServerToUrl("dbimport.php?action=list_jobs" + showAllParam2))
 		.then((r) => r.json())
 		.then((data) => {
