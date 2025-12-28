@@ -436,6 +436,56 @@
 		p.textContent = line + p.textContent;
 	}
 
+	// Template helper: ensure a <template id="job-row-template"> exists
+	function createJobRowFromTemplate(j, updater) {
+		let tpl = document.getElementById("job-row-template");
+
+		const frag = tpl.content.cloneNode(true);
+		frag.querySelector(".job-info").textContent = `${j.job_id} — ${
+			j.status
+		} — ${j.offset || 0}/${j.size || 0}`;
+
+		const viewBtn = frag.querySelector(".view");
+		const startBtn = frag.querySelector(".start");
+		const cancelBtn = frag.querySelector(".cancel");
+		const resumeBtn = frag.querySelector(".resume");
+
+		if (viewBtn)
+			viewBtn.addEventListener("click", () =>
+				showJobStatus(j.job_id, j.size)
+			);
+		if (startBtn)
+			startBtn.addEventListener("click", () =>
+				runImportLoop(j.job_id, j.size)
+			);
+		if (cancelBtn)
+			cancelBtn.addEventListener("click", () => {
+				fetch(
+					appendServerToUrl(
+						"dbimport.php?action=cancel_job&job_id=" +
+							encodeURIComponent(j.job_id)
+					),
+					{ method: "POST" }
+				).then(() => {
+					if (typeof updater === "function") updater();
+				});
+			});
+		if (resumeBtn)
+			resumeBtn.addEventListener("click", () => {
+				fetch(
+					appendServerToUrl(
+						"dbimport.php?action=resume_job&job_id=" +
+							encodeURIComponent(j.job_id)
+					),
+					{ method: "POST" }
+				).then(() => {
+					if (typeof updater === "function") updater();
+				});
+			});
+
+		return frag;
+	}
+
 	async function showJobStatus(jobId, totalSize) {
 		try {
 			const statusResp = await fetch(
@@ -763,44 +813,8 @@
 					container.textContent = "No jobs";
 				} else {
 					jobs.forEach((j) => {
-						const row = document.createElement("div");
-						row.style.display = "flex";
-						row.style.justifyContent = "space-between";
-						row.style.padding = "6px 0";
-						row.style.borderBottom = "1px solid #eee";
-						const info = document.createElement("div");
-						info.textContent = `${j.job_id} — ${j.status} — ${
-							j.offset || 0
-						}/${j.size || 0}`;
-						const actions = document.createElement("div");
-						const cancel = document.createElement("button");
-						cancel.textContent = "Cancel";
-						cancel.style.marginRight = "8px";
-						cancel.addEventListener("click", () => {
-							fetch(
-								appendServerToUrl(
-									"dbimport.php?action=cancel_job&job_id=" +
-										encodeURIComponent(j.job_id)
-								),
-								{ method: "POST" }
-							).then(() => openJobList());
-						});
-						const resume = document.createElement("button");
-						resume.textContent = "Resume";
-						resume.addEventListener("click", () => {
-							fetch(
-								appendServerToUrl(
-									"dbimport.php?action=resume_job&job_id=" +
-										encodeURIComponent(j.job_id)
-								),
-								{ method: "POST" }
-							).then(() => openJobList());
-						});
-						actions.appendChild(cancel);
-						actions.appendChild(resume);
-						row.appendChild(info);
-						row.appendChild(actions);
-						container.appendChild(row);
+						const node = createJobRowFromTemplate(j, openJobList);
+						container.appendChild(node);
 					});
 				}
 				document.getElementById("jobListModal").style.display = "block";
@@ -829,58 +843,11 @@
 					return;
 				}
 				jobs.forEach((j) => {
-					const row = document.createElement("div");
-					row.style.display = "flex";
-					row.style.justifyContent = "space-between";
-					row.style.padding = "6px 0";
-					row.style.borderBottom = "1px solid #eee";
-					const info = document.createElement("div");
-					info.textContent = `${j.job_id} — ${j.status} — ${
-						j.offset || 0
-					}/${j.size || 0}`;
-					const actions = document.createElement("div");
-					const view = document.createElement("button");
-					view.textContent = "View";
-					view.style.marginRight = "8px";
-					view.addEventListener("click", () =>
-						showJobStatus(j.job_id, j.size)
+					const node = createJobRowFromTemplate(
+						j,
+						refreshEmbeddedJobList
 					);
-					const start = document.createElement("button");
-					start.textContent = "Start";
-					start.style.marginRight = "8px";
-					start.addEventListener("click", () =>
-						runImportLoop(j.job_id, j.size)
-					);
-					const cancel = document.createElement("button");
-					cancel.textContent = "Cancel";
-					cancel.style.marginRight = "8px";
-					cancel.addEventListener("click", () => {
-						fetch(
-							appendServerToUrl(
-								"dbimport.php?action=cancel_job&job_id=" +
-									encodeURIComponent(j.job_id)
-							),
-							{ method: "POST" }
-						).then(() => refreshEmbeddedJobList());
-					});
-					const resume = document.createElement("button");
-					resume.textContent = "Resume";
-					resume.addEventListener("click", () => {
-						fetch(
-							appendServerToUrl(
-								"dbimport.php?action=resume_job&job_id=" +
-									encodeURIComponent(j.job_id)
-							),
-							{ method: "POST" }
-						).then(() => refreshEmbeddedJobList());
-					});
-					actions.appendChild(view);
-					actions.appendChild(start);
-					actions.appendChild(cancel);
-					actions.appendChild(resume);
-					row.appendChild(info);
-					row.appendChild(actions);
-					container.appendChild(row);
+					container.appendChild(node);
 				});
 			})
 			.catch((e) => {

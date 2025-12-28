@@ -127,35 +127,41 @@ class ImportFormRenderer extends AbstractContext
             <div id="uploadedJobsList">Loading...</div>
         </div>
 
+        <template id="job-row-template">
+            <div class="import-job-row">
+                <div class="job-info"></div>
+                <div class="job-actions">
+                    <button class="job-btn view">View</button>
+                    <button class="job-btn start">Start</button>
+                    <button class="job-btn cancel">Cancel</button>
+                    <button class="job-btn resume">Resume</button>
+                </div>
+            </div>
+        </template>
+
         <!-- Static modals for import UI (hidden by default) -->
-        <div id="entrySelectorModal" class="import-modal"
-            style="display:none;position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:9999;">
-            <div
-                style="width:480px;margin:80px auto;background:#fff;padding:12px;border-radius:6px;box-shadow:0 2px 10px rgba(0,0,0,0.2);">
-                <h3><?= $lang['strselectzipentry'] ?? 'Select file from ZIP to import' ?></h3>
-                <div class="form-group">
-                    <label for="entrySelect"><?= $lang['strfilename'] ?? 'Filename' ?></label>
-                    <select id="entrySelect" style="width:100%"></select>
-                </div>
-                <div class="form-group">
-                    <label><input type="checkbox" id="import_all_chk" />
-                        <?= $lang['strimportall'] ?? 'Import all entries alphabetically' ?></label>
-                </div>
-                <div style="margin-top:8px">
-                    <button id="entryImportBtn"><?= $lang['strimport'] ?? 'Import' ?></button>
-                    <button id="entryCancelBtn" style="margin-left:8px"><?= $lang['strcancel'] ?? 'Cancel' ?></button>
-                </div>
+        <div id="entrySelectorModal" class="import-panel"
+            style="display:none;margin-top:12px;border:1px solid #ddd;padding:10px;background:#fff;">
+            <h3 style="margin-top:0;"><?= $lang['strselectzipentry'] ?? 'Select file from ZIP to import' ?></h3>
+            <div class="form-group">
+                <label for="entrySelect"><?= $lang['strfilename'] ?? 'Filename' ?></label>
+                <select id="entrySelect" style="width:100%"></select>
+            </div>
+            <div class="form-group">
+                <label><input type="checkbox" id="import_all_chk" />
+                    <?= $lang['strimportall'] ?? 'Import all entries alphabetically' ?></label>
+            </div>
+            <div style="margin-top:8px">
+                <button id="entryImportBtn"><?= $lang['strimport'] ?? 'Import' ?></button>
+                <button id="entryCancelBtn" style="margin-left:8px"><?= $lang['strcancel'] ?? 'Cancel' ?></button>
             </div>
         </div>
 
-        <div id="jobListModal" class="import-modal"
-            style="display:none;position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:9999;">
-            <div
-                style="width:640px;margin:40px auto;background:#fff;padding:12px;border-radius:6px;box-shadow:0 2px 10px rgba(0,0,0,0.2);">
-                <h3><?= $lang['strimportjobs'] ?? 'Import Jobs' ?></h3>
-                <div id="jobListContainer" style="max-height:400px;overflow:auto;margin-top:8px"></div>
-                <div style="margin-top:8px"><button id="jobListClose"><?= $lang['strclose'] ?? 'Close' ?></button></div>
-            </div>
+        <div id="jobListModal" class="import-panel"
+            style="display:none;margin-top:12px;border:1px solid #ddd;padding:10px;background:#fff;">
+            <h3 style="margin-top:0;"><?= $lang['strimportjobs'] ?? 'Import Jobs' ?></h3>
+            <div id="jobListContainer" style="max-height:400px;overflow:auto;margin-top:8px"></div>
+            <div style="margin-top:8px"><button id="jobListClose"><?= $lang['strclose'] ?? 'Close' ?></button></div>
         </div>
 
         <script src="js/import.js"></script>

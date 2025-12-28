@@ -524,3 +524,54 @@ legend {
 	font-weight: bold;
 	padding: 0 5px;
 }
+
+/* Import UI styles */
+.import-panel {
+	border-radius: 4px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.import-job-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 6px 8px;
+	border-bottom: 1px solid #eee;
+}
+
+.import-job-row:last-child {
+	border-bottom: none;
+}
+
+.job-info {
+	flex: 1 1 auto;
+	font-family: monospace;
+	color: #222;
+}
+
+.job-actions {
+	flex: 0 0 auto;
+	white-space: nowrap;
+}
+
+.job-actions .job-btn {
+	margin-left: 8px;
+	padding: 4px 8px;
+	font-size: 0.9em;
+	background: #f5f5f5;
+	border: 1px solid #dcdcdc;
+	border-radius: 3px;
+	cursor: pointer;
+}
+
+.job-actions .job-btn:hover {
+	background: #eee;
+}
+
+.job-actions .job-btn:active {
+	transform: translateY(1px);
+}
+
+.import-modal,
+.import-panel {
+}
