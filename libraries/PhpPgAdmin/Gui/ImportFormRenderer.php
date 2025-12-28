@@ -116,7 +116,8 @@ class ImportFormRenderer extends AbstractContext
             <div id="importPhase" style="display:none;margin-top:16px">
                 <h4><?= $lang['strimport'] ?> <span id="importJobTitle"
                         style="font-weight:normal;font-size:0.9em;color:#555"></span> -
-                    <?= $lang['strprogress'] ?? 'Progress' ?></h4>
+                    <?= $lang['strprogress'] ?? 'Progress' ?>
+                </h4>
                 <progress id="importProgress" value="0" max="100" style="width:100%"></progress>
                 <div id="importStatus" style="margin-top:4px;font-size:0.9em;color:#666"></div>
                 <pre id="importLog"
@@ -166,7 +167,7 @@ class ImportFormRenderer extends AbstractContext
             </div>
         </div>
 
-        <script src="js/import.js"></script>
+        <script type="module" src="js/import.js"></script>
         <?php
     }
 }
