@@ -33,29 +33,21 @@ $output_format = $_REQUEST['output_format'] ?? 'sql';
 $insert_format = $_REQUEST['insert_format'] ?? 'copy';
 
 // Parse composite `output` parameter: 'show' | 'download' | 'download-gzip' | 'download-bzip2' | 'download-zip'
-// No legacy `output_compression` support — keep behavior clean.
 $rawOutput = $_REQUEST['output'] ?? 'download';
-$parts = array_pad(explode('-', $rawOutput, 2), 2, 'plain');
-$output_method = ($parts[0] === 'show') ? 'show' : 'download';
-$compToken = strtolower($parts[1]);
-$compMap = [
-	'gzip' => 'gzipped',
-	'gz' => 'gzipped',
-	'gzipped' => 'gzipped',
-	'bzip2' => 'bzip2',
-	'bz2' => 'bzip2',
-	'zip' => 'zip',
-	'download' => 'download',
-	'plain' => 'download',
-	'' => 'download'
-];
-$output_compression = $compMap[$compToken] ?? 'download';
+if ($rawOutput === 'show') {
+	$output_method = 'show';
+	$output_compression = '';
+} else {
+	$output_method = 'download';
+	$compression_suffix = str_replace('download-', '', $rawOutput);
+	$output_compression = $compression_suffix ?: 'plain';
+}
 
 // Determine dumper selection
 $dumper = $_REQUEST['dumper'] ?? 'internal';
 $use_pg_dumpall = ($dumper === 'pg_dumpall');
 $use_pgdump = ($dumper === 'pgdump');
-$use_internal = ($dumper === 'internal');
+$use_internal = !$use_pg_dumpall && !$use_pgdump;
 $filename_base = generateDumpFilename($_REQUEST['subject'], $_REQUEST);
 
 // ============================================================================
@@ -95,10 +87,9 @@ if ($use_internal) {
 	} else {
 		// Use CompressionFactory for the requested compression (default to 'download')
 		try {
-			$strategy_key = $output_compression ?? 'download';
-			$strategy = CompressionFactory::create($strategy_key);
+			$strategy = CompressionFactory::create($output_compression);
 			if (!$strategy) {
-				die("Error: Unsupported output method: " . htmlspecialchars($strategy_key));
+				die("Error: Unsupported output method: " . htmlspecialchars($output_compression));
 			}
 			$handle = $strategy->begin($filename_base);
 			$output_stream = $handle['stream'];
@@ -120,8 +111,8 @@ if ($use_internal) {
 			$params['database'] = $db_name;
 			$dumper->dump($subject, $params, $options);
 
-			// For gzipped streams, flush periodically
-			if ($output_compression === 'gzipped' && $output_stream) {
+			// Flush stream periodically
+			if ($output_stream) {
 				fflush($output_stream);
 			}
 		}
@@ -651,4 +642,3 @@ function generateDumpFilename($subject, $request)
 
 	return $filename_base;
 }
-

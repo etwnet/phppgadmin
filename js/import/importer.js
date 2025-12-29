@@ -1,16 +1,22 @@
-import {
-	el,
-	log,
-	populateLog,
-	highlightActiveJob,
-	formatBytes,
-} from "./utils.js";
+import { el, log, populateLog, formatBytes } from "./utils.js";
 import { appendServerToUrl } from "./api.js";
 import { refreshEmbeddedJobList } from "./jobs.js";
 
 let activeImportJobId = null;
 
-export async function showJobStatus(jobId, totalSize) {
+export const highlightActiveJob = (jobId) => {
+	document.querySelectorAll(".import-job-row").forEach((row) => {
+		if (row.dataset.jobId === jobId) {
+			row.classList.add("active");
+		} else {
+			row.classList.remove("active");
+		}
+	});
+	const titleEl = el("importJobTitle");
+	if (titleEl) titleEl.textContent = jobId || "Import Job";
+};
+
+export const showJobStatus = async (jobId, totalSize) => {
 	if (activeImportJobId && activeImportJobId !== jobId) {
 		alert("Cannot view other jobs while an import is running.");
 		return;
@@ -51,9 +57,9 @@ export async function showJobStatus(jobId, totalSize) {
 		console.error(e);
 		alert("Failed to fetch job status");
 	}
-}
+};
 
-export async function runImportLoop(jobId, totalSize) {
+export const runImportLoop = async (jobId, totalSize) => {
 	if (activeImportJobId === jobId) return;
 	if (activeImportJobId && activeImportJobId !== jobId) {
 		alert(
@@ -184,4 +190,4 @@ export async function runImportLoop(jobId, totalSize) {
 	} finally {
 		activeImportJobId = null;
 	}
-}
+};

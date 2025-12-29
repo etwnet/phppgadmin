@@ -3,12 +3,13 @@
 namespace PhpPgAdmin\Gui;
 
 use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\Import\CompressionReader;
 
 /**
- * QueryDataRenderer - Renders export form for SQL query results
+ * QueryExportRenderer - Renders export form for SQL query results
  * Simplifies format selection for exporting arbitrary query data
  */
-class QueryDataRenderer
+class QueryExportRenderer
 {
     private $misc;
     private $lang;
@@ -28,6 +29,7 @@ class QueryDataRenderer
      */
     public function renderExportForm($query, $params = [])
     {
+        $compressionCaps = CompressionReader::capabilities();
         ?>
         <form action="dataexport.php" id="export-form" method="get">
 
@@ -96,18 +98,24 @@ class QueryDataRenderer
                     <input type="radio" id="output_download" name="output" value="download" />
                     <label for="output_download"><?= $this->lang['strdownloadasfile']; ?></label>
                 </div>
-                <div>
-                    <input type="radio" id="output_download_gzip" name="output" value="download-gzip" />
-                    <label for="output_download_gzip"><?= $this->lang['strdownloadasgzipped'] ?? 'Download as Gzip'; ?></label>
-                </div>
-                <div>
-                    <input type="radio" id="output_download_bzip2" name="output" value="download-bzip2" />
-                    <label for="output_download_bzip2"><?= $this->lang['strdownloadasbzip2'] ?? 'Download as Bzip2'; ?></label>
-                </div>
-                <div>
-                    <input type="radio" id="output_download_zip" name="output" value="download-zip" />
-                    <label for="output_download_zip"><?= $this->lang['strdownloadaszip'] ?? 'Download as ZIP'; ?></label>
-                </div>
+                <?php if ($compressionCaps['gzip'] ?? false): ?>
+                    <div>
+                        <input type="radio" id="output_download_gzip" name="output" value="download-gzip" />
+                        <label for="output_download_gzip"><?= $this->lang['strdownloadasgzipped'] ?? 'Download as Gzip'; ?></label>
+                    </div>
+                <?php endif ?>
+                <?php if ($compressionCaps['bzip2'] ?? false): ?>
+                    <div>
+                        <input type="radio" id="output_download_bzip2" name="output" value="download-bzip2" />
+                        <label for="output_download_bzip2"><?= $this->lang['strdownloadasbzip2'] ?? 'Download as Bzip2'; ?></label>
+                    </div>
+                <?php endif ?>
+                <?php if ($compressionCaps['zip'] ?? false): ?>
+                    <div>
+                        <input type="radio" id="output_download_zip" name="output" value="download-zip" />
+                        <label for="output_download_zip"><?= $this->lang['strdownloadaszip'] ?? 'Download as ZIP'; ?></label>
+                    </div>
+                <?php endif ?>
             </fieldset>
 
             <p>

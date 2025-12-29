@@ -22,9 +22,11 @@ class ExportOutputRenderer
     {
         AppContainer::setSkipHtmlFrame(false);
         $misc = AppContainer::getMisc();
+        $subject = $_REQUEST['subject'] ?? 'server';
         $misc->printHeader("Export", null);
         $misc->printBody();
-        $misc->printTrail('database');
+        $misc->printTrail($subject);
+        $misc->printTabs($subject, 'export');
 
         ?>
         <style>
@@ -74,42 +76,4 @@ class ExportOutputRenderer
     }
 
 
-    public static function beginZipStream($filename)
-    {
-
-        // Clear any existing output buffers
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-
-        // Disable output buffering to allow direct streaming
-        ini_set('output_buffering', 'Off');
-        ini_set('zlib.output_compression', 'Off');
-
-        // Prepare php://output and ZipStream that will write directly to it.
-        // Verify ZipStream is available
-        if (!class_exists('\ZipStream\\ZipStream')) {
-            return null;
-        }
-
-        // Ensure zlib is available for compression (library uses deflate)
-        if (!extension_loaded('zlib')) {
-            return null;
-        }
-
-        $out = fopen('php://output', 'wb');
-        if ($out === false) {
-            return null;
-        }
-
-        $options = new ArchiveOptions();
-        $options->setOutputStream($out);
-        $options->setSendHttpHeaders(true);
-
-        $zip = new ZipStream("{$filename}.zip", $options);
-
-        // Return the ZipStream instance: callers may use addFileFromStream()
-        // for streaming external command output (pg_dump) or further wiring.
-        return $zip;
-    }
 }

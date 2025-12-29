@@ -135,17 +135,3 @@ export const log = (msg, type = "import") => {
 	const line = "[" + new Date().toISOString() + "] " + msg + "\n";
 	p.textContent = line + p.textContent;
 };
-
-export const highlightActiveJob = (jobId) => {
-	document.querySelectorAll(".import-job-row").forEach((row) => {
-		if (row.dataset.jobId === jobId) {
-			row.style.backgroundColor = "#e6f7ff";
-			row.style.borderLeft = "4px solid #1890ff";
-		} else {
-			row.style.backgroundColor = "";
-			row.style.borderLeft = "";
-		}
-	});
-	const titleEl = el("importJobTitle");
-	if (titleEl) titleEl.textContent = jobId || "Import Job";
-};

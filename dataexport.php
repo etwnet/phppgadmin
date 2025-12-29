@@ -4,7 +4,7 @@ use PhpPgAdmin\Core\AppContainer;
 use PhpPgAdmin\Database\Export\Compression\CompressionFactory;
 use PhpPgAdmin\Database\Export\FormatterFactory;
 use PhpPgAdmin\Gui\ExportOutputRenderer;
-use PhpPgAdmin\Gui\QueryDataRenderer;
+use PhpPgAdmin\Gui\QueryExportRenderer;
 
 /**
  * Export query results to various formats (SQL, CSV, XML, HTML, JSON, etc.)
@@ -27,7 +27,7 @@ $lang = AppContainer::getLang();
 /**
  * Generate a descriptive filename for the query export.
  */
-function generateQueryExportFilename($request)
+function generateQueryExportFilename()
 {
 	$timestamp = date('Ymd_His');
 	return 'query_export_' . $timestamp;
@@ -42,22 +42,15 @@ if (isset($_REQUEST['action']) && $_REQUEST['action'] === 'export') {
 	$insert_format = $_REQUEST['insert_format'] ?? 'copy';
 
 	// Parse composite `output` parameter: 'show' | 'download' | 'download-gzip' | 'download-bzip2' | 'download-zip'
-	$rawOutput = $_REQUEST['output'] ?? 'show';
-	$parts = array_pad(explode('-', $rawOutput, 2), 2, 'plain');
-	$output = ($parts[0] === 'show') ? 'show' : 'download';
-	$compToken = strtolower($parts[1]);
-	$compMap = [
-		'gzip' => 'gzipped',
-		'gz' => 'gzipped',
-		'gzipped' => 'gzipped',
-		'bzip2' => 'bzip2',
-		'bz2' => 'bzip2',
-		'zip' => 'zip',
-		'download' => 'download',
-		'plain' => 'download',
-		'' => 'download'
-	];
-	$output_compression = $compMap[$compToken] ?? 'download';
+	$rawOutput = $_REQUEST['output'] ?? 'download';
+	if ($rawOutput === 'show') {
+		$output_method = 'show';
+		$output_compression = '';
+	} else {
+		$output_method = 'download';
+		$compression_suffix = str_replace('download-', '', $rawOutput);
+		$output_compression = $compression_suffix ?: 'plain';
+	}
 
 	// Get the query to export
 	$query = $_REQUEST['query'] ?? ($_SESSION['sqlquery'] ?? '');
@@ -85,7 +78,7 @@ if (isset($_REQUEST['action']) && $_REQUEST['action'] === 'export') {
 	}
 
 	// Set up download headers and output handling
-	$filename = generateQueryExportFilename($_REQUEST);
+	$filename = generateQueryExportFilename();
 	$mime_type = $formatter->getMimeType();
 	$file_extension = $formatter->getFileExtension();
 
@@ -96,10 +89,9 @@ if (isset($_REQUEST['action']) && $_REQUEST['action'] === 'export') {
 	} else {
 		// For all other output methods (download with optional compression), use CompressionFactory
 		try {
-			$strategy_key = $output_compression ?? 'download';
-			$strategy = CompressionFactory::create($strategy_key);
+			$strategy = CompressionFactory::create($output_compression);
 			if (!$strategy) {
-				die("Error: Unsupported output method: " . htmlspecialchars($strategy_key));
+				die("Error: Unsupported output method: " . htmlspecialchars($output_compression));
 			}
 			$handle = $strategy->begin($filename);
 			$output_stream = $handle['stream'];
@@ -151,7 +143,7 @@ if (isset($msg))
 	$misc->printMsg($msg);
 
 // Render the export form using QueryDataRenderer
-$renderer = new QueryDataRenderer();
+$renderer = new QueryExportRenderer();
 $renderer->renderExportForm($query, $_REQUEST);
 
 $misc->printFooter();

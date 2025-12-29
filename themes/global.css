@@ -525,6 +525,24 @@ legend {
 	padding: 0 5px;
 }
 
+.ui-btn {
+	margin-left: 8px;
+	padding: 4px 8px;
+	font-size: 0.9em;
+	background: #f5f5f5;
+	border: 1px solid #dcdcdc;
+	border-radius: 3px;
+	cursor: pointer;
+}
+
+.ui-btn:hover {
+	background: #eee;
+}
+
+.ui-btn:active {
+	transform: translateY(1px);
+}
+
 /* Import UI styles */
 .import-panel {
 	border-radius: 4px;
@@ -543,35 +561,18 @@ legend {
 	border-bottom: none;
 }
 
+.import-job-row.active {
+	background-color: #e6f7ff;
+	border-left: 4px solid #1890ff;
+}
+
 .job-info {
 	flex: 1 1 auto;
 	font-family: monospace;
-	color: #222;
+	font-size: initial;
 }
 
 .job-actions {
 	flex: 0 0 auto;
 	white-space: nowrap;
-}
-
-.job-actions .job-btn {
-	margin-left: 8px;
-	padding: 4px 8px;
-	font-size: 0.9em;
-	background: #f5f5f5;
-	border: 1px solid #dcdcdc;
-	border-radius: 3px;
-	cursor: pointer;
-}
-
-.job-actions .job-btn:hover {
-	background: #eee;
-}
-
-.job-actions .job-btn:active {
-	transform: translateY(1px);
-}
-
-.import-modal,
-.import-panel {
 }
