@@ -462,7 +462,6 @@ $lang['strtruncatebeforeinsert'] = 'TRUNCATE tables before insert';
 $lang['stroutput'] = 'Output';
 $lang['strshowinbrowser'] = 'Show in browser';
 $lang['strdownloadasfile'] = 'Download as file';
-$lang['strdownloadasgzipped'] = 'Download as gzipped file';
 
 // Views
 $lang['strview'] = 'View';

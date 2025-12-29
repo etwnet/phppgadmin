@@ -4,6 +4,7 @@ use PhpPgAdmin\Core\AppContainer;
 use PhpPgAdmin\Database\Export\FormatterFactory;
 use PhpPgAdmin\Gui\ExportOutputRenderer;
 use PhpPgAdmin\Gui\QueryDataRenderer;
+use PhpPgAdmin\Gui\CompressionFactory;
 
 /**
  * Export query results to various formats (SQL, CSV, XML, HTML, JSON, etc.)
@@ -39,7 +40,24 @@ if (isset($_REQUEST['action']) && $_REQUEST['action'] === 'export') {
 	// Get unified parameters
 	$output_format = $_REQUEST['output_format'] ?? 'csv';
 	$insert_format = $_REQUEST['insert_format'] ?? 'copy';
-	$output = $_REQUEST['output'] ?? 'show';
+
+	// Parse composite `output` parameter: 'show' | 'download' | 'download-gzip' | 'download-bzip2' | 'download-zip'
+	$rawOutput = $_REQUEST['output'] ?? 'show';
+	$parts = array_pad(explode('-', $rawOutput, 2), 2, 'plain');
+	$output = ($parts[0] === 'show') ? 'show' : 'download';
+	$compToken = strtolower($parts[1]);
+	$compMap = [
+		'gzip' => 'gzipped',
+		'gz' => 'gzipped',
+		'gzipped' => 'gzipped',
+		'bzip2' => 'bzip2',
+		'bz2' => 'bzip2',
+		'zip' => 'zip',
+		'download' => 'download',
+		'plain' => 'download',
+		'' => 'download'
+	];
+	$output_compression = $compMap[$compToken] ?? 'download';
 
 	// Get the query to export
 	$query = $_REQUEST['query'] ?? ($_SESSION['sqlquery'] ?? '');
@@ -75,15 +93,19 @@ if (isset($_REQUEST['action']) && $_REQUEST['action'] === 'export') {
 		// For browser display, use unified HTML wrapper
 		ExportOutputRenderer::beginHtmlOutput();
 		$output_stream = null; // HTML mode uses echo directly
-	} elseif ($output === 'gzipped') {
-		// For gzipped download, use streaming instead of buffering
-		$output_stream = ExportOutputRenderer::beginGzipStream($filename);
-		if ($output_stream === null) {
-			die('Error: Could not initialize gzipped output stream');
-		}
 	} else {
-		// For regular download, use streaming to php://output for memory efficiency
-		$output_stream = ExportOutputRenderer::beginDownloadStream($filename, $mime_type, $file_extension);
+		// For all other output methods (download with optional compression), use CompressionFactory
+		try {
+			$strategy_key = $output_compression ?? 'download';
+			$strategy = CompressionFactory::create($strategy_key);
+			if (!$strategy) {
+				die("Error: Unsupported output method: " . htmlspecialchars($strategy_key));
+			}
+			$handle = $strategy->begin($filename);
+			$output_stream = $handle['stream'];
+		} catch (\Exception $e) {
+			die("Error: " . htmlspecialchars($e->getMessage()));
+		}
 	}
 
 	// Reset recordset to beginning for formatter
@@ -103,8 +125,8 @@ if (isset($_REQUEST['action']) && $_REQUEST['action'] === 'export') {
 	$formatter->format($rs, $metadata);
 
 	// Close streams for download and gzipped output
-	if ($output === 'gzipped' || $output === 'download') {
-		ExportOutputRenderer::endOutputStream($output_stream);
+	if ($output !== 'show' && isset($strategy) && isset($handle)) {
+		$strategy->finish($handle);
 	} elseif ($output === 'show') {
 		ExportOutputRenderer::endHtmlOutput();
 	}

@@ -5,6 +5,7 @@ use PhpPgAdmin\Database\DumpManager;
 use PhpPgAdmin\Database\Dump\DumpFactory;
 use PhpPgAdmin\Database\Actions\DatabaseActions;
 use PhpPgAdmin\Gui\ExportOutputRenderer;
+use PhpPgAdmin\Gui\CompressionFactory;
 /**
  * Does an export of a database, schema, table, or view (via internal PHP dumper or pg_dump fallback).
  * Uses DumpFactory internally; pg_dump is used only if explicitly requested via $_REQUEST['dumper'].
@@ -30,9 +31,24 @@ $misc = AppContainer::getMisc();
 $output_format = $_REQUEST['output_format'] ?? 'sql';
 $insert_format = $_REQUEST['insert_format'] ?? 'copy';
 
-// Are we doing a cluster-wide dump or just a per-database dump
-//$dumpall = $_REQUEST['subject'] == 'server';
-$output_method = $_REQUEST['output'] ?? 'download';
+// Parse composite `output` parameter: 'show' | 'download' | 'download-gzip' | 'download-bzip2' | 'download-zip'
+// No legacy `output_compression` support — keep behavior clean.
+$rawOutput = $_REQUEST['output'] ?? 'download';
+$parts = array_pad(explode('-', $rawOutput, 2), 2, 'plain');
+$output_method = ($parts[0] === 'show') ? 'show' : 'download';
+$compToken = strtolower($parts[1]);
+$compMap = [
+	'gzip' => 'gzipped',
+	'gz' => 'gzipped',
+	'gzipped' => 'gzipped',
+	'bzip2' => 'bzip2',
+	'bz2' => 'bzip2',
+	'zip' => 'zip',
+	'download' => 'download',
+	'plain' => 'download',
+	'' => 'download'
+];
+$output_compression = $compMap[$compToken] ?? 'download';
 
 // Determine dumper selection
 $dumper = $_REQUEST['dumper'] ?? 'internal';
@@ -72,27 +88,23 @@ if ($use_internal) {
 	];
 
 	// Set response headers and open output stream
-	if ($output_method === 'gzipped') {
-		// Use the centralized gzip stream handling
-		$output_stream = ExportOutputRenderer::beginGzipStream($filename_base);
-		if ($output_stream === null) {
-			die('Error: Could not initialize gzipped output stream');
-		}
-
-		// Set the dumper to use this stream
-		$dumper = DumpFactory::create($subject, $pg);
-		$dumper->setOutputStream($output_stream);
-	} elseif ($output_method === 'show') {
+	if ($output_method === 'show') {
 		ExportOutputRenderer::beginHtmlOutput(null, null);
 		$output_stream = null; // Show mode uses echo directly
 	} else {
-		// 'download' mode - use streaming to php://output for memory efficiency
-		$output_stream = ExportOutputRenderer::beginDownloadStream($filename_base, 'application/sql', 'sql');
+		// Use CompressionFactory for the requested compression (default to 'download')
+		try {
+			$strategy_key = $output_compression ?? 'download';
+			$strategy = CompressionFactory::create($strategy_key);
+			if (!$strategy) {
+				die("Error: Unsupported output method: " . htmlspecialchars($strategy_key));
+			}
+			$handle = $strategy->begin($filename_base);
+			$output_stream = $handle['stream'];
+		} catch (\Exception $e) {
+			die("Error: " . htmlspecialchars($e->getMessage()));
+		}
 	}
-
-	// Output dump header
-	//echo "-- ", AppContainer::getAppName(), " ", AppContainer::getAppVersion(), " PostgreSQL dump\n";
-	//echo "-- Generated: " . date('Y-m-d H:i:s') . "\n\n";
 
 	// Execute dump via internal dumper
 	// Note: Dumpers handle their own transaction management (beginDump/endDump)
@@ -108,7 +120,7 @@ if ($use_internal) {
 			$dumper->dump($subject, $params, $options);
 
 			// For gzipped streams, flush periodically
-			if ($output_method === 'gzipped') {
+			if ($output_compression === 'gzipped' && $output_stream) {
 				fflush($output_stream);
 			}
 		}
@@ -118,8 +130,8 @@ if ($use_internal) {
 	}
 
 	// Handle output stream closing
-	if ($output_method === 'gzipped' || $output_method === 'download') {
-		ExportOutputRenderer::endOutputStream($output_stream);
+	if ($output_method !== 'show' && isset($strategy) && isset($handle)) {
+		$strategy->finish($handle);
 	} elseif ($output_method === 'show') {
 		// Close HTML output for show mode
 		ExportOutputRenderer::endHtmlOutput();
@@ -167,20 +179,49 @@ if ($use_pg_dumpall) {
 	}
 
 	// Execute based on output method
-	if ($output_method === 'gzipped') {
-		$output_stream = ExportOutputRenderer::beginGzipStream($filename_base);
-		if ($output_stream === null) {
-			die('Error: Could not initialize gzipped output stream');
-		}
-		execute_dump_command_streaming($cmd, $output_stream);
-		ExportOutputRenderer::endOutputStream($output_stream);
-	} elseif ($output_method === 'download') {
-		$output_stream = ExportOutputRenderer::beginDownloadStream($filename_base, 'application/sql', 'sql');
-		execute_dump_command_streaming($cmd, $output_stream);
-		ExportOutputRenderer::endOutputStream($output_stream);
-	} elseif ($output_method === 'show') {
+	if ($output_method === 'show') {
+		ExportOutputRenderer::beginHtmlOutput($pg_dumpall_path, '');
+		checkAndWarnVersionMismatch($pg_dumpall, 'pg_dumpall', $server_info);
 		execute_dump_command($cmd, 'show');
 		ExportOutputRenderer::endHtmlOutput();
+	} elseif ($output_compression === 'zip') {
+		// For ZIP with pg_dump: stream directly into ZipStream
+		$zip = ExportOutputRenderer::beginZipStream($filename_base);
+		if ($zip === null) {
+			die('Error: Zip output not available. Ensure maennchen/zipstream-php is installed and the zlib extension is enabled.');
+		}
+		$descriptors = [
+			0 => ['pipe', 'r'],  // stdin
+			1 => ['pipe', 'w'],  // stdout (pg_dumpall output)
+			2 => ['pipe', 'w'],  // stderr
+		];
+		$process = proc_open($cmd, $descriptors, $pipes);
+		if (is_resource($process)) {
+			fclose($pipes[0]);
+			// Add the pg_dumpall stdout stream directly as the single zip entry
+			$zip->addFileFromStream("{$filename_base}.sql", $pipes[1]);
+			fclose($pipes[1]);
+			fclose($pipes[2]);
+			proc_close($process);
+		} else {
+			echo "-- ERROR: Could not execute command\n";
+		}
+		$zip->finish();
+	} else {
+		// download or gzipped - use compression strategy
+		try {
+			$strategy_key = $output_compression ?? 'download';
+			$strategy = CompressionFactory::create($strategy_key);
+			if (!$strategy) {
+				die("Error: Unsupported output method: " . htmlspecialchars($strategy_key));
+			}
+			$handle = $strategy->begin($filename_base);
+			$output_stream = $handle['stream'];
+			execute_dump_command_streaming($cmd, $output_stream);
+			$strategy->finish($handle);
+		} catch (\Exception $e) {
+			die("Error: " . htmlspecialchars($e->getMessage()));
+		}
 	}
 	exit;
 }
@@ -258,38 +299,7 @@ if ($use_pgdump && !empty($selected_databases)) {
 	$cmd = $db_commands;
 
 	// Set headers and execute
-	if ($output_method === 'gzipped') {
-		$output_stream = ExportOutputRenderer::beginGzipStream($filename_base);
-		if ($output_stream === null) {
-			die('Error: Could not initialize gzipped output stream');
-		}
-		foreach ($cmd as $idx => $db_cmd) {
-			$dbName = $db_names[$idx] ?? null;
-			if ($dbName !== null) {
-				$header = "--\n-- Dumping database: \"" . addslashes($dbName) . "\"\n--\n\\connect \"" . addslashes($dbName) . "\"\n\\encoding UTF8\nSET client_encoding = 'UTF8';\nSET session_replication_role = 'replica';\n\n";
-				fwrite($output_stream, $header);
-			}
-			execute_dump_command_streaming($db_cmd, $output_stream);
-			// Reset replication role after this database stream
-			fwrite($output_stream, "SET session_replication_role = 'origin';\n\n");
-			fflush($output_stream);
-		}
-		ExportOutputRenderer::endOutputStream($output_stream);
-	} elseif ($output_method === 'download') {
-		$output_stream = ExportOutputRenderer::beginDownloadStream($filename_base, 'application/sql', 'sql');
-		foreach ($cmd as $idx => $db_cmd) {
-			$dbName = $db_names[$idx] ?? null;
-			if ($dbName !== null) {
-				$header = "--\n-- Dumping database: \"" . addslashes($dbName) . "\"\n--\n\\connect \"" . addslashes($dbName) . "\"\n\\encoding UTF8\nSET client_encoding = 'UTF8';\nSET session_replication_role = 'replica';\n\n";
-				fwrite($output_stream, $header);
-			}
-			execute_dump_command_streaming($db_cmd, $output_stream);
-			// Reset replication role after this database stream
-			fwrite($output_stream, "SET session_replication_role = 'origin';\n\n");
-			fflush($output_stream);
-		}
-		ExportOutputRenderer::endOutputStream($output_stream);
-	} elseif ($output_method === 'show') {
+	if ($output_method === 'show') {
 		ExportOutputRenderer::beginHtmlOutput($exe_path_pgdump, floatval($version[1] ?? ''));
 		foreach ($cmd as $idx => $db_cmd) {
 			$dbName = $db_names[$idx] ?? null;
@@ -303,9 +313,52 @@ if ($use_pgdump && !empty($selected_databases)) {
 			}
 		}
 		ExportOutputRenderer::endHtmlOutput();
+	} elseif ($output_compression === 'zip') {
+		// For ZIP with multiple databases: stream all into single ZIP entry
+		$zip = ExportOutputRenderer::beginZipStream($filename_base);
+		if ($zip === null) {
+			die('Error: Zip output not available. Ensure maennchen/zipstream-php is installed and the zlib extension is enabled.');
+		}
+
+		// Use php://temp to accumulate all database dumps
+		$temp = fopen('php://temp', 'w+');
+		foreach ($cmd as $idx => $db_cmd) {
+			$dbName = $db_names[$idx] ?? null;
+			if ($dbName !== null) {
+				$header = "--\n-- Dumping database: \"" . addslashes($dbName) . "\"\n--\n\\connect \"" . addslashes($dbName) . "\"\n\\encoding UTF8\nSET client_encoding = 'UTF8';\nSET session_replication_role = 'replica';\n\n";
+				fwrite($temp, $header);
+			}
+			execute_dump_command_streaming($db_cmd, $temp);
+			fwrite($temp, "SET session_replication_role = 'origin';\n\n");
+			fflush($temp);
+		}
+		rewind($temp);
+		$zip->addFileFromStream("{$filename_base}.sql", $temp);
+		fclose($temp);
+		$zip->finish();
 	} else {
-		foreach ($cmd as $db_cmd) {
-			execute_dump_command($db_cmd, $output_method);
+		// download or gzipped - use compression strategy
+		try {
+			$strategy_key = $output_compression ?? 'download';
+			$strategy = CompressionFactory::create($strategy_key);
+			if (!$strategy) {
+				die("Error: Unsupported output method: " . htmlspecialchars($strategy_key));
+			}
+			$handle = $strategy->begin($filename_base);
+			$output_stream = $handle['stream'];
+			foreach ($cmd as $idx => $db_cmd) {
+				$dbName = $db_names[$idx] ?? null;
+				if ($dbName !== null) {
+					$header = "--\n-- Dumping database: \"" . addslashes($dbName) . "\"\n--\n\\connect \"" . addslashes($dbName) . "\"\n\\encoding UTF8\nSET client_encoding = 'UTF8';\nSET session_replication_role = 'replica';\n\n";
+					fwrite($output_stream, $header);
+				}
+				execute_dump_command_streaming($db_cmd, $output_stream);
+				fwrite($output_stream, "SET session_replication_role = 'origin';\n\n");
+				fflush($output_stream);
+			}
+			$strategy->finish($handle);
+		} catch (\Exception $e) {
+			die("Error: " . htmlspecialchars($e->getMessage()));
 		}
 	}
 	exit;
@@ -386,35 +439,7 @@ if ($use_pgdump) {
 	}
 
 	// Set headers for gzipped/download/show and execute
-	if ($output_method === 'gzipped') {
-		$output_stream = ExportOutputRenderer::beginGzipStream($filename_base);
-		if ($output_stream === null) {
-			die('Error: Could not initialize gzipped output stream');
-		}
-		// If we know the target database (from request), emit header + connect
-		$targetDb = $_REQUEST['database'] ?? null;
-		if ($targetDb) {
-			$header = "--\n-- Dumping database: \"" . addslashes($targetDb) . "\"\n--\n\\connect \"" . addslashes($targetDb) . "\"\n\\encoding UTF8\nSET client_encoding = 'UTF8';\nSET session_replication_role = 'replica';\n\n";
-			fwrite($output_stream, $header);
-		}
-		execute_dump_command_streaming($cmd, $output_stream);
-		// Reset replication role after this database stream
-		fwrite($output_stream, "SET session_replication_role = 'origin';\n\n");
-		fflush($output_stream);
-		ExportOutputRenderer::endOutputStream($output_stream);
-	} elseif ($output_method === 'download') {
-		$output_stream = ExportOutputRenderer::beginDownloadStream($filename_base, 'application/sql', 'sql');
-		$targetDb = $_REQUEST['database'] ?? null;
-		if ($targetDb) {
-			$header = "--\n-- Dumping database: \"" . addslashes($targetDb) . "\"\n--\n\\connect \"" . addslashes($targetDb) . "\"\n\\encoding UTF8\nSET client_encoding = 'UTF8';\nSET session_replication_role = 'replica';\n\n";
-			fwrite($output_stream, $header);
-		}
-		execute_dump_command_streaming($cmd, $output_stream);
-		// Reset replication role after this database stream
-		fwrite($output_stream, "SET session_replication_role = 'origin';\n\n");
-		fflush($output_stream);
-		ExportOutputRenderer::endOutputStream($output_stream);
-	} elseif ($output_method === 'show') {
+	if ($output_method === 'show') {
 		ExportOutputRenderer::beginHtmlOutput($exe_path, $version[1]);
 		$targetDb = $_REQUEST['database'] ?? null;
 		if ($targetDb) {
@@ -426,8 +451,51 @@ if ($use_pgdump) {
 			echo htmlspecialchars("SET session_replication_role = 'origin';\n\n");
 		}
 		ExportOutputRenderer::endHtmlOutput();
+	} elseif ($output_compression === 'zip') {
+		// Stream pg_dump output directly into a single-entry ZIP archive
+		$zip = ExportOutputRenderer::beginZipStream($filename_base);
+		if ($zip === null) {
+			die('Error: Zip output not available. Ensure maennchen/zipstream-php is installed and the zlib extension is enabled.');
+		}
+		$descriptors = [
+			0 => ['pipe', 'r'],  // stdin
+			1 => ['pipe', 'w'],  // stdout (pg_dump output)
+			2 => ['pipe', 'w'],  // stderr
+		];
+		$process = proc_open($cmd, $descriptors, $pipes);
+		if (is_resource($process)) {
+			fclose($pipes[0]);
+			// Add the pg_dump stdout stream directly as the single zip entry
+			$zip->addFileFromStream("{$filename_base}.sql", $pipes[1]);
+			fclose($pipes[1]);
+			fclose($pipes[2]);
+			proc_close($process);
+		} else {
+			echo "-- ERROR: Could not execute command\n";
+		}
+		$zip->finish();
 	} else {
-		execute_dump_command($cmd, $output_method);
+		// download or gzipped - use compression strategy
+		try {
+			$strategy_key = $output_compression ?? 'download';
+			$strategy = CompressionFactory::create($strategy_key);
+			if (!$strategy) {
+				die("Error: Unsupported output method: " . htmlspecialchars($strategy_key));
+			}
+			$handle = $strategy->begin($filename_base);
+			$output_stream = $handle['stream'];
+			$targetDb = $_REQUEST['database'] ?? null;
+			if ($targetDb) {
+				$header = "--\n-- Dumping database: \"" . addslashes($targetDb) . "\"\n--\n\\connect \"" . addslashes($targetDb) . "\"\n\\encoding UTF8\nSET client_encoding = 'UTF8';\nSET session_replication_role = 'replica';\n\n";
+				fwrite($output_stream, $header);
+			}
+			execute_dump_command_streaming($cmd, $output_stream);
+			fwrite($output_stream, "SET session_replication_role = 'origin';\n\n");
+			fflush($output_stream);
+			$strategy->finish($handle);
+		} catch (\Exception $e) {
+			die("Error: " . htmlspecialchars($e->getMessage()));
+		}
 	}
 	exit;
 }

@@ -209,10 +209,9 @@ function frameSetHandler() {
 		url += (url.includes("?") ? "&" : "?") + "target=content";
 		console.log("Fetching:", url, options);
 
-		// Check if this is a download request (gzipped or download output)
+		// Check if this is a download request (any output starting with 'download')
 		const urlObj = new URL(url, window.location.href);
-		const output = urlObj.searchParams.get("output");
-		if (output === "download" || output === "gzipped") {
+		if (urlObj.searchParams.get("output")?.startsWith("download")) {
 			// For actual file downloads, open in new window and let browser handle it
 			console.log("Opening download in new window:", url);
 			window.open(url, "_blank");

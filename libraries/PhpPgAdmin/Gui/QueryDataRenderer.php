@@ -97,8 +97,16 @@ class QueryDataRenderer
                     <label for="output_download"><?= $this->lang['strdownloadasfile']; ?></label>
                 </div>
                 <div>
-                    <input type="radio" id="output_gzipped" name="output" value="gzipped" />
-                    <label for="output_gzipped"><?= $this->lang['strdownloadasgzipped']; ?></label>
+                    <input type="radio" id="output_download_gzip" name="output" value="download-gzip" />
+                    <label for="output_download_gzip"><?= $this->lang['strdownloadasgzipped'] ?? 'Download as Gzip'; ?></label>
+                </div>
+                <div>
+                    <input type="radio" id="output_download_bzip2" name="output" value="download-bzip2" />
+                    <label for="output_download_bzip2"><?= $this->lang['strdownloadasbzip2'] ?? 'Download as Bzip2'; ?></label>
+                </div>
+                <div>
+                    <input type="radio" id="output_download_zip" name="output" value="download-zip" />
+                    <label for="output_download_zip"><?= $this->lang['strdownloadaszip'] ?? 'Download as ZIP'; ?></label>
                 </div>
             </fieldset>
 
