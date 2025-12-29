@@ -335,8 +335,8 @@ function handle_status(): void
         echo json_encode(['error' => 'job not found']);
         exit;
     }
-    // If job was cancelled, return current state without processing
-    if (isset($state['status']) && $state['status'] === 'cancelled') {
+    // If job was paused, return current state without processing
+    if (isset($state['status']) && $state['status'] === 'paused') {
         echo json_encode($state);
         exit;
     }
@@ -376,7 +376,7 @@ function validate_job_and_acquire_lock($jobId): array
     }
 
     $state = ImportJob::readState($jobDir);
-    if (isset($state['status']) && $state['status'] === 'cancelled') {
+    if (isset($state['status']) && $state['status'] === 'paused') {
         ImportJob::releaseLock($lock);
         echo json_encode($state);
         exit;
@@ -771,7 +771,7 @@ function handle_list_jobs(): void
     echo json_encode(['jobs' => $out]);
 }
 
-function handle_cancel_job(): void
+function handle_pause_job(): void
 {
     header('Content-Type: application/json');
     $jobId = $_REQUEST['job_id'] ?? '';
@@ -800,7 +800,7 @@ function handle_cancel_job(): void
         exit;
     }
     $s = ImportJob::readState($jobDir);
-    $s['status'] = 'cancelled';
+    $s['status'] = 'paused';
     $s['last_activity'] = time();
     ImportJob::writeState($jobDir, $s);
     ImportJob::releaseLock($lock);
@@ -836,7 +836,7 @@ function handle_resume_job(): void
         exit;
     }
     $s = ImportJob::readState($jobDir);
-    if (isset($s['status']) && $s['status'] === 'cancelled') {
+    if (isset($s['status']) && $s['status'] === 'paused') {
         $s['status'] = 'running';
         $s['last_activity'] = time();
         ImportJob::writeState($jobDir, $s);
@@ -844,7 +844,61 @@ function handle_resume_job(): void
         echo json_encode(['ok' => true]);
     } else {
         ImportJob::releaseLock($lock);
-        echo json_encode(['ok' => false, 'reason' => 'not_cancelled']);
+        echo json_encode(['ok' => false, 'reason' => 'not_paused']);
+    }
+}
+
+function handle_delete_job(): void
+{
+    header('Content-Type: application/json');
+
+    $jobId = $_REQUEST['job_id'] ?? '';
+    if (!$jobId) {
+        echo json_encode(['error' => 'missing job id']);
+        return;
+    }
+
+    try {
+        $jobDir = ImportJob::getDir($jobId);
+    } catch (Exception $e) {
+        echo json_encode(['error' => $e->getMessage()]);
+        return;
+    }
+
+    if (!is_dir($jobDir)) {
+        echo json_encode(['error' => 'job not found']);
+        return;
+    }
+
+    $lock = ImportJob::acquireLock($jobDir, $jobId);
+    if ($lock === false) {
+        echo json_encode(['error' => 'failed to acquire lock']);
+        return;
+    }
+
+    try {
+        $it = new RecursiveDirectoryIterator($jobDir, RecursiveDirectoryIterator::SKIP_DOTS);
+        $files = new RecursiveIteratorIterator($it, RecursiveIteratorIterator::CHILD_FIRST);
+        foreach ($files as $file) {
+            if ($file->isDir()) {
+                @rmdir($file->getRealPath());
+            } else {
+                @unlink($file->getRealPath());
+            }
+        }
+        $removed = @rmdir($jobDir);
+    } catch (Exception $e) {
+        ImportJob::releaseLock($lock);
+        echo json_encode(['error' => 'delete failed: ' . $e->getMessage()]);
+        return;
+    }
+
+    ImportJob::releaseLock($lock);
+
+    if ($removed) {
+        echo json_encode(['ok' => true]);
+    } else {
+        echo json_encode(['error' => 'failed to remove job directory']);
     }
 }
 
@@ -877,11 +931,14 @@ switch ($action) {
     case 'list_jobs':
         handle_list_jobs();
         break;
-    case 'cancel_job':
-        handle_cancel_job();
+    case 'pause_job':
+        handle_pause_job();
         break;
     case 'resume_job':
         handle_resume_job();
+        break;
+    case 'delete_job':
+        handle_delete_job();
         break;
     case 'process':
         handle_process();

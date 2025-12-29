@@ -4,6 +4,33 @@ import { refreshEmbeddedJobList } from "./jobs.js";
 
 let activeImportJobId = null;
 
+// Clear active job and UI when a job is deleted elsewhere
+document.addEventListener("import:deleted", (e) => {
+	try {
+		const jid = e && e.detail && e.detail.jobId;
+		if (jid && jid === activeImportJobId) {
+			activeImportJobId = null;
+			try {
+				highlightActiveJob(null);
+			} catch (err) {}
+			const importUI = el("importUI");
+			if (importUI) importUI.style.display = "none";
+			const uploadPhase = el("uploadPhase");
+			if (uploadPhase) uploadPhase.style.display = "none";
+			const importPhase = el("importPhase");
+			if (importPhase) importPhase.style.display = "none";
+			const importLog = el("importLog");
+			if (importLog) importLog.textContent = "";
+			const importStatus = el("importStatus");
+			if (importStatus) importStatus.textContent = "";
+			const importProgress = el("importProgress");
+			if (importProgress) importProgress.value = 0;
+		}
+	} catch (ex) {
+		console.error("Error handling import:deleted", ex);
+	}
+});
+
 export const highlightActiveJob = (jobId) => {
 	document.querySelectorAll(".import-job-row").forEach((row) => {
 		if (row.dataset.jobId === jobId) {
@@ -83,7 +110,7 @@ export const runImportLoop = async (jobId, totalSize) => {
 			);
 			if (statusResp.ok) {
 				const sdata = await statusResp.json();
-				if (sdata.status === "cancelled") {
+				if (sdata.status === "paused") {
 					try {
 						const resumeResp = await fetch(
 							appendServerToUrl(

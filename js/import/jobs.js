@@ -32,7 +32,7 @@ export function createJobRowFromTemplate(j, updater) {
 		if (j.status === "running") {
 			if (deleteBtn) deleteBtn.style.display = "none";
 		}
-	} else if (j.status === "cancelled" || j.status === "error") {
+	} else if (j.status === "paused" || j.status === "error") {
 		if (startBtn) startBtn.style.display = "none";
 		if (resumeBtn) {
 			resumeBtn.style.display = "inline-block";
@@ -47,105 +47,114 @@ export function createJobRowFromTemplate(j, updater) {
 		if (deleteBtn) deleteBtn.style.display = "inline-block";
 	}
 
-	if (viewBtn)
-		viewBtn.addEventListener("click", () =>
-			document.dispatchEvent(
-				new CustomEvent("import:view", {
-					detail: { jobId: j.job_id, size: j.size },
-				})
-			)
-		);
-	if (startBtn)
-		startBtn.addEventListener("click", () =>
-			document.dispatchEvent(
-				new CustomEvent("import:start", {
-					detail: { jobId: j.job_id, size: j.size },
-				})
-			)
-		);
-	if (cancelBtn)
-		cancelBtn.addEventListener("click", () => {
-			if (!confirm("Are you sure you want to cancel this job?")) return;
-			fetch(
+	viewBtn?.addEventListener("click", () =>
+		document.dispatchEvent(
+			new CustomEvent("import:view", {
+				detail: { jobId: j.job_id, size: j.size },
+			})
+		)
+	);
+
+	startBtn?.addEventListener("click", () =>
+		document.dispatchEvent(
+			new CustomEvent("import:start", {
+				detail: { jobId: j.job_id, size: j.size },
+			})
+		)
+	);
+
+	cancelBtn?.addEventListener("click", async () => {
+		if (!confirm("Are you sure you want to pause this job?")) return;
+		try {
+			await fetch(
 				appendServerToUrl(
-					"dbimport.php?action=cancel_job&job_id=" +
+					"dbimport.php?action=pause_job&job_id=" +
 						encodeURIComponent(j.job_id)
 				),
 				{ method: "POST" }
-			).then(() => {
-				if (typeof updater === "function") updater();
-			});
-		});
-	if (resumeBtn)
-		resumeBtn.addEventListener("click", () => {
-			fetch(
+			);
+			if (typeof updater === "function") updater();
+		} catch (e) {
+			console.error("Pause failed", e);
+			alert("Pause failed: " + e);
+		}
+	});
+
+	resumeBtn?.addEventListener("click", async () => {
+		try {
+			await fetch(
 				appendServerToUrl(
 					"dbimport.php?action=resume_job&job_id=" +
 						encodeURIComponent(j.job_id)
 				),
 				{ method: "POST" }
-			).then(() => {
-				if (typeof updater === "function") updater();
-				document.dispatchEvent(
-					new CustomEvent("import:start", {
-						detail: { jobId: j.job_id, size: j.size },
-					})
-				);
-			});
-		});
-	if (deleteBtn)
-		deleteBtn.addEventListener("click", () => {
-			if (
-				!confirm(
-					"Are you sure you want to delete this job? This cannot be undone."
-				)
-			)
-				return;
-			fetch(
+			);
+			if (typeof updater === "function") updater();
+			document.dispatchEvent(
+				new CustomEvent("import:start", {
+					detail: { jobId: j.job_id, size: j.size },
+				})
+			);
+		} catch (e) {
+			console.error("Resume failed", e);
+			alert("Resume failed: " + e);
+		}
+	});
+
+	deleteBtn?.addEventListener("click", async () => {
+		// Todo: add translations
+		const msg = `Job "${j.job_id}"\n\nAre you sure you want to delete this job?\nThis cannot be undone.`;
+		if (!confirm(msg)) return;
+		try {
+			const resp = await fetch(
 				appendServerToUrl(
 					"dbimport.php?action=delete_job&job_id=" +
 						encodeURIComponent(j.job_id)
 				),
 				{ method: "POST" }
-			)
-				.then((r) => r.json())
-				.then((res) => {
-					if (res.error) {
-						alert("Delete failed: " + res.error);
-					} else {
-						if (typeof updater === "function") updater();
-					}
+			);
+			const res = await resp.json();
+			if (res.error) {
+				//alert("Delete failed: " + res.error);
+				throw new Error(res.error);
+			}
+			if (typeof updater === "function") updater();
+			document.dispatchEvent(
+				new CustomEvent("import:deleted", {
+					detail: { jobId: j.job_id },
 				})
-				.catch((e) => alert("Delete failed: " + e));
-		});
+			);
+		} catch (e) {
+			console.error("Delete failed", e);
+			alert("Delete failed: " + e);
+		}
+	});
 
 	return frag;
 }
 
-export function refreshEmbeddedJobList() {
+export async function refreshEmbeddedJobList() {
 	const container = el("uploadedJobsList");
 	if (!container) return;
 	container.textContent = "Loading...";
 	const showAllParam2 = el("opt_show_all")?.checked ? "&show_all=1" : "";
-	fetch(appendServerToUrl("dbimport.php?action=list_jobs" + showAllParam2))
-		.then((r) => r.json())
-		.then((data) => {
-			const jobs = data && data.jobs ? data.jobs : [];
-			container.innerHTML = "";
-			if (jobs.length === 0) {
-				container.textContent = "No uploaded jobs";
-				return;
-			}
-			jobs.forEach((j) => {
-				const node = createJobRowFromTemplate(
-					j,
-					refreshEmbeddedJobList
-				);
-				container.appendChild(node);
-			});
-		})
-		.catch((e) => {
-			container.textContent = "Failed to load jobs";
-			console.error(e);
+	try {
+		const resp = await fetch(
+			appendServerToUrl("dbimport.php?action=list_jobs" + showAllParam2)
+		);
+		const data = await resp.json();
+		const jobs = data && data.jobs ? data.jobs : [];
+		container.innerHTML = "";
+		if (jobs.length === 0) {
+			container.textContent = "No uploaded jobs";
+			return;
+		}
+		jobs.forEach((j) => {
+			const node = createJobRowFromTemplate(j, refreshEmbeddedJobList);
+			container.appendChild(node);
 		});
+	} catch (e) {
+		container.textContent = "Failed to load jobs";
+		console.error(e);
+	}
 }

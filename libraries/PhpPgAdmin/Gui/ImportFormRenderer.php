@@ -142,7 +142,7 @@ class ImportFormRenderer extends AbstractContext
                 <div class="job-actions">
                     <button class="job-btn view">View</button>
                     <button class="job-btn start">Start</button>
-                    <button class="job-btn cancel">Cancel</button>
+                    <button class="job-btn cancel">Pause</button>
                     <button class="job-btn resume">Resume</button>
                     <button class="job-btn delete">Delete</button>
                 </div>

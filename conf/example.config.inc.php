@@ -190,10 +190,28 @@ $conf['import']['lock_mode'] = 'pg_advisory';
 $conf['import']['stale_lock_age'] = 3600;
 // Maximum allowed upload size in bytes (0 = unlimited).
 $conf['import']['upload_max_size'] = 0;
-// Default chunk size used by uploads (bytes).
-$conf['import']['chunk_size'] = 5 * 1024 * 1024;
+// Maximum chunk size in bytes for chunked uploads .
+$conf['import']['upload_chunk_size'] = 5 * 1024 * 1024; // 5 MB per upload chunk (default)
+// Size of parser chunks in bytes.
+$conf['import']['chunk_size'] = 2 * 1024 * 1024; // 2 MB per parser chunk (default)
 // Maximum number of parser chunks processed per request for compressed inputs.
+// This setting caps how many parser "chunks" (reader->read + parse cycles)
+// are performed in a single HTTP `process` request. Each chunk typically
+// reads up to `chunk_size` bytes from the input reader, so a rough upper
+// bound on bytes processed per request is `chunk_size * max_chunks_per_request`.
+// For plain (uncompressed) uploads the code defaults to 1 chunk; for
+// compressed inputs a small number of chunks (default 3) allows steady
+// progress while keeping per-request work predictable.
 $conf['import']['max_chunks_per_request'] = 3;
+
+// Maximum execution time (seconds) per process request.
+// This is a wall-clock deadline checked between chunk iterations. It stops
+// starting new chunk reads/parses once the deadline is reached, but it does
+// NOT interrupt a single in-progress read/parse call. Therefore this value
+// provides a time-based safety net while `max_chunks_per_request` provides a
+// deterministic iteration/byte bound. Both settings ensure predictable
+// per-request resource usage.
+$conf['import']['process_time_limit'] = 2.0; // 2 seconds per request
 // How long (seconds) before an inactive job is considered eligible for GC.
 $conf['import']['job_lifetime'] = 24 * 3600; // 24 hours
 // Whether compressed uploads (gzip/bzip2/zip) are accepted.

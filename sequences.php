@@ -1,6 +1,9 @@
 <?php
 
 use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\Actions\RoleActions;
+use PhpPgAdmin\Database\Actions\SchemaActions;
+use PhpPgAdmin\Database\Actions\SequenceActions;
 
 /**
  * Manage sequences in a database
@@ -11,32 +14,30 @@ use PhpPgAdmin\Core\AppContainer;
 // Include application functions
 include_once('./libraries/bootstrap.php');
 
-$action = $_REQUEST['action'] ?? '';
-if (!isset($msg)) $msg = '';
-
 /**
  * Display list of all sequences in the database/schema
  */
 function doDefault($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$conf = AppContainer::getConf();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$sequenceActions = new SequenceActions($pg);
 
 	$misc->printTrail('schema');
 	$misc->printTabs('schema', 'sequences');
 	$misc->printMsg($msg);
 
 	// Get all sequences
-	$sequences = $data->getSequences();
+	$sequences = $sequenceActions->getSequences();
 
 	$columns = [
 		'sequence' => [
 			'title' => $lang['strsequence'],
 			'field' => field('seqname'),
-			'url'   => "sequences.php?action=properties&amp;{$misc->href}&amp;",
-			'vars'  => ['sequence' => 'seqname'],
+			'url' => "sequences.php?action=properties&amp;{$misc->href}&amp;",
+			'vars' => ['sequence' => 'seqname'],
 		],
 		'owner' => [
 			'title' => $lang['strowner'],
@@ -101,20 +102,22 @@ function doDefault($msg = '')
 
 	$misc->printTable($sequences, $columns, $actions, 'sequences-sequences', $lang['strnosequences']);
 
-	$misc->printNavLinks(['create' => [
-		'attr' => [
-			'href' => [
-				'url' => 'sequences.php',
-				'urlvars' => [
-					'action' => 'create',
-					'server' => $_REQUEST['server'],
-					'database' => $_REQUEST['database'],
-					'schema' => $_REQUEST['schema']
+	$misc->printNavLinks([
+		'create' => [
+			'attr' => [
+				'href' => [
+					'url' => 'sequences.php',
+					'urlvars' => [
+						'action' => 'create',
+						'server' => $_REQUEST['server'],
+						'database' => $_REQUEST['database'],
+						'schema' => $_REQUEST['schema']
+					]
 				]
-			]
-		],
-		'content' => $lang['strcreatesequence']
-	]], 'sequences-sequences', get_defined_vars());
+			],
+			'content' => $lang['strcreatesequence']
+		]
+	], 'sequences-sequences', get_defined_vars());
 }
 
 /**
@@ -123,15 +126,16 @@ function doDefault($msg = '')
 function doTree()
 {
 	$misc = AppContainer::getMisc();
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
+	$sequenceActions = new SequenceActions($pg);
 
-	$sequences = $data->getSequences();
+	$sequences = $sequenceActions->getSequences();
 
 	$reqvars = $misc->getRequestVars('sequence');
 
 	$attrs = [
-		'text'   => field('seqname'),
-		'icon'   => 'Sequence',
+		'text' => field('seqname'),
+		'icon' => 'Sequence',
 		'toolTip' => field('seqcomment'),
 		'action' => url(
 			'sequences.php',
@@ -152,28 +156,28 @@ function doTree()
  */
 function doProperties($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$sequenceActions = new SequenceActions($pg);
 
 	$misc->printTrail('sequence');
 	$misc->printTitle($lang['strproperties'], 'pg.sequence');
 	$misc->printMsg($msg);
 
 	// Fetch the sequence information
-	$sequence = $data->getSequence($_REQUEST['sequence']);
+	$sequence = $sequenceActions->getSequence($_REQUEST['sequence']);
 
 	if (is_object($sequence) && $sequence->recordCount() > 0) {
-		$sequence->fields['is_cycled'] = $data->phpBool($sequence->fields['is_cycled']);
-		$sequence->fields['is_called'] = $data->phpBool($sequence->fields['is_called']);
-
+		$sequence->fields['is_cycled'] = $pg->phpBool($sequence->fields['is_cycled']);
+		$sequence->fields['is_called'] = $pg->phpBool($sequence->fields['is_called']);
 		// Show comment if any
 		if ($sequence->fields['seqcomment'] !== null)
 			echo "<p class=\"comment\">", $misc->printVal($sequence->fields['seqcomment']), "</p>\n";
 
 		echo "<table border=\"0\">";
 		echo "<tr><th class=\"data\">{$lang['strname']}</th>";
-		if ($data->hasAlterSequenceStart()) {
+		if ($pg->hasAlterSequenceStart()) {
 			echo "<th class=\"data\">{$lang['strstartvalue']}</th>";
 		}
 		echo "<th class=\"data\">{$lang['strlastvalue']}</th>";
@@ -186,7 +190,7 @@ function doProperties($msg = '')
 		echo "<th class=\"data\">{$lang['striscalled']}</th></tr>";
 		echo "<tr>";
 		echo "<td class=\"data1\">", $misc->printVal($sequence->fields['seqname']), "</td>";
-		if ($data->hasAlterSequenceStart()) {
+		if ($pg->hasAlterSequenceStart()) {
 			echo "<td class=\"data1\">", $misc->printVal($sequence->fields['start_value']), "</td>";
 		}
 		echo "<td class=\"data1\">", $misc->printVal($sequence->fields['last_value']), "</td>";
@@ -291,11 +295,12 @@ function doProperties($msg = '')
 			]
 		];
 
-		if (! $data->hasAlterSequenceStart())
+		if (!$pg->hasAlterSequenceStart())
 			unset($navlinks['restart']);
 
 		$misc->printNavLinks($navlinks, 'sequences-properties', get_defined_vars());
-	} else echo "<p>{$lang['strnodata']}</p>\n";
+	} else
+		echo "<p>{$lang['strnodata']}</p>\n";
 }
 
 /**
@@ -303,9 +308,10 @@ function doProperties($msg = '')
  */
 function doDrop($confirm, $msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$sequenceActions = new SequenceActions($pg);
 
 	if (empty($_REQUEST['sequence']) && empty($_REQUEST['ma'])) {
 		doDefault($lang['strspecifysequencetodrop']);
@@ -340,26 +346,27 @@ function doDrop($confirm, $msg = '')
 	} else {
 		if (is_array($_POST['sequence'])) {
 			$msg = '';
-			$status = $data->beginTransaction();
+			$status = $pg->beginTransaction();
 			if ($status == 0) {
 				foreach ($_POST['sequence'] as $s) {
-					$status = $data->dropSequence($s, isset($_POST['cascade']));
+					$status = $sequenceActions->dropSequence($s, isset($_POST['cascade']));
 					if ($status == 0)
 						$msg .= sprintf('%s: %s<br />', htmlentities($s, ENT_QUOTES, 'UTF-8'), $lang['strsequencedropped']);
 					else {
-						$data->endTransaction();
+						$pg->endTransaction();
 						doDefault(sprintf('%s%s: %s<br />', $msg, htmlentities($s, ENT_QUOTES, 'UTF-8'), $lang['strsequencedroppedbad']));
 						return;
 					}
 				}
 			}
-			if ($data->endTransaction() == 0) {
+			if ($pg->endTransaction() == 0) {
 				// Everything went fine, back to the Default page....
 				AppContainer::setShouldReloadTree(true);
 				doDefault($msg);
-			} else doDefault($lang['strsequencedroppedbad']);
+			} else
+				doDefault($lang['strsequencedroppedbad']);
 		} else {
-			$status = $data->dropSequence($_POST['sequence'], isset($_POST['cascade']));
+			$status = $sequenceActions->dropSequence($_POST['sequence'], isset($_POST['cascade']));
 			if ($status == 0) {
 				AppContainer::setShouldReloadTree(true);
 				doDefault($lang['strsequencedropped']);
@@ -374,16 +381,22 @@ function doDrop($confirm, $msg = '')
  */
 function doCreateSequence($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
 
-	if (!isset($_POST['formSequenceName'])) $_POST['formSequenceName'] = '';
-	if (!isset($_POST['formIncrement'])) $_POST['formIncrement'] = '';
-	if (!isset($_POST['formMinValue'])) $_POST['formMinValue'] = '';
-	if (!isset($_POST['formMaxValue'])) $_POST['formMaxValue'] = '';
-	if (!isset($_POST['formStartValue'])) $_POST['formStartValue'] = '';
-	if (!isset($_POST['formCacheValue'])) $_POST['formCacheValue'] = '';
+	if (!isset($_POST['formSequenceName']))
+		$_POST['formSequenceName'] = '';
+	if (!isset($_POST['formIncrement']))
+		$_POST['formIncrement'] = '';
+	if (!isset($_POST['formMinValue']))
+		$_POST['formMinValue'] = '';
+	if (!isset($_POST['formMaxValue']))
+		$_POST['formMaxValue'] = '';
+	if (!isset($_POST['formStartValue']))
+		$_POST['formStartValue'] = '';
+	if (!isset($_POST['formCacheValue']))
+		$_POST['formCacheValue'] = '';
 
 	$misc->printTrail('schema');
 	$misc->printTitle($lang['strcreatesequence'], 'pg.sequence.create');
@@ -393,28 +406,28 @@ function doCreateSequence($msg = '')
 	echo "<table>\n";
 
 	echo "<tr><th class=\"data left required\">{$lang['strname']}</th>\n";
-	echo "<td class=\"data1\"><input name=\"formSequenceName\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-	htmlspecialchars_nc($_POST['formSequenceName']), "\" /></td></tr>\n";
+	echo "<td class=\"data1\"><input name=\"formSequenceName\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
+		htmlspecialchars_nc($_POST['formSequenceName']), "\" /></td></tr>\n";
 
 	echo "<tr><th class=\"data left\">{$lang['strincrementby']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"formIncrement\" size=\"5\" value=\"",
-	htmlspecialchars_nc($_POST['formIncrement']), "\" /> </td></tr>\n";
+		htmlspecialchars_nc($_POST['formIncrement']), "\" /> </td></tr>\n";
 
 	echo "<tr><th class=\"data left\">{$lang['strminvalue']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"formMinValue\" size=\"5\" value=\"",
-	htmlspecialchars_nc($_POST['formMinValue']), "\" /></td></tr>\n";
+		htmlspecialchars_nc($_POST['formMinValue']), "\" /></td></tr>\n";
 
 	echo "<tr><th class=\"data left\">{$lang['strmaxvalue']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"formMaxValue\" size=\"5\" value=\"",
-	htmlspecialchars_nc($_POST['formMaxValue']), "\" /></td></tr>\n";
+		htmlspecialchars_nc($_POST['formMaxValue']), "\" /></td></tr>\n";
 
 	echo "<tr><th class=\"data left\">{$lang['strstartvalue']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"formStartValue\" size=\"5\" value=\"",
-	htmlspecialchars_nc($_POST['formStartValue']), "\" /></td></tr>\n";
+		htmlspecialchars_nc($_POST['formStartValue']), "\" /></td></tr>\n";
 
 	echo "<tr><th class=\"data left\">{$lang['strcachevalue']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"formCacheValue\" size=\"5\" value=\"",
-	htmlspecialchars_nc($_POST['formCacheValue']), "\" /></td></tr>\n";
+		htmlspecialchars_nc($_POST['formCacheValue']), "\" /></td></tr>\n";
 
 	echo "<tr><th class=\"data left\"><label for=\"formCycledValue\">{$lang['strcancycle']}</label></th>\n";
 	echo "<td class=\"data1\"><input type=\"checkbox\" id=\"formCycledValue\" name=\"formCycledValue\" ", (isset($_POST['formCycledValue']) ? ' checked="checked"' : ''), " /></td></tr>\n";
@@ -432,13 +445,15 @@ function doCreateSequence($msg = '')
  */
 function doSaveCreateSequence()
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
+	$sequenceActions = new SequenceActions($pg);
 
 	// Check that they've given a name and at least one column
-	if ($_POST['formSequenceName'] == '') doCreateSequence($lang['strsequenceneedsname']);
+	if ($_POST['formSequenceName'] == '')
+		doCreateSequence($lang['strsequenceneedsname']);
 	else {
-		$status = $data->createSequence(
+		$status = $sequenceActions->createSequence(
 			$_POST['formSequenceName'],
 			$_POST['formIncrement'],
 			$_POST['formMinValue'],
@@ -460,10 +475,11 @@ function doSaveCreateSequence()
  */
 function doRestart()
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
+	$sequenceActions = new SequenceActions($pg);
 
-	$status = $data->restartSequence($_REQUEST['sequence']);
+	$status = $sequenceActions->restartSequence($_REQUEST['sequence']);
 	if ($status == 0)
 		doProperties($lang['strsequencerestart']);
 	else
@@ -475,10 +491,11 @@ function doRestart()
  */
 function doReset()
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
+	$sequenceActions = new SequenceActions($pg);
 
-	$status = $data->resetSequence($_REQUEST['sequence']);
+	$status = $sequenceActions->resetSequence($_REQUEST['sequence']);
 	if ($status == 0)
 		doProperties($lang['strsequencereset']);
 	else
@@ -490,10 +507,11 @@ function doReset()
  */
 function doNextval()
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
+	$sequenceActions = new SequenceActions($pg);
 
-	$status = $data->nextvalSequence($_REQUEST['sequence']);
+	$status = $sequenceActions->nextvalSequence($_REQUEST['sequence']);
 	if ($status == 0)
 		doProperties($lang['strsequencenextval']);
 	else
@@ -505,10 +523,11 @@ function doNextval()
  */
 function doSaveSetval()
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
+	$sequenceActions = new SequenceActions($pg);
 
-	$status = $data->setvalSequence($_POST['sequence'], $_POST['nextvalue']);
+	$status = $sequenceActions->setvalSequence($_POST['sequence'], $_POST['nextvalue']);
 	if ($status == 0)
 		doProperties($lang['strsequencesetval']);
 	else
@@ -520,24 +539,25 @@ function doSaveSetval()
  */
 function doSetval($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$sequenceActions = new SequenceActions($pg);
 
 	$misc->printTrail('sequence');
 	$misc->printTitle($lang['strsetval'], 'pg.sequence');
 	$misc->printMsg($msg);
 
 	// Fetch the sequence information
-	$sequence = $data->getSequence($_REQUEST['sequence']);
+	$sequence = $sequenceActions->getSequence($_REQUEST['sequence']);
 
 	if (is_object($sequence) && $sequence->recordCount() > 0) {
 		echo "<form action=\"sequences.php\" method=\"post\">\n";
 		echo "<table border=\"0\">";
 		echo "<tr><th class=\"data left required\">{$lang['strlastvalue']}</th>\n";
 		echo "<td class=\"data1\">";
-		echo "<input name=\"nextvalue\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-		$misc->printVal($sequence->fields['last_value']), "\" /></td></tr>\n";
+		echo "<input name=\"nextvalue\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
+			$misc->printVal($sequence->fields['last_value']), "\" /></td></tr>\n";
 		echo "</table>\n";
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"setval\" />\n";
 		echo "<input type=\"hidden\" name=\"sequence\" value=\"", htmlspecialchars_nc($_REQUEST['sequence']), "\" />\n";
@@ -545,7 +565,8 @@ function doSetval($msg = '')
 		echo "<input type=\"submit\" name=\"setval\" value=\"{$lang['strsetval']}\" />\n";
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 		echo "</form>\n";
-	} else echo "<p>{$lang['strnodata']}</p>\n";
+	} else
+		echo "<p>{$lang['strnodata']}</p>\n";
 }
 
 /**
@@ -553,22 +574,32 @@ function doSetval($msg = '')
  */
 function doSaveAlter()
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
 	$misc = AppContainer::getMisc();
+	$sequenceActions = new SequenceActions($pg);
 
 
-	if (!isset($_POST['owner'])) $_POST['owner'] = null;
-	if (!isset($_POST['newschema'])) $_POST['newschema'] = null;
-	if (!isset($_POST['formIncrement'])) $_POST['formIncrement'] = null;
-	if (!isset($_POST['formMinValue'])) $_POST['formMinValue'] = null;
-	if (!isset($_POST['formMaxValue'])) $_POST['formMaxValue'] = null;
-	if (!isset($_POST['formStartValue'])) $_POST['formStartValue'] = null;
-	if (!isset($_POST['formRestartValue'])) $_POST['formRestartValue'] = null;
-	if (!isset($_POST['formCacheValue'])) $_POST['formCacheValue'] = null;
-	if (!isset($_POST['formCycledValue'])) $_POST['formCycledValue'] = null;
+	if (!isset($_POST['owner']))
+		$_POST['owner'] = null;
+	if (!isset($_POST['newschema']))
+		$_POST['newschema'] = null;
+	if (!isset($_POST['formIncrement']))
+		$_POST['formIncrement'] = null;
+	if (!isset($_POST['formMinValue']))
+		$_POST['formMinValue'] = null;
+	if (!isset($_POST['formMaxValue']))
+		$_POST['formMaxValue'] = null;
+	if (!isset($_POST['formStartValue']))
+		$_POST['formStartValue'] = null;
+	if (!isset($_POST['formRestartValue']))
+		$_POST['formRestartValue'] = null;
+	if (!isset($_POST['formCacheValue']))
+		$_POST['formCacheValue'] = null;
+	if (!isset($_POST['formCycledValue']))
+		$_POST['formCycledValue'] = null;
 
-	$status = $data->alterSequence(
+	$status = $sequenceActions->alterSequence(
 		$_POST['sequence'],
 		$_POST['name'],
 		$_POST['comment'],
@@ -590,7 +621,7 @@ function doSaveAlter()
 			// Force a browser reload
 			AppContainer::setShouldReloadPage(true);
 		}
-		if (!empty($_POST['newschema']) && ($_POST['newschema'] != $data->_schema)) {
+		if (!empty($_POST['newschema']) && ($_POST['newschema'] != $pg->_schema)) {
 			// Jump them to the new sequence schema
 			$misc->setCurrentSchema($_POST['newschema']);
 			AppContainer::setShouldReloadTree(true);
@@ -605,38 +636,46 @@ function doSaveAlter()
  */
 function doAlter($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$sequenceActions = new SequenceActions($pg);
+	$roleActions = new RoleActions($pg);
+	$schemaActions = new SchemaActions($pg);
 
 	$misc->printTrail('sequence');
 	$misc->printTitle($lang['stralter'], 'pg.sequence.alter');
 	$misc->printMsg($msg);
 
 	// Fetch the sequence information
-	$sequence = $data->getSequence($_REQUEST['sequence']);
+	$sequence = $sequenceActions->getSequence($_REQUEST['sequence']);
 
 	if (is_object($sequence) && $sequence->recordCount() > 0) {
-		if (!isset($_POST['name'])) $_POST['name'] = $_REQUEST['sequence'];
-		if (!isset($_POST['comment'])) $_POST['comment'] = $sequence->fields['seqcomment'];
-		if (!isset($_POST['owner'])) $_POST['owner'] = $sequence->fields['seqowner'];
-		if (!isset($_POST['newschema'])) $_POST['newschema'] = $sequence->fields['nspname'];
+		if (!isset($_POST['name']))
+			$_POST['name'] = $_REQUEST['sequence'];
+		if (!isset($_POST['comment']))
+			$_POST['comment'] = $sequence->fields['seqcomment'];
+		if (!isset($_POST['owner']))
+			$_POST['owner'] = $sequence->fields['seqowner'];
+		if (!isset($_POST['newschema']))
+			$_POST['newschema'] = $sequence->fields['nspname'];
 
 		// Handle Checkbox Value
-		$sequence->fields['is_cycled'] = $data->phpBool($sequence->fields['is_cycled']);
-		if ($sequence->fields['is_cycled']) $_POST['formCycledValue'] = 'on';
+		$sequence->fields['is_cycled'] = $pg->phpBool($sequence->fields['is_cycled']);
+		if ($sequence->fields['is_cycled'])
+			$_POST['formCycledValue'] = 'on';
 
 		echo "<form action=\"sequences.php\" method=\"post\">\n";
 		echo "<table>\n";
 
 		echo "<tr><th class=\"data left required\">{$lang['strname']}</th>\n";
 		echo "<td class=\"data1\">";
-		echo "<input name=\"name\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-		htmlspecialchars_nc($_POST['name']), "\" /></td></tr>\n";
+		echo "<input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
+			htmlspecialchars_nc($_POST['name']), "\" /></td></tr>\n";
 
-		if ($data->isSuperUser()) {
+		if ($roleActions->isSuperUser()) {
 			// Fetch all users
-			$users = $data->getUsers();
+			$users = $roleActions->getUsers();
 
 			echo "<tr><th class=\"data left required\">{$lang['strowner']}</th>\n";
 			echo "<td class=\"data1\"><select name=\"owner\">";
@@ -648,8 +687,8 @@ function doAlter($msg = '')
 			echo "</select></td></tr>\n";
 		}
 
-		if ($data->hasAlterSequenceSchema()) {
-			$schemas = $data->getSchemas();
+		if ($pg->hasAlterSequenceSchema()) {
+			$schemas = $schemaActions->getSchemas();
 			echo "<tr><th class=\"data left required\">{$lang['strschema']}</th>\n";
 			echo "<td class=\"data1\"><select name=\"newschema\">";
 			while (!$schemas->EOF) {
@@ -663,33 +702,33 @@ function doAlter($msg = '')
 		echo "<tr><th class=\"data left\">{$lang['strcomment']}</th>\n";
 		echo "<td class=\"data1\">";
 		echo "<textarea rows=\"3\" cols=\"32\" name=\"comment\">",
-		htmlspecialchars_nc($_POST['comment']), "</textarea></td></tr>\n";
+			htmlspecialchars_nc($_POST['comment']), "</textarea></td></tr>\n";
 
-		if ($data->hasAlterSequenceStart()) {
+		if ($pg->hasAlterSequenceStart()) {
 			echo "<tr><th class=\"data left\">{$lang['strstartvalue']}</th>\n";
 			echo "<td class=\"data1\"><input name=\"formStartValue\" size=\"5\" value=\"",
-			htmlspecialchars_nc($sequence->fields['start_value']), "\" /></td></tr>\n";
+				htmlspecialchars_nc($sequence->fields['start_value']), "\" /></td></tr>\n";
 		}
 
 		echo "<tr><th class=\"data left\">{$lang['strrestartvalue']}</th>\n";
 		echo "<td class=\"data1\"><input name=\"formRestartValue\" size=\"5\" value=\"",
-		htmlspecialchars_nc($sequence->fields['last_value']), "\" /></td></tr>\n";
+			htmlspecialchars_nc($sequence->fields['last_value']), "\" /></td></tr>\n";
 
 		echo "<tr><th class=\"data left\">{$lang['strincrementby']}</th>\n";
 		echo "<td class=\"data1\"><input name=\"formIncrement\" size=\"5\" value=\"",
-		htmlspecialchars_nc($sequence->fields['increment_by']), "\" /> </td></tr>\n";
+			htmlspecialchars_nc($sequence->fields['increment_by']), "\" /> </td></tr>\n";
 
 		echo "<tr><th class=\"data left\">{$lang['strmaxvalue']}</th>\n";
 		echo "<td class=\"data1\"><input name=\"formMaxValue\" size=\"5\" value=\"",
-		htmlspecialchars_nc($sequence->fields['max_value']), "\" /></td></tr>\n";
+			htmlspecialchars_nc($sequence->fields['max_value']), "\" /></td></tr>\n";
 
 		echo "<tr><th class=\"data left\">{$lang['strminvalue']}</th>\n";
 		echo "<td class=\"data1\"><input name=\"formMinValue\" size=\"5\" value=\"",
-		htmlspecialchars_nc($sequence->fields['min_value']), "\" /></td></tr>\n";
+			htmlspecialchars_nc($sequence->fields['min_value']), "\" /></td></tr>\n";
 
 		echo "<tr><th class=\"data left\">{$lang['strcachevalue']}</th>\n";
 		echo "<td class=\"data1\"><input name=\"formCacheValue\" size=\"5\" value=\"",
-		htmlspecialchars_nc($sequence->fields['cache_value']), "\" /></td></tr>\n";
+			htmlspecialchars_nc($sequence->fields['cache_value']), "\" /></td></tr>\n";
 
 		echo "<tr><th class=\"data left\"><label for=\"formCycledValue\">{$lang['strcancycle']}</label></th>\n";
 		echo "<td class=\"data1\"><input type=\"checkbox\" id=\"formCycledValue\" name=\"formCycledValue\" ", (isset($_POST['formCycledValue']) ? ' checked="checked"' : ''), " /></td></tr>\n";
@@ -701,10 +740,20 @@ function doAlter($msg = '')
 		echo "<input type=\"submit\" name=\"alter\" value=\"{$lang['stralter']}\" />\n";
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 		echo "</form>\n";
-	} else echo "<p>{$lang['strnodata']}</p>\n";
+	} else
+		echo "<p>{$lang['strnodata']}</p>\n";
 }
 
-if ($action == 'tree') doTree();
+// Main program
+$misc = AppContainer::getMisc();
+$lang = AppContainer::getLang();
+
+$action = $_REQUEST['action'] ?? '';
+if (!isset($msg))
+	$msg = '';
+
+if ($action == 'tree')
+	doTree();
 
 // Print header
 $misc->printHeader($lang['strsequences']);
@@ -715,15 +764,19 @@ switch ($action) {
 		doCreateSequence();
 		break;
 	case 'save_create_sequence':
-		if (isset($_POST['create'])) doSaveCreateSequence();
-		else doDefault();
+		if (isset($_POST['create']))
+			doSaveCreateSequence();
+		else
+			doDefault();
 		break;
 	case 'properties':
 		doProperties();
 		break;
 	case 'drop':
-		if (isset($_POST['drop'])) doDrop(false);
-		else doDefault();
+		if (isset($_POST['drop']))
+			doDrop(false);
+		else
+			doDefault();
 		break;
 	case 'confirm_drop':
 		doDrop(true);
@@ -738,15 +791,19 @@ switch ($action) {
 		doNextval();
 		break;
 	case 'setval':
-		if (isset($_POST['setval'])) doSaveSetval();
-		else doDefault();
+		if (isset($_POST['setval']))
+			doSaveSetval();
+		else
+			doDefault();
 		break;
 	case 'confirm_setval':
 		doSetval();
 		break;
 	case 'alter':
-		if (isset($_POST['alter'])) doSaveAlter();
-		else doDefault();
+		if (isset($_POST['alter']))
+			doSaveAlter();
+		else
+			doDefault();
 		break;
 	case 'confirm_alter':
 		doAlter();

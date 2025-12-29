@@ -29,16 +29,20 @@ export function init() {
 			if (importAll) params.append("import_all", "1");
 			else params.append("entry", sel.value);
 			appendServerToParams(params);
-			fetch(appendServerToUrl("dbimport.php?action=select_entry"), {
-				method: "POST",
-				body: params,
-			})
-				.then((r) => r.json())
-				.then(() => {
+			(async () => {
+				try {
+					const resp = await fetch(
+						appendServerToUrl("dbimport.php?action=select_entry"),
+						{ method: "POST", body: params }
+					);
+					if (!resp.ok) throw new Error("select_entry failed");
+					await resp.json();
 					modal.style.display = "none";
 					runImportLoop(jobId, totalSize);
-				})
-				.catch(() => alert("Failed to select entry"));
+				} catch (e) {
+					alert("Failed to select entry: " + e);
+				}
+			})();
 		});
 	}
 	if (entryCancelBtn)
