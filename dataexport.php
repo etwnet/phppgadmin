@@ -1,10 +1,10 @@
 <?php
 
 use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\Export\Compression\CompressionFactory;
 use PhpPgAdmin\Database\Export\FormatterFactory;
 use PhpPgAdmin\Gui\ExportOutputRenderer;
 use PhpPgAdmin\Gui\QueryDataRenderer;
-use PhpPgAdmin\Gui\CompressionFactory;
 
 /**
  * Export query results to various formats (SQL, CSV, XML, HTML, JSON, etc.)

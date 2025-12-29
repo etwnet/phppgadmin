@@ -2,10 +2,11 @@
 
 use PhpPgAdmin\Core\AppContainer;
 use PhpPgAdmin\Database\DumpManager;
+use PhpPgAdmin\Gui\ExportOutputRenderer;
 use PhpPgAdmin\Database\Dump\DumpFactory;
 use PhpPgAdmin\Database\Actions\DatabaseActions;
-use PhpPgAdmin\Gui\ExportOutputRenderer;
-use PhpPgAdmin\Gui\CompressionFactory;
+use PhpPgAdmin\Database\Export\Compression\CompressionFactory;
+
 /**
  * Does an export of a database, schema, table, or view (via internal PHP dumper or pg_dump fallback).
  * Uses DumpFactory internally; pg_dump is used only if explicitly requested via $_REQUEST['dumper'].
@@ -184,36 +185,12 @@ if ($use_pg_dumpall) {
 		checkAndWarnVersionMismatch($pg_dumpall, 'pg_dumpall', $server_info);
 		execute_dump_command($cmd, 'show');
 		ExportOutputRenderer::endHtmlOutput();
-	} elseif ($output_compression === 'zip') {
-		// For ZIP with pg_dump: stream directly into ZipStream
-		$zip = ExportOutputRenderer::beginZipStream($filename_base);
-		if ($zip === null) {
-			die('Error: Zip output not available. Ensure maennchen/zipstream-php is installed and the zlib extension is enabled.');
-		}
-		$descriptors = [
-			0 => ['pipe', 'r'],  // stdin
-			1 => ['pipe', 'w'],  // stdout (pg_dumpall output)
-			2 => ['pipe', 'w'],  // stderr
-		];
-		$process = proc_open($cmd, $descriptors, $pipes);
-		if (is_resource($process)) {
-			fclose($pipes[0]);
-			// Add the pg_dumpall stdout stream directly as the single zip entry
-			$zip->addFileFromStream("{$filename_base}.sql", $pipes[1]);
-			fclose($pipes[1]);
-			fclose($pipes[2]);
-			proc_close($process);
-		} else {
-			echo "-- ERROR: Could not execute command\n";
-		}
-		$zip->finish();
 	} else {
-		// download or gzipped - use compression strategy
+		// use compression strategy
 		try {
-			$strategy_key = $output_compression ?? 'download';
-			$strategy = CompressionFactory::create($strategy_key);
+			$strategy = CompressionFactory::create($output_compression);
 			if (!$strategy) {
-				die("Error: Unsupported output method: " . htmlspecialchars($strategy_key));
+				die("Error: Unsupported output method: " . htmlspecialchars($output_compression));
 			}
 			$handle = $strategy->begin($filename_base);
 			$output_stream = $handle['stream'];
@@ -313,36 +290,12 @@ if ($use_pgdump && !empty($selected_databases)) {
 			}
 		}
 		ExportOutputRenderer::endHtmlOutput();
-	} elseif ($output_compression === 'zip') {
-		// For ZIP with multiple databases: stream all into single ZIP entry
-		$zip = ExportOutputRenderer::beginZipStream($filename_base);
-		if ($zip === null) {
-			die('Error: Zip output not available. Ensure maennchen/zipstream-php is installed and the zlib extension is enabled.');
-		}
-
-		// Use php://temp to accumulate all database dumps
-		$temp = fopen('php://temp', 'w+');
-		foreach ($cmd as $idx => $db_cmd) {
-			$dbName = $db_names[$idx] ?? null;
-			if ($dbName !== null) {
-				$header = "--\n-- Dumping database: \"" . addslashes($dbName) . "\"\n--\n\\connect \"" . addslashes($dbName) . "\"\n\\encoding UTF8\nSET client_encoding = 'UTF8';\nSET session_replication_role = 'replica';\n\n";
-				fwrite($temp, $header);
-			}
-			execute_dump_command_streaming($db_cmd, $temp);
-			fwrite($temp, "SET session_replication_role = 'origin';\n\n");
-			fflush($temp);
-		}
-		rewind($temp);
-		$zip->addFileFromStream("{$filename_base}.sql", $temp);
-		fclose($temp);
-		$zip->finish();
 	} else {
 		// download or gzipped - use compression strategy
 		try {
-			$strategy_key = $output_compression ?? 'download';
-			$strategy = CompressionFactory::create($strategy_key);
+			$strategy = CompressionFactory::create($output_compression);
 			if (!$strategy) {
-				die("Error: Unsupported output method: " . htmlspecialchars($strategy_key));
+				die("Error: Unsupported output method: " . htmlspecialchars($output_compression));
 			}
 			$handle = $strategy->begin($filename_base);
 			$output_stream = $handle['stream'];
@@ -451,36 +404,12 @@ if ($use_pgdump) {
 			echo htmlspecialchars("SET session_replication_role = 'origin';\n\n");
 		}
 		ExportOutputRenderer::endHtmlOutput();
-	} elseif ($output_compression === 'zip') {
-		// Stream pg_dump output directly into a single-entry ZIP archive
-		$zip = ExportOutputRenderer::beginZipStream($filename_base);
-		if ($zip === null) {
-			die('Error: Zip output not available. Ensure maennchen/zipstream-php is installed and the zlib extension is enabled.');
-		}
-		$descriptors = [
-			0 => ['pipe', 'r'],  // stdin
-			1 => ['pipe', 'w'],  // stdout (pg_dump output)
-			2 => ['pipe', 'w'],  // stderr
-		];
-		$process = proc_open($cmd, $descriptors, $pipes);
-		if (is_resource($process)) {
-			fclose($pipes[0]);
-			// Add the pg_dump stdout stream directly as the single zip entry
-			$zip->addFileFromStream("{$filename_base}.sql", $pipes[1]);
-			fclose($pipes[1]);
-			fclose($pipes[2]);
-			proc_close($process);
-		} else {
-			echo "-- ERROR: Could not execute command\n";
-		}
-		$zip->finish();
 	} else {
 		// download or gzipped - use compression strategy
 		try {
-			$strategy_key = $output_compression ?? 'download';
-			$strategy = CompressionFactory::create($strategy_key);
+			$strategy = CompressionFactory::create($output_compression);
 			if (!$strategy) {
-				die("Error: Unsupported output method: " . htmlspecialchars($strategy_key));
+				die("Error: Unsupported output method: " . htmlspecialchars($output_compression));
 			}
 			$handle = $strategy->begin($filename_base);
 			$output_stream = $handle['stream'];

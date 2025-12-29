@@ -1,5 +1,5 @@
 <?php
-namespace PhpPgAdmin\Gui;
+namespace PhpPgAdmin\Database\Export\Compression;
 
 class PlainStrategy implements CompressionStrategy
 {

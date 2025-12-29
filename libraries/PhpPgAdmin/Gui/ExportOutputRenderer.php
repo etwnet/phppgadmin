@@ -3,8 +3,6 @@
 namespace PhpPgAdmin\Gui;
 
 use PhpPgAdmin\Core\AppContainer;
-use ZipStream\ZipStream;
-use ZipStream\Option\Archive as ArchiveOptions;
 
 /**
  * Unified export output rendering helper.
@@ -75,73 +73,6 @@ class ExportOutputRenderer
         $misc->printFooter();
     }
 
-    /**
-     * Begin regular file download stream output.
-     * Opens php://output stream for non-gzipped downloads.
-     * Used for 'download' mode (show and gzipped modes have dedicated methods).
-     *
-     * @param string $filename Base filename (without extension)
-     * @param string $mime_type MIME type for the output
-     * @param string $file_extension File extension (without dot)
-     * @return resource The output stream resource
-     */
-    public static function beginDownloadStream($filename, $mime_type, $file_extension)
-    {
-        header('Content-Type: application/octet-stream');
-        header("Content-Disposition: attachment; filename={$filename}.{$file_extension}");
-        return fopen('php://output', 'wb');
-    }
-
-    /**
-     * Begin gzipped stream output using zlib.deflate filter.
-     * This provides true streaming compression without buffering the entire dump in memory.
-     *
-     * @param string $filename Base filename for the download (without extension)
-     * @return resource|null The output stream resource, or null on error
-     */
-    public static function beginGzipStream($filename)
-    {
-        // Clear any existing output buffers
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-
-        // Disable output buffering to allow direct streaming
-        ini_set('output_buffering', 'Off');
-        ini_set('zlib.output_compression', 'Off');
-
-        // Set headers for gzipped stream
-        header('Content-Type: application/gzip');
-        header("Content-Disposition: attachment; filename={$filename}.sql.gz");
-
-        // Open output stream and attach zlib.deflate filter for compression
-        // window=31 adds gzip format headers automatically
-        $output_stream = fopen('php://output', 'wb');
-        if ($output_stream === false) {
-            return null;
-        }
-
-        $filter = stream_filter_append($output_stream, 'zlib.deflate', STREAM_FILTER_WRITE, ['window' => 31]);
-        if ($filter === false) {
-            fclose($output_stream);
-            return null;
-        }
-
-        return $output_stream;
-    }
-
-    /**
-     * End output stream (for both gzipped and regular downloads).
-     * Closes the stream and flushes any remaining data.
-     *
-     * @param resource $output_stream The stream resource from beginGzipStream() or beginDownloadStream()
-     */
-    public static function endOutputStream($output_stream)
-    {
-        if (is_resource($output_stream)) {
-            fclose($output_stream);
-        }
-    }
 
     public static function beginZipStream($filename)
     {

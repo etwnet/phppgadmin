@@ -1,5 +1,5 @@
 <?php
-namespace PhpPgAdmin\Gui;
+namespace PhpPgAdmin\Database\Export\Compression;
 
 /**
  * Minimal in-process ZIP streamer using raw DEFLATE via deflate_init/deflate_add.
@@ -29,8 +29,6 @@ class ZipStreamer
             throw new \RuntimeException('Failed to write to output stream');
         }
         $this->bytesWritten += $written;
-        // Ensure data is flushed to the webserver / client promptly
-        // fflush on the php://output handle plus PHP-level flushes
         @fflush($this->out);
         if (function_exists('ob_flush')) {
             @ob_flush();
@@ -64,10 +62,8 @@ class ZipStreamer
             throw new \LogicException('A file is already open');
         }
 
-        // Record offset for central directory
         $localHeaderOffset = $this->bytesWritten;
 
-        // Use data descriptor (set bit 3) and zero sizes in local header
         $gpFlag = 0x08;
         $compMethod = 8; // deflate
         list($modTime, $modDate) = self::dosTimeDate();
@@ -91,7 +87,6 @@ class ZipStreamer
 
         $this->writeRaw($local);
 
-        // initialize current file meta
         $this->current = (object) [
             'name' => $fname,
             'localHeaderOffset' => $localHeaderOffset,
@@ -127,18 +122,15 @@ class ZipStreamer
             return;
         }
 
-        // Finish deflate stream
         $tail = deflate_add($this->current->deflateCtx, '', ZLIB_FINISH);
         if ($tail !== '') {
             $this->writeRaw($tail);
             $this->current->compressedSize += strlen($tail);
         }
 
-        // Compute CRC32 (unsigned)
         $crcHex = hash_final($this->current->crcCtx);
         $crc32 = (int) sprintf('%u', hexdec($crcHex));
 
-        // Write data descriptor (with signature). Use ZIP64 sizes when necessary.
         $desc = '';
         $desc .= pack('V', 0x08074b50);
         $desc .= pack('V', $crc32);
@@ -151,7 +143,6 @@ class ZipStreamer
         }
         $this->writeRaw($desc);
 
-        // Record entry for central directory
         $this->entries[] = [
             'name' => $this->current->name,
             'localHeaderOffset' => $this->current->localHeaderOffset,
@@ -160,18 +151,11 @@ class ZipStreamer
             'uncompressedSize' => $this->current->uncompressedSize,
         ];
 
-        // Clear current file
         $this->current = null;
     }
 
-    /**
-     * Write central directory and end of central directory records.
-     * Must be called after all files are finished.
-     */
     public function finish(): void
     {
-        // Determine if ZIP64 is required
-        // Record central directory start and entry count
         $centralStart = $this->bytesWritten;
         $entries = count($this->entries);
 
@@ -183,7 +167,6 @@ class ZipStreamer
             }
         }
 
-        // Write central directory entries
         foreach ($this->entries as $e) {
             $fname = $e['name'];
             $fnameLen = strlen($fname);
@@ -191,15 +174,14 @@ class ZipStreamer
 
             $cent = '';
             $cent .= pack('V', 0x02014b50);
-            $cent .= pack('v', $useZip64 ? 45 : 20); // version made by
-            $cent .= pack('v', $useZip64 ? 45 : 20); // version needed
-            $cent .= pack('v', 0x08); // gp flag
-            $cent .= pack('v', 8); // compression method
+            $cent .= pack('v', $useZip64 ? 45 : 20);
+            $cent .= pack('v', $useZip64 ? 45 : 20);
+            $cent .= pack('v', 0x08);
+            $cent .= pack('v', 8);
             $cent .= pack('v', $modTime);
             $cent .= pack('v', $modDate);
             $cent .= pack('V', $e['crc32']);
 
-            // compression/uncompressed sizes (placeholders if ZIP64 needed)
             if ($e['compressedSize'] > 0xFFFFFFFF || $e['uncompressedSize'] > 0xFFFFFFFF) {
                 $cent .= pack('V', 0xFFFFFFFF);
                 $cent .= pack('V', 0xFFFFFFFF);
@@ -210,7 +192,6 @@ class ZipStreamer
 
             $cent .= pack('v', $fnameLen);
 
-            // Prepare extra field if zip64 needed for this entry
             $extra = '';
             $zip64data = '';
             if ($e['uncompressedSize'] > 0xFFFFFFFF) {
@@ -223,18 +204,17 @@ class ZipStreamer
                 $zip64data .= self::packLE64($e['localHeaderOffset']);
             }
             if ($zip64data !== '') {
-                $extra .= pack('v', 0x0001); // ZIP64 extra ID
+                $extra .= pack('v', 0x0001);
                 $extra .= pack('v', strlen($zip64data));
                 $extra .= $zip64data;
             }
 
-            $cent .= pack('v', strlen($extra)); // extra len
-            $cent .= pack('v', 0); // comment len
-            $cent .= pack('v', 0); // disk number start
-            $cent .= pack('v', 0); // internal attrs
-            $cent .= pack('V', 0); // external attrs
+            $cent .= pack('v', strlen($extra));
+            $cent .= pack('v', 0);
+            $cent .= pack('v', 0);
+            $cent .= pack('v', 0);
+            $cent .= pack('V', 0);
 
-            // local header offset (placeholder if ZIP64)
             if ($e['localHeaderOffset'] > 0xFFFFFFFF) {
                 $cent .= pack('V', 0xFFFFFFFF);
             } else {
@@ -251,31 +231,27 @@ class ZipStreamer
         $centralSize = $centralEnd - $centralStart;
         $centralOffset = $centralStart;
 
-        // End of central directory
         if ($useZip64 || $centralSize > 0xFFFFFFFF || $centralOffset > 0xFFFFFFFF || $entries > 0xFFFF) {
-            // EOCD64 record
             $eocd64 = '';
             $eocd64 .= pack('V', 0x06064b50);
-            $eocd64 .= self::packLE64(44); // size of remaining EOCD64 record
-            $eocd64 .= pack('v', 45); // version made by
-            $eocd64 .= pack('v', 45); // version needed
-            $eocd64 .= pack('V', 0); // disk number
-            $eocd64 .= pack('V', 0); // disk where central starts
-            $eocd64 .= self::packLE64($entries); // number of entries on this disk
-            $eocd64 .= self::packLE64($entries); // total number of entries
+            $eocd64 .= self::packLE64(44);
+            $eocd64 .= pack('v', 45);
+            $eocd64 .= pack('v', 45);
+            $eocd64 .= pack('V', 0);
+            $eocd64 .= pack('V', 0);
+            $eocd64 .= self::packLE64($entries);
+            $eocd64 .= self::packLE64($entries);
             $eocd64 .= self::packLE64($centralSize);
             $eocd64 .= self::packLE64($centralOffset);
             $this->writeRaw($eocd64);
 
-            // EOCD64 locator
             $locator = '';
             $locator .= pack('V', 0x07064b50);
-            $locator .= pack('V', 0); // number of disk with EOCD64
-            $locator .= self::packLE64($centralEnd); // offset of EOCD64
-            $locator .= pack('V', 1); // total number of disks
+            $locator .= pack('V', 0);
+            $locator .= self::packLE64($centralEnd);
+            $locator .= pack('V', 1);
             $this->writeRaw($locator);
 
-            // Write classic EOCD with 0xFFFF/0xFFFFFFFF placeholders
             $eocd = '';
             $eocd .= pack('V', 0x06054b50);
             $eocd .= pack('v', 0xFFFF);
@@ -284,24 +260,23 @@ class ZipStreamer
             $eocd .= pack('v', 0xFFFF);
             $eocd .= pack('V', 0xFFFFFFFF);
             $eocd .= pack('V', 0xFFFFFFFF);
-            $eocd .= pack('v', 0); // comment len
+            $eocd .= pack('v', 0);
 
             $this->writeRaw($eocd);
         } else {
             $eocd = '';
             $eocd .= pack('V', 0x06054b50);
-            $eocd .= pack('v', 0); // disk number
-            $eocd .= pack('v', 0); // disk where central starts
+            $eocd .= pack('v', 0);
+            $eocd .= pack('v', 0);
             $eocd .= pack('v', $entries);
             $eocd .= pack('v', $entries);
             $eocd .= pack('V', $centralSize);
             $eocd .= pack('V', $centralOffset);
-            $eocd .= pack('v', 0); // comment len
+            $eocd .= pack('v', 0);
 
             $this->writeRaw($eocd);
         }
 
-        // Ensure final data flushed to client
         if (function_exists('fflush')) {
             @fflush($this->out);
         }
@@ -311,68 +286,5 @@ class ZipStreamer
         if (function_exists('flush')) {
             @flush();
         }
-    }
-}
-
-/**
- * Stream wrapper that routes writes to a ZipStreamer instance by id.
- * Path: phppgadminzip://<id>
- */
-class ZipWriterStream
-{
-    public $context;
-    protected $id;
-    protected $stream;
-
-    protected static $instances = [];
-    protected static $registered = false;
-
-    public static function registerWrapper(): void
-    {
-        if (!self::$registered) {
-            $wrappers = stream_get_wrappers();
-            if (!in_array('phppgadminzip', $wrappers, true)) {
-                @stream_wrapper_register('phppgadminzip', __CLASS__);
-            }
-            self::$registered = true;
-        }
-    }
-
-    public static function addInstance(string $id, ZipStreamer $inst): void
-    {
-        self::$instances[$id] = $inst;
-    }
-
-    public static function removeInstance(string $id): void
-    {
-        unset(self::$instances[$id]);
-    }
-
-    public function stream_open($path, $mode, $options, &$opened_path)
-    {
-        // path like phppgadminzip://<id>
-        $parts = parse_url($path);
-        $this->id = $parts['host'] ?? ($parts['path'] ?? '');
-        if (!isset(self::$instances[$this->id])) {
-            return false;
-        }
-        $this->stream = self::$instances[$this->id];
-        return true;
-    }
-
-    public function stream_write($data)
-    {
-        $this->stream->writeData($data);
-        return strlen($data);
-    }
-
-    public function stream_close()
-    {
-        // nothing here; ZipStreamer.finish() will be called explicitly
-    }
-
-    public function stream_eof()
-    {
-        return true;
     }
 }
