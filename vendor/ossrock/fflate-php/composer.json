@@ -1,0 +1,50 @@
+{
+  "name": "ossrock/fflate-php",
+  "description": "Pure PHP implementation of DEFLATE/GZIP/Zlib compression with stream filters and gz* polyfills",
+  "type": "library",
+  "license": "MIT",
+  "keywords": [
+    "compression",
+    "gzip",
+    "deflate",
+    "zlib",
+    "polyfill",
+    "stream-filter",
+    "inflate"
+  ],
+  "authors": [
+    {
+      "name": "Christian for Ossrock"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Ossrock\\FflatePhp\\": "src/"
+    },
+    "files": [
+      "src/Polyfill/functions.php"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Ossrock\\FflatePhp\\Tests\\": "tests/",
+      "Ossrock\\FflatePhp\\Benchmark\\": "benchmark/"
+    }
+  },
+  "minimum-stability": "stable",
+  "require": {
+    "php": ">=7.2"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^8.5 || ^9.0"
+  },
+  "suggest": {
+    "ext-zlib": "For significantly better performance (native implementation)"
+  },
+  "config": {
+    "platform": {
+      "php": "7.2.0"
+    },
+    "sort-packages": true
+  }
+}

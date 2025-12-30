@@ -13,7 +13,8 @@
 		"php": ">=7.2",
 		"ext-pgsql": "*",
 		"ext-mbstring": "*",
-		"greenlion/php-sql-parser": "dev-master"
+		"greenlion/php-sql-parser": "dev-master",
+		"ossrock/fflate-php": "^0.1.0"
 	},
 	"autoload": {
 		"psr-4": {

@@ -1,6 +1,7 @@
 <?php
 
 use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\Actions\RuleActions;
 
 /**
  * List rules on a table OR view
@@ -99,9 +100,10 @@ function createRule($confirm, $msg = '')
  */
 function doDrop($confirm)
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$ruleActions = new RuleActions($pg);
 
 	if ($confirm) {
 		$misc->printTrail($_REQUEST['subject']);
@@ -125,7 +127,11 @@ function doDrop($confirm)
 		echo "<input type=\"submit\" name=\"no\" value=\"{$lang['strno']}\" />\n";
 		echo "</form>\n";
 	} else {
-		$status = $data->dropRule($_POST['rule'], $_POST[$_POST['subject']], isset($_POST['cascade']));
+		$status = $ruleActions->dropRule(
+			$_POST['rule'],
+			$_POST[$_POST['subject']],
+			isset($_POST['cascade'])
+		);
 		if ($status == 0)
 			doDefault($lang['strruledropped']);
 		else
@@ -139,15 +145,16 @@ function doDrop($confirm)
  */
 function doDefault($msg = '')
 {
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$ruleActions = new RuleActions($pg);
 
 	$misc->printTrail($_REQUEST['subject']);
 	$misc->printTabs($_REQUEST['subject'], 'rules');
 	$misc->printMsg($msg);
 
-	$rules = $data->getRules($_REQUEST[$_REQUEST['subject']]);
+	$rules = $ruleActions->getRules($_REQUEST[$_REQUEST['subject']]);
 
 	$columns = [
 		'rule' => [
@@ -210,9 +217,10 @@ function doDefault($msg = '')
 function doTree()
 {
 	$misc = AppContainer::getMisc();
-	$data = AppContainer::getData();
+	$pg = AppContainer::getPostgres();
+	$ruleActions = new RuleActions($pg);
 
-	$rules = $data->getRules($_REQUEST[$_REQUEST['subject']]);
+	$rules = $ruleActions->getRules($_REQUEST[$_REQUEST['subject']]);
 
 	$reqvars = $misc->getRequestVars($_REQUEST['subject']);
 
