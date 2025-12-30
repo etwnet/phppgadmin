@@ -7,6 +7,7 @@ use PhpPgAdmin\Database\Import\ZipEntryReader;
 use PhpPgAdmin\Database\Import\GzipReader;
 use PhpPgAdmin\Database\Import\Bzip2Reader;
 use PhpPgAdmin\Database\Import\LocalFileReader;
+use PhpPgAdmin\Database\Import\ChunkedGzipReader;
 use PhpPgAdmin\Database\Import\SqlParser;
 use PhpPgAdmin\Database\Import\StatementClassifier;
 use ZipArchive;
@@ -56,6 +57,13 @@ class ImportExecutor
 
     public static function createReaderForJob($uploadFile, &$state, $conf)
     {
+        // Check for chunked format first (highest priority)
+        if (!empty($state['chunks']) && is_array($state['chunks'])) {
+            $jobDir = dirname($uploadFile);
+            return new ChunkedGzipReader($jobDir, $state['chunks']);
+        }
+
+        // Legacy single-file format
         $type = CompressionReader::detect($uploadFile);
         if (!CompressionReader::isSupported($type)) {
             throw new Exception("unsupported_compression: $type");

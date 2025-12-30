@@ -14,10 +14,21 @@ use PhpPgAdmin\Database\Import\ImportJob;
 use PhpPgAdmin\Database\Import\ImportExecutor;
 
 // dbimport.php
-// Minimal import job API scaffold
-// Actions: upload, process, status, gc
+// API endpoint for chunked file upload and import processing
+// This is an API endpoint that expects JSON requests and returns JSON responses.
+// Authentication is checked via session (user must be logged in via main app).
 
 require_once __DIR__ . '/libraries/bootstrap.php';
+
+// After bootstrap, check if we have authentication
+// If $_server_info is not set, the user was redirected to login and this won't execute
+// But we want to catch the case where server param is missing
+if (!isset($_REQUEST['server']) && ($_REQUEST['action'] ?? '') !== 'list_jobs' && ($_REQUEST['action'] ?? '') !== 'gc') {
+    header('Content-Type: application/json');
+    http_response_code(400);
+    echo json_encode(['error' => 'server parameter required']);
+    exit;
+}
 
 function fnv1a64(string $data): string
 {
@@ -137,12 +148,19 @@ function handle_upload_chunk()
     $maxSize = $conf['import']['upload_max_size'] ?? 0;
 
     $jobId = $_REQUEST['job_id'] ?? '';
-    $offset = intval($_REQUEST['offset'] ?? 0);
+    $chunkNumber = intval($_REQUEST['chunk_number'] ?? -1);
     $clientChecksum = strtolower($_SERVER['HTTP_X_CHECKSUM'] ?? '');
+    $uncompressedSize = intval($_SERVER['HTTP_X_UNCOMPRESSED_SIZE'] ?? 0);
 
     if (!$jobId) {
         http_response_code(400);
         echo json_encode(['error' => 'job_id required']);
+        exit;
+    }
+
+    if ($chunkNumber < 0) {
+        http_response_code(400);
+        echo json_encode(['error' => 'chunk_number required']);
         exit;
     }
 
@@ -167,8 +185,13 @@ function handle_upload_chunk()
         exit;
     }
 
+    // Initialize chunks array if not present
+    if (!isset($state['chunks'])) {
+        $state['chunks'] = [];
+    }
+
     $tmpFile = $jobDir . DIRECTORY_SEPARATOR . 'chunk.tmp';
-    $targetFile = $jobDir . DIRECTORY_SEPARATOR . 'upload.dump';
+    $chunkFile = $jobDir . DIRECTORY_SEPARATOR . sprintf('chunk_%06d.gz', $chunkNumber);
 
     // Read chunk from php://input
     $in = fopen('php://input', 'rb');
@@ -192,34 +215,62 @@ function handle_upload_chunk()
         exit;
     }
 
-    $chunkSize = strlen($chunkData);
-    if ($maxSize > 0 && ($offset + $chunkSize) > $maxSize) {
-        @unlink($tmpFile);
-        http_response_code(413);
-        echo json_encode(['error' => 'Upload exceeds configured maximum']);
-        exit;
+    $compressedSize = strlen($chunkData);
+
+    // Check max size against total uncompressed size
+    if ($maxSize > 0) {
+        $totalUncompressed = array_sum(array_column($state['chunks'], 'uncompressed_size')) + $uncompressedSize;
+        if ($totalUncompressed > $maxSize) {
+            @unlink($tmpFile);
+            http_response_code(413);
+            echo json_encode(['error' => 'Upload exceeds configured maximum']);
+            exit;
+        }
     }
 
-    // Append to target file
-    $target = fopen($targetFile, $offset === 0 ? 'wb' : 'ab');
-    if (!$target) {
+    // Move tmp file to final chunk location
+    if (!rename($tmpFile, $chunkFile)) {
         @unlink($tmpFile);
         http_response_code(500);
-        echo json_encode(['error' => 'failed to open target']);
+        echo json_encode(['error' => 'failed to save chunk']);
         exit;
     }
-    $tmp = fopen($tmpFile, 'rb');
-    stream_copy_to_stream($tmp, $target);
-    fclose($tmp);
-    fclose($target);
-    @unlink($tmpFile);
 
-    // Update state
-    $state['uploaded_bytes'] = $offset + $chunkSize;
+    // Calculate uncompressed offset (sum of all previous chunks' uncompressed sizes)
+    $uncompressedOffset = 0;
+    foreach ($state['chunks'] as $existingChunk) {
+        if ($existingChunk['chunk_number'] < $chunkNumber) {
+            $uncompressedOffset += $existingChunk['uncompressed_size'];
+        }
+    }
+
+    // Add chunk metadata to state
+    $state['chunks'][] = [
+        'chunk_number' => $chunkNumber,
+        'uncompressed_offset' => $uncompressedOffset,
+        'compressed_size' => $compressedSize,
+        'uncompressed_size' => $uncompressedSize,
+        'checksum' => $clientChecksum,
+        'file' => basename($chunkFile),
+    ];
+
+    // Sort chunks by chunk_number to maintain order
+    usort($state['chunks'], function ($a, $b) {
+        return $a['chunk_number'] - $b['chunk_number'];
+    });
+
+    // Recalculate all uncompressed_offsets after sorting (in case chunks arrived out of order)
+    $offset = 0;
+    foreach ($state['chunks'] as &$chunk) {
+        $chunk['uncompressed_offset'] = $offset;
+        $offset += $chunk['uncompressed_size'];
+    }
+    unset($chunk);
+
     $state['last_activity'] = time();
     ImportJob::writeState($jobDir, $state);
 
-    echo json_encode(['status' => 'OK', 'uploaded_bytes' => $state['uploaded_bytes']]);
+    echo json_encode(['status' => 'OK', 'chunk_number' => $chunkNumber]);
 }
 
 function handle_upload_status()
@@ -243,11 +294,17 @@ function handle_upload_status()
 
     $state = ImportJob::readState($jobDir);
     if (!$state) {
-        echo json_encode(['uploaded_bytes' => 0]);
+        echo json_encode(['uploaded_bytes' => 0, 'chunks' => []]);
         exit;
     }
 
-    echo json_encode(['uploaded_bytes' => $state['uploaded_bytes'] ?? 0]);
+    $response = [
+        'uploaded_bytes' => $state['uploaded_bytes'] ?? 0,
+        'chunks' => $state['chunks'] ?? [],
+        'chunk_size' => $state['chunk_size'] ?? 0,
+    ];
+
+    echo json_encode($response);
 }
 
 function handle_finalize_upload()
@@ -276,6 +333,34 @@ function handle_finalize_upload()
         exit;
     }
 
+    // Check if using chunked format
+    if (!empty($state['chunks'])) {
+        // Chunked format: calculate total uncompressed size
+        $totalUncompressed = 0;
+        $totalCompressed = 0;
+        foreach ($state['chunks'] as $chunk) {
+            $totalUncompressed += $chunk['uncompressed_size'];
+            $totalCompressed += $chunk['compressed_size'];
+        }
+
+        $state['size'] = $totalUncompressed;
+        $state['compressed_size'] = $totalCompressed;
+        $state['compression'] = 'chunked-gzip';
+        $state['status'] = 'uploaded';
+        $state['last_activity'] = time();
+        ImportJob::writeState($jobDir, $state);
+
+        echo json_encode([
+            'job_id' => $jobId,
+            'size' => $totalUncompressed,
+            'compressed_size' => $totalCompressed,
+            'chunks' => count($state['chunks']),
+            'status' => 'uploaded'
+        ]);
+        return;
+    }
+
+    // Legacy monolithic file format
     $targetFile = $jobDir . DIRECTORY_SEPARATOR . 'upload.dump';
 
     if (!is_file($targetFile)) {

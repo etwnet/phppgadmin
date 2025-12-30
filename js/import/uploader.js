@@ -12,6 +12,15 @@ import { appendServerToUrl, appendServerToParams } from "./api.js";
 import { runImportLoop } from "./importer.js";
 import { refreshEmbeddedJobList } from "./jobs.js";
 
+// Dynamically import fflate for decompression/compression
+let fflate = null;
+async function ensureFflate() {
+	if (!fflate) {
+		fflate = await import("../lib/fflate/esm/browser.js");
+	}
+	return fflate;
+}
+
 let isUploadPaused = false;
 let uploadResolveResume = null;
 let currentChunkController = null;
@@ -35,8 +44,11 @@ const current = {
 	file: null,
 	jobId: null,
 	fileKey: null,
-	chunkSize: 5 * 1024 * 1024,
+	chunkSize: 5 * 1024 * 1024, // Uncompressed chunk size
 	uploaded: 0,
+	compressedBytesRead: 0, // For progress tracking with compressed files
+	totalCompressedSize: 0, // Original file size if compressed
+	chunkNumber: 0, // Sequential chunk number for chunked format
 };
 
 function cacheUI() {
@@ -55,8 +67,13 @@ function cacheUI() {
 	ui.importAllChk = el("import_all_chk");
 }
 
-export async function uploadChunkWithRetry(jobId, offset, chunk) {
-	const buf = new Uint8Array(await chunk.arrayBuffer());
+export async function uploadChunkWithRetry(
+	jobId,
+	chunkNumber,
+	chunkData,
+	uncompressedSize
+) {
+	const buf = new Uint8Array(chunkData);
 	const checksum = fnv1a64(buf);
 
 	try {
@@ -64,7 +81,7 @@ export async function uploadChunkWithRetry(jobId, offset, chunk) {
 		currentChunkController = controller;
 		let _url = `dbimport.php?action=upload_chunk&job_id=${encodeURIComponent(
 			jobId
-		)}&offset=${offset}`;
+		)}&chunk_number=${chunkNumber}`;
 		_url = appendServerToUrl(_url);
 
 		const resp = await fetch(_url, {
@@ -72,6 +89,7 @@ export async function uploadChunkWithRetry(jobId, offset, chunk) {
 			body: buf,
 			headers: {
 				"X-Checksum": checksum,
+				"X-Uncompressed-Size": uncompressedSize.toString(),
 				"Content-Type": "application/octet-stream",
 			},
 			signal: controller.signal,
@@ -81,12 +99,14 @@ export async function uploadChunkWithRetry(jobId, offset, chunk) {
 
 		if (resp.ok) {
 			const res = await resp.json();
-			if (res.status === "OK") return res.uploaded_bytes;
+			if (res.status === "OK") return res.chunk_number;
 			if (res.status === "BAD_CHECKSUM") {
 				throw new Error("BAD_CHECKSUM");
 			}
 			throw new Error(res.error || "Upload failed");
 		}
+		const responseText = await resp.text();
+		console.error("[Upload] Server error response:", responseText);
 		throw new Error(`HTTP ${resp.status}`);
 	} catch (e) {
 		currentChunkController = null;
@@ -251,6 +271,7 @@ async function initOrResumeJob(scope, scope_ident) {
 	let chunkSize = current.chunkSize;
 
 	if (jobId) {
+		console.log("[Init] Found cached job_id:", jobId);
 		try {
 			const statusUrl = appendServerToUrl(
 				`dbimport.php?action=upload_status&job_id=${encodeURIComponent(
@@ -260,18 +281,18 @@ async function initOrResumeJob(scope, scope_ident) {
 			const statusRes = await fetch(statusUrl);
 			const statusData = await statusRes.json();
 
+			// Check for chunked format resume
 			if (
-				statusData.uploaded_bytes !== undefined &&
-				statusData.uploaded_bytes < file.size
+				statusData.chunks !== undefined &&
+				Array.isArray(statusData.chunks)
 			) {
 				current.jobId = jobId;
-				current.uploaded = statusData.uploaded_bytes || 0;
-				// if server provides it, prefer it
+				current.chunkNumber = statusData.chunks.length; // Resume from next chunk
 				if (statusData.chunk_size)
 					current.chunkSize = statusData.chunk_size;
 
 				log(
-					`Found existing job ${jobId}, checking status...`,
+					`Found existing job ${jobId}, resuming from chunk ${current.chunkNumber}`,
 					"upload"
 				);
 				return;
@@ -279,11 +300,16 @@ async function initOrResumeJob(scope, scope_ident) {
 
 			jobId = null;
 		} catch (e) {
+			console.log(
+				"[Init] Cached job not found or invalid, will create new:",
+				e.message
+			);
 			jobId = null;
 		}
 	}
 
 	if (!jobId) {
+		console.log("[Init] Creating new job");
 		const formData = new URLSearchParams();
 		formData.append("filename", file.name);
 		formData.append("filesize", file.size);
@@ -327,7 +353,7 @@ async function initOrResumeJob(scope, scope_ident) {
 		const initData = await initRes.json();
 		current.jobId = initData.job_id;
 		current.chunkSize = initData.chunk_size || chunkSize;
-		current.uploaded = 0;
+		current.chunkNumber = 0;
 
 		localStorage.setItem(fileKey, current.jobId);
 
@@ -341,19 +367,47 @@ async function initOrResumeJob(scope, scope_ident) {
 }
 
 async function uploadAllChunks() {
-	// CHANGED: uses module state
 	const file = current.file;
 	const jobId = current.jobId;
-	const chunkSize = current.chunkSize;
-
-	let uploaded = current.uploaded || 0;
+	const targetChunkSize = current.chunkSize; // 5MB uncompressed
+	let chunkNumber = current.chunkNumber || 0;
 
 	if (!file || !jobId) throw new Error("Upload not initialized");
 
-	if (uploaded > 0)
-		log(`Resuming from offset ${formatBytes(uploaded)}`, "upload");
+	if (chunkNumber > 0) {
+		log(`Resuming from chunk ${chunkNumber}`, "upload");
+	}
 
-	while (uploaded < file.size) {
+	// Detect file format
+	const magic = await sniffMagicType(file);
+	const isGzip = magic === "gzip";
+
+	current.totalCompressedSize = file.size;
+	current.compressedBytesRead = 0;
+
+	if (isGzip) {
+		log(`Detected gzip input, will decompress and re-chunk`, "upload");
+		await uploadGzipFileChunked(file, jobId, targetChunkSize, chunkNumber);
+	} else {
+		log(`Uploading plain file in chunks`, "upload");
+		await uploadPlainFileChunked(file, jobId, targetChunkSize, chunkNumber);
+	}
+}
+
+/**
+ * Upload a plain (uncompressed) file by chunking and compressing
+ */
+async function uploadPlainFileChunked(
+	file,
+	jobId,
+	targetChunkSize,
+	startChunkNumber
+) {
+	const ff = await ensureFflate();
+	let chunkNumber = startChunkNumber;
+	let offset = chunkNumber * targetChunkSize;
+
+	while (offset < file.size) {
 		if (isUploadPaused) {
 			log("Upload paused. Waiting for resume...", "upload");
 			const shouldResume = await new Promise((resolve) => {
@@ -363,28 +417,35 @@ async function uploadAllChunks() {
 			log("Upload resumed", "upload");
 		}
 
-		const chunk = file.slice(uploaded, uploaded + chunkSize);
-		const pct = Math.floor((uploaded / file.size) * 100);
+		const end = Math.min(offset + targetChunkSize, file.size);
+		const blob = file.slice(offset, end);
+		const uncompressedData = new Uint8Array(await blob.arrayBuffer());
+		const uncompressedSize = uncompressedData.length;
 
+		// Compress with gzip level 3
+		const compressedData = ff.gzipSync(uncompressedData, { level: 3 });
+
+		const pct = Math.floor((offset / file.size) * 100);
 		if (ui.uploadProgress) ui.uploadProgress.value = pct;
 		if (ui.uploadStatus) {
 			ui.uploadStatus.textContent = `Uploading ${
 				file.name
-			} - ${pct}% (${formatBytes(uploaded)} / ${formatBytes(file.size)})`;
+			} - ${pct}% (${formatBytes(offset)} / ${formatBytes(file.size)})`;
 		}
 
-		let newUploaded;
+		// Upload with retry logic
 		let attemptDelay = 1000;
-
 		while (true) {
 			try {
-				newUploaded = await uploadChunkWithRetry(
+				await uploadChunkWithRetry(
 					jobId,
-					uploaded,
-					chunk
+					chunkNumber,
+					compressedData,
+					uncompressedSize
 				);
-				uploaded = newUploaded;
-				current.uploaded = uploaded;
+				chunkNumber++;
+				current.chunkNumber = chunkNumber;
+				offset = end;
 				break;
 			} catch (e) {
 				if (uploadCancelledByUser || e.message === "aborted") {
@@ -417,6 +478,160 @@ async function uploadAllChunks() {
 			}
 		}
 	}
+}
+
+/**
+ * Upload a gzip file by streaming decompression, chunking, and re-compression
+ * Uses true streaming to handle multi-gigabyte files without loading into memory
+ */
+async function uploadGzipFileChunked(
+	file,
+	jobId,
+	targetChunkSize,
+	startChunkNumber
+) {
+	const ff = await ensureFflate();
+	let chunkNumber = startChunkNumber;
+	let uncompressedBuffer = new Uint8Array(0);
+	let compressedBytesRead = 0;
+	let decompressedTotal = 0;
+
+	log(`Starting streaming decompression...`, "upload");
+
+	// Create streaming gunzip decompressor with ondata callback
+	const gunzip = new ff.Gunzip();
+	gunzip.ondata = (data, final) => {
+		// Note: fflate signature is (data, final), not (err, data, final)
+		// Accumulate decompressed data
+		const newBuffer = new Uint8Array(
+			uncompressedBuffer.length + data.length
+		);
+		newBuffer.set(uncompressedBuffer);
+		newBuffer.set(data, uncompressedBuffer.length);
+		uncompressedBuffer = newBuffer;
+		decompressedTotal += data.length;
+		console.log(
+			`[Decompress] Received ${data.length} bytes, total: ${decompressedTotal}`
+		);
+	};
+
+	// Read compressed file in 1MB chunks
+	const readChunkSize = 1 * 1024 * 1024;
+	let fileOffset = 0;
+
+	log(`Starting streaming decompression and upload...`, "upload");
+
+	while (fileOffset < file.size || uncompressedBuffer.length > 0) {
+		if (isUploadPaused) {
+			log("Upload paused. Waiting for resume...", "upload");
+			const shouldResume = await new Promise((resolve) => {
+				uploadResolveResume = resolve;
+			});
+			if (!shouldResume) throw new Error("Upload cancelled by user");
+			log("Upload resumed", "upload");
+		}
+
+		// Read and decompress more data if we don't have enough uncompressed yet
+		while (
+			uncompressedBuffer.length < targetChunkSize &&
+			fileOffset < file.size
+		) {
+			const end = Math.min(fileOffset + readChunkSize, file.size);
+			const blob = file.slice(fileOffset, end);
+			const compressedChunk = new Uint8Array(await blob.arrayBuffer());
+
+			// Push to decompressor (it will call our ondata callback)
+			const isFinal = fileOffset + compressedChunk.length >= file.size;
+			gunzip.push(compressedChunk, isFinal);
+
+			fileOffset = end;
+			compressedBytesRead = fileOffset;
+
+			// Update progress based on compressed bytes read
+			const pct = Math.floor((compressedBytesRead / file.size) * 100);
+			if (ui.uploadProgress) ui.uploadProgress.value = pct;
+			if (ui.uploadStatus) {
+				ui.uploadStatus.textContent = `Processing ${
+					file.name
+				} - ${pct}% (${formatBytes(decompressedTotal)} decompressed)`;
+			}
+		}
+
+		// If we have enough data (or finished reading and have remainder), upload a chunk
+		if (
+			uncompressedBuffer.length >= targetChunkSize ||
+			(fileOffset >= file.size && uncompressedBuffer.length > 0)
+		) {
+			const chunkSize = Math.min(
+				targetChunkSize,
+				uncompressedBuffer.length
+			);
+			const chunkData = uncompressedBuffer.slice(0, chunkSize);
+			uncompressedBuffer = uncompressedBuffer.slice(chunkSize);
+			const uncompressedSize = chunkData.length;
+
+			// Compress this chunk with gzip level 3
+			const compressedChunk = ff.gzipSync(chunkData, { level: 3 });
+
+			console.log(
+				`[Upload] Chunk ${chunkNumber}: ${uncompressedSize} bytes -> ${compressedChunk.length} bytes compressed`
+			);
+
+			// Upload with retry logic
+			let attemptDelay = 1000;
+			while (true) {
+				try {
+					await uploadChunkWithRetry(
+						jobId,
+						chunkNumber,
+						compressedChunk,
+						uncompressedSize
+					);
+					chunkNumber++;
+					current.chunkNumber = chunkNumber;
+					break;
+				} catch (e) {
+					if (uploadCancelledByUser || e.message === "aborted") {
+						throw new Error("Upload cancelled by user");
+					}
+
+					console.warn("Chunk upload failed, will retry:", e);
+
+					if (ui.uploadStatus) {
+						ui.uploadStatus.textContent = `Upload interrupted — retrying in ${Math.round(
+							attemptDelay / 1000
+						)}s...`;
+					}
+
+					if (typeof navigator !== "undefined" && !navigator.onLine) {
+						if (ui.uploadStatus)
+							ui.uploadStatus.textContent =
+								"Offline — waiting to reconnect...";
+						await new Promise((resolve) => {
+							const onOnline = () => {
+								window.removeEventListener("online", onOnline);
+								resolve();
+							};
+							window.addEventListener("online", onOnline);
+						});
+					} else {
+						await new Promise((r) => setTimeout(r, attemptDelay));
+						attemptDelay = Math.min(attemptDelay * 2, 60000);
+					}
+				}
+			}
+		}
+
+		// Exit if file fully read and buffer empty
+		if (fileOffset >= file.size && uncompressedBuffer.length === 0) {
+			break;
+		}
+	}
+
+	log(
+		`Upload complete: ${formatBytes(decompressedTotal)} processed`,
+		"upload"
+	);
 }
 
 async function finalizeAndStart() {
@@ -495,6 +710,9 @@ export async function startUpload() {
 		current.file = ui.fileInput.files[0];
 		current.jobId = null;
 		current.uploaded = 0;
+		current.chunkNumber = 0;
+		current.compressedBytesRead = 0;
+		current.totalCompressedSize = 0;
 		// keep current.chunkSize default unless server overrides
 
 		if (uploadResolveResume) {
