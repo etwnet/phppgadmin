@@ -95,8 +95,8 @@ function doFind($confirm = true, $msg = '')
 			</select>
 		</p>
 		<p>
-			<input name="term" value="<?= htmlspecialchars_nc($_REQUEST['term']); ?>" size="32"
-				maxlength="<?= $pg->_maxNameLen; ?>" />
+			<input name="term" value="<?= html_esc($_REQUEST['term']); ?>" size="32"
+			       maxlength="<?= $pg->_maxNameLen; ?>" />
 		</p>
 		<p>
 			<input type="submit" value="<?= $lang['strfind']; ?>" />
@@ -620,7 +620,7 @@ function doSQL()
 		<div><?= $lang['strsql']; ?></div>
 		<div>
 			<textarea class="sql-editor frame resizable bigger" style="width:100%;" rows="20" cols="50"
-				name="query"><?= htmlspecialchars_nc($_SESSION['sqlquery']); ?></textarea>
+				name="query"><?= html_esc($_SESSION['sqlquery']); ?></textarea>
 		</div>
 
 		<?php

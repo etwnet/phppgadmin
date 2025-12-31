@@ -49,23 +49,25 @@ function doAlter($msg = '')
 
 	if ($triggerdata->recordCount() > 0) {
 
-		if (!isset($_POST['name'])) $_POST['name'] = $triggerdata->fields['tgname'];
+		if (!isset($_POST['name']))
+			$_POST['name'] = $triggerdata->fields['tgname'];
 
 		echo "<form action=\"triggers.php\" method=\"post\">\n";
 		echo "<table>\n";
 		echo "<tr><th class=\"data\">{$lang['strname']}</th>\n";
 		echo "<td class=\"data1\">";
 		echo "<input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-		htmlspecialchars_nc($_POST['name']), "\" />\n";
+			html_esc($_POST['name']), "\" />\n";
 		echo "</table>\n";
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"alter\" />\n";
-		echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"trigger\" value=\"", htmlspecialchars_nc($_REQUEST['trigger']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"trigger\" value=\"", html_esc($_REQUEST['trigger']), "\" />\n";
 		echo $misc->form;
 		echo "<input type=\"submit\" name=\"alter\" value=\"{$lang['strok']}\" />\n";
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 		echo "</form>\n";
-	} else echo "<p>{$lang['strnodata']}</p>\n";
+	} else
+		echo "<p>{$lang['strnodata']}</p>\n";
 }
 
 /**
@@ -82,13 +84,16 @@ function doDrop($confirm)
 		$misc->printTrail('trigger');
 		$misc->printTitle($lang['strdrop'], 'pg.trigger.drop');
 
-		echo "<p>", sprintf($lang['strconfdroptrigger'], $misc->printVal($_REQUEST['trigger']),
-		   $misc->printVal($_REQUEST['table'])), "</p>\n";
+		echo "<p>", sprintf(
+			$lang['strconfdroptrigger'],
+			$misc->printVal($_REQUEST['trigger']),
+			$misc->printVal($_REQUEST['table'])
+		), "</p>\n";
 
 		echo "<form action=\"triggers.php\" method=\"post\">\n";
 		echo "<input type=\"hidden\" name=\"action\" value=\"drop\" />\n";
-		echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"trigger\" value=\"", htmlspecialchars_nc($_REQUEST['trigger']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"trigger\" value=\"", html_esc($_REQUEST['trigger']), "\" />\n";
 		echo $misc->form;
 		echo "<p><input type=\"checkbox\" id=\"cascade\" name=\"cascade\" /> <label for=\"cascade\">{$lang['strcascade']}</label></p>\n";
 		echo "<input type=\"submit\" name=\"yes\" value=\"{$lang['stryes']}\" />\n";
@@ -118,13 +123,16 @@ function doEnable($confirm)
 		$misc->printTrail('trigger');
 		$misc->printTitle($lang['strenable'], 'pg.table.alter');
 
-		echo "<p>", sprintf($lang['strconfenabletrigger'], $misc->printVal($_REQUEST['trigger']),
-		   $misc->printVal($_REQUEST['table'])), "</p>\n";
+		echo "<p>", sprintf(
+			$lang['strconfenabletrigger'],
+			$misc->printVal($_REQUEST['trigger']),
+			$misc->printVal($_REQUEST['table'])
+		), "</p>\n";
 
 		echo "<form action=\"triggers.php\" method=\"post\">\n";
 		echo "<input type=\"hidden\" name=\"action\" value=\"enable\" />\n";
-		echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"trigger\" value=\"", htmlspecialchars_nc($_REQUEST['trigger']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"trigger\" value=\"", html_esc($_REQUEST['trigger']), "\" />\n";
 		echo $misc->form;
 		echo "<input type=\"submit\" name=\"yes\" value=\"{$lang['stryes']}\" />\n";
 		echo "<input type=\"submit\" name=\"no\" value=\"{$lang['strno']}\" />\n";
@@ -153,13 +161,16 @@ function doDisable($confirm)
 		$misc->printTrail('trigger');
 		$misc->printTitle($lang['strdisable'], 'pg.table.alter');
 
-		echo "<p>", sprintf($lang['strconfdisabletrigger'], $misc->printVal($_REQUEST['trigger']),
-		   $misc->printVal($_REQUEST['table'])), "</p>\n";
+		echo "<p>", sprintf(
+			$lang['strconfdisabletrigger'],
+			$misc->printVal($_REQUEST['trigger']),
+			$misc->printVal($_REQUEST['table'])
+		), "</p>\n";
 
 		echo "<form action=\"triggers.php\" method=\"post\">\n";
 		echo "<input type=\"hidden\" name=\"action\" value=\"disable\" />\n";
-		echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"trigger\" value=\"", htmlspecialchars_nc($_REQUEST['trigger']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"trigger\" value=\"", html_esc($_REQUEST['trigger']), "\" />\n";
 		echo $misc->form;
 		echo "<input type=\"submit\" name=\"yes\" value=\"{$lang['stryes']}\" />\n";
 		echo "<input type=\"submit\" name=\"no\" value=\"{$lang['strno']}\" />\n";
@@ -240,7 +251,7 @@ function doCreate($msg = '')
 	echo "<p><input type=\"submit\" value=\"{$lang['strcreate']}\" />\n";
 	echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 	echo "<input type=\"hidden\" name=\"action\" value=\"save_create\" />\n";
-	echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+	echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
 	echo $misc->form;
 	echo "</form>\n";
 }
@@ -265,11 +276,12 @@ function doSaveCreate()
 	else {
 		$status = $triggerActions->createTrigger(
 			$_POST['formTriggerName'],
-			 $_POST['table'],
-		   $_POST['formFunction'],
-		    $_POST['formExecTime'], $_POST['formEvent'],
-		   $_POST['formFrequency'],
-		    $_POST['formTriggerArgs']
+			$_POST['table'],
+			$_POST['formFunction'],
+			$_POST['formExecTime'],
+			$_POST['formEvent'],
+			$_POST['formFrequency'],
+			$_POST['formTriggerArgs']
 		);
 		if ($status == 0)
 			doDefault($lang['strtriggercreated']);
@@ -307,109 +319,111 @@ function doDefault($msg = '')
 	$triggers = $triggerActions->getTriggers($_REQUEST['table']);
 
 	$columns = [
-	   'trigger' => [
-		  'title' => $lang['strname'],
-		  'field' => field('tgname'),
-	   ],
-	   'definition' => [
-		  'title' => $lang['strdefinition'],
-		  'field' => field('tgdef'),
-		  'type' => 'sql',
-	   ],
-	   'function' => [
-		  'title' => $lang['strfunction'],
-		  'field' => field('proproto'),
-		  'url' => "functions.php?action=properties&amp;server={$_REQUEST['server']}&amp;database={$_REQUEST['database']}&amp;",
-		  'vars' => [
-			 'schema' => 'pronamespace',
-			 'function' => 'proproto',
-			 'function_oid' => 'prooid',
-		  ],
-	   ],
-	   'actions' => [
-		  'title' => $lang['stractions'],
-	   ],
+		'trigger' => [
+			'title' => $lang['strname'],
+			'field' => field('tgname'),
+		],
+		'definition' => [
+			'title' => $lang['strdefinition'],
+			'field' => field('tgdef'),
+			'type' => 'sql',
+		],
+		'function' => [
+			'title' => $lang['strfunction'],
+			'field' => field('proproto'),
+			'url' => "functions.php?action=properties&amp;server={$_REQUEST['server']}&amp;database={$_REQUEST['database']}&amp;",
+			'vars' => [
+				'schema' => 'pronamespace',
+				'function' => 'proproto',
+				'function_oid' => 'prooid',
+			],
+		],
+		'actions' => [
+			'title' => $lang['stractions'],
+		],
 	];
 
 	$actions = [
-	   'alter' => [
-		  'icon' => $misc->icon('Edit'),
-		  'content' => $lang['stredit'],
-		  'attr' => [
-			 'href' => [
-				'url' => 'triggers.php',
-				'urlvars' => [
-				   'action' => 'confirm_alter',
-				   'table' => $_REQUEST['table'],
-				   'trigger' => field('tgname')
+		'alter' => [
+			'icon' => $misc->icon('Edit'),
+			'content' => $lang['stredit'],
+			'attr' => [
+				'href' => [
+					'url' => 'triggers.php',
+					'urlvars' => [
+						'action' => 'confirm_alter',
+						'table' => $_REQUEST['table'],
+						'trigger' => field('tgname')
+					]
 				]
-			 ]
-		  ]
-	   ],
-	   'drop' => [
-		  'icon' => $misc->icon('Delete'),
-		  'content' => $lang['strdrop'],
-		  'attr' => [
-			 'href' => [
-				'url' => 'triggers.php',
-				'urlvars' => [
-				   'action' => 'confirm_drop',
-				   'table' => $_REQUEST['table'],
-				   'trigger' => field('tgname')
+			]
+		],
+		'drop' => [
+			'icon' => $misc->icon('Delete'),
+			'content' => $lang['strdrop'],
+			'attr' => [
+				'href' => [
+					'url' => 'triggers.php',
+					'urlvars' => [
+						'action' => 'confirm_drop',
+						'table' => $_REQUEST['table'],
+						'trigger' => field('tgname')
+					]
 				]
-			 ]
-		  ]
-	   ],
+			]
+		],
 	];
 	if ($pg->hasDisableTriggers()) {
 		$actions['enable'] = [
-		   'icon' => $misc->icon('Show'),
-		   'content' => $lang['strenable'],
-		   'attr' => [
-			  'href' => [
-				 'url' => 'triggers.php',
-				 'urlvars' => [
-					'action' => 'confirm_enable',
-					'table' => $_REQUEST['table'],
-					'trigger' => field('tgname')
-				 ]
-			  ]
-		   ]
+			'icon' => $misc->icon('Show'),
+			'content' => $lang['strenable'],
+			'attr' => [
+				'href' => [
+					'url' => 'triggers.php',
+					'urlvars' => [
+						'action' => 'confirm_enable',
+						'table' => $_REQUEST['table'],
+						'trigger' => field('tgname')
+					]
+				]
+			]
 		];
 		$actions['disable'] = [
-		   'icon' => $misc->icon('Hide'),
-		   'content' => $lang['strdisable'],
-		   'attr' => [
-			  'href' => [
-				 'url' => 'triggers.php',
-				 'urlvars' => [
-					'action' => 'confirm_disable',
-					'table' => $_REQUEST['table'],
-					'trigger' => field('tgname')
-				 ]
-			  ]
-		   ]
+			'icon' => $misc->icon('Hide'),
+			'content' => $lang['strdisable'],
+			'attr' => [
+				'href' => [
+					'url' => 'triggers.php',
+					'urlvars' => [
+						'action' => 'confirm_disable',
+						'table' => $_REQUEST['table'],
+						'trigger' => field('tgname')
+					]
+				]
+			]
 		];
 	}
 
 	$misc->printTable($triggers, $columns, $actions, 'triggers-triggers', $lang['strnotriggers'], $tgPre);
 
-	$misc->printNavLinks(['create' => [
-	   'attr' => [
-		  'href' => [
-			 'url' => 'triggers.php',
-			 'urlvars' => [
-				'action' => 'create',
-				'server' => $_REQUEST['server'],
-				'database' => $_REQUEST['database'],
-				'schema' => $_REQUEST['schema'],
-				'table' => $_REQUEST['table']
-			 ]
-		  ]
-	   ],
-	   'icon' => $misc->icon('CreateTrigger'),
-	   'content' => $lang['strcreatetrigger']
-	]], 'triggers-triggers', get_defined_vars());
+	$misc->printNavLinks([
+		'create' => [
+			'attr' => [
+				'href' => [
+					'url' => 'triggers.php',
+					'urlvars' => [
+						'action' => 'create',
+						'server' => $_REQUEST['server'],
+						'database' => $_REQUEST['database'],
+						'schema' => $_REQUEST['schema'],
+						'table' => $_REQUEST['table']
+					]
+				]
+			],
+			'icon' => $misc->icon('CreateTrigger'),
+			'content' => $lang['strcreatetrigger']
+		]
+	], 'triggers-triggers', get_defined_vars());
 }
 
 function doTree()
@@ -424,17 +438,23 @@ function doTree()
 	$reqvars = $misc->getRequestVars('table');
 
 	$attrs = [
-	   'text' => field('tgname'),
-	   'icon' => 'Trigger',
+		'text' => field('tgname'),
+		'icon' => 'Trigger',
 	];
 
 	$misc->printTree($triggers, $attrs, 'triggers');
 	exit;
 }
 
+// Main program
+
+$misc = AppContainer::getMisc();
+$lang = AppContainer::getLang();
+
 $action = $_REQUEST['action'] ?? '';
 
-if ($action == 'tree') doTree();
+if ($action == 'tree')
+	doTree();
 
 $misc->printHeader(
 	"{$lang['strtables']} - {$_REQUEST['table']} - {$lang['strtriggers']}"
@@ -442,44 +462,54 @@ $misc->printHeader(
 $misc->printBody();
 
 switch ($action) {
-case 'alter':
-	if (isset($_POST['alter'])) doSaveAlter();
-	else doDefault();
-	break;
-case 'confirm_alter':
-	doAlter();
-	break;
-case 'confirm_enable':
-	doEnable(true);
-	break;
-case 'confirm_disable':
-	doDisable(true);
-	break;
-case 'save_create':
-	if (isset($_POST['cancel'])) doDefault();
-	else doSaveCreate();
-	break;
-case 'create':
-	doCreate();
-	break;
-case 'drop':
-	if (isset($_POST['yes'])) doDrop(false);
-	else doDefault();
-	break;
-case 'confirm_drop':
-	doDrop(true);
-	break;
-case 'enable':
-	if (isset($_POST['yes'])) doEnable(false);
-	else doDefault();
-	break;
-case 'disable':
-	if (isset($_POST['yes'])) doDisable(false);
-	else doDefault();
-	break;
-default:
-	doDefault();
-	break;
+	case 'alter':
+		if (isset($_POST['alter']))
+			doSaveAlter();
+		else
+			doDefault();
+		break;
+	case 'confirm_alter':
+		doAlter();
+		break;
+	case 'confirm_enable':
+		doEnable(true);
+		break;
+	case 'confirm_disable':
+		doDisable(true);
+		break;
+	case 'save_create':
+		if (isset($_POST['cancel']))
+			doDefault();
+		else
+			doSaveCreate();
+		break;
+	case 'create':
+		doCreate();
+		break;
+	case 'drop':
+		if (isset($_POST['yes']))
+			doDrop(false);
+		else
+			doDefault();
+		break;
+	case 'confirm_drop':
+		doDrop(true);
+		break;
+	case 'enable':
+		if (isset($_POST['yes']))
+			doEnable(false);
+		else
+			doDefault();
+		break;
+	case 'disable':
+		if (isset($_POST['yes']))
+			doDisable(false);
+		else
+			doDefault();
+		break;
+	default:
+		doDefault();
+		break;
 }
 
 $misc->printFooter();

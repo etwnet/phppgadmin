@@ -31,19 +31,19 @@ $md5_server = md5($_REQUEST['server']);
 		if (substr($key, 0, 5) == 'login') continue;
 		if (is_array($val)) {
 			foreach ($val as $sub_key => $sub_val) {
-				echo "<input type=\"hidden\" name=\"", htmlspecialchars($key), '[', htmlspecialchars($sub_key), "]\" value=\"", htmlspecialchars_nc($sub_val), "\" />\n";
+				echo "<input type=\"hidden\" name=\"", htmlspecialchars($key), '[', htmlspecialchars($sub_key), "]\" value=\"", html_esc($sub_val), "\" />\n";
 			}
 		} else {
-			echo "<input type=\"hidden\" name=\"", htmlspecialchars($key), "\" value=\"", htmlspecialchars_nc($val), "\" />\n";
+			echo "<input type=\"hidden\" name=\"", htmlspecialchars($key), "\" value=\"", html_esc($val), "\" />\n";
 		}
 	}
 	?>
-	<input type="hidden" name="loginServer" value="<?php echo htmlspecialchars_nc($_REQUEST['server']); ?>"/>
+	<input type="hidden" name="loginServer" value="<?php echo html_esc($_REQUEST['server']); ?>"/>
 	<table class="navbar" border="0" cellpadding="5" cellspacing="3">
 		<tr>
 			<td><?php echo $lang['strusername']; ?></td>
 			<td>
-				<input type="text" name="loginUsername" value="<?php if (isset($_POST['loginUsername'])) echo htmlspecialchars_nc($_POST['loginUsername']); ?>" size="24"/>
+				<input type="text" name="loginUsername" value="<?php if (isset($_POST['loginUsername'])) echo html_esc($_POST['loginUsername']); ?>" size="24"/>
 			</td>
 		</tr>
 		<tr>

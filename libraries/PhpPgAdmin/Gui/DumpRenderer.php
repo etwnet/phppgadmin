@@ -122,11 +122,11 @@ class DumpRenderer
                         $checked = (strpos($dbName, 'template') !== 0) ? 'checked="checked"' : '';
                         ?>
                         <div>
-                            <input type="checkbox" id="db_<?= htmlspecialchars_nc($dbName); ?>" name="databases[]"
-                                value="<?= htmlspecialchars_nc($dbName); ?>" <?= $checked; ?> />
-                            <label for="db_<?= htmlspecialchars_nc($dbName); ?>">
+                            <input type="checkbox" id="db_<?= html_esc($dbName); ?>" name="databases[]"
+                                   value="<?= html_esc($dbName); ?>" <?= $checked; ?> />
+                            <label for="db_<?= html_esc($dbName); ?>">
                                 <img src="<?= $this->misc->icon('Database') ?>" class="icon">
-                                <?= htmlspecialchars_nc($dbName); ?>
+                                <?= html_esc($dbName); ?>
                             </label>
                         </div>
                         <?php
@@ -247,10 +247,10 @@ class DumpRenderer
 
             <p>
                 <input type="hidden" name="action" value="export" />
-                <input type="hidden" name="subject" value="<?= htmlspecialchars_nc($subject); ?>" />
+                <input type="hidden" name="subject" value="<?= html_esc($subject); ?>" />
                 <?php foreach ($params as $key => $value): ?>
                     <?php if (!in_array($key, ['action', 'subject'])): ?>
-                        <input type="hidden" name="<?= htmlspecialchars_nc($key); ?>" value="<?= htmlspecialchars_nc($value); ?>" />
+                        <input type="hidden" name="<?= html_esc($key); ?>" value="<?= html_esc($value); ?>" />
                     <?php endif; ?>
                 <?php endforeach; ?>
                 <?= $this->misc->form; ?>

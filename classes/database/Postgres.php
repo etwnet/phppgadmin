@@ -113,13 +113,13 @@ class Postgres extends ADODB_base
 	// List of all legal privileges that can be applied to different types
 	// of objects.
 	var $privlist = array(
-		'table' => array('SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REFERENCES', 'TRIGGER', 'ALL PRIVILEGES', 'GRAND OPTION'),
+		'table' => array('SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REFERENCES', 'TRIGGER', 'ALL PRIVILEGES', 'GRANT OPTION'),
 		'view' => array('SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REFERENCES', 'TRIGGER', 'ALL PRIVILEGES'),
 		'sequence' => array('USAGE', 'SELECT', 'UPDATE', 'ALL PRIVILEGES'),
-		'database' => array('CREATE', 'TEMPORARY', 'CONNECT', 'ALL PRIVILEGES', 'GRAND OPTION'),
+		'database' => array('CREATE', 'TEMPORARY', 'CONNECT', 'ALL PRIVILEGES', 'GRANT OPTION'),
 		'function' => array('EXECUTE', 'ALL PRIVILEGES'),
 		'language' => array('USAGE', 'ALL PRIVILEGES'),
-		'schema' => array('CREATE', 'USAGE', 'ALL PRIVILEGES', 'GRAND OPTION'),
+		'schema' => array('CREATE', 'USAGE', 'ALL PRIVILEGES', 'GRANT OPTION'),
 		'tablespace' => array('CREATE', 'ALL PRIVILEGES'),
 		'column' => array('SELECT', 'INSERT', 'UPDATE', 'REFERENCES', 'ALL PRIVILEGES')
 	);
@@ -139,7 +139,7 @@ class Postgres extends ADODB_base
 		'C' => 'CREATE',
 		'T' => 'TEMPORARY',
 		'c' => 'CONNECT',
-		'm' => 'GRAND OPTION',
+		'm' => 'GRANT OPTION',
 	);
 	// Rule action types
 	var $rule_events = array('SELECT', 'INSERT', 'UPDATE', 'DELETE');

@@ -120,10 +120,10 @@ $misc = AppContainer::getMisc();
 
 					echo "<p><input type=\"hidden\" name=\"action\" value=\"save_add_foreign_key\" />\n";
 					echo $misc->form;
-					echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
-					echo "<input type=\"hidden\" name=\"name\" value=\"", htmlspecialchars_nc($_REQUEST['name']), "\" />\n";
-					echo "<input type=\"hidden\" name=\"target\" value=\"", htmlspecialchars_nc(serialize($_REQUEST['target'])), "\" />\n";
-					echo "<input type=\"hidden\" name=\"SourceColumnList\" value=\"", htmlspecialchars_nc($_REQUEST['SourceColumnList']), "\" />\n";
+					echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
+					echo "<input type=\"hidden\" name=\"name\" value=\"", html_esc($_REQUEST['name']), "\" />\n";
+					echo "<input type=\"hidden\" name=\"target\" value=\"", html_esc(serialize($_REQUEST['target'])), "\" />\n";
+					echo "<input type=\"hidden\" name=\"SourceColumnList\" value=\"", html_esc($_REQUEST['SourceColumnList']), "\" />\n";
 					echo "<input type=\"hidden\" name=\"stage\" value=\"3\" />\n";
 					echo "<input type=\"submit\" value=\"{$lang['stradd']}\" />\n";
 					echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -194,11 +194,11 @@ $misc = AppContainer::getMisc();
 				while (!$tables->EOF) {
 					$key = ['schemaname' => $tables->fields['nspname'], 'tablename' => $tables->fields['relname']];
 					$key = serialize($key);
-					echo "<option value=\"", htmlspecialchars_nc($key), "\">";
+					echo "<option value=\"", html_esc($key), "\">";
 					if ($tables->fields['nspname'] != $_REQUEST['schema']) {
-							echo htmlspecialchars_nc($tables->fields['nspname']), '.';
+							echo html_esc($tables->fields['nspname']), '.';
 					}
-					echo htmlspecialchars_nc($tables->fields['relname']), "</option>\n";
+					echo html_esc($tables->fields['relname']), "</option>\n";
 					$tables->moveNext();
 				}
 				echo "</select>\n";
@@ -207,7 +207,7 @@ $misc = AppContainer::getMisc();
 
 				echo "<p><input type=\"hidden\" name=\"action\" value=\"save_add_foreign_key\" />\n";
 				echo $misc->form;
-				echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
 				echo "<input type=\"hidden\" name=\"stage\" value=\"2\" />\n";
 				echo "<input type=\"submit\" value=\"{$lang['stradd']}\" />\n";
 				echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -279,7 +279,7 @@ $misc = AppContainer::getMisc();
 			echo "<table>\n";
 			echo "<tr><th class=\"data\" colspan=\"3\">{$lang['strname']}</th></tr>";
 			echo "<tr>";
-			echo "<td class=\"data1\" colspan=\"3\"><input type=\"text\" name=\"name\" value=\"", htmlspecialchars_nc($_POST['name']),
+			echo "<td class=\"data1\" colspan=\"3\"><input type=\"text\" name=\"name\" value=\"", html_esc($_POST['name']),
 				"\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" /></td></tr>";
 			echo "<tr><th class=\"data\">{$lang['strtablecolumnlist']}</th><th class=\"data\">&nbsp;</th><th class=\"data required\">{$lang['strindexcolumnlist']}</th></tr>\n";
 			echo "<tr><td class=\"data1\">" . $selColumns->fetch() . "</td>\n";
@@ -295,7 +295,7 @@ $misc = AppContainer::getMisc();
 					($_POST['tablespace'] == '') ? ' selected="selected"' : '', "></option>\n";
 				// Display all other tablespaces
 				while (!$tablespaces->EOF) {
-					$spcname = htmlspecialchars_nc($tablespaces->fields['spcname']);
+					$spcname = html_esc($tablespaces->fields['spcname']);
 					echo "\t\t\t\t<option value=\"{$spcname}\"",
 						($spcname == $_POST['tablespace']) ? ' selected="selected"' : '', ">{$spcname}</option>\n";
 					$tablespaces->moveNext();
@@ -307,8 +307,8 @@ $misc = AppContainer::getMisc();
 
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"save_add_primary_key\" />\n";
 			echo $misc->form;
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"type\" value=\"", htmlspecialchars_nc($type), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"type\" value=\"", html_esc($type), "\" />\n";
 			echo "<input type=\"submit\" value=\"{$lang['stradd']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 			echo "</form>\n";
@@ -367,14 +367,14 @@ $misc = AppContainer::getMisc();
 			echo "<th class=\"data required\">{$lang['strdefinition']}</th></tr>\n";
 
 			echo "<tr><td class=\"data1\"><input name=\"name\" size=\"16\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-				htmlspecialchars_nc($_POST['name']), "\" /></td>\n";
+				html_esc($_POST['name']), "\" /></td>\n";
 
 			echo "<td class=\"data1\">(<input name=\"definition\" size=\"32\" value=\"",
-				htmlspecialchars_nc($_POST['definition']), "\" />)</td></tr>\n";
+				html_esc($_POST['definition']), "\" />)</td></tr>\n";
 			echo "</table>\n";
 
 			echo "<input type=\"hidden\" name=\"action\" value=\"save_add_check\" />\n";
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
 			echo $misc->form;
 			echo "<p><input type=\"submit\" name=\"ok\" value=\"{$lang['stradd']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -412,9 +412,9 @@ $misc = AppContainer::getMisc();
 
 			echo "<form action=\"constraints.php\" method=\"post\">\n";
 			echo "<input type=\"hidden\" name=\"action\" value=\"drop\" />\n";
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"constraint\" value=\"", htmlspecialchars_nc($_REQUEST['constraint']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"type\" value=\"", htmlspecialchars_nc($_REQUEST['type']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"constraint\" value=\"", html_esc($_REQUEST['constraint']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"type\" value=\"", html_esc($_REQUEST['type']), "\" />\n";
 			echo $misc->form;
 			echo "<p><input type=\"checkbox\" id=\"cascade\" name=\"cascade\" /> <label for=\"cascade\">{$lang['strcascade']}</label></p>\n";
 			echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";

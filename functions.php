@@ -177,17 +177,17 @@ function doEdit($msg = '')
 		echo "</td>\n";
 		echo "<td class=\"data1\">";
 		echo "<input type=\"hidden\" name=\"original_function\" value=\"", htmlspecialchars($fndata->fields['proname']), "\" />\n";
-		echo "<input name=\"formFunction\" style=\"width: 100%\" maxlength=\"{$pg->_maxNameLen}\" value=\"", htmlspecialchars_nc($_POST['formFunction']), "\" />";
+		echo "<input name=\"formFunction\" style=\"width: 100%\" maxlength=\"{$pg->_maxNameLen}\" value=\"", html_esc($_POST['formFunction']), "\" />";
 		echo "</td>\n";
 
 		echo "<td class=\"data1\">", $misc->printVal($args), "\n";
-		echo "<input type=\"hidden\" name=\"original_arguments\" value=\"", htmlspecialchars_nc($args), "\" />\n";
+		echo "<input type=\"hidden\" name=\"original_arguments\" value=\"", html_esc($args), "\" />\n";
 		echo "</td>\n";
 
 		echo "<td class=\"data1\">";
 		if ($fndata->fields['proretset']) echo "setof ";
 		echo $misc->printVal($fndata->fields['proresult']), "\n";
-		echo "<input type=\"hidden\" name=\"original_returns\" value=\"", htmlspecialchars_nc($fndata->fields['proresult']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"original_returns\" value=\"", html_esc($fndata->fields['proresult']), "\" />\n";
 		if ($fndata->fields['proretset'])
 			echo "<input type=\"hidden\" name=\"original_setof\" value=\"yes\" />\n";
 		echo "</td>\n";
@@ -202,32 +202,32 @@ function doEdit($msg = '')
 			echo "<tr><th class=\"data required\" colspan=\"2\">{$lang['strobjectfile']}</th>\n";
 			echo "<th class=\"data\" colspan=\"2\">{$lang['strlinksymbol']}</th></tr>\n";
 			echo "<tr><td class=\"data1\" colspan=\"2\"><input type=\"text\" name=\"formObjectFile\" style=\"width:100%\" value=\"",
-			htmlspecialchars_nc($_POST['formObjectFile']), "\" /></td>\n";
+			html_esc($_POST['formObjectFile']), "\" /></td>\n";
 			echo "<td class=\"data1\" colspan=\"2\"><input type=\"text\" name=\"formLinkSymbol\" style=\"width:100%\" value=\"",
-			htmlspecialchars_nc($_POST['formLinkSymbol']), "\" /></td></tr>\n";
+			html_esc($_POST['formLinkSymbol']), "\" /></td></tr>\n";
 		} else if ($fnlang == 'internal') {
 			echo "<tr><th class=\"data\" colspan=\"5\">{$lang['strlinksymbol']}</th></tr>\n";
 			echo "<tr><td class=\"data1\" colspan=\"5\"><input type=\"text\" name=\"formLinkSymbol\" style=\"width:100%\" value=\"",
-			htmlspecialchars_nc($_POST['formLinkSymbol']), "\" /></td></tr>\n";
+			html_esc($_POST['formLinkSymbol']), "\" /></td></tr>\n";
 		} else {
 			$mode = htmlspecialchars($fndata->fields['prolanguage']);
 			echo "<tr><th class=\"data required\" colspan=\"5\">{$lang['strdefinition']}</th></tr>\n";
 			echo "<tr><td class=\"data1\" colspan=\"5\"><textarea style=\"width:100%;\" rows=\"20\" cols=\"50\" name=\"formDefinition\" class=\"sql-editor frame resizable big\" data-mode=\"$mode\">",
-			htmlspecialchars_nc($_POST['formDefinition']), "</textarea></td></tr>\n";
+			html_esc($_POST['formDefinition']), "</textarea></td></tr>\n";
 		}
 
 		// Display function comment
 		echo "<tr><th class=\"data\" colspan=\"5\">{$lang['strcomment']}</th></tr>\n";
 		echo "<tr><td class=\"data1\" colspan=\"5\"><textarea style=\"width:100%;\" name=\"formComment\" rows=\"3\" cols=\"50\">",
-		htmlspecialchars_nc($_POST['formComment']), "</textarea></td></tr>\n";
+		html_esc($_POST['formComment']), "</textarea></td></tr>\n";
 
 		// Display function cost options
 		if ($functionActions->hasFunctionCosting()) {
 			echo "<tr><th class=\"data required\" colspan=\"5\">{$lang['strfunctioncosting']}</th></tr>\n";
 			echo "<td class=\"data1\" colspan=\"2\">{$lang['strexecutioncost']}: <input name=\"formCost\" size=\"16\" value=\"" .
-				htmlspecialchars_nc($_POST['formCost']) . "\" /></td>";
+				html_esc($_POST['formCost']) . "\" /></td>";
 			echo "<td class=\"data1\" colspan=\"2\">{$lang['strresultrows']}: <input name=\"formRows\" size=\"16\" value=\"",
-			htmlspecialchars_nc($_POST['formRows']), "\"", (!$fndata->fields['proretset']) ? 'disabled' : '', "/></td>";
+			html_esc($_POST['formRows']), "\"", (!$fndata->fields['proretset']) ? 'disabled' : '', "/></td>";
 		}
 
 		// Display function properties
@@ -253,17 +253,17 @@ function doEdit($msg = '')
 			echo "<tr><td class=\"data1\" colspan=\"5\">{$lang['strowner']}: <select name=\"formFuncOwn\">";
 			while (!$users->EOF) {
 				$uname = $users->fields['usename'];
-				echo "<option value=\"", htmlspecialchars_nc($uname), "\"", ($uname == $_POST['formFuncOwn']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($uname), "</option>\n";
+				echo "<option value=\"", html_esc($uname), "\"", ($uname == $_POST['formFuncOwn']) ? ' selected="selected"' : '', ">", html_esc($uname), "</option>\n";
 				$users->moveNext();
 			}
 			echo "</select>\n";
-			echo "<input type=\"hidden\" name=\"original_owner\" value=\"", htmlspecialchars_nc($fndata->fields['proowner']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"original_owner\" value=\"", html_esc($fndata->fields['proowner']), "\" />\n";
 			echo "</td></tr>\n";
 		}
 		echo "</table>\n";
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"save_edit\" />\n";
-		echo "<input type=\"hidden\" name=\"function\" value=\"", htmlspecialchars_nc($_REQUEST['function']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"function_oid\" value=\"", htmlspecialchars_nc($_REQUEST['function_oid']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"function\" value=\"", html_esc($_REQUEST['function']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"function_oid\" value=\"", html_esc($_REQUEST['function_oid']), "\" />\n";
 		echo $misc->form;
 		echo "<input type=\"submit\" value=\"{$lang['stralter']}\" />\n";
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -384,7 +384,7 @@ function doProperties($msg = '')
 		}
 
 		echo "<tr><th class=\"data\" colspan=\"4\">{$lang['strowner']}</th></tr>\n";
-		echo "<tr><td class=\"data1\" colspan=\"4\">", htmlspecialchars_nc($funcdata->fields['proowner']), "</td></tr>\n";
+		echo "<tr><td class=\"data1\" colspan=\"4\">", html_esc($funcdata->fields['proowner']), "</td></tr>\n";
 		echo "</table>\n";
 	} else echo "<p>{$lang['strnodata']}</p>\n";
 
@@ -468,13 +468,13 @@ function doDrop($confirm)
 			foreach ($_REQUEST['ma'] as $v) {
 				$a = unserialize(htmlspecialchars_decode($v, ENT_QUOTES));
 				echo "<p>", sprintf($lang['strconfdropfunction'], $misc->printVal($a['function'])), "</p>\n";
-				echo '<input type="hidden" name="function[]" value="', htmlspecialchars_nc($a['function']), "\" />\n";
-				echo "<input type=\"hidden\" name=\"function_oid[]\" value=\"", htmlspecialchars_nc($a['function_oid']), "\" />\n";
+				echo '<input type="hidden" name="function[]" value="', html_esc($a['function']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"function_oid[]\" value=\"", html_esc($a['function_oid']), "\" />\n";
 			}
 		} else {
 			echo "<p>", sprintf($lang['strconfdropfunction'], $misc->printVal($_REQUEST['function'])), "</p>\n";
-			echo "<input type=\"hidden\" name=\"function\" value=\"", htmlspecialchars_nc($_REQUEST['function']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"function_oid\" value=\"", htmlspecialchars_nc($_REQUEST['function_oid']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"function\" value=\"", html_esc($_REQUEST['function']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"function_oid\" value=\"", html_esc($_REQUEST['function_oid']), "\" />\n";
 		}
 
 		echo "<input type=\"hidden\" name=\"action\" value=\"drop\" />\n";
@@ -570,16 +570,16 @@ function doCreate($msg = '', $szJS = "")
 			$szSelected = " selected=\"selected\"";
 		}
 		/* this variable is include in the JS code below, so we need to ENT_QUOTES */
-		$szTypes .= "<option value=\"" . htmlspecialchars_nc($types->fields['typname'], ENT_QUOTES) . "\"{$szSelected}>";
-		$szTypes .= htmlspecialchars_nc($types->fields['typname'], ENT_QUOTES) . "</option>";
+		$szTypes .= "<option value=\"" . html_esc($types->fields['typname'], ENT_QUOTES) . "\"{$szSelected}>";
+		$szTypes .= html_esc($types->fields['typname'], ENT_QUOTES) . "</option>";
 		$types->moveNext();
 	}
 
 	$szFunctionName = "<td class=\"data1\"><input name=\"formFunction\" size=\"16\" maxlength=\"{$pg->_maxNameLen}\" value=\"" .
-		htmlspecialchars_nc($_POST['formFunction']) . "\" /></td>";
+		html_esc($_POST['formFunction']) . "\" /></td>";
 
 	$szArguments = "<td class=\"data1\"><input name=\"formArguments\" style=\"width:100%;\" size=\"16\" value=\"" .
-		htmlspecialchars_nc($_POST['formArguments']) . "\" /></td>";
+		html_esc($_POST['formArguments']) . "\" /></td>";
 
 	$szSetOfSelected = "";
 	$szNotSetOfSelected = "";
@@ -624,7 +624,7 @@ function doCreate($msg = '', $szJS = "")
 				$szSelected = ' selected="selected"';
 			}
 			if (strtolower($langs->fields['lanname']) != 'c' && strtolower($langs->fields['lanname']) != 'internal')
-				$szLanguage .= "<option value=\"" . htmlspecialchars_nc($langs->fields['lanname']) . "\"{$szSelected}>\n" .
+				$szLanguage .= "<option value=\"" . html_esc($langs->fields['lanname']) . "\"{$szSelected}>\n" .
 					$misc->printVal($langs->fields['lanname']) . "</option>";
 			$langs->moveNext();
 		}
@@ -660,14 +660,14 @@ function doCreate($msg = '', $szJS = "")
 			var g_types_select = '<select name=\"formArgType[]\">{$szTypes}</select>{$szArgReturns}';
 			var g_modes_select = '{$szModes}';
 			var g_name = '';
-			var g_lang_strargremove = '", htmlspecialchars_nc($lang["strargremove"], ENT_QUOTES), "';
-			var g_lang_strargnoargs = '", htmlspecialchars_nc($lang["strargnoargs"], ENT_QUOTES), "';
-			var g_lang_strargenableargs = '", htmlspecialchars_nc($lang["strargenableargs"], ENT_QUOTES), "';
-			var g_lang_strargnorowabove = '", htmlspecialchars_nc($lang["strargnorowabove"], ENT_QUOTES), "';
-			var g_lang_strargnorowbelow = '", htmlspecialchars_nc($lang["strargnorowbelow"], ENT_QUOTES), "';
-			var g_lang_strargremoveconfirm = '", htmlspecialchars_nc($lang["strargremoveconfirm"], ENT_QUOTES), "';
-			var g_lang_strargraise = '", htmlspecialchars_nc($lang["strargraise"], ENT_QUOTES), "';
-			var g_lang_strarglower = '", htmlspecialchars_nc($lang["strarglower"], ENT_QUOTES), "';
+			var g_lang_strargremove = '", html_esc($lang["strargremove"], ENT_QUOTES), "';
+			var g_lang_strargnoargs = '", html_esc($lang["strargnoargs"], ENT_QUOTES), "';
+			var g_lang_strargenableargs = '", html_esc($lang["strargenableargs"], ENT_QUOTES), "';
+			var g_lang_strargnorowabove = '", html_esc($lang["strargnorowabove"], ENT_QUOTES), "';
+			var g_lang_strargnorowbelow = '", html_esc($lang["strargnorowbelow"], ENT_QUOTES), "';
+			var g_lang_strargremoveconfirm = '", html_esc($lang["strargremoveconfirm"], ENT_QUOTES), "';
+			var g_lang_strargraise = '", html_esc($lang["strargraise"], ENT_QUOTES), "';
+			var g_lang_strarglower = '", html_esc($lang["strarglower"], ENT_QUOTES), "';
 		</script>
 		";
 	echo "<form action=\"functions.php\" method=\"post\">\n";
@@ -692,31 +692,31 @@ function doCreate($msg = '', $szJS = "")
 		echo "<tr><th class=\"data required\" colspan=\"2\">{$lang['strobjectfile']}</th>\n";
 		echo "<th class=\"data\" colspan=\"2\">{$lang['strlinksymbol']}</th></tr>\n";
 		echo "<tr><td class=\"data1\" colspan=\"2\"><input type=\"text\" name=\"formObjectFile\" style=\"width:100%\" value=\"",
-		htmlspecialchars_nc($_POST['formObjectFile']), "\" /></td>\n";
+		html_esc($_POST['formObjectFile']), "\" /></td>\n";
 		echo "<td class=\"data1\" colspan=\"2\"><input type=\"text\" name=\"formLinkSymbol\" style=\"width:100%\" value=\"",
-		htmlspecialchars_nc($_POST['formLinkSymbol']), "\" /></td></tr>\n";
+		html_esc($_POST['formLinkSymbol']), "\" /></td></tr>\n";
 	} else if ($fnlang == 'internal') {
 		echo "<tr><th class=\"data\" colspan=\"4\">{$lang['strlinksymbol']}</th></tr>\n";
 		echo "<tr><td class=\"data1\" colspan=\"4\"><input type=\"text\" name=\"formLinkSymbol\" style=\"width:100%\" value=\"",
-		htmlspecialchars_nc($_POST['formLinkSymbol']), "\" /></td></tr>\n";
+		html_esc($_POST['formLinkSymbol']), "\" /></td></tr>\n";
 	} else {
 		echo "<tr><th class=\"data required\" colspan=\"4\">{$lang['strdefinition']}</th></tr>\n";
 		echo "<tr><td class=\"data1\" colspan=\"4\"><textarea style=\"width:100%;\" rows=\"20\" cols=\"50\" name=\"formDefinition\" class=\"sql-editor frame resizable big\" data-mode=\"plpgsql\">",
-		htmlspecialchars_nc($_POST['formDefinition']), "</textarea></td></tr>\n";
+		html_esc($_POST['formDefinition']), "</textarea></td></tr>\n";
 	}
 
 	// Display function comment
 	echo "<tr><th class=\"data\" colspan=\"4\">{$lang['strcomment']}</th></tr>\n";
 	echo "<tr><td class=\"data1\" colspan=\"4\"><textarea style=\"width:100%;\" name=\"formComment\" rows=\"3\" cols=\"50\">",
-	htmlspecialchars_nc($_POST['formComment']), "</textarea></td></tr>\n";
+	html_esc($_POST['formComment']), "</textarea></td></tr>\n";
 
 	// Display function cost options
 	if ($functionActions->hasFunctionCosting()) {
 		echo "<tr><th class=\"data required\" colspan=\"4\">{$lang['strfunctioncosting']}</th></tr>\n";
 		echo "<td class=\"data1\" colspan=\"2\">{$lang['strexecutioncost']}: <input name=\"formCost\" size=\"16\" value=\"" .
-			htmlspecialchars_nc($_POST['formCost']) . "\" /></td>";
+			html_esc($_POST['formCost']) . "\" /></td>";
 		echo "<td class=\"data1\" colspan=\"2\">{$lang['strresultrows']}: <input name=\"formRows\" size=\"16\" value=\"" .
-			htmlspecialchars_nc($_POST['formRows']) . "\" /></td>";
+			html_esc($_POST['formRows']) . "\" /></td>";
 	}
 
 	// Display function properties
@@ -727,7 +727,7 @@ function doCreate($msg = '', $szJS = "")
 		foreach ($functionActions->funcprops as $k => $v) {
 			echo "<select name=\"formProperties[{$i}]\">\n";
 			foreach ($v as $p) {
-				echo "<option value=\"", htmlspecialchars_nc($p), "\"", ($p == $_POST['formProperties'][$i]) ? ' selected="selected"' : '',
+				echo "<option value=\"", html_esc($p), "\"", ($p == $_POST['formProperties'][$i]) ? ' selected="selected"' : '',
 				">", $misc->printVal($p), "</option>\n";
 			}
 			echo "</select><br />\n";

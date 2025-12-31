@@ -330,11 +330,11 @@ function doDrop($confirm, $msg = '')
 			foreach ($_REQUEST['ma'] as $v) {
 				$a = unserialize(htmlspecialchars_decode($v, ENT_QUOTES));
 				echo "<p>", sprintf($lang['strconfdropsequence'], $misc->printVal($a['sequence'])), "</p>\n";
-				printf('<input type="hidden" name="sequence[]" value="%s" />', htmlspecialchars_nc($a['sequence']));
+				printf('<input type="hidden" name="sequence[]" value="%s" />', html_esc($a['sequence']));
 			}
 		} else {
 			echo "<p>", sprintf($lang['strconfdropsequence'], $misc->printVal($_REQUEST['sequence'])), "</p>\n";
-			echo "<input type=\"hidden\" name=\"sequence\" value=\"", htmlspecialchars_nc($_REQUEST['sequence']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"sequence\" value=\"", html_esc($_REQUEST['sequence']), "\" />\n";
 		}
 
 		echo "<p><input type=\"checkbox\" id=\"cascade\" name=\"cascade\" /> <label for=\"cascade\">{$lang['strcascade']}</label></p>\n";
@@ -407,27 +407,27 @@ function doCreateSequence($msg = '')
 
 	echo "<tr><th class=\"data left required\">{$lang['strname']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"formSequenceName\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-		htmlspecialchars_nc($_POST['formSequenceName']), "\" /></td></tr>\n";
+		html_esc($_POST['formSequenceName']), "\" /></td></tr>\n";
 
 	echo "<tr><th class=\"data left\">{$lang['strincrementby']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"formIncrement\" size=\"5\" value=\"",
-		htmlspecialchars_nc($_POST['formIncrement']), "\" /> </td></tr>\n";
+		html_esc($_POST['formIncrement']), "\" /> </td></tr>\n";
 
 	echo "<tr><th class=\"data left\">{$lang['strminvalue']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"formMinValue\" size=\"5\" value=\"",
-		htmlspecialchars_nc($_POST['formMinValue']), "\" /></td></tr>\n";
+		html_esc($_POST['formMinValue']), "\" /></td></tr>\n";
 
 	echo "<tr><th class=\"data left\">{$lang['strmaxvalue']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"formMaxValue\" size=\"5\" value=\"",
-		htmlspecialchars_nc($_POST['formMaxValue']), "\" /></td></tr>\n";
+		html_esc($_POST['formMaxValue']), "\" /></td></tr>\n";
 
 	echo "<tr><th class=\"data left\">{$lang['strstartvalue']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"formStartValue\" size=\"5\" value=\"",
-		htmlspecialchars_nc($_POST['formStartValue']), "\" /></td></tr>\n";
+		html_esc($_POST['formStartValue']), "\" /></td></tr>\n";
 
 	echo "<tr><th class=\"data left\">{$lang['strcachevalue']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"formCacheValue\" size=\"5\" value=\"",
-		htmlspecialchars_nc($_POST['formCacheValue']), "\" /></td></tr>\n";
+		html_esc($_POST['formCacheValue']), "\" /></td></tr>\n";
 
 	echo "<tr><th class=\"data left\"><label for=\"formCycledValue\">{$lang['strcancycle']}</label></th>\n";
 	echo "<td class=\"data1\"><input type=\"checkbox\" id=\"formCycledValue\" name=\"formCycledValue\" ", (isset($_POST['formCycledValue']) ? ' checked="checked"' : ''), " /></td></tr>\n";
@@ -560,7 +560,7 @@ function doSetval($msg = '')
 			$misc->printVal($sequence->fields['last_value']), "\" /></td></tr>\n";
 		echo "</table>\n";
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"setval\" />\n";
-		echo "<input type=\"hidden\" name=\"sequence\" value=\"", htmlspecialchars_nc($_REQUEST['sequence']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"sequence\" value=\"", html_esc($_REQUEST['sequence']), "\" />\n";
 		echo $misc->form;
 		echo "<input type=\"submit\" name=\"setval\" value=\"{$lang['strsetval']}\" />\n";
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -671,7 +671,7 @@ function doAlter($msg = '')
 		echo "<tr><th class=\"data left required\">{$lang['strname']}</th>\n";
 		echo "<td class=\"data1\">";
 		echo "<input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-			htmlspecialchars_nc($_POST['name']), "\" /></td></tr>\n";
+			html_esc($_POST['name']), "\" /></td></tr>\n";
 
 		if ($roleActions->isSuperUser()) {
 			// Fetch all users
@@ -681,7 +681,7 @@ function doAlter($msg = '')
 			echo "<td class=\"data1\"><select name=\"owner\">";
 			while (!$users->EOF) {
 				$uname = $users->fields['usename'];
-				echo "<option value=\"", htmlspecialchars_nc($uname), "\"", ($uname == $_POST['owner']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($uname), "</option>\n";
+				echo "<option value=\"", html_esc($uname), "\"", ($uname == $_POST['owner']) ? ' selected="selected"' : '', ">", html_esc($uname), "</option>\n";
 				$users->moveNext();
 			}
 			echo "</select></td></tr>\n";
@@ -693,7 +693,7 @@ function doAlter($msg = '')
 			echo "<td class=\"data1\"><select name=\"newschema\">";
 			while (!$schemas->EOF) {
 				$schema = $schemas->fields['nspname'];
-				echo "<option value=\"", htmlspecialchars_nc($schema), "\"", ($schema == $_POST['newschema']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($schema), "</option>\n";
+				echo "<option value=\"", html_esc($schema), "\"", ($schema == $_POST['newschema']) ? ' selected="selected"' : '', ">", html_esc($schema), "</option>\n";
 				$schemas->moveNext();
 			}
 			echo "</select></td></tr>\n";
@@ -702,33 +702,33 @@ function doAlter($msg = '')
 		echo "<tr><th class=\"data left\">{$lang['strcomment']}</th>\n";
 		echo "<td class=\"data1\">";
 		echo "<textarea rows=\"3\" cols=\"32\" name=\"comment\">",
-			htmlspecialchars_nc($_POST['comment']), "</textarea></td></tr>\n";
+			html_esc($_POST['comment']), "</textarea></td></tr>\n";
 
 		if ($pg->hasAlterSequenceStart()) {
 			echo "<tr><th class=\"data left\">{$lang['strstartvalue']}</th>\n";
 			echo "<td class=\"data1\"><input name=\"formStartValue\" size=\"5\" value=\"",
-				htmlspecialchars_nc($sequence->fields['start_value']), "\" /></td></tr>\n";
+				html_esc($sequence->fields['start_value']), "\" /></td></tr>\n";
 		}
 
 		echo "<tr><th class=\"data left\">{$lang['strrestartvalue']}</th>\n";
 		echo "<td class=\"data1\"><input name=\"formRestartValue\" size=\"5\" value=\"",
-			htmlspecialchars_nc($sequence->fields['last_value']), "\" /></td></tr>\n";
+			html_esc($sequence->fields['last_value']), "\" /></td></tr>\n";
 
 		echo "<tr><th class=\"data left\">{$lang['strincrementby']}</th>\n";
 		echo "<td class=\"data1\"><input name=\"formIncrement\" size=\"5\" value=\"",
-			htmlspecialchars_nc($sequence->fields['increment_by']), "\" /> </td></tr>\n";
+			html_esc($sequence->fields['increment_by']), "\" /> </td></tr>\n";
 
 		echo "<tr><th class=\"data left\">{$lang['strmaxvalue']}</th>\n";
 		echo "<td class=\"data1\"><input name=\"formMaxValue\" size=\"5\" value=\"",
-			htmlspecialchars_nc($sequence->fields['max_value']), "\" /></td></tr>\n";
+			html_esc($sequence->fields['max_value']), "\" /></td></tr>\n";
 
 		echo "<tr><th class=\"data left\">{$lang['strminvalue']}</th>\n";
 		echo "<td class=\"data1\"><input name=\"formMinValue\" size=\"5\" value=\"",
-			htmlspecialchars_nc($sequence->fields['min_value']), "\" /></td></tr>\n";
+			html_esc($sequence->fields['min_value']), "\" /></td></tr>\n";
 
 		echo "<tr><th class=\"data left\">{$lang['strcachevalue']}</th>\n";
 		echo "<td class=\"data1\"><input name=\"formCacheValue\" size=\"5\" value=\"",
-			htmlspecialchars_nc($sequence->fields['cache_value']), "\" /></td></tr>\n";
+			html_esc($sequence->fields['cache_value']), "\" /></td></tr>\n";
 
 		echo "<tr><th class=\"data left\"><label for=\"formCycledValue\">{$lang['strcancycle']}</label></th>\n";
 		echo "<td class=\"data1\"><input type=\"checkbox\" id=\"formCycledValue\" name=\"formCycledValue\" ", (isset($_POST['formCycledValue']) ? ' checked="checked"' : ''), " /></td></tr>\n";
@@ -736,7 +736,7 @@ function doAlter($msg = '')
 		echo "</table>\n";
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"alter\" />\n";
 		echo $misc->form;
-		echo "<input type=\"hidden\" name=\"sequence\" value=\"", htmlspecialchars_nc($_REQUEST['sequence']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"sequence\" value=\"", html_esc($_REQUEST['sequence']), "\" />\n";
 		echo "<input type=\"submit\" name=\"alter\" value=\"{$lang['stralter']}\" />\n";
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 		echo "</form>\n";

@@ -7,5 +7,4 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'PhpPgAdmin\\' => array($baseDir . '/libraries/PhpPgAdmin'),
-    'Ossrock\\FflatePhp\\' => array($vendorDir . '/ossrock/fflate-php/src'),
 );

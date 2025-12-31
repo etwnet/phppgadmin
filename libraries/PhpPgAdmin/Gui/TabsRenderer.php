@@ -3,6 +3,7 @@
 namespace PhpPgAdmin\Gui;
 
 use PhpPgAdmin\Core\AbstractContext;
+use PhpPgAdmin\Database\Actions\AclActions;
 use PhpPgAdmin\Database\Actions\RoleActions;
 
 class TabsRenderer extends AbstractContext
@@ -194,7 +195,7 @@ class TabsRenderer extends AbstractContext
                         'title' => $lang['strprivileges'],
                         'url' => 'privileges.php',
                         'urlvars' => ['subject' => 'database'],
-                        'hide' => (!isset($data->privlist['database'])),
+                        //'hide' => (!isset(AclActions::PRIV_LIST['database'])),
                         'help' => 'pg.privilege',
                         'tree' => false,
                         'icon' => 'Privileges',
@@ -219,7 +220,7 @@ class TabsRenderer extends AbstractContext
                         'title' => $lang['strexport'],
                         'url' => 'database.php',
                         'urlvars' => ['subject' => 'database', 'action' => 'export'],
-                        'hide' => (!$this->misc()->isDumpEnabled()),
+                        //'hide' => (!$this->misc()->isDumpEnabled()),
                         'tree' => false,
                         'icon' => 'Export',
                     ],
@@ -227,7 +228,7 @@ class TabsRenderer extends AbstractContext
                         'title' => $lang['strimport'],
                         'url' => 'database.php',
                         'urlvars' => ['subject' => 'database', 'action' => 'import'],
-                        'hide' => false,
+                        //'hide' => false,
                         'tree' => false,
                         'icon' => 'Import',
                     ],

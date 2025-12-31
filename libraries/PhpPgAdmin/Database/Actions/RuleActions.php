@@ -6,8 +6,8 @@ use PhpPgAdmin\Database\AbstractActions;
 
 class RuleActions extends AbstractActions
 {
-	// Rule action types
-	private $ruleEvents = ['SELECT', 'INSERT', 'UPDATE', 'DELETE'];
+    // Rule action types
+    public const RULE_EVENTS = ['SELECT', 'INSERT', 'UPDATE', 'DELETE'];
 
     /**
      * Returns a list of all rules on a table or view.
@@ -48,7 +48,7 @@ class RuleActions extends AbstractActions
         $this->connection->fieldClean($name);
         $this->connection->fieldClean($table);
 
-        if (!in_array($event, $this->ruleEvents)) {
+        if (!in_array($event, self::RULE_EVENTS)) {
             return -1;
         }
 

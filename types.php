@@ -175,7 +175,7 @@ function doAlter($msg = '')
 	echo "<table>\n";
 	echo "<tr><th class=\"data left required\">{$lang['strname']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-		htmlspecialchars_nc($_POST['name']), "\" /></td></tr>\n";
+		html_esc($_POST['name']), "\" /></td></tr>\n";
 
 	// Owner change (superusers only)
 	if ($roleActions->isSuperUser()) {
@@ -237,7 +237,7 @@ function doAlter($msg = '')
 
 	echo "</table>\n";
 	echo "<p><input type=\"hidden\" name=\"action\" value=\"save_alter\" />\n";
-	echo "<input type=\"hidden\" name=\"type\" value=\"", htmlspecialchars_nc($_REQUEST['type']), "\" />\n";
+	echo "<input type=\"hidden\" name=\"type\" value=\"", html_esc($_REQUEST['type']), "\" />\n";
 	echo $misc->form;
 	echo "<input type=\"submit\" value=\"{$lang['strsave']}\" />\n";
 	echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -363,7 +363,7 @@ function doDrop($confirm)
 		echo "<form action=\"types.php\" method=\"post\">\n";
 		echo "<p><input type=\"checkbox\" id=\"cascade\" name=\"cascade\" /> <label for=\"cascade\">{$lang['strcascade']}</label></p>\n";
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"drop\" />\n";
-		echo "<input type=\"hidden\" name=\"type\" value=\"", htmlspecialchars_nc($_REQUEST['type']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"type\" value=\"", html_esc($_REQUEST['type']), "\" />\n";
 		echo $misc->form;
 		echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -406,14 +406,14 @@ function doCreateComposite($msg = '')
 			echo "<table>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
 			echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-				htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
+				html_esc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strnumfields']}</th>\n";
 			echo "\t\t<td class=\"data\"><input name=\"fields\" size=\"5\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-				htmlspecialchars_nc($_REQUEST['fields']), "\" /></td>\n\t</tr>\n";
+				html_esc($_REQUEST['fields']), "\" /></td>\n\t</tr>\n";
 
 			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
 			echo "\t\t<td><textarea name=\"typcomment\" rows=\"3\" cols=\"32\">",
-				htmlspecialchars_nc($_REQUEST['typcomment']), "</textarea></td>\n\t</tr>\n";
+				html_esc($_REQUEST['typcomment']), "</textarea></td>\n\t</tr>\n";
 
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"create_comp\" />\n";
@@ -459,12 +459,12 @@ function doCreateComposite($msg = '')
 
 				echo "\t<tr>\n\t\t<td>", $i + 1, ".&nbsp;</td>\n";
 				echo "\t\t<td><input name=\"field[{$i}]\" size=\"16\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-					htmlspecialchars_nc($_REQUEST['field'][$i]), "\" /></td>\n";
+					html_esc($_REQUEST['field'][$i]), "\" /></td>\n";
 				echo "\t\t<td>\n\t\t\t<select name=\"type[{$i}]\">\n";
 				$types->moveFirst();
 				while (!$types->EOF) {
 					$typname = $types->fields['typname'];
-					echo "\t\t\t\t<option value=\"", htmlspecialchars_nc($typname), "\"", (isset($_REQUEST['type'][$i]) && $typname == $_REQUEST['type'][$i]) ? ' selected="selected"' : '', ">",
+					echo "\t\t\t\t<option value=\"", html_esc($typname), "\"", (isset($_REQUEST['type'][$i]) && $typname == $_REQUEST['type'][$i]) ? ' selected="selected"' : '', ">",
 						$misc->printVal($typname), "</option>\n";
 					$types->moveNext();
 				}
@@ -477,17 +477,17 @@ function doCreateComposite($msg = '')
 				echo "\t\t\t</select>\n\t\t</td>\n";
 
 				echo "\t\t<td><input name=\"length[{$i}]\" size=\"10\" value=\"",
-					htmlspecialchars_nc($_REQUEST['length'][$i]), "\" /></td>\n";
+					html_esc($_REQUEST['length'][$i]), "\" /></td>\n";
 				echo "\t\t<td><input name=\"colcomment[{$i}]\" size=\"40\" value=\"",
-					htmlspecialchars_nc($_REQUEST['colcomment'][$i]), "\" /></td>\n\t</tr>\n";
+					html_esc($_REQUEST['colcomment'][$i]), "\" /></td>\n\t</tr>\n";
 			}
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"create_comp\" />\n";
 			echo "<input type=\"hidden\" name=\"stage\" value=\"3\" />\n";
 			echo $misc->form;
-			echo "<input type=\"hidden\" name=\"name\" value=\"", htmlspecialchars_nc($_REQUEST['name']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"fields\" value=\"", htmlspecialchars_nc($_REQUEST['fields']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"typcomment\" value=\"", htmlspecialchars_nc($_REQUEST['typcomment']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"name\" value=\"", html_esc($_REQUEST['name']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"fields\" value=\"", html_esc($_REQUEST['fields']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"typcomment\" value=\"", html_esc($_REQUEST['typcomment']), "\" />\n";
 			echo "<input type=\"submit\" value=\"{$lang['strcreate']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 			echo "</form>\n";
@@ -563,14 +563,14 @@ function doCreateEnum($msg = '')
 			echo "<table>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
 			echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-				htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
+				html_esc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strnumvalues']}</th>\n";
 			echo "\t\t<td class=\"data\"><input name=\"values\" size=\"5\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-				htmlspecialchars_nc($_REQUEST['values']), "\" /></td>\n\t</tr>\n";
+				html_esc($_REQUEST['values']), "\" /></td>\n\t</tr>\n";
 
 			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
 			echo "\t\t<td><textarea name=\"typcomment\" rows=\"3\" cols=\"32\">",
-				htmlspecialchars_nc($_REQUEST['typcomment']), "</textarea></td>\n\t</tr>\n";
+				html_esc($_REQUEST['typcomment']), "</textarea></td>\n\t</tr>\n";
 
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"create_enum\" />\n";
@@ -609,15 +609,15 @@ function doCreateEnum($msg = '')
 
 				echo "\t<tr>\n\t\t<td>", $i + 1, ".&nbsp;</td>\n";
 				echo "\t\t<td><input name=\"value[{$i}]\" size=\"16\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-					htmlspecialchars_nc($_REQUEST['value'][$i]), "\" /></td>\n\t</tr>\n";
+					html_esc($_REQUEST['value'][$i]), "\" /></td>\n\t</tr>\n";
 			}
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"create_enum\" />\n";
 			echo "<input type=\"hidden\" name=\"stage\" value=\"3\" />\n";
 			echo $misc->form;
-			echo "<input type=\"hidden\" name=\"name\" value=\"", htmlspecialchars_nc($_REQUEST['name']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"values\" value=\"", htmlspecialchars_nc($_REQUEST['values']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"typcomment\" value=\"", htmlspecialchars_nc($_REQUEST['typcomment']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"name\" value=\"", html_esc($_REQUEST['name']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"values\" value=\"", html_esc($_REQUEST['values']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"typcomment\" value=\"", html_esc($_REQUEST['typcomment']), "\" />\n";
 			echo "<input type=\"submit\" value=\"{$lang['strcreate']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 			echo "</form>\n";
@@ -697,11 +697,11 @@ function doCreate($msg = '')
 	echo "<table>\n";
 	echo "<tr><th class=\"data left required\">{$lang['strname']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"typname\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-		htmlspecialchars_nc($_POST['typname']), "\" /></td></tr>\n";
+		html_esc($_POST['typname']), "\" /></td></tr>\n";
 	echo "<tr><th class=\"data left required\">{$lang['strinputfn']}</th>\n";
 	echo "<td class=\"data1\"><select name=\"typin\">";
 	while (!$funcs->EOF) {
-		$proname = htmlspecialchars_nc($funcs->fields['proname']);
+		$proname = html_esc($funcs->fields['proname']);
 		echo "<option value=\"{$proname}\"", ($proname == $_POST['typin']) ? ' selected="selected"' : '', ">{$proname}</option>\n";
 		$funcs->moveNext();
 	}
@@ -710,29 +710,29 @@ function doCreate($msg = '')
 	echo "<td class=\"data1\"><select name=\"typout\">";
 	$funcs->moveFirst();
 	while (!$funcs->EOF) {
-		$proname = htmlspecialchars_nc($funcs->fields['proname']);
+		$proname = html_esc($funcs->fields['proname']);
 		echo "<option value=\"{$proname}\"", ($proname == $_POST['typout']) ? ' selected="selected"' : '', ">{$proname}</option>\n";
 		$funcs->moveNext();
 	}
 	echo "</select></td></tr>\n";
 	echo "<tr><th class=\"data left" . (version_compare($pg->major_version, '7.4', '<') ? ' required' : '') . "\">{$lang['strlength']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"typlen\" size=\"8\" value=\"",
-		htmlspecialchars_nc($_POST['typlen']), "\" /></td></tr>";
+		html_esc($_POST['typlen']), "\" /></td></tr>";
 	echo "<tr><th class=\"data left\">{$lang['strdefault']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"typdef\" size=\"8\" value=\"",
-		htmlspecialchars_nc($_POST['typdef']), "\" /></td></tr>";
+		html_esc($_POST['typdef']), "\" /></td></tr>";
 	echo "<tr><th class=\"data left\">{$lang['strelement']}</th>\n";
 	echo "<td class=\"data1\"><select name=\"typelem\">";
 	echo "<option value=\"\"></option>\n";
 	while (!$types->EOF) {
-		$currname = htmlspecialchars_nc($types->fields['typname']);
+		$currname = html_esc($types->fields['typname']);
 		echo "<option value=\"{$currname}\"", ($currname == $_POST['typelem']) ? ' selected="selected"' : '', ">{$currname}</option>\n";
 		$types->moveNext();
 	}
 	echo "</select></td></tr>\n";
 	echo "<tr><th class=\"data left\">{$lang['strdelimiter']}</th>\n";
 	echo "<td class=\"data1\"><input name=\"typdelim\" size=\"1\" maxlength=\"1\" value=\"",
-		htmlspecialchars_nc($_POST['typdelim']), "\" /></td></tr>";
+		html_esc($_POST['typdelim']), "\" /></td></tr>";
 	echo "<tr><th class=\"data left\"><label for=\"typbyval\">{$lang['strpassbyval']}</label></th>\n";
 	echo "<td class=\"data1\"><input type=\"checkbox\" id=\"typbyval\" name=\"typbyval\"",
 		isset($_POST['typbyval']) ? ' checked="checked"' : '', " /></td></tr>";

@@ -1,6 +1,8 @@
 <?php
 namespace PhpPgAdmin\Database\Export\Compression;
 
+use Ossrock\FflatePhp\FflatePhp;
+
 class GzipStrategy implements CompressionStrategy
 {
     public function begin(string $filename): array

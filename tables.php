@@ -57,10 +57,10 @@ function doCreate($msg = '')
 			echo "<table>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
 			echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-				htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
+				html_esc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
 			echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strnumcols']}</th>\n";
 			echo "\t\t<td class=\"data\"><input name=\"fields\" size=\"5\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-				htmlspecialchars_nc($_REQUEST['fields']), "\" /></td>\n\t</tr>\n";
+				html_esc($_REQUEST['fields']), "\" /></td>\n\t</tr>\n";
 			if ($pg->hasServerOids()) {
 				echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['stroptions']}</th>\n";
 				echo "\t\t<td class=\"data\"><label for=\"withoutoids\"><input type=\"checkbox\" id=\"withoutoids\" name=\"withoutoids\"", isset($_REQUEST['withoutoids']) ? ' checked="checked"' : '', " />WITHOUT OIDS</label></td>\n\t</tr>\n";
@@ -76,7 +76,7 @@ function doCreate($msg = '')
 				echo "\t\t\t\t<option value=\"\"", ($_REQUEST['spcname'] == '') ? ' selected="selected"' : '', "></option>\n";
 				// Display all other tablespaces
 				while (!$tablespaces->EOF) {
-					$spcname = htmlspecialchars_nc($tablespaces->fields['spcname']);
+					$spcname = html_esc($tablespaces->fields['spcname']);
 					echo "\t\t\t\t<option value=\"{$spcname}\"", ($tablespaces->fields['spcname'] == $_REQUEST['spcname']) ? ' selected="selected"' : '', ">{$spcname}</option>\n";
 					$tablespaces->moveNext();
 				}
@@ -85,7 +85,7 @@ function doCreate($msg = '')
 
 			echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
 			echo "\t\t<td><textarea name=\"tblcomment\" rows=\"3\" cols=\"32\">",
-				htmlspecialchars_nc($_REQUEST['tblcomment']), "</textarea></td>\n\t</tr>\n";
+				html_esc($_REQUEST['tblcomment']), "</textarea></td>\n\t</tr>\n";
 
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"create\" />\n";
@@ -137,19 +137,19 @@ function doCreate($msg = '')
 
 				echo "\t<tr>\n\t\t<td>", $i + 1, ".&nbsp;</td>\n";
 				echo "\t\t<td><input name=\"field[{$i}]\" size=\"16\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-					htmlspecialchars_nc($_REQUEST['field'][$i]), "\" /></td>\n";
+					html_esc($_REQUEST['field'][$i]), "\" /></td>\n";
 				echo "\t\t<td>\n\t\t\t<select name=\"type[{$i}]\" id=\"types{$i}\" onchange=\"checkLengths(this.options[this.selectedIndex].value,{$i});\">\n";
 				// Output any "magic" types
 				foreach ($pg->extraTypes as $v) {
 					$types_for_js[strtolower($v)] = 1;
-					echo "\t\t\t\t<option value=\"", htmlspecialchars_nc($v), "\"", (isset($_REQUEST['type'][$i]) && $v == $_REQUEST['type'][$i]) ? ' selected="selected"' : '', ">",
+					echo "\t\t\t\t<option value=\"", html_esc($v), "\"", (isset($_REQUEST['type'][$i]) && $v == $_REQUEST['type'][$i]) ? ' selected="selected"' : '', ">",
 						$misc->printVal($v), "</option>\n";
 				}
 				$types->moveFirst();
 				while (!$types->EOF) {
 					$typname = $types->fields['typname'];
 					$types_for_js[$typname] = 1;
-					echo "\t\t\t\t<option value=\"", htmlspecialchars_nc($typname), "\"", (isset($_REQUEST['type'][$i]) && $typname == $_REQUEST['type'][$i]) ? ' selected="selected"' : '', ">",
+					echo "\t\t\t\t<option value=\"", html_esc($typname), "\"", (isset($_REQUEST['type'][$i]) && $typname == $_REQUEST['type'][$i]) ? ' selected="selected"' : '', ">",
 						$misc->printVal($typname), "</option>\n";
 					$types->moveNext();
 				}
@@ -170,7 +170,7 @@ function doCreate($msg = '')
 				echo "\t\t\t</select>\n\t\t</td>\n";
 
 				echo "\t\t<td><input name=\"length[{$i}]\" id=\"lengths{$i}\" size=\"10\" value=\"",
-					htmlspecialchars_nc($_REQUEST['length'][$i]), "\" /></td>\n";
+					html_esc($_REQUEST['length'][$i]), "\" /></td>\n";
 				echo "\t\t<td><input type=\"checkbox\" name=\"notnull[{$i}]\"", (isset($_REQUEST['notnull'][$i])) ? ' checked="checked"' : '', " /></td>\n";
 				echo "\t\t<td style=\"text-align: center\"><input type=\"checkbox\" name=\"uniquekey[{$i}]\""
 					. (isset($_REQUEST['uniquekey'][$i]) ? ' checked="checked"' : '') . " /></td>\n";
@@ -178,9 +178,9 @@ function doCreate($msg = '')
 					. (isset($_REQUEST['primarykey'][$i]) ? ' checked="checked"' : '')
 					. " /></td>\n";
 				echo "\t\t<td><input name=\"default[{$i}]\" size=\"20\" value=\"",
-					htmlspecialchars_nc($_REQUEST['default'][$i]), "\" /></td>\n";
+					html_esc($_REQUEST['default'][$i]), "\" /></td>\n";
 				echo "\t\t<td><input name=\"colcomment[{$i}]\" size=\"40\" value=\"",
-					htmlspecialchars_nc($_REQUEST['colcomment'][$i]), "\" />
+					html_esc($_REQUEST['colcomment'][$i]), "\" />
 						<script type=\"text/javascript\">checkLengths(document.getElementById('types{$i}').value,{$i});</script>
 						</td>\n\t</tr>\n";
 			}
@@ -188,14 +188,14 @@ function doCreate($msg = '')
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"create\" />\n";
 			echo "<input type=\"hidden\" name=\"stage\" value=\"3\" />\n";
 			echo $misc->form;
-			echo "<input type=\"hidden\" name=\"name\" value=\"", htmlspecialchars_nc($_REQUEST['name']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"fields\" value=\"", htmlspecialchars_nc($_REQUEST['fields']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"name\" value=\"", html_esc($_REQUEST['name']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"fields\" value=\"", html_esc($_REQUEST['fields']), "\" />\n";
 			if (isset($_REQUEST['withoutoids'])) {
 				echo "<input type=\"hidden\" name=\"withoutoids\" value=\"true\" />\n";
 			}
-			echo "<input type=\"hidden\" name=\"tblcomment\" value=\"", htmlspecialchars_nc($_REQUEST['tblcomment']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"tblcomment\" value=\"", html_esc($_REQUEST['tblcomment']), "\" />\n";
 			if (isset($_REQUEST['spcname'])) {
-				echo "<input type=\"hidden\" name=\"spcname\" value=\"", htmlspecialchars_nc($_REQUEST['spcname']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"spcname\" value=\"", html_esc($_REQUEST['spcname']), "\" />\n";
 			}
 			echo "<input type=\"submit\" value=\"{$lang['strcreate']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -299,14 +299,14 @@ function doCreateLike($confirm, $msg = '')
 			$pg->fieldClean($a['relname']);
 			$tables["\"{$a['nspname']}\".\"{$a['relname']}\""] = serialize(['schema' => $a['nspname'], 'table' => $a['relname']]);
 			if ($_REQUEST['like'] == $tables["\"{$a['nspname']}\".\"{$a['relname']}\""])
-				$tblsel = htmlspecialchars_nc($tables["\"{$a['nspname']}\".\"{$a['relname']}\""]);
+				$tblsel = html_esc($tables["\"{$a['nspname']}\".\"{$a['relname']}\""]);
 		}
 
 		unset($tbltmp);
 
 		echo "<form action=\"tables.php\" method=\"post\">\n";
 		echo "<table>\n\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
-		echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"", htmlspecialchars_nc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
+		echo "\t\t<td class=\"data\"><input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"", html_esc($_REQUEST['name']), "\" /></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strcreatetablelikeparent']}</th>\n";
 		echo "\t\t<td class=\"data\">";
 		echo $formRenderer->printCombo($tables, 'like', true, $tblsel, false);
@@ -439,15 +439,15 @@ function doSelectRows($confirm, $msg = '')
 				$id = (($i % 2) == 0 ? '1' : '2');
 				echo "<tr class=\"data{$id}\">\n";
 				echo "<td style=\"white-space:nowrap;\">";
-				echo "<input type=\"checkbox\" name=\"show[", htmlspecialchars_nc($attrs->fields['attname']), "]\"",
+				echo "<input type=\"checkbox\" name=\"show[", html_esc($attrs->fields['attname']), "]\"",
 					isset($_REQUEST['show'][$attrs->fields['attname']]) ? ' checked="checked"' : '', " /></td>";
 				echo "<td style=\"white-space:nowrap;\">", $misc->printVal($attrs->fields['attname']), "</td>";
 				echo "<td style=\"white-space:nowrap;\">", $misc->printVal($pg->formatType($attrs->fields['type'], $attrs->fields['atttypmod'])), "</td>";
 				echo "<td style=\"white-space:nowrap;\">";
 				echo "<select name=\"ops[{$attrs->fields['attname']}]\">\n";
 				foreach (array_keys($pg->selectOps) as $v) {
-					echo "<option value=\"", htmlspecialchars_nc($v), "\"", ($v == $_REQUEST['ops'][$attrs->fields['attname']]) ? ' selected="selected"' : '',
-						">", htmlspecialchars_nc($v), "</option>\n";
+					echo "<option value=\"", html_esc($v), "\"", ($v == $_REQUEST['ops'][$attrs->fields['attname']]) ? ' selected="selected"' : '',
+						">", html_esc($v), "</option>\n";
 				}
 				echo "</select>\n</td>\n";
 				echo "<td style=\"white-space:nowrap;\" id=\"row_att_search_{$attrs->fields['attnum']}\">";
@@ -479,7 +479,7 @@ function doSelectRows($confirm, $msg = '')
 			echo "<p>{$lang['strinvalidparam']}</p>\n";
 
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"selectrows\" />\n";
-		echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
 		echo "<input type=\"hidden\" name=\"subject\" value=\"table\" />\n";
 		echo $misc->form;
 		echo "<input type=\"submit\" name=\"select\" accesskey=\"r\" value=\"{$lang['strselect']}\" />\n";
@@ -585,7 +585,7 @@ function doInsertRow($confirm, $msg = '')
 				echo "<td style=\"white-space:nowrap;\">\n";
 				echo $misc->printVal($data->formatType($attrs->fields['type'], $attrs->fields['atttypmod']));
 				echo "<input type=\"hidden\" name=\"types[{$attrs->fields['attnum']}]\" value=\"",
-				htmlspecialchars_nc($attrs->fields['type']), "\" /></td>";
+				html_esc($attrs->fields['type']), "\" /></td>";
 				echo "<td style=\"white-space:nowrap;\">\n";
 				echo "<select name=\"format[{$attrs->fields['attnum']}]\">\n";
 				echo "<option value=\"VALUE\"", ($_REQUEST['format'][$attrs->fields['attnum']] == 'VALUE') ? ' selected="selected"' : '', ">{$lang['strvalue']}</option>\n";
@@ -627,7 +627,7 @@ function doInsertRow($confirm, $msg = '')
 			echo "<input type=\"hidden\" name=\"action\" value=\"insertrow\" />\n";
 			echo "<input type=\"hidden\" name=\"fields\" value=\"", htmlentities(serialize($fields), ENT_QUOTES, 'UTF-8'), "\" />\n";
 			echo "<input type=\"hidden\" name=\"protection_counter\" value=\"" . $_SESSION['counter'] . "\" />\n";
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
 			echo "<p><input type=\"submit\" name=\"insert\" value=\"{$lang['strinsert']}\" />\n";
 			echo "<input type=\"submit\" name=\"insertandrepeat\" accesskey=\"r\" value=\"{$lang['strinsertandrepeat']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" />\n";
@@ -699,7 +699,7 @@ function doEmpty($confirm)
 			foreach ($_REQUEST['ma'] as $v) {
 				$a = unserialize(htmlspecialchars_decode($v, ENT_QUOTES));
 				echo "<p>", sprintf($lang['strconfemptytable'], $misc->printVal($a['table'])), "</p>\n";
-				printf('<input type="hidden" name="table[]" value="%s" />', htmlspecialchars_nc($a['table']));
+				printf('<input type="hidden" name="table[]" value="%s" />', html_esc($a['table']));
 			}
 		} // END multi empty
 		else {
@@ -709,7 +709,7 @@ function doEmpty($confirm)
 			echo "<p>", sprintf($lang['strconfemptytable'], $misc->printVal($_REQUEST['table'])), "</p>\n";
 
 			echo "<form action=\"tables.php\" method=\"post\">\n";
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
 		} // END not multi empty
 
 		echo "<input type=\"hidden\" name=\"action\" value=\"empty\" />\n";
@@ -767,7 +767,7 @@ function doDrop($confirm)
 			foreach ($_REQUEST['ma'] as $v) {
 				$a = unserialize(htmlspecialchars_decode($v, ENT_QUOTES));
 				echo "<p>", sprintf($lang['strconfdroptable'], $misc->printVal($a['table'])), "</p>\n";
-				printf('<input type="hidden" name="table[]" value="%s" />', htmlspecialchars_nc($a['table']));
+				printf('<input type="hidden" name="table[]" value="%s" />', html_esc($a['table']));
 			}
 		} else {
 
@@ -777,7 +777,7 @@ function doDrop($confirm)
 			echo "<p>", sprintf($lang['strconfdroptable'], $misc->printVal($_REQUEST['table'])), "</p>\n";
 
 			echo "<form action=\"tables.php\" method=\"post\">\n";
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
 		} // END if multi drop
 
 		echo "<input type=\"hidden\" name=\"action\" value=\"drop\" />\n";

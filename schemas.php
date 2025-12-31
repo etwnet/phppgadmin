@@ -154,24 +154,24 @@ function doCreate($msg = '')
 	echo "<table>\n";
 	echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
 	echo "\t\t<td class=\"data1\"><input name=\"formName\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-		htmlspecialchars_nc($_POST['formName']), "\" /></td>\n\t</tr>\n";
+		html_esc($_POST['formName']), "\" /></td>\n\t</tr>\n";
 	// Owner
 	echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strowner']}</th>\n";
 	echo "\t\t<td class=\"data1\">\n\t\t\t<select name=\"formAuth\">\n";
 	while (!$users->EOF) {
-		$uname = htmlspecialchars_nc($users->fields['usename']);
+		$uname = html_esc($users->fields['usename']);
 		echo "\t\t\t\t<option value=\"{$uname}\"", ($uname == $_POST['formAuth']) ? ' selected="selected"' : '', ">{$uname}</option>\n";
 		$users->moveNext();
 	}
 	echo "\t\t\t</select>\n\t\t</td>\n\t</tr>\n";
 	echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
 	echo "\t\t<td class=\"data1\"><textarea name=\"formComment\" rows=\"3\" cols=\"32\">",
-		htmlspecialchars_nc($_POST['formComment']), "</textarea></td>\n\t</tr>\n";
+		html_esc($_POST['formComment']), "</textarea></td>\n\t</tr>\n";
 
 	echo "</table>\n";
 	echo "<p>\n";
 	echo "<input type=\"hidden\" name=\"action\" value=\"create\" />\n";
-	echo "<input type=\"hidden\" name=\"database\" value=\"", htmlspecialchars_nc($_REQUEST['database']), "\" />\n";
+	echo "<input type=\"hidden\" name=\"database\" value=\"", html_esc($_REQUEST['database']), "\" />\n";
 	echo $misc->form;
 	echo "<input type=\"submit\" name=\"create\" value=\"{$lang['strcreate']}\" />\n";
 	echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" />\n";
@@ -241,7 +241,7 @@ function doAlter($msg = '')
 		echo "\t\t<th class=\"data left required\">{$lang['strname']}</th>\n";
 		echo "\t\t<td class=\"data1\">";
 		echo "\t\t\t<input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-			htmlspecialchars_nc($_POST['name']), "\" />\n";
+			html_esc($_POST['name']), "\" />\n";
 		echo "\t\t</td>\n";
 		echo "\t</tr>\n";
 
@@ -250,18 +250,18 @@ function doAlter($msg = '')
 		echo "<td class=\"data2\"><select name=\"owner\">";
 		while (!$users->EOF) {
 			$uname = $users->fields['usename'];
-			echo "<option value=\"", htmlspecialchars_nc($uname), "\"", ($uname == $_POST['owner']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($uname), "</option>\n";
+			echo "<option value=\"", html_esc($uname), "\"", ($uname == $_POST['owner']) ? ' selected="selected"' : '', ">", html_esc($uname), "</option>\n";
 			$users->moveNext();
 		}
 		echo "</select></td></tr>\n";
 
 		echo "\t<tr>\n";
 		echo "\t\t<th class=\"data\">{$lang['strcomment']}</th>\n";
-		echo "\t\t<td class=\"data1\"><textarea cols=\"32\" rows=\"3\" name=\"comment\">", htmlspecialchars_nc($_POST['comment']), "</textarea></td>\n";
+		echo "\t\t<td class=\"data1\"><textarea cols=\"32\" rows=\"3\" name=\"comment\">", html_esc($_POST['comment']), "</textarea></td>\n";
 		echo "\t</tr>\n";
 		echo "</table>\n";
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"alter\" />\n";
-		echo "<input type=\"hidden\" name=\"schema\" value=\"", htmlspecialchars_nc($_POST['schema']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"schema\" value=\"", html_esc($_POST['schema']), "\" />\n";
 		echo $misc->form;
 		echo "<input type=\"submit\" name=\"alter\" value=\"{$lang['stralter']}\" />\n";
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -318,16 +318,16 @@ function doDrop($confirm)
 			foreach ($_REQUEST['ma'] as $v) {
 				$a = unserialize(htmlspecialchars_decode($v, ENT_QUOTES));
 				echo '<p>', sprintf($lang['strconfdropschema'], $misc->printVal($a['nsp'])), "</p>\n";
-				echo '<input type="hidden" name="nsp[]" value="', htmlspecialchars_nc($a['nsp']), "\" />\n";
+				echo '<input type="hidden" name="nsp[]" value="', html_esc($a['nsp']), "\" />\n";
 			}
 		} else {
 			echo "<p>", sprintf($lang['strconfdropschema'], $misc->printVal($_REQUEST['nsp'])), "</p>\n";
-			echo "<input type=\"hidden\" name=\"nsp\" value=\"", htmlspecialchars_nc($_REQUEST['nsp']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"nsp\" value=\"", html_esc($_REQUEST['nsp']), "\" />\n";
 		}
 
 		echo "<p><input type=\"checkbox\" id=\"cascade\" name=\"cascade\" /> <label for=\"cascade\">{$lang['strcascade']}</label></p>\n";
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"drop\" />\n";
-		echo "<input type=\"hidden\" name=\"database\" value=\"", htmlspecialchars_nc($_REQUEST['database']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"database\" value=\"", html_esc($_REQUEST['database']), "\" />\n";
 		echo $misc->form;
 		echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";

@@ -83,7 +83,7 @@ function doAlter($msg = '')
 
 			// Column name
 			echo "<tr><td><input name=\"field\" size=\"16\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-				htmlspecialchars_nc($_REQUEST['field']), "\" /></td>\n";
+				html_esc($_REQUEST['field']), "\" /></td>\n";
 
 			// Column type
 			$escaped_predef_types = []; // the JS escaped array elements
@@ -96,7 +96,7 @@ function doAlter($msg = '')
 				while (!$types->EOF) {
 					$typname = $types->fields['typname'];
 					$types_for_js[] = $typname;
-					echo "\t<option value=\"", htmlspecialchars_nc($typname), "\"", ($typname == $_REQUEST['type']) ? ' selected="selected"' : '', ">",
+					echo "\t<option value=\"", html_esc($typname), "\"", ($typname == $_REQUEST['type']) ? ' selected="selected"' : '', ">",
 						$misc->printVal($typname), "</option>\n";
 					$types->moveNext();
 				}
@@ -113,7 +113,7 @@ function doAlter($msg = '')
 				}
 
 				echo "<td><input name=\"length\" id=\"lengths\" size=\"8\" value=\"",
-					htmlspecialchars_nc($_REQUEST['length']), "\" /></td>\n";
+					html_esc($_REQUEST['length']), "\" /></td>\n";
 			} else {
 				// Otherwise draw the read-only type name
 				echo "<td>", $misc->printVal($data->formatType($column->fields['type'], $column->fields['atttypmod'])), "</td>\n";
@@ -121,24 +121,24 @@ function doAlter($msg = '')
 
 			echo "<td><input type=\"checkbox\" name=\"notnull\"", (isset($_REQUEST['notnull'])) ? ' checked="checked"' : '', " /></td>\n";
 			echo "<td><input name=\"default\" size=\"20\" value=\"",
-				htmlspecialchars_nc($_REQUEST['default']), "\" /></td>\n";
+				html_esc($_REQUEST['default']), "\" /></td>\n";
 			echo "<td><input name=\"comment\" size=\"40\" value=\"",
-				htmlspecialchars_nc($_REQUEST['comment']), "\" /></td></tr>\n";
+				html_esc($_REQUEST['comment']), "\" /></td></tr>\n";
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"properties\" />\n";
 			echo "<input type=\"hidden\" name=\"stage\" value=\"2\" />\n";
 			echo $misc->form;
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"column\" value=\"", htmlspecialchars_nc($_REQUEST['column']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"olddefault\" value=\"", htmlspecialchars_nc($_REQUEST['olddefault']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"column\" value=\"", html_esc($_REQUEST['column']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"olddefault\" value=\"", html_esc($_REQUEST['olddefault']), "\" />\n";
 			if ($column->fields['attnotnull'])
 				echo "<input type=\"hidden\" name=\"oldnotnull\" value=\"on\" />\n";
-			echo "<input type=\"hidden\" name=\"oldtype\" value=\"", htmlspecialchars_nc($data->formatType($column->fields['type'], $column->fields['atttypmod'])), "\" />\n";
+			echo "<input type=\"hidden\" name=\"oldtype\" value=\"", html_esc($data->formatType($column->fields['type'], $column->fields['atttypmod'])), "\" />\n";
 			// Add hidden variables to suppress error notices if we don't support altering column type
 			if (!$data->hasAlterColumnType()) {
-				echo "<input type=\"hidden\" name=\"type\" value=\"", htmlspecialchars_nc($_REQUEST['type']), "\" />\n";
-				echo "<input type=\"hidden\" name=\"length\" value=\"", htmlspecialchars_nc($_REQUEST['length']), "\" />\n";
-				echo "<input type=\"hidden\" name=\"array\" value=\"", htmlspecialchars_nc($_REQUEST['array']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"type\" value=\"", html_esc($_REQUEST['type']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"length\" value=\"", html_esc($_REQUEST['length']), "\" />\n";
+				echo "<input type=\"hidden\" name=\"array\" value=\"", html_esc($_REQUEST['array']), "\" />\n";
 			}
 			echo "<input type=\"submit\" value=\"{$lang['stralter']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";

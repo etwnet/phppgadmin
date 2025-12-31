@@ -439,9 +439,9 @@ function execute_dump_command_streaming($command, $output_stream)
 	fclose($pipes[0]); // Close stdin
 
 	// Stream pg_dump output directly to the gzipped stream
-	// Read in 8KB chunks: small enough to not overwhelm memory, large enough for efficiency
+	// Read in 32KB chunks: small enough to not overwhelm memory, large enough for efficiency
 	while (!feof($pipes[1])) {
-		$chunk = fread($pipes[1], 8192);
+		$chunk = fread($pipes[1], 32768);
 		if ($chunk === false || $chunk === '') {
 			break;
 		}

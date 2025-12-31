@@ -261,7 +261,7 @@ EOT;
 			foreach ($keyFields as $field => $val) {
 				echo "<input type=\"hidden\" name=\"key[", htmlspecialchars($field), "]\" value=\"", htmlspecialchars($val), "\" />\n";
 			}
-			//echo "<input type=\"hidden\" name=\"key\" value=\"", htmlspecialchars_nc(urlencode(serialize($keyFields))), "\" />\n";
+			//echo "<input type=\"hidden\" name=\"key\" value=\"", html_esc(urlencode(serialize($keyFields))), "\" />\n";
 		}
 		if (isset($_REQUEST['table']))
 			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars($_REQUEST['table']), "\" />\n";
@@ -410,23 +410,23 @@ function doDelRow($confirm)
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" />\n";
 		}
 		if (isset($_REQUEST['table']))
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
 		if (isset($_REQUEST['subject']))
-			echo "<input type=\"hidden\" name=\"subject\" value=\"", htmlspecialchars_nc($_REQUEST['subject']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"subject\" value=\"", html_esc($_REQUEST['subject']), "\" />\n";
 		if (isset($_REQUEST['query']))
-			echo "<input type=\"hidden\" name=\"query\" value=\"", htmlspecialchars_nc($_REQUEST['query']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"query\" value=\"", html_esc($_REQUEST['query']), "\" />\n";
 		if (isset($_REQUEST['count']))
-			echo "<input type=\"hidden\" name=\"count\" value=\"", htmlspecialchars_nc($_REQUEST['count']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"count\" value=\"", html_esc($_REQUEST['count']), "\" />\n";
 		if (isset($_REQUEST['return']))
-			echo "<input type=\"hidden\" name=\"return\" value=\"", htmlspecialchars_nc($_REQUEST['return']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"page\" value=\"", htmlspecialchars_nc($_REQUEST['page']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"return\" value=\"", html_esc($_REQUEST['return']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"page\" value=\"", html_esc($_REQUEST['page']), "\" />\n";
 		if (isset($_REQUEST['orderby'])) {
 			foreach ($_REQUEST['orderby'] as $key => $val) {
 				echo "<input type=\"hidden\" name=\"orderby[", htmlspecialchars($key), "]\" value=\"", htmlspecialchars($val), "\" />\n";
 			}
 		}
-		echo "<input type=\"hidden\" name=\"strings\" value=\"", htmlspecialchars_nc($_REQUEST['strings']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"key\" value=\"", htmlspecialchars_nc(urlencode(serialize($_REQUEST['key']))), "\" />\n";
+		echo "<input type=\"hidden\" name=\"strings\" value=\"", html_esc($_REQUEST['strings']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"key\" value=\"", html_esc(urlencode(serialize($_REQUEST['key']))), "\" />\n";
 		echo "</form>\n";
 	} else {
 		$status = $rowActions->deleteRow($_POST['table'], unserialize(urldecode($_POST['key'])));
@@ -939,7 +939,7 @@ function doBrowse($msg = '')
 	<form method="get" onsubmit="adjustQueryFormMethod(this)" action="display.php?<?= http_build_query($_sub_params) ?>">
 		<div>
 			<textarea name="query" class="sql-editor frame resizable auto-expand" width="90%" rows="5" cols="100"
-				resizable="true"><?= htmlspecialchars_nc($query) ?></textarea>
+				resizable="true"><?= html_esc($query) ?></textarea>
 		</div>
 		<div><input type="submit" value="<?= $lang['strquerysubmit'] ?>" /></div>
 	</form>

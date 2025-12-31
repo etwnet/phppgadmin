@@ -9,7 +9,7 @@ class AclActions extends AbstractActions
     // Base constructor inherited from Actions
 
     /** @var array map of ACL chars to privilege names */
-    private $privmap = [
+    private const PRIV_MAP = [
         'r' => 'SELECT',
         'w' => 'UPDATE',
         'a' => 'INSERT',
@@ -23,10 +23,22 @@ class AclActions extends AbstractActions
         'C' => 'CREATE',
         'T' => 'TEMPORARY',
         'c' => 'CONNECT',
-        'm' => 'GRAND OPTION',
+        'm' => 'GRANT OPTION',
     ];
 
-    //
+    // List of all legal privileges that can be applied to different types
+    // of objects.
+    public const PRIV_LIST = [
+        'table' => ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REFERENCES', 'TRIGGER', 'ALL PRIVILEGES'],
+        'view' => ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REFERENCES', 'TRIGGER', 'ALL PRIVILEGES'],
+        'sequence' => ['USAGE', 'SELECT', 'UPDATE', 'ALL PRIVILEGES'],
+        'database' => ['CREATE', 'TEMPORARY', 'CONNECT', 'ALL PRIVILEGES'],
+        'function' => ['EXECUTE', 'ALL PRIVILEGES'],
+        'language' => ['USAGE', 'ALL PRIVILEGES'],
+        'schema' => ['CREATE', 'USAGE', 'ALL PRIVILEGES'],
+        'tablespace' => ['CREATE', 'ALL PRIVILEGES'],
+        'column' => ['SELECT', 'INSERT', 'UPDATE', 'REFERENCES', 'ALL PRIVILEGES']
+    ];
 
     /**
      * Internal function used for parsing ACLs (aclitem[] -> structured array).
@@ -103,7 +115,7 @@ class AclActions extends AbstractActions
             for ($i = 0; $i < strlen($chars); $i++) {
                 $char = substr($chars, $i, 1);
                 if ($char === '*') {
-                    $row[4][] = $this->privmap[substr($chars, $i - 1, 1)] ?? null;
+                    $row[4][] = self::PRIV_MAP[substr($chars, $i - 1, 1)] ?? null;
                 } elseif ($char === '/') {
                     $grantor = substr($chars, $i + 1);
                     if (strpos($grantor, '"') === 0) {
@@ -113,10 +125,10 @@ class AclActions extends AbstractActions
                     $row[3] = $grantor;
                     break;
                 } else {
-                    if (!isset($this->privmap[$char])) {
+                    if (!isset(self::PRIV_MAP[$char])) {
                         return -3;
                     }
-                    $row[2][] = $this->privmap[$char];
+                    $row[2][] = self::PRIV_MAP[$char];
                 }
             }
 
@@ -183,6 +195,7 @@ class AclActions extends AbstractActions
             return [];
         }
 
+        //var_dump($acl); // Debug line, can be removed later
         return $this->parseAcl($acl);
     }
 
@@ -229,7 +242,7 @@ class AclActions extends AbstractActions
             case 'column':
                 $sql .= " (\"{$object}\")";
                 $object = $table;
-                // fallthrough
+            // fallthrough
             case 'table':
             case 'view':
             case 'sequence':

@@ -35,8 +35,8 @@ $misc = AppContainer::getMisc();
 			echo "<form action=\"indexes.php\" method=\"post\">\n";
 			echo "<p><input type=\"checkbox\" id=\"analyze\" name=\"analyze\"", (isset($_REQUEST['analyze']) ? ' checked="checked"' : ''), " /><label for=\"analyze\">{$lang['stranalyze']}</label></p>\n";
 			echo "<input type=\"hidden\" name=\"action\" value=\"cluster_index\" />\n";
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"index\" value=\"", htmlspecialchars_nc($_REQUEST['index']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"index\" value=\"", html_esc($_REQUEST['index']), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"cluster\" value=\"{$lang['strclusterindex']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" />\n";
@@ -121,7 +121,7 @@ $misc = AppContainer::getMisc();
 		echo "<tr><th class=\"data required\" colspan=\"3\">{$lang['strindexname']}</th></tr>";
 		echo "<tr>";
 		echo "<td class=\"data1\" colspan=\"3\"><input type=\"text\" name=\"formIndexName\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"", 
-			htmlspecialchars_nc($_POST['formIndexName']), "\" /></td></tr>";
+			html_esc($_POST['formIndexName']), "\" /></td></tr>";
 		echo "<tr><th class=\"data\">{$lang['strtablecolumnlist']}</th><th class=\"data\">&nbsp;</th>";
 		echo "<th class=\"data required\">{$lang['strindexcolumnlist']}</th></tr>\n";
 		echo "<tr><td class=\"data1\">" . $selColumns->fetch() . "</td>\n";
@@ -134,8 +134,8 @@ $misc = AppContainer::getMisc();
 		echo "<th class=\"data left required\" scope=\"row\">{$lang['strindextype']}</th>";
 		echo "<td class=\"data1\"><select name=\"formIndexType\">";
 		foreach ($data->typIndexes as $v) {
-			echo "<option value=\"", htmlspecialchars_nc($v), "\"",
-				($v == $_POST['formIndexType']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($v), "</option>\n";
+			echo "<option value=\"", html_esc($v), "\"",
+				($v == $_POST['formIndexType']) ? ' selected="selected"' : '', ">", html_esc($v), "</option>\n";
 		}
 		echo "</select></td></tr>\n";				
 		echo "<tr>";
@@ -145,7 +145,7 @@ $misc = AppContainer::getMisc();
 		echo "<tr>";
 		echo "<th class=\"data left\" scope=\"row\">{$lang['strwhere']}</th>";
 		echo "<td class=\"data1\">(<input name=\"formWhere\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"", 
-			htmlspecialchars_nc($_POST['formWhere']), "\" />)</td>";
+			html_esc($_POST['formWhere']), "\" />)</td>";
 		echo "</tr>";
 		
 		// Tablespace (if there are any)
@@ -157,7 +157,7 @@ $misc = AppContainer::getMisc();
 				($_POST['formSpc'] == '') ? ' selected="selected"' : '', "></option>\n";
 			// Display all other tablespaces
 			while (!$tablespaces->EOF) {
-				$spcname = htmlspecialchars_nc($tablespaces->fields['spcname']);
+				$spcname = html_esc($tablespaces->fields['spcname']);
 				echo "\t\t\t\t<option value=\"{$spcname}\"",
 					($spcname == $_POST['formSpc']) ? ' selected="selected"' : '', ">{$spcname}</option>\n";
 				$tablespaces->moveNext();
@@ -176,7 +176,7 @@ $misc = AppContainer::getMisc();
 
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"save_create_index\" />\n";
 		echo $misc->form;
-		echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
 		echo "<input type=\"submit\" value=\"{$lang['strcreate']}\" />\n";
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 		echo "</form>\n";
@@ -225,8 +225,8 @@ $misc = AppContainer::getMisc();
 
 			echo "<form action=\"indexes.php\" method=\"post\">\n";
 			echo "<input type=\"hidden\" name=\"action\" value=\"drop_index\" />\n";
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"index\" value=\"", htmlspecialchars_nc($_REQUEST['index']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"index\" value=\"", html_esc($_REQUEST['index']), "\" />\n";
 			echo $misc->form;
 			echo "<p><input type=\"checkbox\" id=\"cascade\" name=\"cascade\" /> <label for=\"cascade\">{$lang['strcascade']}</label></p>\n";
 			echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";

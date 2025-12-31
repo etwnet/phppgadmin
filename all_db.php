@@ -39,7 +39,7 @@ function doAlter($confirm)
 					<th class="data left required"><?= $lang['strname']; ?></th>
 					<td class="data1">
 						<input name="newname" size="32" maxlength="<?= $pg->_maxNameLen; ?>"
-							value="<?= htmlspecialchars_nc($dbName); ?>" />
+							value="<?= html_esc($dbName); ?>" />
 					</td>
 				</tr>
 
@@ -58,9 +58,9 @@ function doAlter($confirm)
 								while (!$users->EOF) {
 									$uname = $users->fields['usename'];
 									?>
-									<option value="<?= htmlspecialchars_nc($uname); ?>" <?php if ($uname == $owner)
+									<option value="<?= html_esc($uname); ?>" <?php if ($uname == $owner)
 										  echo ' selected="selected"'; ?>>
-										<?= htmlspecialchars_nc($uname); ?>
+										<?= html_esc($uname); ?>
 									</option>
 									<?php
 									$users->moveNext();
@@ -79,7 +79,7 @@ function doAlter($confirm)
 					<tr>
 						<th class="data left"><?= $lang['strcomment']; ?></th>
 						<td class="data1">
-							<textarea rows="3" cols="32" name="dbcomment"><?= htmlspecialchars_nc($comment); ?></textarea>
+							<textarea rows="3" cols="32" name="dbcomment"><?= html_esc($comment); ?></textarea>
 						</td>
 					</tr>
 				<?php endif; ?>
@@ -87,7 +87,7 @@ function doAlter($confirm)
 
 			<input type="hidden" name="action" value="alter" />
 			<?= $misc->form; ?>
-			<input type="hidden" name="oldname" value="<?= htmlspecialchars_nc($dbName); ?>" />
+			<input type="hidden" name="oldname" value="<?= html_esc($dbName); ?>" />
 			<p>
 				<input type="submit" name="alter" value="<?= $lang['stralter']; ?>" />
 				<input type="submit" name="cancel" value="<?= $lang['strcancel']; ?>" />
@@ -142,13 +142,13 @@ function doDrop($confirm)
 					$a = unserialize(htmlspecialchars_decode($v, ENT_QUOTES));
 					?>
 					<p><?= sprintf($lang['strconfdropdatabase'], $misc->printVal($a['database'])); ?></p>
-					<input type="hidden" name="dropdatabase[]" value="<?= htmlspecialchars_nc($a['database']); ?>" />
+					<input type="hidden" name="dropdatabase[]" value="<?= html_esc($a['database']); ?>" />
 					<?php
 				}
 			} else {
 				?>
 				<p><?= sprintf($lang['strconfdropdatabase'], $misc->printVal($_REQUEST['dropdatabase'])); ?></p>
-				<input type="hidden" name="dropdatabase" value="<?= htmlspecialchars_nc($_REQUEST['dropdatabase']); ?>" />
+				<input type="hidden" name="dropdatabase" value="<?= html_esc($_REQUEST['dropdatabase']); ?>" />
 				<?php
 			}
 			?>
@@ -227,7 +227,7 @@ function doCreate($msg = '')
 				<th class="data left required"><?= $lang['strname']; ?></th>
 				<td class="data1">
 					<input name="formName" size="32" maxlength="<?= $pg->_maxNameLen; ?>"
-						value="<?= htmlspecialchars_nc($_POST['formName']); ?>" />
+						value="<?= html_esc($_POST['formName']); ?>" />
 				</td>
 			</tr>
 
@@ -242,7 +242,7 @@ function doCreate($msg = '')
 							echo ' selected="selected"'; ?>>template1</option>
 						<?php
 						while (!$templatedbs->EOF) {
-							$dbname = htmlspecialchars_nc($templatedbs->fields['datname']);
+							$dbname = html_esc($templatedbs->fields['datname']);
 							if ($dbname != 'template1') {
 								// filter out for $conf[show_system] users so we don't get duplicates
 								?>
@@ -266,7 +266,7 @@ function doCreate($msg = '')
 						<?php
 						foreach ($pg->codemap as $key) {
 							?>
-							<option value="<?= htmlspecialchars_nc($key); ?>" <?php if ($key == $_POST['formEncoding'])
+							<option value="<?= html_esc($key); ?>" <?php if ($key == $_POST['formEncoding'])
 								  echo ' selected="selected"'; ?>>
 								<?= $misc->printVal($key); ?>
 							</option>
@@ -288,7 +288,7 @@ function doCreate($msg = '')
 				<tr>
 					<th class="data left"><?= $lang['strcollation']; ?></th>
 					<td class="data1">
-						<input name="formCollate" value="<?= htmlspecialchars_nc($_POST['formCollate']); ?>" />
+						<input name="formCollate" value="<?= html_esc($_POST['formCollate']); ?>" />
 					</td>
 				</tr>
 
@@ -296,7 +296,7 @@ function doCreate($msg = '')
 				<tr>
 					<th class="data left"><?= $lang['strctype']; ?></th>
 					<td class="data1">
-						<input name="formCType" value="<?= htmlspecialchars_nc($_POST['formCType']); ?>" />
+						<input name="formCType" value="<?= html_esc($_POST['formCType']); ?>" />
 					</td>
 				</tr>
 			<?php endif; ?>
@@ -313,7 +313,7 @@ function doCreate($msg = '')
 							<?php
 							// Display all other tablespaces
 							while (!$tablespaces->EOF) {
-								$spcname = htmlspecialchars_nc($tablespaces->fields['spcname']);
+								$spcname = html_esc($tablespaces->fields['spcname']);
 								?>
 								<option value="<?= $spcname; ?>" <?php if ($spcname == $_POST['formSpc'])
 									  echo ' selected="selected"'; ?>>
@@ -334,7 +334,7 @@ function doCreate($msg = '')
 					<th class="data left"><?= $lang['strcomment']; ?></th>
 					<td>
 						<textarea name="formComment" rows="3"
-							cols="32"><?= htmlspecialchars_nc($_POST['formComment']); ?></textarea>
+							cols="32"><?= html_esc($_POST['formComment']); ?></textarea>
 					</td>
 				</tr>
 			<?php endif; ?>

@@ -6,18 +6,10 @@ namespace Composer\Autoload;
 
 class ComposerStaticInitdc4157232e79bfa339749cac4891f73b
 {
-    public static $files = array (
-        'b9a001a12da876e3197e0282e14c822b' => __DIR__ . '/..' . '/ossrock/fflate-php/src/Polyfill/functions.php',
-    );
-
     public static $prefixLengthsPsr4 = array (
         'P' =>
         array (
             'PhpPgAdmin\\' => 11,
-        ),
-        'O' =>
-        array (
-            'Ossrock\\FflatePhp\\' => 18,
         ),
     );
 
@@ -25,10 +17,6 @@ class ComposerStaticInitdc4157232e79bfa339749cac4891f73b
         'PhpPgAdmin\\' =>
         array (
             0 => __DIR__ . '/../..' . '/libraries/PhpPgAdmin',
-        ),
-        'Ossrock\\FflatePhp\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/ossrock/fflate-php/src',
         ),
     );
 

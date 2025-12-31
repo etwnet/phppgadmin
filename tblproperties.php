@@ -131,14 +131,14 @@ function doAlter($msg = '')
 	echo "<tr><th class=\"data left required\">{$lang['strname']}</th>\n";
 	echo "<td class=\"data1\">";
 	echo "<input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-		htmlspecialchars_nc($_POST['name'], ENT_QUOTES), "\" /></td></tr>\n";
+		html_esc($_POST['name'], ENT_QUOTES), "\" /></td></tr>\n";
 
 	if ($roleActions->isSuperUser()) {
 		echo "<tr><th class=\"data left required\">{$lang['strowner']}</th>\n";
 		echo "<td class=\"data1\"><select name=\"owner\">";
 		while (!$users->EOF) {
 			$uname = $users->fields['usename'];
-			echo "<option value=\"", htmlspecialchars_nc($uname), "\"", ($uname == $_POST['owner']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($uname), "</option>\n";
+			echo "<option value=\"", html_esc($uname), "\"", ($uname == $_POST['owner']) ? ' selected="selected"' : '', ">", html_esc($uname), "</option>\n";
 			$users->moveNext();
 		}
 		echo "</select></td></tr>\n";
@@ -150,7 +150,7 @@ function doAlter($msg = '')
 		echo "<td class=\"data1\"><select name=\"newschema\">";
 		while (!$schemas->EOF) {
 			$schema = $schemas->fields['nspname'];
-			echo "<option value=\"", htmlspecialchars_nc($schema), "\"", ($schema == $_POST['newschema']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($schema), "</option>\n";
+			echo "<option value=\"", html_esc($schema), "\"", ($schema == $_POST['newschema']) ? ' selected="selected"' : '', ">", html_esc($schema), "</option>\n";
 			$schemas->moveNext();
 		}
 		echo "</select></td></tr>\n";
@@ -164,7 +164,7 @@ function doAlter($msg = '')
 		echo "\t\t\t\t<option value=\"\"", ($_POST['tablespace'] == '') ? ' selected="selected"' : '', "></option>\n";
 		// Display all other tablespaces
 		while (!$tablespaces->EOF) {
-			$spcname = htmlspecialchars_nc($tablespaces->fields['spcname']);
+			$spcname = html_esc($tablespaces->fields['spcname']);
 			echo "\t\t\t\t<option value=\"{$spcname}\"", ($spcname == $_POST['tablespace']) ? ' selected="selected"' : '', ">{$spcname}</option>\n";
 			$tablespaces->moveNext();
 		}
@@ -174,10 +174,10 @@ function doAlter($msg = '')
 	echo "<tr><th class=\"data left\">{$lang['strcomment']}</th>\n";
 	echo "<td class=\"data1\">";
 	echo "<textarea rows=\"3\" cols=\"32\" name=\"comment\">",
-		htmlspecialchars_nc($_POST['comment'] ?? ''), "</textarea></td></tr>\n";
+		html_esc($_POST['comment'] ?? ''), "</textarea></td></tr>\n";
 	echo "</table>\n";
 	echo "<p><input type=\"hidden\" name=\"action\" value=\"alter\" />\n";
-	echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+	echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
 	echo $misc->form;
 	echo "<input type=\"submit\" name=\"alter\" value=\"{$lang['stralter']}\" />\n";
 	echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -242,7 +242,7 @@ function doImport($msg = '')
 	echo "</table>\n";
 	echo "<p><input type=\"hidden\" name=\"action\" value=\"import\" />\n";
 	echo $misc->form;
-	echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+	echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
 	echo "<input type=\"submit\" value=\"{$lang['strimport']}\" /></p>\n";
 	echo "</form>\n";
 }
@@ -312,20 +312,20 @@ function doAddColumn($msg = '')
 			echo "<th class=\"data\">{$lang['strcomment']}</th></tr>\n";
 
 			echo "<tr><td><input name=\"field\" size=\"16\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-				htmlspecialchars_nc($_POST['field']), "\" /></td>\n";
+				html_esc($_POST['field']), "\" /></td>\n";
 			echo "<td><select name=\"type\" id=\"type\" onchange=\"checkLengths(document.getElementById('type').value,'');\">\n";
 			// Output any "magic" types.  This came in with the alter column type so we'll check that
 			if ($pg->hasMagicTypes()) {
 				foreach ($pg->extraTypes as $v) {
 					$types_for_js[] = strtolower($v);
-					echo "\t<option value=\"", htmlspecialchars_nc($v), "\"", ($v == $_POST['type']) ? ' selected="selected"' : '', ">",
+					echo "\t<option value=\"", html_esc($v), "\"", ($v == $_POST['type']) ? ' selected="selected"' : '', ">",
 						$misc->printVal($v), "</option>\n";
 				}
 			}
 			while (!$types->EOF) {
 				$typname = $types->fields['typname'];
 				$types_for_js[] = $typname;
-				echo "\t<option value=\"", htmlspecialchars_nc($typname), "\"", ($typname == $_POST['type']) ? ' selected="selected"' : '', ">",
+				echo "\t<option value=\"", html_esc($typname), "\"", ($typname == $_POST['type']) ? ' selected="selected"' : '', ">",
 					$misc->printVal($typname), "</option>\n";
 				$types->moveNext();
 			}
@@ -343,20 +343,20 @@ function doAddColumn($msg = '')
 			}
 
 			echo "<td><input name=\"length\" id=\"lengths\" size=\"8\" value=\"",
-				htmlspecialchars_nc($_POST['length']), "\" /></td>\n";
+				html_esc($_POST['length']), "\" /></td>\n";
 			// Support for adding column with not null and default
 			if ($pg->hasCreateFieldWithConstraints()) {
 				echo "<td><input type=\"checkbox\" name=\"notnull\"", (isset($_REQUEST['notnull'])) ? ' checked="checked"' : '', " /></td>\n";
 				echo "<td><input name=\"default\" size=\"20\" value=\"",
-					htmlspecialchars_nc($_POST['default']), "\" /></td>\n";
+					html_esc($_POST['default']), "\" /></td>\n";
 			}
 			echo "<td><input name=\"comment\" size=\"40\" value=\"",
-				htmlspecialchars_nc($_POST['comment']), "\" /></td></tr>\n";
+				html_esc($_POST['comment']), "\" /></td></tr>\n";
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"add_column\" />\n";
 			echo "<input type=\"hidden\" name=\"stage\" value=\"2\" />\n";
 			echo $misc->form;
-			echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
 			if (!$pg->hasCreateFieldWithConstraints()) {
 				echo "<input type=\"hidden\" name=\"default\" value=\"\" />\n";
 			}
@@ -422,8 +422,8 @@ function doDrop($confirm)
 
 		echo "<form action=\"tblproperties.php\" method=\"post\">\n";
 		echo "<input type=\"hidden\" name=\"action\" value=\"drop\" />\n";
-		echo "<input type=\"hidden\" name=\"table\" value=\"", htmlspecialchars_nc($_REQUEST['table']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"column\" value=\"", htmlspecialchars_nc($_REQUEST['column']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"column\" value=\"", html_esc($_REQUEST['column']), "\" />\n";
 		echo $misc->form;
 		echo "<p><input type=\"checkbox\" id=\"cascade\" name=\"cascade\"> <label for=\"cascade\">{$lang['strcascade']}</label></p>\n";
 		echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";

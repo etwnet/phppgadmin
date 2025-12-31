@@ -541,12 +541,12 @@ EOT;
 				$out = $str;
 				break;
 			case 'sql':
-				$tag = 'pre';
+				$tag = 'div';
 				$class = 'sql-viewer';
 				$out = htmlspecialchars($str);
 				break;
 			case 'plpgsql':
-				$tag = 'pre';
+				$tag = 'div';
 				$class = 'sql-viewer';
 				$attr = 'data-mode="plpgsql"';
 				$out = htmlspecialchars($str);

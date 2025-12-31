@@ -228,9 +228,9 @@ AppContainer::setMisc($misc);
 $misc->setHREF();
 $misc->setForm();
 
-if (isset($_POST['action'])) {
-	$_POST[$_POST['action']] = $_POST['action'];
-}
+//if (isset($_POST['action'])) {
+//	$_POST[$_POST['action']] = $_POST['action'];
+//}
 
 // Enforce PHP environment
 ini_set('arg_separator.output', '&amp;');

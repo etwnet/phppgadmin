@@ -32,7 +32,7 @@ function renderQueryResult($result, $query)
 	$lang = AppContainer::getLang();
 
 	if (!$result->isSuccess) {
-		echo nl2br(htmlspecialchars_nc($result->errorMsg)), "<br/>\n";
+		echo nl2br(html_esc($result->errorMsg)), "<br/>\n";
 		return;
 	}
 
@@ -87,7 +87,7 @@ function sqlCallback($query, $result, $lineno)
 	echo "Line {$lineno}: ";
 
 	if (!$result->isSuccess) {
-		echo htmlspecialchars_nc($_FILES['script']['name']), ':', $lineno, ': ', nl2br(htmlspecialchars_nc($result->errorMsg)), "<br/>\n";
+		echo html_esc($_FILES['script']['name']), ':', $lineno, ': ', nl2br(html_esc($result->errorMsg)), "<br/>\n";
 	} else {
 		// Render the result
 		renderQueryResult($result, $query);

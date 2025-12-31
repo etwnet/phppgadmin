@@ -309,7 +309,7 @@ class RoleActions extends AbstractActions
 		else
 			$sql .= " NOLOGIN";
 
-		if ($connlimit != -1) {
+		if (!empty($connlimit) && $connlimit != -1) {
 			$sql .= " CONNECTION LIMIT {$connlimit}";
 		}
 

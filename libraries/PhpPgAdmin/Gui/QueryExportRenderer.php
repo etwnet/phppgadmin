@@ -120,10 +120,10 @@ class QueryExportRenderer
 
             <p>
                 <input type="hidden" name="action" value="export" />
-                <input type="hidden" name="query" value="<?= htmlspecialchars_nc($query); ?>" />
+                <input type="hidden" name="query" value="<?= html_esc($query); ?>" />
                 <?php foreach ($params as $key => $value): ?>
                     <?php if (!in_array($key, ['action', 'query'])): ?>
-                        <input type="hidden" name="<?= htmlspecialchars_nc($key); ?>" value="<?= htmlspecialchars_nc($value); ?>" />
+                        <input type="hidden" name="<?= html_esc($key); ?>" value="<?= html_esc($value); ?>" />
                     <?php endif; ?>
                 <?php endforeach; ?>
                 <?= $this->misc->form; ?>

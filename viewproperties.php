@@ -60,13 +60,13 @@ function doEdit($msg = '')
 		echo "<table style=\"width: 100%\">\n";
 		echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strdefinition']}</th>\n";
 		echo "\t\t<td class=\"data1\"><textarea style=\"width: 100%;\" rows=\"20\" cols=\"50\" name=\"formDefinition\" class=\"sql-editor frame resizable high\">",
-			htmlspecialchars_nc($_POST['formDefinition']), "</textarea></td>\n\t</tr>\n";
+			html_esc($_POST['formDefinition']), "</textarea></td>\n\t</tr>\n";
 		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strcomment']}</th>\n";
 		echo "\t\t<td class=\"data1\"><textarea rows=\"3\" cols=\"32\" name=\"formComment\">",
-			htmlspecialchars_nc($_POST['formComment']), "</textarea></td>\n\t</tr>\n";
+			html_esc($_POST['formComment']), "</textarea></td>\n\t</tr>\n";
 		echo "</table>\n";
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"save_edit\" />\n";
-		echo "<input type=\"hidden\" name=\"view\" value=\"", htmlspecialchars_nc($_REQUEST['view']), "\" />\n";
+		echo "<input type=\"hidden\" name=\"view\" value=\"", html_esc($_REQUEST['view']), "\" />\n";
 		echo $misc->form;
 		echo "<input type=\"submit\" value=\"{$lang['stralter']}\" />\n";
 		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -181,21 +181,21 @@ function doProperties($msg = '')
 			}
 
 			echo "<tr><td><input name=\"field\" size=\"32\" value=\"",
-				htmlspecialchars_nc($_REQUEST['field']), "\" /></td>";
+				html_esc($_REQUEST['field']), "\" /></td>";
 
 			echo "<td>", $misc->printVal($pg->formatType($column->fields['type'], $column->fields['atttypmod'])), "</td>";
 			echo "<td><input name=\"default\" size=\"20\" value=\"",
-				htmlspecialchars_nc($_REQUEST['default']), "\" /></td>";
+				html_esc($_REQUEST['default']), "\" /></td>";
 			echo "<td><input name=\"comment\" size=\"32\" value=\"",
-				htmlspecialchars_nc($_REQUEST['comment']), "\" /></td>";
+				html_esc($_REQUEST['comment']), "\" /></td>";
 
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"properties\" />\n";
 			echo "<input type=\"hidden\" name=\"stage\" value=\"2\" />\n";
 			echo $misc->form;
-			echo "<input type=\"hidden\" name=\"view\" value=\"", htmlspecialchars_nc($_REQUEST['view']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"column\" value=\"", htmlspecialchars_nc($_REQUEST['column']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"olddefault\" value=\"", htmlspecialchars_nc($_REQUEST['olddefault']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"view\" value=\"", html_esc($_REQUEST['view']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"column\" value=\"", html_esc($_REQUEST['column']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"olddefault\" value=\"", html_esc($_REQUEST['olddefault']), "\" />\n";
 			echo "<input type=\"submit\" value=\"{$lang['stralter']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
 			echo "</form>\n";
@@ -270,7 +270,7 @@ function doAlter($confirm = false, $msg = '')
 			echo "<tr><th class=\"data left required\">{$lang['strname']}</th>\n";
 			echo "<td class=\"data1\">";
 			echo "<input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-				htmlspecialchars_nc($_POST['name']), "\" /></td></tr>\n";
+				html_esc($_POST['name']), "\" /></td></tr>\n";
 
 			if ($roleActions->isSuperUser()) {
 
@@ -281,7 +281,7 @@ function doAlter($confirm = false, $msg = '')
 				echo "<td class=\"data1\"><select name=\"owner\">";
 				while (!$users->EOF) {
 					$uname = $users->fields['usename'];
-					echo "<option value=\"", htmlspecialchars_nc($uname), "\"", ($uname == $_POST['owner']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($uname), "</option>\n";
+					echo "<option value=\"", html_esc($uname), "\"", ($uname == $_POST['owner']) ? ' selected="selected"' : '', ">", html_esc($uname), "</option>\n";
 					$users->moveNext();
 				}
 				echo "</select></td></tr>\n";
@@ -293,7 +293,7 @@ function doAlter($confirm = false, $msg = '')
 				echo "<td class=\"data1\"><select name=\"newschema\">";
 				while (!$schemas->EOF) {
 					$schema = $schemas->fields['nspname'];
-					echo "<option value=\"", htmlspecialchars_nc($schema), "\"", ($schema == $_POST['newschema']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($schema), "</option>\n";
+					echo "<option value=\"", html_esc($schema), "\"", ($schema == $_POST['newschema']) ? ' selected="selected"' : '', ">", html_esc($schema), "</option>\n";
 					$schemas->moveNext();
 				}
 				echo "</select></td></tr>\n";
@@ -302,10 +302,10 @@ function doAlter($confirm = false, $msg = '')
 			echo "<tr><th class=\"data left\">{$lang['strcomment']}</th>\n";
 			echo "<td class=\"data1\">";
 			echo "<textarea rows=\"3\" cols=\"32\" name=\"comment\">",
-				htmlspecialchars_nc($_POST['comment']), "</textarea></td></tr>\n";
+				html_esc($_POST['comment']), "</textarea></td></tr>\n";
 			echo "</table>\n";
 			echo "<input type=\"hidden\" name=\"action\" value=\"alter\" />\n";
-			echo "<input type=\"hidden\" name=\"view\" value=\"", htmlspecialchars_nc($_REQUEST['view']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"view\" value=\"", html_esc($_REQUEST['view']), "\" />\n";
 			echo $misc->form;
 			echo "<p><input type=\"submit\" name=\"alter\" value=\"{$lang['stralter']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";

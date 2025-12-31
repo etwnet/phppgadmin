@@ -99,8 +99,8 @@ function doFind()
 			</select>
 		</p>
 		<p>
-			<input name="term" value="<?= htmlspecialchars_nc($_REQUEST['term']); ?>" size="32"
-				maxlength="<?= $pg->_maxNameLen; ?>" />
+			<input name="term" value="<?= html_esc($_REQUEST['term']); ?>" size="32"
+			       maxlength="<?= $pg->_maxNameLen; ?>" />
 		</p>
 		<p>
 			<input type="submit" value="<?= $lang['strfind']; ?>" />
@@ -169,11 +169,11 @@ EOD;
 				?>:
 			</label>
 			<input data-use-in-url="t" class="flex-5" type="text" name="search_path" id="search_path" size="50"
-				value="<?= htmlspecialchars_nc($_REQUEST['search_path']); ?>">
+				value="<?= html_esc($_REQUEST['search_path']); ?>">
 		</p>
 
 		<textarea class="sql-editor frame resizable" rows="10" cols="50"
-			name="query"><?= htmlspecialchars_nc($_SESSION['sqlquery']); ?></textarea>
+			name="query"><?= html_esc($_SESSION['sqlquery']); ?></textarea>
 
 		<?php
 		if (ini_get('file_uploads')) {

@@ -2,104 +2,18 @@
 
 use PhpPgAdmin\Core\AppContainer;
 
-// ------------------------------------------------------------
-// str_starts_with
-// ------------------------------------------------------------
-if (!function_exists('str_starts_with')) {
-	function str_starts_with($haystack, $needle)
-	{
-		if ($needle === '') {
-			return false;
-		}
-		return substr_compare($haystack, $needle, 0, strlen($needle)) === 0;
-	}
-}
-
-// ------------------------------------------------------------
-// str_ends_with
-// ------------------------------------------------------------
-if (!function_exists('str_ends_with')) {
-	function str_ends_with($haystack, $needle)
-	{
-		if ($needle === '') {
-			return false;
-		}
-		return substr_compare($haystack, $needle, -strlen($needle), strlen($needle)) === 0;
-	}
-}
-
-// ------------------------------------------------------------
-// str_contains
-// ------------------------------------------------------------
-if (!function_exists('str_contains')) {
-	function str_contains($haystack, $needle)
-	{
-		if ($needle === '') {
-			return false;
-		}
-		return strpos($haystack, $needle) !== false;
-	}
-}
-
-// ------------------------------------------------------------
-// fdiv — PHP 8 floating‑point division with INF/NaN behavior
-// ------------------------------------------------------------
-if (!function_exists('fdiv')) {
-	function fdiv($dividend, $divisor)
-	{
-		// Match PHP 8 behavior exactly
-		if ($divisor == 0) {
-			if ($dividend == 0) {
-				return NAN;
-			}
-			return ($dividend > 0 ? INF : -INF);
-		}
-		return $dividend / $divisor;
-	}
-}
-
-// ------------------------------------------------------------
-// get_debug_type — PHP 8 type inspection
-// ------------------------------------------------------------
-if (!function_exists('get_debug_type')) {
-	function get_debug_type($value)
-	{
-		switch (true) {
-			case is_null($value):
-				return 'null';
-			case is_bool($value):
-				return 'bool';
-			case is_int($value):
-				return 'int';
-			case is_float($value):
-				return 'float';
-			case is_string($value):
-				return 'string';
-			case is_array($value):
-				return 'array';
-			case is_object($value):
-				return get_class($value);
-			case is_resource($value):
-				$type = get_resource_type($value);
-				return $type === 'unknown type' ? 'resource' : "resource ($type)";
-			default:
-				return 'unknown';
-		}
-	}
-}
-
 function pg_escape_id($id = ''): string
 {
 	$pg = AppContainer::getPostgres();
 	return pg_escape_identifier($pg->conn->_connectionID, $id);
 }
 
-function htmlspecialchars_nc(
+function html_esc(
 	$string,
 	$flags = ENT_QUOTES | ENT_SUBSTITUTE,
 	$encoding = 'UTF-8',
 	$double_encode = true
-) {
+): string {
 	if ($string === null) {
 		return '';
 	}
@@ -292,9 +206,9 @@ function isSqlReadQuery($sql)
 		}
 
 		$isRead = str_starts_with($upper, "SELECT") ||
-			str_starts_with($upper, "WITH") ||
-			str_starts_with($upper, "SET") ||
-			str_starts_with($upper, "SHOW");
+		str_starts_with($upper, "WITH") ||
+		str_starts_with($upper, "SET") ||
+		str_starts_with($upper, "SHOW");
 
 		if ($isRead) {
 			continue;
@@ -304,7 +218,7 @@ function isSqlReadQuery($sql)
 		if ($isRead) {
 			$rest = trim(substr($upper, 7));
 			$isRead = str_starts_with($rest, "SELECT") ||
-				str_starts_with($rest, "WITH");
+			str_starts_with($rest, "WITH");
 			if ($isRead) {
 				continue;
 			}
@@ -314,4 +228,90 @@ function isSqlReadQuery($sql)
 	}
 
 	return true;
+}
+
+// ------------------------------------------------------------
+// str_starts_with
+// ------------------------------------------------------------
+if (!function_exists('str_starts_with')) {
+	function str_starts_with($haystack, $needle)
+	{
+		if ($needle === '') {
+			return false;
+		}
+		return substr_compare($haystack, $needle, 0, strlen($needle)) === 0;
+	}
+}
+
+// ------------------------------------------------------------
+// str_ends_with
+// ------------------------------------------------------------
+if (!function_exists('str_ends_with')) {
+	function str_ends_with($haystack, $needle)
+	{
+		if ($needle === '') {
+			return false;
+		}
+		return substr_compare($haystack, $needle, -strlen($needle), strlen($needle)) === 0;
+	}
+}
+
+// ------------------------------------------------------------
+// str_contains
+// ------------------------------------------------------------
+if (!function_exists('str_contains')) {
+	function str_contains($haystack, $needle)
+	{
+		if ($needle === '') {
+			return false;
+		}
+		return strpos($haystack, $needle) !== false;
+	}
+}
+
+// ------------------------------------------------------------
+// fdiv — PHP 8 floating‑point division with INF/NaN behavior
+// ------------------------------------------------------------
+if (!function_exists('fdiv')) {
+	function fdiv($dividend, $divisor)
+	{
+		// Match PHP 8 behavior exactly
+		if ($divisor == 0) {
+			if ($dividend == 0) {
+				return NAN;
+			}
+			return ($dividend > 0 ? INF : -INF);
+		}
+		return $dividend / $divisor;
+	}
+}
+
+// ------------------------------------------------------------
+// get_debug_type — PHP 8 type inspection
+// ------------------------------------------------------------
+if (!function_exists('get_debug_type')) {
+	function get_debug_type($value)
+	{
+		switch (true) {
+			case is_null($value):
+				return 'null';
+			case is_bool($value):
+				return 'bool';
+			case is_int($value):
+				return 'int';
+			case is_float($value):
+				return 'float';
+			case is_string($value):
+				return 'string';
+			case is_array($value):
+				return 'array';
+			case is_object($value):
+				return get_class($value);
+			case is_resource($value):
+				$type = get_resource_type($value);
+				return $type === 'unknown type' ? 'resource' : "resource ($type)";
+			default:
+				return 'unknown';
+		}
+	}
 }

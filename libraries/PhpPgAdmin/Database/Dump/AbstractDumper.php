@@ -64,11 +64,6 @@ abstract class AbstractDumper extends AbstractContext
             fwrite($this->outputStream, $string);
         } else {
             echo $string;
-            // Flush output buffer if possible to support streaming
-            if (ob_get_level() > 0) {
-                ob_flush();
-            }
-            flush();
         }
     }
 

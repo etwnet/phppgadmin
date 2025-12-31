@@ -22,7 +22,7 @@ function getHelp($help)
 	$pg = AppContainer::getPostgres();
 	$conf = AppContainer::getConf();
 
-	$help_base = sprintf($conf['help_base'], (string)$pg->major_version);
+	$help_base = sprintf($conf['help_base'], (string) $pg->major_version);
 
 	// Get help pages
 	$pages = include __DIR__ . '/help/PostgresDocBase.php';
@@ -75,12 +75,13 @@ function doBrowse($msg = '')
 
 	echo "<dl>\n";
 
-	$pages = getHelpPages();
+	$pages = include __DIR__ . '/help/PostgresDocBase.php';
 	foreach ($pages as $page => $dummy) {
 		echo "<dt>{$page}</dt>\n";
 
 		$urls = getHelp($page);
-		if (!is_array($urls)) $urls = [$urls];
+		if (!is_array($urls))
+			$urls = [$urls];
 		foreach ($urls as $url) {
 			echo "<dd><a href=\"{$url}\">{$url}</a></dd>\n";
 		}

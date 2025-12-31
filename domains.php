@@ -66,19 +66,19 @@ $misc = AppContainer::getMisc();
 			echo "<td class=\"data1\"><input type=\"checkbox\" id=\"domnotnull\" name=\"domnotnull\"", (isset($_POST['domnotnull']) ? ' checked="checked"' : ''), " /></td></tr>\n";
 			echo "<tr><th class=\"data left\">{$lang['strdefault']}</th>\n";
 			echo "<td class=\"data1\"><input name=\"domdefault\" size=\"32\" value=\"", 
-				htmlspecialchars_nc($_POST['domdefault']), "\" /></td></tr>\n";
+				html_esc($_POST['domdefault']), "\" /></td></tr>\n";
 			echo "<tr><th class=\"data left required\">{$lang['strowner']}</th>\n";
 			echo "<td class=\"data1\"><select name=\"domowner\">";
 			while (!$users->EOF) {
 				$uname = $users->fields['usename'];
-				echo "<option value=\"", htmlspecialchars_nc($uname), "\"",
-					($uname == $_POST['domowner']) ? ' selected="selected"' : '', ">", htmlspecialchars_nc($uname), "</option>\n";
+				echo "<option value=\"", html_esc($uname), "\"",
+					($uname == $_POST['domowner']) ? ' selected="selected"' : '', ">", html_esc($uname), "</option>\n";
 				$users->moveNext();
 			}
 			echo "</select></td></tr>\n";				
 			echo "</table>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"save_alter\" />\n";
-			echo "<input type=\"hidden\" name=\"domain\" value=\"", htmlspecialchars_nc($_REQUEST['domain']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"domain\" value=\"", html_esc($_REQUEST['domain']), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"alter\" value=\"{$lang['stralter']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -109,14 +109,14 @@ $misc = AppContainer::getMisc();
 			echo "<th class=\"data required\">{$lang['strdefinition']}</th></tr>\n";
 
 			echo "<tr><td class=\"data1\"><input name=\"name\" size=\"16\" maxlength=\"{$data->_maxNameLen}\" value=\"",
-				htmlspecialchars_nc($_POST['name']), "\" /></td>\n";
+				html_esc($_POST['name']), "\" /></td>\n";
 
 			echo "<td class=\"data1\">(<input name=\"definition\" size=\"32\" value=\"",
-				htmlspecialchars_nc($_POST['definition']), "\" />)</td></tr>\n";
+				html_esc($_POST['definition']), "\" />)</td></tr>\n";
 			echo "</table>\n";
 
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"save_add_check\" />\n";
-			echo "<input type=\"hidden\" name=\"domain\" value=\"", htmlspecialchars_nc($_REQUEST['domain']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"domain\" value=\"", html_esc($_REQUEST['domain']), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"add\" value=\"{$lang['stradd']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -154,8 +154,8 @@ $misc = AppContainer::getMisc();
 				$misc->printVal($_REQUEST['domain'])), "</p>\n";	
 			echo "<form action=\"domains.php\" method=\"post\">\n";
 			echo "<input type=\"hidden\" name=\"action\" value=\"drop_con\" />\n";
-			echo "<input type=\"hidden\" name=\"domain\" value=\"", htmlspecialchars_nc($_REQUEST['domain']), "\" />\n";
-			echo "<input type=\"hidden\" name=\"constraint\" value=\"", htmlspecialchars_nc($_REQUEST['constraint']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"domain\" value=\"", html_esc($_REQUEST['domain']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"constraint\" value=\"", html_esc($_REQUEST['constraint']), "\" />\n";
 			echo $misc->form;
 			echo "<p><input type=\"checkbox\" id=\"cascade\" name=\"cascade\" /> <label for=\"cascade\">{$lang['strcascade']}</label></p>\n";
 			echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";
@@ -317,7 +317,7 @@ $misc = AppContainer::getMisc();
 			echo "<form action=\"domains.php\" method=\"post\">\n";
 			echo "<p><input type=\"checkbox\" id=\"cascade\" name=\"cascade\" /><label for=\"cascade\">{$lang['strcascade']}</label></p>\n";
 			echo "<p><input type=\"hidden\" name=\"action\" value=\"drop\" />\n";
-			echo "<input type=\"hidden\" name=\"domain\" value=\"", htmlspecialchars_nc($_REQUEST['domain']), "\" />\n";
+			echo "<input type=\"hidden\" name=\"domain\" value=\"", html_esc($_REQUEST['domain']), "\" />\n";
 			echo $misc->form;
 			echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";
 			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
@@ -358,13 +358,13 @@ $misc = AppContainer::getMisc();
 		echo "<table>\n";
 		echo "<tr><th class=\"data left required\" style=\"width: 70px\">{$lang['strname']}</th>\n";
 		echo "<td class=\"data1\"><input name=\"domname\" size=\"32\" maxlength=\"{$data->_maxNameLen}\" value=\"", 
-			htmlspecialchars_nc($_POST['domname']), "\" /></td></tr>\n";
+			html_esc($_POST['domname']), "\" /></td></tr>\n";
 		echo "<tr><th class=\"data left required\">{$lang['strtype']}</th>\n";
 		echo "<td class=\"data1\">\n";
 		// Output return type list		
 		echo "<select name=\"domtype\">\n";
 		while (!$types->EOF) {
-			echo "<option value=\"", htmlspecialchars_nc($types->fields['typname']), "\"", 
+			echo "<option value=\"", html_esc($types->fields['typname']), "\"",
 				($types->fields['typname'] == $_POST['domtype']) ? ' selected="selected"' : '', ">",
 				$misc->printVal($types->fields['typname']), "</option>\n";
 			$types->moveNext();
@@ -372,7 +372,7 @@ $misc = AppContainer::getMisc();
 		echo "</select>\n";
 		
 		// Type length
-		echo "<input type=\"text\" size=\"4\" name=\"domlength\" value=\"", htmlspecialchars_nc($_POST['domlength']), "\" />";
+		echo "<input type=\"text\" size=\"4\" name=\"domlength\" value=\"", html_esc($_POST['domlength']), "\" />";
 
 		// Output array type selector
 		echo "<select name=\"domarray\">\n";
@@ -385,11 +385,11 @@ $misc = AppContainer::getMisc();
 			(isset($_POST['domnotnull']) ? ' checked="checked"' : ''), " /></td></tr>\n";
 		echo "<tr><th class=\"data left\">{$lang['strdefault']}</th>\n";
 		echo "<td class=\"data1\"><input name=\"domdefault\" size=\"32\" value=\"", 
-			htmlspecialchars_nc($_POST['domdefault']), "\" /></td></tr>\n";
+			html_esc($_POST['domdefault']), "\" /></td></tr>\n";
 		if ($data->hasDomainConstraints()) {
 			echo "<tr><th class=\"data left\">{$lang['strconstraints']}</th>\n";
 			echo "<td class=\"data1\">CHECK (<input name=\"domcheck\" size=\"32\" value=\"", 
-				htmlspecialchars_nc($_POST['domcheck']), "\" />)</td></tr>\n";
+				html_esc($_POST['domcheck']), "\" />)</td></tr>\n";
 		}
 		echo "</table>\n";
 		echo "<p><input type=\"hidden\" name=\"action\" value=\"save_create\" />\n";

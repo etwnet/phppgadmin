@@ -276,7 +276,7 @@
 	/**
 	 * @param {HTMLElement} element
 	 */
-	window.createSqlEditor = function (element) {
+	const createSqlEditor = function (element) {
 		if (element.classList.contains("ace_editor")) {
 			// Editor already created
 			return;
@@ -343,13 +343,12 @@
 	/**
 	 * @param {HTMLElement} element
 	 */
-	window.createSqlViewer = function (element) {
+	const createSqlViewer = function (element) {
 		if (element.classList.contains("ace_editor")) {
 			// Editor already created
 			return;
 		}
 		const editor = ace.edit(element);
-		editor.session.setUseWrapMode(true);
 		//editor.session.setMode("ace/mode/pgsql");
 		const mode = element.dataset.mode || "pgsql";
 		editor.session.setMode("ace/mode/" + mode);
@@ -359,15 +358,32 @@
 		editor.renderer.setShowGutter(false);
 		editor.setHighlightActiveLine(false);
 		editor.setShowPrintMargin(false);
+		editor.session.setUseWrapMode(true);
+		editor.session.setWrapLimitRange(null, null);
 		editor.setOptions({
 			maxLines: Infinity,
 			highlightGutterLine: false,
 			showLineNumbers: true,
+			wrap: "free",
+			useWrapMode: true,
 		});
 
 		editor.on("blur", function () {
 			editor.clearSelection();
 		});
+
+		// Ace in Tabellenzellen stabilisieren
+		editor.renderer.setScrollMargin(0, 0, 0, 0);
+		editor.renderer.setOption("hScrollBarAlwaysVisible", false);
+		editor.renderer.setOption("vScrollBarAlwaysVisible", false);
+		editor.renderer.setOption("maxPixelWidth", 0);
+
+		// Wrap neu triggern
+		editor.session.setUseWrapMode(true);
+		editor.setOption("wrap", "free");
+
+		// Neu layouten
+		editor.resize(true);
 	};
 
 	/**
