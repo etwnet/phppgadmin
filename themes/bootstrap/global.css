@@ -367,6 +367,13 @@ td[class^="opbutton"] img.icon {
 	padding-bottom: 2px;
 }
 
+#sticky-header {
+	padding-bottom: 0;
+	/*border-bottom: 1px solid #ccc;*/
+	/*box-shadow: 0px 0px 1px 0px rgba(0, 0, 0, 0.1);*/
+	margin-bottom: 7px;
+}
+
 .topbar {
 	border: 2px solid #f9f9f9;
 }
@@ -418,12 +425,13 @@ td[class^="opbutton"] img.icon {
 table.tabs {
 	width: 100%;
 	border-collapse: collapse;
-	margin-bottom: 1ex;
+	/*margin-bottom: 1ex;*/
 }
 
 .tab {
 	text-align: center;
 	background: linear-gradient(0deg, #ededed 0%, #fff 100%);
+	border-bottom: 1px solid #ccc;
 }
 
 .tab:not(:last-child) {
@@ -432,6 +440,7 @@ table.tabs {
 
 .tabs .active {
 	background: linear-gradient(0deg, #fff 0%, #f3f3f3 100%);
+	border-bottom-color: #fff;
 }
 
 .tab .icon {
@@ -608,7 +617,7 @@ i.null {
 	/*background: linear-gradient(0deg, #FFF 0%, #f3f3f3 100%);*/
 	/*font-size: 1.05em;*/
 	/*color: #9a7530;*/
-	background: #efffa2;
+	background: #dff6ff;
 }
 
 .scroll-container {

@@ -33,20 +33,31 @@ html[dir="rtl"] #frameset {
 	background: #c4c4c4 linear-gradient(90deg, #fff 20%, #c4c4c4 50%, #fff 80%);
 }
 
+#content-container {
+	flex: 1;
+	/*background: #fff;*/
+	overflow: hidden;
+	/*position: relative;*/
+}
+
 #content {
 	padding-left: 2px;
 	padding-right: 7px;
+	position: relative;
+	overflow: auto;
+	max-height: 100%;
 }
 
 #content.popup {
 	padding-left: 5px;
 }
 
-#content-container {
-	flex: 1;
-	/*background: #fff;*/
-	overflow: auto;
-	position: relative;
+#sticky-header {
+	position: sticky;
+	top: 0;
+	background: #fff;
+	z-index: 5;
+	padding-bottom: 1px;
 }
 
 .no-select {

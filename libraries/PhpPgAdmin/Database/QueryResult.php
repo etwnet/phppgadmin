@@ -62,7 +62,10 @@ class QueryResult
     public function affectedRows()
     {
         if ($this->adoRecordSet !== null && is_object($this->adoRecordSet)) {
-            return $this->adoRecordSet->Affected_Rows();
+            if (is_callable([$this->adoRecordSet, 'Affected_Rows'])) {
+                return $this->adoRecordSet->Affected_Rows();
+            }
+            return 0;
         }
         if ($this->pgResult !== false) {
             return pg_affected_rows($this->pgResult);

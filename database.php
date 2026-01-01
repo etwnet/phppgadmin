@@ -95,8 +95,7 @@ function doFind($confirm = true, $msg = '')
 			</select>
 		</p>
 		<p>
-			<input name="term" value="<?= html_esc($_REQUEST['term']); ?>" size="32"
-			       maxlength="<?= $pg->_maxNameLen; ?>" />
+			<input name="term" value="<?= html_esc($_REQUEST['term']); ?>" size="32" maxlength="<?= $pg->_maxNameLen; ?>" />
 		</p>
 		<p>
 			<input type="submit" value="<?= $lang['strfind']; ?>" />
@@ -604,7 +603,7 @@ function doSQL()
 	<p><?= $lang['strentersql']; ?></p>
 	<script type="text/javascript">
 		// Adjust form method based on whether the query is read-only
-		const adjustSqlFormMethod = function (form) {
+		let adjustSqlFormMethod = function (form) {
 			const isValidReadQuery =
 				!form.script.value
 				&& isSqlReadQuery(form.query.value)
@@ -619,7 +618,7 @@ function doSQL()
 	<form action="sql.php" name="sqlForm" onsubmit="adjustSqlFormMethod(this)" method="post" enctype="multipart/form-data">
 		<div><?= $lang['strsql']; ?></div>
 		<div>
-			<textarea class="sql-editor frame resizable bigger" style="width:100%;" rows="20" cols="50"
+			<textarea class="sql-editor frame resizable bigger" style="width:100%;" rows="20" cols="50" data-mode="plpgsql"
 				name="query"><?= html_esc($_SESSION['sqlquery']); ?></textarea>
 		</div>
 

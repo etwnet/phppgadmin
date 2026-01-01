@@ -68,14 +68,20 @@ function frameSetHandler() {
 
 	// Link and Form interception
 
-	function setContent(html) {
+	function setContent(html, opts = {}) {
+		const { restoreFormStates = false, formStates = null } = opts;
 		content.innerHTML = html;
 
+		setStickyHeader();
+
 		// Restore form state BEFORE running scripts
-		// This ensures forms are in correct state when scripts initialize
-		const state = window.history.state;
-		if (state?.formStates) {
-			restoreAllFormStates(state.formStates);
+		// Only do this when explicitly requested (e.g. history back/forward).
+		if (restoreFormStates) {
+			const statesToRestore =
+				formStates ?? window.history.state?.formStates ?? null;
+			if (statesToRestore) {
+				restoreAllFormStates(statesToRestore);
+			}
 		}
 
 		// Now bring scripts to life
@@ -114,6 +120,20 @@ function frameSetHandler() {
 				restoreFormState(form, allFormStates[index]);
 			}
 		});
+	}
+
+	function persistCurrentFormStatesToHistory() {
+		if (!content?.querySelector("form")) return;
+		const currentState =
+			window.history.state && typeof window.history.state === "object"
+				? { ...window.history.state }
+				: {};
+		currentState.formStates = captureAllFormStates();
+		try {
+			history.replaceState(currentState, "", window.location.href);
+		} catch (e) {
+			console.warn("Failed to persist form state to history", e);
+		}
 	}
 
 	/**
@@ -166,6 +186,8 @@ function frameSetHandler() {
 	function restoreFormState(form, formState) {
 		if (!form || !formState) return;
 
+		console.log("Restoring form state:", formState);
+
 		// Restore text inputs, textareas, and selects
 		form.querySelectorAll(
 			"input[type=text], input[type=hidden], textarea, select"
@@ -204,7 +226,36 @@ function frameSetHandler() {
 		});
 	}
 
+	function setStickyHeader() {
+		// Check if sticky header already exists
+		let sticky = content.querySelector("#sticky-header");
+		if (sticky) {
+			return;
+		}
+		sticky = document.createElement("div");
+		sticky.id = "sticky-header";
+		content.insertBefore(sticky, content.firstChild);
+
+		// Collect elements to be sticky
+		const stickyElements = [
+			content.querySelector(".topbar"),
+			content.querySelector(".trail"),
+			content.querySelector(".tabs"),
+		].filter(Boolean);
+
+		// Move elements into sticky container
+		stickyElements.forEach((el) => sticky.appendChild(el));
+
+		//const totalHeight = sticky.offsetHeight;
+		//content.style.paddingTop = totalHeight + "px";
+	}
+
 	async function loadContent(url, options = {}, addToHistory = true) {
+		if (addToHistory) {
+			// Persist the current page form state so Back/Forward restores it.
+			persistCurrentFormStatesToHistory();
+		}
+
 		url = url.replace(/[&?]$/, "");
 		url += (url.includes("?") ? "&" : "?") + "target=content";
 		console.log("Fetching:", url, options);
@@ -235,54 +286,60 @@ function frameSetHandler() {
 			const contentType = res.headers.get("content-type") || "";
 			const responseText = await res.text();
 
+			// Calculate final URL from response
+			const urlObj = new URL(res.url || url, window.location.href);
+			urlObj.searchParams.delete("target");
+			finalUrl = urlObj.toString();
+
 			const unloadEvent = new CustomEvent("beforeFrameUnload", {
 				target: content,
 			});
 			document.dispatchEvent(unloadEvent);
 
-			if (content.querySelector("form")) {
-				// If there was a form, save state of all forms before navigation
-				const state = window.history.state ?? {};
-				state.formStates = captureAllFormStates();
-				// Preserve method if it exists, default to GET for initial loads
-				if (!state.method) {
-					state.method = "GET";
-				}
-				history.replaceState(state, document.title, location.href);
-				//console.log("Saved form states before navigation");
-			}
-
-			if (
-				contentType.includes("text/plain") ||
-				contentType.includes("application/download")
-			) {
-				// Handle different content types
+			// Render content
+			if (contentType.includes("text/plain")) {
 				// For plain text (dumps/exports), wrap in <pre> tag
-				setContent(`<pre>${escapeHtml(responseText)}</pre>`);
+				setContent(`<pre>${escapeHtml(responseText)}</pre>`, {
+					restoreFormStates: !addToHistory,
+				});
 			} else {
 				// For HTML, parse as normal
-				setContent(responseText);
+				setContent(responseText, {
+					restoreFormStates: !addToHistory,
+				});
 			}
 
-			const urlObj = new URL(res.url || url, window.location.href);
-			urlObj.searchParams.delete("target");
-			finalUrl = urlObj.toString();
-
 			if (addToHistory) {
+				// Build history state
 				const state = {};
-				const isPost = /post/i.test(options.method ?? "");
 
-				if (isPost) {
-					// For POST: save both HTML and all form states
-					state.html = responseText;
-					state.formStates = captureAllFormStates();
-					state.method = "POST";
-				} else {
-					// For GET: only save form states, not HTML
-					state.formStates = captureAllFormStates();
-					state.method = "GET";
+				// For POST requests, cache HTML in sessionStorage
+				if (/post/i.test(options.method ?? "")) {
+					const storageKey =
+						"post_" +
+						Date.now() +
+						"_" +
+						Math.random().toString(36).substring(2, 11);
+					try {
+						sessionStorage.setItem(storageKey, responseText);
+						state.storageKey = storageKey;
+					} catch (e) {
+						// Fallback if sessionStorage quota exceeded
+						console.warn(
+							"sessionStorage quota exceeded, storing in history state",
+							e
+						);
+						state.html = responseText;
+					}
 				}
-				history.pushState(state, document.title, finalUrl);
+
+				// Capture form states from the newly loaded content
+				if (content.querySelector("form")) {
+					state.formStates = captureAllFormStates();
+				}
+
+				history.pushState(state, "", finalUrl);
+
 				// Scroll back to the top
 				contentContainer.scrollTo(0, 0);
 			}
@@ -402,17 +459,39 @@ function frameSetHandler() {
 	window.addEventListener("popstate", (e) => {
 		const url = window.location.href;
 
+		// Try to restore from sessionStorage cache first
+		if (e.state?.storageKey) {
+			const cachedHtml = sessionStorage.getItem(e.state.storageKey);
+			if (cachedHtml) {
+				setContent(cachedHtml, {
+					restoreFormStates: true,
+					formStates: e.state?.formStates,
+				});
+				const event = new CustomEvent("frameLoaded", {
+					detail: { url: url },
+					target: content,
+				});
+				document.dispatchEvent(event);
+				return;
+			}
+		}
+
+		// Fallback: direct HTML in state (for quota exceeded case)
 		if (e.state?.html) {
-			setContent(e.state.html);
+			setContent(e.state.html, {
+				restoreFormStates: true,
+				formStates: e.state?.formStates,
+			});
 			const event = new CustomEvent("frameLoaded", {
 				detail: { url: url },
 				target: content,
 			});
 			document.dispatchEvent(event);
-		} else {
-			// Fallback: load content normally
-			loadContent(url, {}, false);
+			return;
 		}
+
+		// No cached content, fetch fresh (for GET requests)
+		loadContent(url, {}, false);
 	});
 
 	window.addEventListener("message", (event) => {
@@ -445,6 +524,8 @@ function frameSetHandler() {
 		}
 	});
 
+	setStickyHeader();
+
 	return true;
 }
 
@@ -457,6 +538,11 @@ function popupHandler() {
 
 		// We lost the popup reference, lets create a new one again
 		if (!window.opener) return;
+
+		if (form.getAttribute("target") != "detail") {
+			// Intercept only frameset forms
+			return;
+		}
 
 		e.preventDefault();
 		console.log("Intercepted form:", form);
@@ -515,17 +601,6 @@ function popupHandler() {
 			return;
 		}
 
-		if (target.target != "detail") {
-			// Intercept only frameset links
-			return;
-		}
-
-		// We lost the popup reference, lets create a new one again
-		if (!window.opener) return;
-
-		e.preventDefault();
-		e.stopPropagation();
-
 		if (target.href === window.location.href + "#") {
 			// Emulate scroll top
 			if (target.classList.contains("bottom_link")) {
@@ -541,6 +616,17 @@ function popupHandler() {
 		if (target.href.startsWith("javascript")) {
 			return;
 		}
+
+		if (target.target != "detail") {
+			// Intercept only frameset links
+			return;
+		}
+
+		// We lost the popup reference, lets create a new one again
+		if (!window.opener) return;
+
+		e.preventDefault();
+		e.stopPropagation();
 
 		console.log("Intercepted link:", target.href);
 

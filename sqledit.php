@@ -99,8 +99,7 @@ function doFind()
 			</select>
 		</p>
 		<p>
-			<input name="term" value="<?= html_esc($_REQUEST['term']); ?>" size="32"
-			       maxlength="<?= $pg->_maxNameLen; ?>" />
+			<input name="term" value="<?= html_esc($_REQUEST['term']); ?>" size="32" maxlength="<?= $pg->_maxNameLen; ?>" />
 		</p>
 		<p>
 			<input type="submit" value="<?= $lang['strfind']; ?>" />
@@ -132,7 +131,7 @@ function doDefault()
 	$scripts = <<<EOD
 <script type="text/javascript">
 	// Adjust form method based on whether the query is read-only
-	const adjustPopupSqlFormMethod = function(form) {
+	let adjustPopupSqlFormMethod = function(form) {
 		const isValidReadQuery =
 			!form.script.value
 			&& isSqlReadQuery(form.query.value)
@@ -172,7 +171,7 @@ EOD;
 				value="<?= html_esc($_REQUEST['search_path']); ?>">
 		</p>
 
-		<textarea class="sql-editor frame resizable" rows="10" cols="50"
+		<textarea class="sql-editor frame resizable" rows="10" cols="50" data-mode="plpgsql"
 			name="query"><?= html_esc($_SESSION['sqlquery']); ?></textarea>
 
 		<?php
