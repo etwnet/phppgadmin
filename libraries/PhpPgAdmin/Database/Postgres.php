@@ -180,6 +180,25 @@ class Postgres extends AbstractConnection
 			case 'FUNCTION':
 				$sql .= "\"{$f_schema}\".{$obj_name} IS ";
 				break;
+			case 'OPERATOR':
+				// $obj_name = operator name, $table = left arg type, $basetype = right arg type
+				$left = $table;
+				$right = $basetype;
+				// support NONE for arguments; types should be passed as type names (unquoted)
+				if ($left === null || $left === '') {
+					$leftsql = 'NONE';
+				} else {
+					$this->clean($left);
+					$leftsql = $left;
+				}
+				if ($right === null || $right === '') {
+					$rightsql = 'NONE';
+				} else {
+					$this->clean($right);
+					$rightsql = $right;
+				}
+				$sql .= "{$obj_name} ({$leftsql}, {$rightsql}) IS ";
+				break;
 			case 'AGGREGATE':
 				$sql .= "\"{$f_schema}\".\"{$obj_name}\" (\"{$basetype}\") IS ";
 				break;

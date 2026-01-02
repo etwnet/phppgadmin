@@ -2,6 +2,8 @@
 
 use PhpPgAdmin\Core\AppContainer;
 use PhpPgAdmin\Database\Actions\OperatorActions;
+use PhpPgAdmin\Database\Actions\SqlFunctionActions;
+use PhpPgAdmin\Database\Actions\TypeActions;
 
 /**
  * Manage operators in a database
@@ -30,64 +32,100 @@ function doProperties($msg = '')
 	$oprdata = $operatorActions->getOperator($_REQUEST['operator_oid']);
 	$oprdata->fields['oprcanhash'] = $pg->phpBool($oprdata->fields['oprcanhash']);
 
-	if ($oprdata->recordCount() > 0) {
-		echo "<table>\n";
-		echo "<tr><th class=\"data left\">{$lang['strname']}</th>\n";
-		echo "<td class=\"data1\">", $misc->printVal($oprdata->fields['oprname']), "</td></tr>\n";
-		echo "<tr><th class=\"data left\">{$lang['strleftarg']}</th>\n";
-		echo "<td class=\"data1\">", $misc->printVal($oprdata->fields['oprleftname']), "</td></tr>\n";
-		echo "<tr><th class=\"data left\">{$lang['strrightarg']}</th>\n";
-		echo "<td class=\"data1\">", $misc->printVal($oprdata->fields['oprrightname']), "</td></tr>\n";
-		echo "<tr><th class=\"data left\">{$lang['strcommutator']}</th>\n";
-		echo "<td class=\"data1\">", $misc->printVal($oprdata->fields['oprcom']), "</td></tr>\n";
-		echo "<tr><th class=\"data left\">{$lang['strnegator']}</th>\n";
-		echo "<td class=\"data1\">", $misc->printVal($oprdata->fields['oprnegate']), "</td></tr>\n";
-		echo "<tr><th class=\"data left\">{$lang['strjoin']}</th>\n";
-		echo "<td class=\"data1\">", $misc->printVal($oprdata->fields['oprjoin']), "</td></tr>\n";
-		echo "<tr><th class=\"data left\">{$lang['strhashes']}</th>\n";
-		echo "<td class=\"data1\">", ($oprdata->fields['oprcanhash']) ? $lang['stryes'] : $lang['strno'], "</td></tr>\n";
-
-		/* these field only exists in 8.2 and before in pg_catalog */
-		if (isset($oprdata->fields['oprlsortop'])) {
-			echo "<tr><th class=\"data left\">{$lang['strmerges']}</th>\n";
-			echo "<td class=\"data1\">", ($oprdata->fields['oprlsortop'] !== '0' && $oprdata->fields['oprrsortop'] !== '0') ? $lang['stryes'] : $lang['strno'], "</td></tr>\n";
-			echo "<tr><th class=\"data left\">{$lang['strrestrict']}</th>\n";
-			echo "<td class=\"data1\">", $misc->printVal($oprdata->fields['oprrest']), "</td></tr>\n";
-			echo "<tr><th class=\"data left\">{$lang['strleftsort']}</th>\n";
-			echo "<td class=\"data1\">", $misc->printVal($oprdata->fields['oprlsortop']), "</td></tr>\n";
-			echo "<tr><th class=\"data left\">{$lang['strrightsort']}</th>\n";
-			echo "<td class=\"data1\">", $misc->printVal($oprdata->fields['oprrsortop']), "</td></tr>\n";
-			echo "<tr><th class=\"data left\">{$lang['strlessthan']}</th>\n";
-			echo "<td class=\"data1\">", $misc->printVal($oprdata->fields['oprltcmpop']), "</td></tr>\n";
-			echo "<tr><th class=\"data left\">{$lang['strgreaterthan']}</th>\n";
-			echo "<td class=\"data1\">", $misc->printVal($oprdata->fields['oprgtcmpop']), "</td></tr>\n";
-		} else {
-			echo "<tr><th class=\"data left\">{$lang['strmerges']}</th>\n";
-			echo "<td class=\"data1\">", $pg->phpBool($oprdata->fields['oprcanmerge']) ? $lang['stryes'] : $lang['strno'], "</td></tr>\n";
-		}
-		echo "</table>\n";
-
-		$misc->printNavLinks(
-			[
-				'showall' => [
-					'attr' => [
-						'href' => [
-							'url' => 'operators.php',
-							'urlvars' => [
-								'server' => $_REQUEST['server'],
-								'database' => $_REQUEST['database'],
-								'schema' => $_REQUEST['schema']
-							]
-						]
-					],
-					'content' => $lang['strshowalloperators']
-				]
-			],
-			'operators-properties',
-			get_defined_vars()
-		);
-	} else
+	if ($oprdata->recordCount() == 0) {
 		doDefault($lang['strinvalidparam']);
+		return;
+	}
+
+	?>
+	<table>
+		<tr>
+			<th class="data left"><?= $lang['strname'] ?></th>
+			<td class="data1"><?= $misc->printVal($oprdata->fields['oprname']) ?></td>
+		</tr>
+		<tr>
+			<th class="data left"><?= $lang['strleftarg'] ?></th>
+			<td class="data1"><?= $misc->printVal($oprdata->fields['oprleftname']) ?></td>
+		</tr>
+		<tr>
+			<th class="data left"><?= $lang['strrightarg'] ?></th>
+			<td class="data1"><?= $misc->printVal($oprdata->fields['oprrightname']) ?></td>
+		</tr>
+		<tr>
+			<th class="data left"><?= $lang['strcommutator'] ?></th>
+			<td class="data1"><?= $misc->printVal($oprdata->fields['oprcom']) ?></td>
+		</tr>
+		<tr>
+			<th class="data left"><?= $lang['strnegator'] ?></th>
+			<td class="data1"><?= $misc->printVal($oprdata->fields['oprnegate']) ?></td>
+		</tr>
+		<tr>
+			<th class="data left"><?= $lang['strjoin'] ?></th>
+			<td class="data1"><?= $misc->printVal($oprdata->fields['oprjoin']) ?></td>
+		</tr>
+		<tr>
+			<th class="data left"><?= $lang['strhashes'] ?></th>
+			<td class="data1"><?php echo ($oprdata->fields['oprcanhash']) ? $lang['stryes'] : $lang['strno']; ?></td>
+		</tr>
+
+		<?php if (isset($oprdata->fields['oprlsortop'])): ?>
+			<tr>
+				<th class="data left"><?= $lang['strmerges'] ?></th>
+				<td class="data1">
+					<?php echo ($oprdata->fields['oprlsortop'] !== '0' && $oprdata->fields['oprrsortop'] !== '0') ? $lang['stryes'] : $lang['strno']; ?>
+				</td>
+			</tr>
+			<tr>
+				<th class="data left"><?= $lang['strrestrict'] ?></th>
+				<td class="data1"><?= $misc->printVal($oprdata->fields['oprrest']) ?></td>
+			</tr>
+			<tr>
+				<th class="data left"><?= $lang['strleftsort'] ?></th>
+				<td class="data1"><?= $misc->printVal($oprdata->fields['oprlsortop']) ?></td>
+			</tr>
+			<tr>
+				<th class="data left"><?= $lang['strrightsort'] ?></th>
+				<td class="data1"><?= $misc->printVal($oprdata->fields['oprrsortop']) ?></td>
+			</tr>
+			<tr>
+				<th class="data left"><?= $lang['strlessthan'] ?></th>
+				<td class="data1"><?= $misc->printVal($oprdata->fields['oprltcmpop']) ?></td>
+			</tr>
+			<tr>
+				<th class="data left"><?= $lang['strgreaterthan'] ?></th>
+				<td class="data1"><?= $misc->printVal($oprdata->fields['oprgtcmpop']) ?></td>
+			</tr>
+		<?php else: ?>
+			<tr>
+				<th class="data left"><?= $lang['strmerges'] ?></th>
+				<td class="data1">
+					<?php echo $pg->phpBool($oprdata->fields['oprcanmerge']) ? $lang['stryes'] : $lang['strno']; ?>
+				</td>
+			</tr>
+		<?php endif; ?>
+	</table>
+	<?php
+
+	$misc->printNavLinks(
+		[
+			'showall' => [
+				'attr' => [
+					'href' => [
+						'url' => 'operators.php',
+						'urlvars' => [
+							'server' => $_REQUEST['server'],
+							'database' => $_REQUEST['database'],
+							'schema' => $_REQUEST['schema']
+						]
+					]
+				],
+				'icon' => $misc->icon('Operators'),
+				'content' => $lang['strshowalloperators']
+			]
+		],
+		'operators-properties',
+		get_defined_vars()
+	);
 }
 
 /**
@@ -128,6 +166,199 @@ function doDrop($confirm)
 
 }
 
+// Create operator form and handlers
+function doCreate($msg = '')
+{
+	$pg = AppContainer::getPostgres();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
+	$funcActions = new SqlFunctionActions($pg);
+	$typeActions = new TypeActions($pg);
+
+	if (!isset($_POST['name']))
+		$_POST['name'] = '';
+	if (!isset($_POST['procedure']))
+		$_POST['procedure'] = '';
+	if (!isset($_POST['leftarg']))
+		$_POST['leftarg'] = '';
+	if (!isset($_POST['rightarg']))
+		$_POST['rightarg'] = '';
+	if (!isset($_POST['commutator']))
+		$_POST['commutator'] = '';
+	if (!isset($_POST['negator']))
+		$_POST['negator'] = '';
+	if (!isset($_POST['restrict']))
+		$_POST['restrict'] = '';
+	if (!isset($_POST['join']))
+		$_POST['join'] = '';
+	if (!isset($_POST['hashes']))
+		$_POST['hashes'] = false;
+	if (!isset($_POST['merges']))
+		$_POST['merges'] = false;
+	if (!isset($_POST['comment']))
+		$_POST['comment'] = '';
+
+	$functions = $funcActions->getFunctions(true)->getArray();
+	$types = $typeActions->getTypes(true)->getArray();
+
+	$misc->printTrail('schema');
+	$misc->printTitle($lang['strcreateoperator'], 'pg.operator.create');
+	$misc->printMsg($msg);
+	?>
+	<form action="operators.php" method="post">
+		<table>
+			<tr>
+				<th class="data left required"><?= $lang['strname'] ?></th>
+				<td class="data1">
+					<input name="name" size="32" maxlength="<?= $pg->_maxNameLen ?>"
+						value="<?= html_esc($_POST['name']) ?>" />
+				</td>
+			</tr>
+			<tr>
+				<th class="data left required"><?= $lang['strfunction'] ?></th>
+				<td class="data1">
+					<select name="procedure">
+						<option value="">(CHOOSE)</option>
+						<?php foreach ($functions as $f):
+							$val = htmlspecialchars($f['proproto']);
+							$sel = ($val == $_POST['procedure']) ? ' selected' : '';
+							?>
+							<option value="<?= $val ?>" <?= $sel ?>><?= $val ?></option>
+						<?php endforeach; ?>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th class="data left"><?= $lang['strleftarg'] ?></th>
+				<td class="data1">
+					<select name="leftarg">
+						<option value="">(NONE)</option>
+						<?php foreach ($types as $t):
+							$val = htmlspecialchars($t['typname']);
+							$sel = ($val == $_POST['leftarg']) ? ' selected' : '';
+							?>
+							<option value="<?= $val ?>" <?= $sel ?>><?= $val ?></option>
+						<?php endforeach; ?>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th class="data left"><?= $lang['strrightarg'] ?></th>
+				<td class="data1">
+					<select name="rightarg">
+						<option value="">(NONE)</option>
+						<?php foreach ($types as $t):
+							$val = htmlspecialchars($t['typname']);
+							$sel = ($val == $_POST['rightarg']) ? ' selected' : '';
+							?>
+							<option value="<?= $val ?>" <?= $sel ?>><?= $val ?></option>
+						<?php endforeach; ?>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th class="data left"><?= $lang['strcommutator'] ?></th>
+				<td class="data1"><input name="commutator" size="32" value="<?= html_esc($_POST['commutator']) ?>" /></td>
+			</tr>
+			<tr>
+				<th class="data left"><?= $lang['strnegator'] ?></th>
+				<td class="data1"><input name="negator" size="32" value="<?= html_esc($_POST['negator']) ?>" /></td>
+			</tr>
+			<tr>
+				<th class="data left"><?= $lang['strrestrict'] ?></th>
+				<td class="data1">
+					<select name="restrict">
+						<option value="">(NONE)</option>
+						<?php foreach ($functions as $f):
+							$val = htmlspecialchars($f['proproto']);
+							$sel = ($val == $_POST['restrict']) ? ' selected' : '';
+							?>
+							<option value="<?= $val ?>" <?= $sel ?>><?= $val ?></option>
+						<?php endforeach; ?>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th class="data left"><?= $lang['strjoin'] ?></th>
+				<td class="data1">
+					<select name="join">
+						<option value="">(NONE)</option>
+						<?php foreach ($functions as $f):
+							$val = htmlspecialchars($f['proproto']);
+							$sel = ($val == $_POST['join']) ? ' selected' : '';
+							?>
+							<option value="<?= $val ?>" <?= $sel ?>><?= $val ?></option>
+						<?php endforeach; ?>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th class="data left"><?= $lang['strhashes'] ?></th>
+				<td class="data1"><input type="checkbox" name="hashes" value="1" <?= isset($_POST['hashes']) && $_POST['hashes'] ? ' checked' : '' ?> /></td>
+			</tr>
+			<tr>
+				<th class="data left"><?= $lang['strmerges'] ?></th>
+				<td class="data1"><input type="checkbox" name="merges" value="1" <?= isset($_POST['merges']) && $_POST['merges'] ? ' checked' : '' ?> /></td>
+			</tr>
+			<tr>
+				<th class="data left"><?= $lang['strcomment'] ?></th>
+				<td class="data1"><textarea name="comment" rows="3" cols="40"><?= html_esc($_POST['comment']) ?></textarea>
+				</td>
+			</tr>
+		</table>
+		<p>
+			<input type="hidden" name="action" value="save_create" />
+			<?= $misc->form ?>
+			<input type="submit" name="create" value="<?= $lang['strcreate'] ?>" />
+			<input type="submit" name="cancel" value="<?= $lang['strcancel'] ?>" />
+		</p>
+	</form>
+	<?php
+}
+
+function doSaveCreate()
+{
+	$pg = AppContainer::getPostgres();
+	$lang = AppContainer::getLang();
+	$operatorActions = new OperatorActions($pg);
+
+	$name = trim($_POST['name'] ?? '');
+	if ($name === '') {
+		doCreate($lang['stroperatorneedsname']);
+		return;
+	}
+	// Strip off any argument list that may have been included
+	$procedure = trim($_POST['procedure'] ?? '');
+	if ($procedure == '') {
+		doCreate($lang['stroperatorcreatedbad']);
+		return;
+	}
+
+	$hashes = isset($_POST['hashes']) && $_POST['hashes'] ? true : false;
+	$merges = isset($_POST['merges']) && $_POST['merges'] ? true : false;
+
+	$status = $operatorActions->createOperator(
+		$name,
+		$procedure,
+		$_POST['leftarg'] ?? '',
+		$_POST['rightarg'] ?? '',
+		$_POST['commutator'] ?? '',
+		$_POST['negator'] ?? '',
+		$_POST['restrict'] ?? '',
+		$_POST['join'] ?? '',
+		$hashes,
+		$merges,
+		$_POST['comment'] ?? ''
+	);
+
+	if ($status == 0) {
+		AppContainer::setShouldReloadTree(true);
+		doDefault($lang['stroperatorcreated']);
+	} else {
+		doCreate($lang['stroperatorcreatedbad']);
+	}
+}
+
 /**
  * Show default list of operators in the database
  */
@@ -150,6 +381,7 @@ function doDefault($msg = '')
 			'field' => field('oprname'),
 			'url' => "operators.php?action=properties&amp;{$misc->href}&amp;",
 			'vars' => ['operator' => 'oprname', 'operator_oid' => 'oid'],
+			'icon' => $misc->icon('Operator'),
 		],
 		'leftarg' => [
 			'title' => $lang['strleftarg'],
@@ -194,8 +426,30 @@ function doDefault($msg = '')
 
 	$misc->printTable($operators, $columns, $actions, 'operators-operators', $lang['strnooperators']);
 
-	//		TODO operators.php action=create $lang['strcreateoperator']
+	$misc->printNavLinks(
+		[
+			'create' => [
+				'attr' => [
+					'href' => [
+						'url' => 'operators.php',
+						'urlvars' => [
+							'server' => $_REQUEST['server'],
+							'database' => $_REQUEST['database'],
+							'schema' => $_REQUEST['schema'],
+							'action' => 'create',
+						]
+					]
+				],
+				'icon' => $misc->icon('CreateOperator'),
+				'content' => $lang['strcreateoperator']
+			]
+		],
+		'operators-default',
+		get_defined_vars()
+	);
+
 }
+
 
 /**
  * Generate XML for the browser tree.

@@ -89,4 +89,92 @@ class OperatorActions extends AbstractActions
 
         return $this->connection->execute($sql);
     }
+
+    /**
+     * Creates a new operator.
+     */
+    public function createOperator($name, $procedure, $leftarg, $rightarg, $commutator, $negator, $restrict, $join, $hashes, $merges, $comment)
+    {
+        $status = $this->connection->beginTransaction();
+        if ($status != 0) {
+            $this->connection->rollbackTransaction();
+            return -1;
+        }
+
+        //$this->connection->fieldClean($name);
+        //$f_schema = $this->connection->_schema;
+        //$this->connection->fieldClean($f_schema);
+
+        $sql = "CREATE OPERATOR {$name} (";
+
+        // PROCEDURE is required for operator creation; strip any signature and properly quote schema/name
+        if (!empty($procedure)) {
+            // Strip any "(...)" if accidentally included
+            if (strpos($procedure, '(') !== false) {
+                $procedure = strstr($procedure, '(', true);
+            }
+            $procedure = trim($procedure);
+
+            // Build a safe, quoted procedure reference
+            if (strpos($procedure, '.') !== false) {
+                list($pschema, $pfunc) = explode('.', $procedure, 2);
+                $this->connection->fieldClean($pschema);
+                $this->connection->fieldClean($pfunc);
+                $pschema = '"' . $pschema . '"';
+                $pfunc = '"' . $pfunc . '"';
+                $proc_sql = "{$pschema}.{$pfunc}";
+            } else {
+                $this->connection->fieldClean($procedure);
+                $proc_sql = '"' . $procedure . '"';
+            }
+
+            $sql .= "PROCEDURE = {$proc_sql}";
+        } else {
+            // Procedure missing
+            $this->connection->rollbackTransaction();
+            return -2;
+        }
+
+        if ($leftarg !== null && $leftarg !== '' && strtoupper($leftarg) !== 'NONE') {
+            $sql .= ", LEFTARG = {$leftarg}";
+        }
+        if ($rightarg !== null && $rightarg !== '' && strtoupper($rightarg) !== 'NONE') {
+            $sql .= ", RIGHTARG = {$rightarg}";
+        }
+        if (!empty($commutator)) {
+            $sql .= ", COMMUTATOR = {$commutator}";
+        }
+        if (!empty($negator)) {
+            $sql .= ", NEGATOR = {$negator}";
+        }
+        if (!empty($restrict)) {
+            $sql .= ", RESTRICT = {$restrict}";
+        }
+        if (!empty($join)) {
+            $sql .= ", JOIN = {$join}";
+        }
+        if ($hashes) {
+            $sql .= ", HASHES";
+        }
+        if ($merges) {
+            $sql .= ", MERGES";
+        }
+
+        $sql .= ")";
+
+        $status = $this->connection->execute($sql);
+        if ($status != 0) {
+            $this->connection->rollbackTransaction();
+            return -3;
+        }
+
+        // set comment if present
+        $status = $this->connection->setComment('OPERATOR', $name, $leftarg, $comment, $rightarg);
+        if ($status != 0) {
+            $this->connection->rollbackTransaction();
+            return -4;
+        }
+
+        return $this->connection->endTransaction();
+    }
 }
