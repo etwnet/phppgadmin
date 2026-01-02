@@ -37,7 +37,7 @@ hr {
 }
 
 h2 {
-	color: #336699;
+	color: #195998;
 	font-size: 1.7em;
 	font-weight: bold;
 	/*border: 2px solid #f1f1f1;*/
@@ -47,10 +47,14 @@ h2 {
 }
 
 h3 {
-	color: #336699;
+	color: #195998;
 	font-size: small;
 
 	font-weight: bold;
+}
+
+legend {
+	color: #195998;
 }
 
 form {
@@ -425,7 +429,10 @@ td[class^="opbutton"] img.icon {
 table.tabs {
 	width: 100%;
 	border-collapse: collapse;
-	/*margin-bottom: 1ex;*/
+}
+
+body.popup table.tabs {
+	margin-bottom: 1em;
 }
 
 .tab {
@@ -441,6 +448,7 @@ table.tabs {
 .tabs .active {
 	background: linear-gradient(0deg, #fff 0%, #f3f3f3 100%);
 	border-bottom-color: #fff;
+	/*border-top: 1px solid #dcdcdc;*/
 }
 
 .tab .icon {

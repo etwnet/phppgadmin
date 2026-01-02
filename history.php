@@ -14,28 +14,31 @@ use PhpPgAdmin\Core\AppContainer;
 include_once('./libraries/bootstrap.php');
 
 
-function doDefault() {
+function doDefault()
+{
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
 
 	$onchange = "onchange=\"location.href='history.php?server=' + encodeURI(server.options[server.selectedIndex].value) + '&amp;database=' + encodeURI(database.options[database.selectedIndex].value) + '&amp;'\"";
 
 	$misc->printHeader($lang['strhistory']);
+	echo "<body id=\"content\" class=\"popup pt-2\" onload=\"window.focus();\">\n";
+	?>
 
-	// Bring to the front always
-	echo "<body onload=\"window.focus();\">\n";
-
-	echo "<form action=\"history.php\" method=\"post\">\n";
-	$misc->printConnection($onchange);
-	echo "</form><br />";
+	<form action="history.php" method="post">
+		<?php $misc->printConnection($onchange); ?>
+	</form><br />
+	<?php
 
 	if (!isset($_REQUEST['database'])) {
-		echo "<p>{$lang['strnodatabaseselected']}</p>\n";
+		?>
+		<p><?= $lang['strnodatabaseselected'] ?></p>
+		<?php
 		return;
 	}
 
 	$data = $_SESSION['history'][$_REQUEST['server']][$_REQUEST['database']] ?? null;
-	if (isset($data)) {
+	if (!empty($data)) {
 
 		$history = new ArrayRecordSet(array_reverse($data));
 
@@ -43,6 +46,7 @@ function doDefault() {
 			'query' => [
 				'title' => $lang['strsql'],
 				'field' => field('query'),
+				'type' => 'sql',
 			],
 			'paginate' => [
 				'title' => $lang['strpaginate'],
@@ -87,7 +91,11 @@ function doDefault() {
 		];
 
 		$misc->printTable($history, $columns, $actions, 'history-history', $lang['strnohistory']);
-	} else echo "<p>{$lang['strnohistory']}</p>\n";
+	} else {
+		?>
+		<p class="empty"><?= $lang['strnohistory'] ?></p>
+		<?php
+	}
 
 	$navlinks = [
 		'refresh' => [
@@ -101,12 +109,12 @@ function doDefault() {
 					]
 				]
 			],
+			'icon' => $misc->icon('Refresh'),
 			'content' => $lang['strrefresh']
 		]
 	];
 
-	if (isset($_SESSION['history'][$_REQUEST['server']][$_REQUEST['database']])
-		&& count($_SESSION['history'][$_REQUEST['server']][$_REQUEST['database']])) {
+	if (!empty($data)) {
 		$navlinks['download'] = [
 			'attr' => [
 				'href' => [
@@ -118,6 +126,7 @@ function doDefault() {
 					]
 				]
 			],
+			'icon' => $misc->icon('Download'),
 			'content' => $lang['strdownload']
 		];
 		$navlinks['clear'] = [
@@ -131,6 +140,7 @@ function doDefault() {
 					]
 				]
 			],
+			'icon' => $misc->icon('Trashcan'),
 			'content' => $lang['strclearhistory']
 		];
 	}
@@ -138,63 +148,64 @@ function doDefault() {
 	$misc->printNavLinks($navlinks, 'history-history', get_defined_vars());
 }
 
-function doDelHistory($qid, $confirm) {
+function doDelHistory($qid, $confirm)
+{
 	$misc = AppContainer::getMisc();
-$lang = AppContainer::getLang();
+	$lang = AppContainer::getLang();
 
 	if ($confirm) {
 		$misc->printHeader($lang['strhistory']);
+		?>
 
-		// Bring to the front always
-		echo "<body onload=\"window.focus();\">\n";
-
-		echo "<h3>{$lang['strdelhistory']}</h3>\n";
-		echo "<p>{$lang['strconfdelhistory']}</p>\n";
-
-		echo "<pre>", htmlentities($_SESSION['history'][$_REQUEST['server']][$_REQUEST['database']][$qid]['query'], ENT_QUOTES, 'UTF-8'), "</pre>";
-		echo "<form action=\"history.php\" method=\"post\">\n";
-		echo "<input type=\"hidden\" name=\"action\" value=\"delhistory\" />\n";
-		echo "<input type=\"hidden\" name=\"queryid\" value=\"$qid\" />\n";
-		echo $misc->form;
-		echo "<input type=\"submit\" name=\"yes\" value=\"{$lang['stryes']}\" />\n";
-		echo "<input type=\"submit\" name=\"no\" value=\"{$lang['strno']}\" />\n";
-		echo "</form>\n";
+		<body onload="window.focus();">
+			<h3><?= $lang['strdelhistory'] ?></h3>
+			<p><?= $lang['strconfdelhistory'] ?></p>
+			<pre><?= htmlentities($_SESSION['history'][$_REQUEST['server']][$_REQUEST['database']][$qid]['query'], ENT_QUOTES, 'UTF-8') ?></pre>
+			<form action="history.php" method="post">
+				<input type="hidden" name="action" value="delhistory" />
+				<input type="hidden" name="queryid" value="<?= html_esc($qid) ?>" />
+				<?= $misc->form ?>
+				<input type="submit" name="yes" value="<?= $lang['stryes'] ?>" />
+				<input type="submit" name="no" value="<?= $lang['strno'] ?>" />
+			</form>
+			<?php
 	} else
 		unset($_SESSION['history'][$_REQUEST['server']][$_REQUEST['database']][$qid]);
 }
 
-function doClearHistory($confirm) {
+function doClearHistory($confirm)
+{
 	$misc = AppContainer::getMisc();
-$lang = AppContainer::getLang();
+	$lang = AppContainer::getLang();
 
 	if ($confirm) {
 		$misc->printHeader($lang['strhistory']);
+		?>
 
-		// Bring to the front always
-		echo "<body onload=\"window.focus();\">\n";
-
-		echo "<h3>{$lang['strclearhistory']}</h3>\n";
-		echo "<p>{$lang['strconfclearhistory']}</p>\n";
-
-		echo "<form action=\"history.php\" method=\"post\">\n";
-		echo "<input type=\"hidden\" name=\"action\" value=\"clearhistory\" />\n";
-		echo $misc->form;
-		echo "<input type=\"submit\" name=\"yes\" value=\"{$lang['stryes']}\" />\n";
-		echo "<input type=\"submit\" name=\"no\" value=\"{$lang['strno']}\" />\n";
-		echo "</form>\n";
+			<body onload="window.focus();">
+				<h3><?= $lang['strclearhistory'] ?></h3>
+				<p><?= $lang['strconfclearhistory'] ?></p>
+				<form action="history.php" method="post">
+					<input type="hidden" name="action" value="clearhistory" />
+					<?= $misc->form ?>
+					<input type="submit" name="yes" value="<?= $lang['stryes'] ?>" />
+					<input type="submit" name="no" value="<?= $lang['strno'] ?>" />
+				</form>
+				<?php
 	} else
 		unset($_SESSION['history'][$_REQUEST['server']][$_REQUEST['database']]);
 }
 
-function doDownloadHistory() {
+function doDownloadHistory()
+{
 	header('Content-Type: application/download');
-	$datetime = date('YmdHis');
-	header("Content-Disposition: attachment; filename=history{$datetime}.sql");
+	$datetime = date('Ymd_His');
+	header("Content-Disposition: attachment; filename=history_{$datetime}.sql");
 
 	foreach ($_SESSION['history'][$_REQUEST['server']][$_REQUEST['database']] as $queries) {
 		$query = rtrim($queries['query']);
 		echo $query;
-		if (substr($query, -1) != ';')
+		if (!str_ends_with($query, ';'))
 			echo ';';
 		echo "\n";
 	}
@@ -202,30 +213,34 @@ function doDownloadHistory() {
 	exit;
 }
 
+// Main program
+
 $misc = AppContainer::getMisc();
 
 $action = $_REQUEST['action'] ?? '';
 
 switch ($action) {
-case 'confdelhistory':
-	doDelHistory($_REQUEST['queryid'], true);
-	break;
-case 'delhistory':
-	if (isset($_POST['yes'])) doDelHistory($_REQUEST['queryid'], false);
-	doDefault();
-	break;
-case 'confclearhistory':
-	doClearHistory(true);
-	break;
-case 'clearhistory':
-	if (isset($_POST['yes'])) doClearHistory(false);
-	doDefault();
-	break;
-case 'download':
-	doDownloadHistory();
-	break;
-default:
-	doDefault();
+	case 'confdelhistory':
+		doDelHistory($_REQUEST['queryid'], true);
+		break;
+	case 'delhistory':
+		if (isset($_POST['yes']))
+			doDelHistory($_REQUEST['queryid'], false);
+		doDefault();
+		break;
+	case 'confclearhistory':
+		doClearHistory(true);
+		break;
+	case 'clearhistory':
+		if (isset($_POST['yes']))
+			doClearHistory(false);
+		doDefault();
+		break;
+	case 'download':
+		doDownloadHistory();
+		break;
+	default:
+		doDefault();
 }
 
 // Set the name of the window

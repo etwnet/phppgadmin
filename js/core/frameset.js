@@ -315,13 +315,14 @@ function frameSetHandler() {
 
 				// For POST requests, cache HTML in sessionStorage
 				if (/post/i.test(options.method ?? "")) {
+					const compressed = LZString.compressToUTF16(responseText);
 					const storageKey =
 						"post_" +
 						Date.now() +
 						"_" +
 						Math.random().toString(36).substring(2, 11);
 					try {
-						sessionStorage.setItem(storageKey, responseText);
+						sessionStorage.setItem(storageKey, compressed);
 						state.storageKey = storageKey;
 					} catch (e) {
 						// Fallback if sessionStorage quota exceeded
@@ -329,7 +330,7 @@ function frameSetHandler() {
 							"sessionStorage quota exceeded, storing in history state",
 							e
 						);
-						state.html = responseText;
+						state.htmlLz = compressed;
 					}
 				}
 
@@ -432,7 +433,9 @@ function frameSetHandler() {
 			hiddenInputs.forEach((input) => {
 				if (input.name) {
 					if (!/^(loginServer|action)$/.test(input.name)) {
-						params.append(input.name, input.value);
+						if (!input.dataset.hideFromUrl) {
+							params.append(input.name, input.value);
+						}
 					}
 					//formData.delete(input.name);
 				}
@@ -459,26 +462,18 @@ function frameSetHandler() {
 	window.addEventListener("popstate", (e) => {
 		const url = window.location.href;
 
-		// Try to restore from sessionStorage cache first
+		let htmlLz = null;
 		if (e.state?.storageKey) {
-			const cachedHtml = sessionStorage.getItem(e.state.storageKey);
-			if (cachedHtml) {
-				setContent(cachedHtml, {
-					restoreFormStates: true,
-					formStates: e.state?.formStates,
-				});
-				const event = new CustomEvent("frameLoaded", {
-					detail: { url: url },
-					target: content,
-				});
-				document.dispatchEvent(event);
-				return;
-			}
+			// Cached content found in sessionStorage
+			htmlLz = sessionStorage.getItem(e.state.storageKey);
+		} else if (e.state && e.state.htmlLz) {
+			// Fallback: direct HTML in state (for quota exceeded case)
+			htmlLz = e.state.htmlLz;
 		}
 
-		// Fallback: direct HTML in state (for quota exceeded case)
-		if (e.state?.html) {
-			setContent(e.state.html, {
+		if (htmlLz) {
+			const cachedHtml = LZString.decompressFromUTF16(htmlLz);
+			setContent(cachedHtml, {
 				restoreFormStates: true,
 				formStates: e.state?.formStates,
 			});
@@ -558,12 +553,15 @@ function popupHandler() {
 
 		if (post) {
 			// add hidden input fields to search query
-			const hiddenInputs = form.querySelectorAll("input[type=hidden]");
-			hiddenInputs.forEach((input) => {
-				if (input.name) {
-					if (!/^(action)$/.test(input.name)) {
+			const inputs = form.querySelectorAll("input,textarea,select");
+			inputs.forEach((input) => {
+				if (!input.name) return;
+				if (input.type == "hidden" && !/^(action)$/.test(input.name)) {
+					if (!input.dataset.hideFromUrl) {
 						params.append(input.name, input.value);
 					}
+				} else if (input.dataset.useInUrl) {
+					params.append(input.name, input.value);
 				}
 			});
 		} else {

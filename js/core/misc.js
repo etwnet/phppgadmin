@@ -290,6 +290,11 @@
 		hidden.type = "hidden";
 		hidden.name = element.name;
 
+		// copy data- attributes
+		for (const [key, value] of Object.entries(element.dataset)) {
+			hidden.dataset[key] = value;
+		}
+
 		element.insertAdjacentElement("afterend", editorDiv);
 		editorDiv.insertAdjacentElement("afterend", hidden);
 		element.remove();

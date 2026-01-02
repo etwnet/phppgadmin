@@ -5762,7 +5762,7 @@ class Postgres extends ADODB_base
 	/**
 	 *  Gets all opclasses
 	 *
-	 * @return A recordset
+	 * @return ADORecordSet A recordset
 	 */
 
 	function getOpClasses()

@@ -161,15 +161,19 @@ EOD;
 			$_REQUEST['search_path'] = implode(',', $schemaActions->getSearchPath());
 		?>
 
-		<p class="flex-row">
-			<label class="flex-7" for="search_path">
-				<?php
-				$misc->printHelp($lang['strsearchpath'], 'pg.schema.search_path');
-				?>:
-			</label>
-			<input data-use-in-url="t" class="flex-5" type="text" name="search_path" id="search_path" size="50"
-				value="<?= html_esc($_REQUEST['search_path']); ?>">
-		</p>
+		<div class="flex-row my-2">
+			<div class="flex-5">
+				<label class="flex-7" for="search_path">
+					<?php
+					$misc->printHelp($lang['strsearchpath'], 'pg.schema.search_path');
+					?>:
+				</label>
+			</div>
+			<div class="flex-5">
+				<input data-use-in-url="1" type="text" name="search_path" id="search_path" size="50"
+					value="<?= html_esc($_REQUEST['search_path']); ?>">
+			</div>
+		</div>
 
 		<textarea class="sql-editor frame resizable" rows="10" cols="50" data-mode="plpgsql"
 			name="query"><?= html_esc($_SESSION['sqlquery']); ?></textarea>

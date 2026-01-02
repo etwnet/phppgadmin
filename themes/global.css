@@ -322,7 +322,7 @@ td[class^="opbutton"] img.icon {
 
 .sql-editor.resizable {
 	resize: vertical;
-	overflow: auto;
+	/*overflow: auto;*/
 	min-height: 20px;
 	height: 90px;
 	/*max-height: 600px;*/

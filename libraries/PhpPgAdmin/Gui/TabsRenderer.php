@@ -382,7 +382,7 @@ class TabsRenderer extends AbstractContext
                             'table' => field('table'),
                         ],
                         'help' => 'pg.sql.insert',
-                        'icon' => 'Operator'
+                        'icon' => 'Add'
                     ],
                     'indexes' => [
                         'title' => $lang['strindexes'],

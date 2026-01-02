@@ -1,10 +1,11 @@
 <?php
 
-use PhpPgAdmin\Core\AppContainer;
-use PhpPgAdmin\Database\Actions\RoleActions;
-use PhpPgAdmin\Database\Actions\DatabaseActions;
 use PhpPgAdmin\Gui\DumpRenderer;
+use PhpPgAdmin\Core\AppContainer;
 use PhpPgAdmin\Gui\ImportFormRenderer;
+use PhpPgAdmin\Database\Actions\RoleActions;
+use PhpPgAdmin\Database\Actions\AdminActions;
+use PhpPgAdmin\Database\Actions\DatabaseActions;
 
 /**
  * Manage schemas within a database
@@ -28,8 +29,9 @@ function doSignal()
 {
 	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
+	$adminActions = new AdminActions($pg);
 
-	$status = $pg->sendSignal($_REQUEST['pid'], $_REQUEST['signal']);
+	$status = $adminActions->sendSignal($_REQUEST['pid'], $_REQUEST['signal']);
 	if ($status == 0)
 		doProcesses($lang['strsignalsent']);
 	else
@@ -402,6 +404,7 @@ function currentProcesses($isAjax = false)
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
 	$roleActions = new RoleActions($pg);
+	$adminActions = new AdminActions($pg);
 
 	// Display prepared transactions
 	if ($pg->hasPreparedXacts()) {
@@ -434,7 +437,7 @@ function currentProcesses($isAjax = false)
 
 	// Fetch the processes from the database
 	echo "<h3>{$lang['strprocesses']}</h3>\n";
-	$processes = $pg->getProcesses($_REQUEST['database']);
+	$processes = $adminActions->getProcesses($_REQUEST['database']);
 
 	$columns = [
 		'user' => [
@@ -516,10 +519,10 @@ function currentLocks($isAjax = false)
 	$pg = AppContainer::getPostgres();
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
-	$databaseActions = new DatabaseActions($pg);
+	$adminActions = new AdminActions($pg);
 
 	// Get the info from the pg_locks view
-	$variables = $databaseActions->getLocks();
+	$variables = $adminActions->getLocks();
 
 	$columns = [
 		'namespace' => [

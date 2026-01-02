@@ -7,6 +7,7 @@ use PhpPgAdmin\Database\AbstractActions;
 class IndexActions extends AbstractActions
 {
     // Base constructor inherited from Actions
+    public const INDEX_TYPES = ['BTREE', 'HASH', 'GIST', 'GIN'];
 
     /**
      * Grabs a list of indexes for a table.

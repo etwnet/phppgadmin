@@ -521,7 +521,7 @@ class Misc extends AbstractContext
 
 
 	/** Print a table
-	 * @param \ADORecordSet|array $tabledata A set of records to populate the table.
+	 * @param \ADORecordSet|ArrayRecordSet $tabledata A set of records to populate the table.
 	 * @param array $columns An associative array defining the columns to display.
 	 *        The array keys are the field names, and the values are arrays with
 	 *        the following possible keys:
@@ -544,7 +544,7 @@ class Misc extends AbstractContext
 	 * @param callable $pre_fn Function to call before rendering each row.
 	 *        The function will be passed the row data as an associative array.
 	 */
-	function printTable($tabledata, &$columns, &$actions, $place, $nodata = null, $pre_fn = null)
+	function printTable($tabledata, $columns, $actions, $place, $nodata = null, $pre_fn = null)
 	{
 		return $this->getTableRenderer()->printTable($tabledata, $columns, $actions, $place, $nodata, $pre_fn);
 	}

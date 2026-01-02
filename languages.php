@@ -1,84 +1,91 @@
 <?php
 
 use PhpPgAdmin\Core\AppContainer;
+use PhpPgAdmin\Database\Actions\LanguageActions;
 
-	/**
-	 * Manage languages in a database
-	 *
-	 * $Id: languages.php,v 1.13 2007/08/31 18:30:11 ioguix Exp $
-	 */
+/**
+ * Manage languages in a database
+ *
+ * $Id: languages.php,v 1.13 2007/08/31 18:30:11 ioguix Exp $
+ */
 
-	// Include application functions
-	include_once('./libraries/bootstrap.php');
-	
-	$action = $_REQUEST['action'] ?? '';
-	if (!isset($msg)) $msg = '';
+// Include application functions
+include_once('./libraries/bootstrap.php');
 
-	/**
-	 * Show default list of languages in the database
-	 */
-	function doDefault($msg = '') {
-		global $database;
-$data = AppContainer::getData();
+/**
+ * Show default list of languages in the database
+ */
+function doDefault($msg = '')
+{
+	$lang = AppContainer::getLang();
+	$misc = AppContainer::getMisc();
+	$pg = AppContainer::getPostgres();
+	$languageActions = new LanguageActions($pg);
+
+	$misc->printTrail('database');
+	$misc->printTabs('database', 'languages');
+	$misc->printMsg($msg);
+
+	$languages = $languageActions->getLanguages();
+
+	$columns = [
+		'language' => [
+			'title' => $lang['strname'],
+			'field' => field('lanname'),
+		],
+		'trusted' => [
+			'title' => $lang['strtrusted'],
+			'field' => field('lanpltrusted'),
+			'type' => 'yesno',
+		],
+		'function' => [
+			'title' => $lang['strfunction'],
+			'field' => field('lanplcallf'),
+		],
+	];
+
+	$actions = [];
+
+	$misc->printTable($languages, $columns, $actions, 'languages-languages', $lang['strnolanguages']);
+}
+
+/**
+ * Generate XML for the browser tree.
+ */
+function doTree()
+{
+	$misc = AppContainer::getMisc();
+	$pg = AppContainer::getPostgres();
+	$languageActions = new LanguageActions($pg);
+
+	$languages = $languageActions->getLanguages();
+
+	$attrs = [
+		'text' => field('lanname'),
+		'icon' => 'Language'
+	];
+
+	$misc->printTree($languages, $attrs, 'languages');
+	exit;
+}
+
+// Main program
+
 $misc = AppContainer::getMisc();
-		$lang = AppContainer::getLang();
-		
-		$misc->printTrail('database');
-		$misc->printTabs('database','languages');
-		$misc->printMsg($msg);
-		
-		$languages = $data->getLanguages();
+$lang = AppContainer::getLang();
 
-		$columns = [
-			'language' => [
-				'title' => $lang['strname'],
-				'field' => field('lanname'),
-			],
-			'trusted' => [
-				'title' => $lang['strtrusted'],
-				'field' => field('lanpltrusted'),
-				'type'  => 'yesno',
-			],
-			'function' => [
-				'title' => $lang['strfunction'],
-				'field' => field('lanplcallf'),
-			],
-		];
+$action = $_REQUEST['action'] ?? '';
 
-		$actions = [];
+if ($action == 'tree')
+	doTree();
 
-		$misc->printTable($languages, $columns, $actions, 'languages-languages', $lang['strnolanguages']);
-	}
+$misc->printHeader($lang['strlanguages']);
+$misc->printBody();
 
-	/**
-	 * Generate XML for the browser tree.
-	 */
-	function doTree() {
-		$misc = AppContainer::getMisc();
-$data = AppContainer::getData();
-		
-		$languages = $data->getLanguages();
-		
-		$attrs = [
-			'text'   => field('lanname'),
-			'icon'   => 'Language'
-		];
-		
-		$misc->printTree($languages, $attrs, 'languages');
-		exit;
-	}
-	
-	if ($action == 'tree') doTree();
-	
-	$misc->printHeader($lang['strlanguages']);
-	$misc->printBody();
+switch ($action) {
+	default:
+		doDefault();
+		break;
+}
 
-	switch ($action) {
-		default:
-			doDefault();
-			break;
-	}	
-
-	$misc->printFooter();
-
-
+$misc->printFooter();

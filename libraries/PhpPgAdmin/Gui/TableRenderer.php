@@ -109,7 +109,7 @@ class TableRenderer extends AbstractContext
             // Display table rows
             $i = 0;
             while (!$tabledata->EOF) {
-                $id = ($i % 2) + 1;
+                $id = ($i & 1) + 1;
 
                 unset($alt_actions);
                 if (!is_null($pre_fn))
@@ -151,7 +151,7 @@ class TableRenderer extends AbstractContext
                         case 'comment':
                             echo "<td class='comment_cell'>";
                             $val = value($column['field'], $tabledata->fields);
-                            if (!is_null($val)) {
+                            if ($val !== null) {
                                 echo htmlentities($val);
                             }
                             echo "</td>";
@@ -159,7 +159,7 @@ class TableRenderer extends AbstractContext
                         default:
                             echo "<td$classAttr>";
                             $val = value($column['field'], $tabledata->fields);
-                            if (!is_null($val)) {
+                            if ($val !== null) {
                                 if (isset($column['url'])) {
                                     echo "<a href=\"{$column['url']}";
                                     $this->misc()->printUrlVars($column['vars'], $tabledata->fields);

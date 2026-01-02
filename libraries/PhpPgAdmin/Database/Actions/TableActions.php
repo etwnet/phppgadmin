@@ -976,4 +976,73 @@ class TableActions extends AbstractActions
         $sql = "SHOW default_with_oids";
         return $this->connection->selectField($sql, 'default_with_oids');
     }
+
+    /**
+     * Fetches tuple statistics for a table
+     * @param $table The table to fetch stats for
+     * @return \ADORecordSet A recordset
+     */
+    function getStatsTableTuples($table)
+    {
+        $c_schema = $this->connection->_schema;
+        $this->connection->clean($c_schema);
+        $this->connection->clean($table);
+
+        $sql = "SELECT * FROM pg_stat_all_tables 
+			WHERE schemaname='{$c_schema}' AND relname='{$table}'";
+
+        return $this->connection->selectSet($sql);
+    }
+
+    /**
+     * Fetches I/0 statistics for a table
+     * @param $table The table to fetch stats for
+     * @return \ADORecordSet A recordset
+     */
+    function getStatsTableIO($table)
+    {
+        $c_schema = $this->connection->_schema;
+        $this->connection->clean($c_schema);
+        $this->connection->clean($table);
+
+        $sql = "SELECT * FROM pg_statio_all_tables 
+			WHERE schemaname='{$c_schema}' AND relname='{$table}'";
+
+        return $this->connection->selectSet($sql);
+    }
+
+    /**
+     * Fetches tuple statistics for all indexes on a table
+     * @param $table The table to fetch index stats for
+     * @return \ADORecordSet A recordset
+     */
+    function getStatsIndexTuples($table)
+    {
+        $c_schema = $this->connection->_schema;
+        $this->connection->clean($c_schema);
+        $this->connection->clean($table);
+
+        $sql = "SELECT * FROM pg_stat_all_indexes 
+			WHERE schemaname='{$c_schema}' AND relname='{$table}' ORDER BY indexrelname";
+
+        return $this->connection->selectSet($sql);
+    }
+
+    /**
+     * Fetches I/0 statistics for all indexes on a table
+     * @param $table The table to fetch index stats for
+     * @return \ADORecordSet A recordset
+     */
+    function getStatsIndexIO($table)
+    {
+        $c_schema = $this->connection->_schema;
+        $this->connection->clean($c_schema);
+        $this->connection->clean($table);
+
+        $sql = "SELECT * FROM pg_statio_all_indexes 
+			WHERE schemaname='{$c_schema}' AND relname='{$table}' 
+			ORDER BY indexrelname";
+
+        return $this->connection->selectSet($sql);
+    }
 }

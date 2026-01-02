@@ -79,7 +79,8 @@ class LayoutRenderer extends AbstractContext
 			<?php endif ?>
 			<script src="js/lib/ace/src-min-noconflict/ace.js" defer type="text/javascript"></script>
 			<script src="js/lib/ace/src-min-noconflict/mode-pgsql.js" defer type="text/javascript"></script>
-			<script src="js/core/ace-mode-plpgsql.js" defer type="text/javascript"></script>
+			<script src="js/core/ace-mode-plpgsql-lite.js" defer type="text/javascript"></script>
+			<script src="js/lib/lz-string/lz-string.js" defer type="text/javascript"></script>
 			<script src="js/core/frameset.js" defer type="text/javascript"></script>
 			<script src="js/core/misc.js" defer type="text/javascript"></script>
 			<script src="js/core/autocomplete-fk.js" defer type="text/javascript"></script>
@@ -465,7 +466,7 @@ EOT;
 		$conf = $this->conf();
 
 		// Shortcircuit for a NULL value
-		if (is_null($str))
+		if ($str === null)
 			return isset($params['null'])
 				? ($params['null'] === true ? '<i class="null">NULL</i>' : $params['null'])
 				: '';
