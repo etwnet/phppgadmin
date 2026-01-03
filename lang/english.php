@@ -281,6 +281,7 @@ $lang['strconfdropcolumn'] = 'Are you sure you want to drop column "%s" from tab
 $lang['strcolumndropped'] = 'Column dropped.';
 $lang['strcolumndroppedbad'] = 'Column drop failed.';
 $lang['straddcolumn'] = 'Add column';
+$lang['straddmorecolumns'] = 'Add more columns';
 $lang['strcolumnadded'] = 'Column added.';
 $lang['strcolumnaddedbad'] = 'Column add failed.';
 $lang['strcascade'] = 'CASCADE';

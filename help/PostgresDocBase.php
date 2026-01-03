@@ -16,9 +16,9 @@ return [
 	'pg.cast.create' => 'sql-createcast.html',
 	'pg.cast.drop' => 'sql-dropcast.html',
 
-	'pg.column.add' => ['ddl-alter.html#AEN2115', 'sql-altertable.html'],
+	'pg.column.add' => ['ddl-alter.html#DDL-ALTER-ADDING-A-COLUMN', 'sql-altertable.html'],
 	'pg.column.alter' => ['ddl-alter.html', 'sql-altertable.html'],
-	'pg.column.drop' => ['ddl-alter.html#AEN2124', 'sql-altertable.html'],
+	'pg.column.drop' => ['ddl-alter.html#DDL-ALTER-REMOVING-A-COLUMN', 'sql-altertable.html'],
 
 	'pg.constraint' => 'ddl-constraints.html',
 	'pg.constraint.add' => 'ddl-alter.html#AEN2131',

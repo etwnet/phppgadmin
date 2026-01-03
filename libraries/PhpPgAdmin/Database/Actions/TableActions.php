@@ -11,7 +11,7 @@ use PhpPgAdmin\Database\Actions\RuleActions;
 
 class TableActions extends AbstractActions
 {
-    // Base constructor inherited from Actions
+    //public const 
 
     /** @var AclActions */
     private $acl;

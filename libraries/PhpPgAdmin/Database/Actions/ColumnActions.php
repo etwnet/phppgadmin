@@ -6,6 +6,74 @@ use PhpPgAdmin\Database\AbstractActions;
 
 class ColumnActions extends AbstractActions
 {
+    public const EXCLUDE_TYPES = [
+
+        // --- Polymorphic Type ---
+        'anyelement',
+        'anyarray',
+        'anynonarray',
+        'anyenum',
+        'anyrange',
+        'anymultirange',
+        'anycompatible',
+        'anycompatiblearray',
+        'anycompatiblenonarray',
+        'anycompatiblerange',
+        'anycompatiblemultirange',
+
+        // --- Internal Types ---
+        'internal',
+        'cstring',
+        'oidvector',
+        'tid',
+        'xid',
+        'xid8',
+        'unknown',
+
+        // --- Handler Types ---
+        'trigger',
+        'event_trigger',
+        'fdw_handler',
+        'table_am_handler',
+        'index_am_handler',
+        'tsm_handler',
+
+        // --- System catalog types (reg*) ---
+        'regclass',
+        'regtype',
+        'regproc',
+        'regprocedure',
+        'regoperator',
+        'regoper',
+        'regnamespace',
+        'regrole',
+        'regconfig',
+        'regdictionary',
+        'regcollation',
+
+        // --- PG internal Structures ---
+        'pg_lsn',
+        'pg_snapshot',
+        'pg_node_tree',
+        'pg_mcv_list',
+        'pg_ndistinct',
+        'pg_dependencies',
+        'pg_ddl_command',
+        'pg_brin_bloom_summary',
+        'pg_brin_minmax_multi_summary',
+
+        // --- Information Schema Types ---
+        'information_schema.cardinal_number',
+        'information_schema.character_data',
+        'information_schema.sql_identifier',
+        'information_schema.time_stamp',
+        'information_schema.yes_or_no',
+
+        // Special cases: internal pseudotypes 
+        '"any"',
+        '"char"',
+    ];
+
 
     /**
      * @var array
@@ -106,7 +174,8 @@ class ColumnActions extends AbstractActions
         }
 
         // Add array qualifier, if requested
-        if ($array) $ftype .= '[]';
+        if ($array)
+            $ftype .= '[]';
 
         if ($ftype != $oldtype) {
             $toAlter[] = "ALTER COLUMN \"{$name}\" TYPE {$ftype}";
@@ -168,9 +237,12 @@ class ColumnActions extends AbstractActions
             }
         }
 
-        if ($array) $sql .= '[]';
-        if ($notnull) $sql .= ' NOT NULL';
-        if ($default != '') $sql .= ' DEFAULT ' . $default;
+        if ($array)
+            $sql .= '[]';
+        if ($notnull)
+            $sql .= ' NOT NULL';
+        if ($default != '')
+            $sql .= ' DEFAULT ' . $default;
 
         $status = $this->connection->execute($sql);
         if ($status == 0 && trim($comment) != '') {
@@ -254,7 +326,8 @@ class ColumnActions extends AbstractActions
         $this->connection->fieldClean($column);
 
         $sql = "ALTER TABLE \"{$f_schema}\".\"{$table}\" DROP COLUMN \"{$column}\"";
-        if ($cascade) $sql .= " CASCADE";
+        if ($cascade)
+            $sql .= " CASCADE";
 
         return $this->connection->execute($sql);
     }
@@ -342,8 +415,10 @@ class ColumnActions extends AbstractActions
             }
         }
 
-        if ($array) $sql .= '[]';
-        if ($default != '') $sql .= " USING {$default}";
+        if ($array)
+            $sql .= '[]';
+        if ($default != '')
+            $sql .= " USING {$default}";
         $status = $this->connection->execute($sql);
 
         if ($status == 0) {

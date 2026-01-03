@@ -25,7 +25,6 @@ class Postgres extends AbstractConnection
 	];
 
 	public $defaultprops = ['', '', ''];
-	public $extraTypes = ['SERIAL', 'BIGSERIAL'];
 	public $fkactions = ['NO ACTION', 'RESTRICT', 'CASCADE', 'SET NULL', 'SET DEFAULT'];
 	public $fkdeferrable = ['NOT DEFERRABLE', 'DEFERRABLE'];
 	public $fkinitial = ['INITIALLY IMMEDIATE', 'INITIALLY DEFERRED'];
@@ -40,7 +39,9 @@ class Postgres extends AbstractConnection
 		'FULL JOIN' => 'FULL JOIN'
 	];
 
-	public $predefined_size_types = [
+	public $extraTypes = ['serial', 'bigserial'];
+
+	public $predefinedSizeTypes = [
 		'abstime',
 		'aclitem',
 		'bigserial',

@@ -155,7 +155,7 @@ function doCreate($msg = '')
 				}
 				echo "\t\t\t</select>\n\t\t\n";
 				if ($i == 0) { // only define js types array once
-					$predefined_size_types = array_intersect($pg->predefined_size_types, array_keys($types_for_js));
+					$predefined_size_types = array_intersect($pg->predefinedSizeTypes, array_keys($types_for_js));
 					$escaped_predef_types = []; // the JS escaped array elements
 					foreach ($predefined_size_types as $value) {
 						$escaped_predef_types[] = "'{$value}'";

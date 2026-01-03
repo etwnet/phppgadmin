@@ -204,7 +204,7 @@ function doExport($msg = '')
 	$misc->printMsg($msg);
 
 	// Use the unified DumpRenderer for the export form
-	$dumpRenderer = new \PhpPgAdmin\Gui\DumpRenderer();
+	$dumpRenderer = new DumpRenderer();
 	$dumpRenderer->renderExportForm('table', []);
 }
 
@@ -270,82 +270,49 @@ function doImport($msg = '')
 
 function doAddColumn($msg = '')
 {
-
 	$pg = AppContainer::getPostgres();
-	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
+	$misc = AppContainer::getMisc();
 	$typeActions = new TypeActions($pg);
-	$columnActions = new ColumnActions($pg);
 
-	if (!isset($_REQUEST['stage']))
-		$_REQUEST['stage'] = 1;
+	// Determine number of rows to display
+	if (!isset($_POST['num_columns'])) {
+		$numColumns = 10;
+	} else {
+		$numColumns = (int) $_POST['num_columns'];
+	}
 
-	if ($_REQUEST['stage'] == 2) {
-		// Check inputs
-		if (trim($_POST['field']) == '') {
-			$_REQUEST['stage'] = 1;
-			doAddColumn($lang['strcolneedsname']);
-			return;
+	// Initialize arrays for form values
+	for ($i = 0; $i < $numColumns; $i++) {
+		if (!isset($_POST['field'][$i])) {
+			$_POST['field'][$i] = '';
 		}
-		if (!isset($_POST['length'])) {
-			$_POST['length'] = '';
+		if (!isset($_POST['type'][$i])) {
+			$_POST['type'][$i] = '';
 		}
-
-		$status = $columnActions->addColumn(
-			$_POST['table'],
-			$_POST['field'],
-			$_POST['type'],
-			$_POST['array'] != '',
-			$_POST['length'],
-			isset($_POST['notnull']),
-			$_POST['default'],
-			$_POST['comment']
-		);
-		if ($status == 0) {
-			AppContainer::setShouldReloadTree(true);
-			doDefault($lang['strcolumnadded']);
-		} else {
-			$_REQUEST['stage'] = 1;
-			doAddColumn($lang['strcolumnaddedbad']);
+		if (!isset($_POST['array'][$i])) {
+			$_POST['array'][$i] = '';
 		}
-		return;
-	}
-
-	if ($_REQUEST['stage'] != 1) {
-		?>
-		<p class="empty"><?= $lang['strinvalidparam'] ?></p>
-		<?php
-		return;
-	}
-
-	// Set variable defaults
-	if (!isset($_POST['field'])) {
-		$_POST['field'] = '';
-	}
-
-	if (!isset($_POST['type'])) {
-		$_POST['type'] = '';
-	}
-
-	if (!isset($_POST['array'])) {
-		$_POST['array'] = '';
-	}
-
-	if (!isset($_POST['length'])) {
-		$_POST['length'] = '';
-	}
-
-	if (!isset($_POST['default'])) {
-		$_POST['default'] = '';
-	}
-
-	if (!isset($_POST['comment'])) {
-		$_POST['comment'] = '';
+		if (!isset($_POST['length'][$i])) {
+			$_POST['length'][$i] = '';
+		}
+		if (!isset($_POST['default'][$i])) {
+			$_POST['default'][$i] = '';
+		}
+		if (!isset($_POST['comment'][$i])) {
+			$_POST['comment'][$i] = '';
+		}
 	}
 
 	// Fetch all available types
 	$types = $typeActions->getTypes(true, false, true);
-	$types_for_js = [];
+	$allTypes = $pg->extraTypes;
+	while (!$types->EOF) {
+		$allTypes[] = $types->fields['typname'];
+		$types->moveNext();
+	}
+	// Exclude types that cannot be used to create columns
+	$allTypes = array_diff($allTypes, ColumnActions::EXCLUDE_TYPES);
 
 	$misc->printTrail('table');
 	$misc->printTitle($lang['straddcolumn'], 'pg.column.add');
@@ -354,81 +321,167 @@ function doAddColumn($msg = '')
 	?>
 	<script src="js/tables.js" type="text/javascript"></script>
 	<form action="tblproperties.php" method="post">
-		<table>
+		<table id="columnsTable">
 			<tr>
 				<th class="data required"><?= $lang['strname'] ?></th>
 				<th colspan="2" class="data required"><?= $lang['strtype'] ?></th>
 				<th class="data"><?= $lang['strlength'] ?></th>
-				<?php if ($pg->hasCreateFieldWithConstraints()): ?>
-					<th class="data"><?= $lang['strnotnull'] ?></th>
-					<th class="data"><?= $lang['strdefault'] ?></th>
-				<?php endif; ?>
+				<th class="data text-center"><?= $lang['strnotnull'] ?></th>
+				<th class="data"><?= $lang['strdefault'] ?></th>
 				<th class="data"><?= $lang['strcomment'] ?></th>
 			</tr>
 
-			<tr>
-				<td><input name="field" size="16" maxlength="<?= $pg->_maxNameLen ?>"
-						value="<?= html_esc($_POST['field']) ?>" /></td>
-				<td><select name="type" id="type" onchange="checkLengths(document.getElementById('type').value,'');">
-						<?php
-						// Output any "magic" types.
-						if ($pg->hasMagicTypes()) {
-							foreach ($pg->extraTypes as $v) {
-								$types_for_js[] = strtolower($v);
-								$sel = ($v == $_POST['type']) ? ' selected="selected"' : '';
+			<?php
+			$predefined_size_types = array_intersect($pg->predefinedSizeTypes, $allTypes);
+			$escaped_predef_types = []; // the JS escaped array elements
+			foreach ($predefined_size_types as $value) {
+				$escaped_predef_types[] = "'{$value}'";
+			}
+
+			for ($i = 0; $i < $numColumns; $i++) {
+				?>
+				<tr class="data<?= ($i & 1) == 0 ? '1' : '2' ?>" data-row-index="<?= $i ?>">
+					<td><input name="field[<?= $i ?>]" size="16" maxlength="<?= $pg->_maxNameLen ?>"
+							value="<?= html_esc($_POST['field'][$i]) ?>" /></td>
+					<td><select name="type[<?= $i ?>]" id="types<?= $i ?>" onchange="checkLengths(this.value, <?= $i ?>);">
+							<?php
+							foreach ($allTypes as $type) {
+								$sel = ($type == $_POST['type'][$i]) ? ' selected="selected"' : '';
 								?>
-								<option value="<?= html_esc($v) ?>" <?= $sel ?>><?= $misc->printVal($v) ?></option>
+								<option value="<?= html_esc($type) ?>" <?= $sel ?>><?= $misc->printVal($type) ?></option>
 								<?php
 							}
-						}
-						while (!$types->EOF) {
-							$typname = $types->fields['typname'];
-							$types_for_js[] = $typname;
-							$sel = ($typname == $_POST['type']) ? ' selected="selected"' : '';
 							?>
-							<option value="<?= html_esc($typname) ?>" <?= $sel ?>><?= $misc->printVal($typname) ?></option>
-							<?php
-							$types->moveNext();
-						}
-						?>
-					</select></td>
+						</select></td>
 
-				<td><select name="array">
-						<option value="" <?= ($_POST['array'] == '') ? ' selected="selected"' : '' ?>></option>
-						<option value="[]" <?= ($_POST['array'] == '[]') ? ' selected="selected"' : '' ?>>[ ]</option>
-					</select></td>
-				<?php
-				$predefined_size_types = array_intersect($pg->predefined_size_types, $types_for_js);
-				$escaped_predef_types = []; // the JS escaped array elements
-				foreach ($predefined_size_types as $value) {
-					$escaped_predef_types[] = "'{$value}'";
-				}
-				?>
-				<td><input name="length" id="lengths" size="8" value="<?= html_esc($_POST['length']) ?>" /></td>
-				<?php if ($pg->hasCreateFieldWithConstraints()): ?>
-					<td><input type="checkbox" name="notnull" <?= (isset($_REQUEST['notnull'])) ? ' checked="checked"' : '' ?> />
+					<td><select name="array[<?= $i ?>]">
+							<option value="" <?= ($_POST['array'][$i] == '') ? ' selected="selected"' : '' ?>></option>
+							<option value="[]" <?= ($_POST['array'][$i] == '[]') ? ' selected="selected"' : '' ?>>[ ]</option>
+						</select></td>
+					<td><input name="length[<?= $i ?>]" id="lengths<?= $i ?>" size="8"
+							value="<?= html_esc($_POST['length'][$i]) ?>" /></td>
+					<td class="text-center"><input type="checkbox" name="notnull[<?= $i ?>]" <?= (isset($_POST['notnull'][$i])) ? ' checked="checked"' : '' ?> />
 					</td>
-					<td><input name="default" size="20" value="<?= html_esc($_POST['default']) ?>" /></td>
-				<?php endif; ?>
-				<td><input name="comment" size="40" value="<?= html_esc($_POST['comment']) ?>" /></td>
-			</tr>
+					<td><input name="default[<?= $i ?>]" size="20" value="<?= html_esc($_POST['default'][$i]) ?>" /></td>
+					<td><input name="comment[<?= $i ?>]" size="40" value="<?= html_esc($_POST['comment'][$i]) ?>" /></td>
+				</tr>
+				<?php
+			}
+			?>
 		</table>
-		<p><input type="hidden" name="action" value="add_column" />
-			<input type="hidden" name="stage" value="2" />
+		<div class="flex-row my-3">
+			<input type="hidden" name="action" value="save_add_column" />
+			<input type="hidden" name="num_columns" id="num_columns" value="<?= $numColumns ?>" />
 			<?= $misc->form ?>
 			<input type="hidden" name="table" value="<?= html_esc($_REQUEST['table']) ?>" />
-			<?php if (!$pg->hasCreateFieldWithConstraints()): ?>
-				<input type="hidden" name="default" value="" />
-			<?php endif; ?>
-			<input type="submit" value="<?= $lang['stradd'] ?>" />
-			<input type="submit" name="cancel" value="<?= $lang['strcancel'] ?>" />
-		</p>
+			<div>
+				<input type="submit" name="add" value="<?= $lang['strsave'] ?>" />
+				<input type="submit" name="cancel" value="<?= $lang['strcancel'] ?>" />
+			</div>
+			<div class="ml-auto">
+				<input type="button" value="<?= $lang['straddmorecolumns'] ?>" onclick="addColumnRow();" />
+			</div>
+		</div>
 	</form>
 	<script type="text/javascript">
 		var predefined_lengths = new Array(<?= implode(",", $escaped_predef_types) ?>);
-		checkLengths(document.getElementById('type').value, '');
+		var maxNameLen = <?= $pg->_maxNameLen ?>;
+		var allTypes = <?= json_encode(array_values($allTypes)) ?>;
+		// Initialize all rows
+		for (var i = 0; i < <?= $numColumns ?>; i++) {
+			checkLengths(document.getElementById('types' + i).value, i);
+		}
 	</script>
 	<?php
+}
+
+function doSaveAddColumn()
+{
+	$pg = AppContainer::getPostgres();
+	$lang = AppContainer::getLang();
+	$columnActions = new ColumnActions($pg);
+
+	// Determine number of columns
+	$numColumns = isset($_POST['num_columns']) ? (int) $_POST['num_columns'] : 1;
+
+	// Collect valid columns (non-empty field names)
+	$validColumns = [];
+	for ($i = 0; $i < $numColumns; $i++) {
+		if (isset($_POST['field'][$i]) && trim($_POST['field'][$i]) != '') {
+			$validColumns[] = [
+				'index' => $i,
+				'field' => trim($_POST['field'][$i]),
+				'type' => isset($_POST['type'][$i]) ? $_POST['type'][$i] : '',
+				'array' => isset($_POST['array'][$i]) && $_POST['array'][$i] != '',
+				'length' => isset($_POST['length'][$i]) ? $_POST['length'][$i] : '',
+				'notnull' => isset($_POST['notnull'][$i]),
+				'default' => isset($_POST['default'][$i]) ? $_POST['default'][$i] : '',
+				'comment' => isset($_POST['comment'][$i]) ? $_POST['comment'][$i] : ''
+			];
+		}
+	}
+
+	// Check if at least one column is provided
+	if (empty($validColumns)) {
+		doAddColumn($lang['strcolneedsname'], $_POST);
+		return;
+	}
+
+	// Begin transaction
+	$status = $pg->beginTransaction();
+	if ($status != 0) {
+		doAddColumn($lang['strcolumnaddedbad'], $_POST);
+		return;
+	}
+
+	// Add each column
+	$addedCount = 0;
+	$failedColumn = null;
+	$errorMsg = '';
+
+	foreach ($validColumns as $col) {
+		$status = $columnActions->addColumn(
+			$_POST['table'],
+			$col['field'],
+			$col['type'],
+			$col['array'],
+			$col['length'],
+			$col['notnull'],
+			$col['default'],
+			$col['comment']
+		);
+
+		if ($status != 0) {
+			// Rollback transaction on error
+			$pg->rollbackTransaction();
+			$failedColumn = $col;
+			$errorMsg = sprintf(
+				$lang['strcolumnaddedbad'] . ' - Row %d (%s): %s',
+				$col['index'] + 1,
+				html_esc($col['field']),
+				$lang['strcolumnaddedbad']
+			);
+			// Redisplay form with error
+			doAddColumn($errorMsg);
+			return;
+		}
+		$addedCount++;
+	}
+
+	// Commit transaction
+	$status = $pg->endTransaction();
+	if ($status != 0) {
+		doAddColumn($lang['strcolumnaddedbad'], $_POST);
+		return;
+	}
+
+	// Success
+	AppContainer::setShouldReloadTree(true);
+	if ($addedCount == 1) {
+		doDefault($lang['strcolumnadded']);
+	} else {
+		doDefault(sprintf('%d %s', $addedCount, $lang['strcolumnsadded'] ?? 'columns added'));
+	}
 }
 
 /**
@@ -845,7 +898,6 @@ switch ($action) {
 		} else {
 			doDefault();
 		}
-
 		break;
 	case 'confirm_alter':
 		doAlter();
@@ -862,7 +914,13 @@ switch ($action) {
 		} else {
 			doAddColumn();
 		}
-
+		break;
+	case 'save_add_column':
+		if (isset($_POST['add'])) {
+			doSaveAddColumn();
+		} else {
+			doDefault();
+		}
 		break;
 	case 'properties':
 		if (isset($_POST['cancel'])) {
@@ -870,7 +928,6 @@ switch ($action) {
 		} else {
 			doProperties();
 		}
-
 		break;
 	case 'drop':
 		if (isset($_POST['drop'])) {
@@ -878,7 +935,6 @@ switch ($action) {
 		} else {
 			doDefault();
 		}
-
 		break;
 	case 'confirm_drop':
 		doDrop(true);
