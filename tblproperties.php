@@ -296,6 +296,9 @@ function doAddColumn($msg = '')
 		if (!isset($_POST['length'][$i])) {
 			$_POST['length'][$i] = '';
 		}
+		if (!isset($_POST['default_preset'][$i])) {
+			$_POST['default_preset'][$i] = '';
+		}
 		if (!isset($_POST['default'][$i])) {
 			$_POST['default'][$i] = '';
 		}
@@ -311,6 +314,15 @@ function doAddColumn($msg = '')
 		$allTypes[] = $types->fields['typname'];
 		$types->moveNext();
 	}
+	$columnDefaults = [
+		'' => '',
+		'NULL' => 'NULL',
+		'CURRENT_TIMESTAMP' => 'CURRENT_TIMESTAMP',
+		'gen_random_uuid()' => 'gen_random_uuid()',
+		"'{}'::jsonb" => "'{}'::jsonb",
+		'custom' => $lang['strcustom'] ?? 'Custom:',
+	];
+
 	// Exclude types that cannot be used to create columns
 	$allTypes = array_diff($allTypes, ColumnActions::EXCLUDE_TYPES);
 
@@ -360,9 +372,20 @@ function doAddColumn($msg = '')
 						</select></td>
 					<td><input name="length[<?= $i ?>]" id="lengths<?= $i ?>" size="8"
 							value="<?= html_esc($_POST['length'][$i]) ?>" /></td>
-					<td class="text-center"><input type="checkbox" name="notnull[<?= $i ?>]" <?= (isset($_POST['notnull'][$i])) ? ' checked="checked"' : '' ?> />
+					<td class="text-center"><input type="checkbox" name="notnull[<?= $i ?>]" id="notnull<?= $i ?>"
+							<?= (isset($_POST['notnull'][$i])) ? ' checked="checked"' : '' ?> />
 					</td>
-					<td><input name="default[<?= $i ?>]" size="20" value="<?= html_esc($_POST['default'][$i]) ?>" /></td>
+					<td>
+						<select name="default_preset[<?= $i ?>]" id="default_preset<?= $i ?>"
+							onchange="handleDefaultPresetChange(<?= $i ?>);" style="margin-bottom: 2px;">
+							<?php foreach ($columnDefaults as $value => $label): ?>
+								<option value="<?= html_esc($value) ?>" <?= ($_POST['default_preset'][$i] == $value) ? ' selected="selected"' : '' ?>><?= html_esc($label) ?></option>
+							<?php endforeach; ?>
+						</select>
+						<input name="default[<?= $i ?>]" id="default<?= $i ?>" size="7"
+							value="<?= html_esc($_POST['default'][$i]) ?>"
+							style="display: <?= ($_POST['default_preset'][$i] == 'custom' || ($_POST['default_preset'][$i] == '' && $_POST['default'][$i] != '')) ? 'inline' : 'none' ?>;" />
+					</td>
 					<td><input name="comment[<?= $i ?>]" size="40" value="<?= html_esc($_POST['comment'][$i]) ?>" /></td>
 				</tr>
 				<?php
@@ -387,9 +410,11 @@ function doAddColumn($msg = '')
 		var predefined_lengths = new Array(<?= implode(",", $escaped_predef_types) ?>);
 		var maxNameLen = <?= $pg->_maxNameLen ?>;
 		var allTypes = <?= json_encode(array_values($allTypes)) ?>;
+
 		// Initialize all rows
 		for (var i = 0; i < <?= $numColumns ?>; i++) {
 			checkLengths(document.getElementById('types' + i).value, i);
+			handleDefaultPresetChange(i);
 		}
 	</script>
 	<?php
@@ -408,6 +433,19 @@ function doSaveAddColumn()
 	$validColumns = [];
 	for ($i = 0; $i < $numColumns; $i++) {
 		if (isset($_POST['field'][$i]) && trim($_POST['field'][$i]) != '') {
+			// Determine the actual default value
+			$defaultValue = '';
+			if (isset($_POST['default_preset'][$i])) {
+				$preset = $_POST['default_preset'][$i];
+				if ($preset === 'custom') {
+					$defaultValue = isset($_POST['default'][$i]) ? $_POST['default'][$i] : '';
+				} elseif ($preset !== '') {
+					$defaultValue = $preset;
+				}
+			} elseif (isset($_POST['default'][$i])) {
+				$defaultValue = $_POST['default'][$i];
+			}
+
 			$validColumns[] = [
 				'index' => $i,
 				'field' => trim($_POST['field'][$i]),
@@ -415,7 +453,7 @@ function doSaveAddColumn()
 				'array' => isset($_POST['array'][$i]) && $_POST['array'][$i] != '',
 				'length' => isset($_POST['length'][$i]) ? $_POST['length'][$i] : '',
 				'notnull' => isset($_POST['notnull'][$i]),
-				'default' => isset($_POST['default'][$i]) ? $_POST['default'][$i] : '',
+				'default' => $defaultValue,
 				'comment' => isset($_POST['comment'][$i]) ? $_POST['comment'][$i] : ''
 			];
 		}
@@ -423,14 +461,14 @@ function doSaveAddColumn()
 
 	// Check if at least one column is provided
 	if (empty($validColumns)) {
-		doAddColumn($lang['strcolneedsname'], $_POST);
+		doAddColumn($lang['strcolneedsname']);
 		return;
 	}
 
 	// Begin transaction
 	$status = $pg->beginTransaction();
 	if ($status != 0) {
-		doAddColumn($lang['strcolumnaddedbad'], $_POST);
+		doAddColumn($lang['strcolumnaddedbad']);
 		return;
 	}
 
@@ -471,7 +509,7 @@ function doSaveAddColumn()
 	// Commit transaction
 	$status = $pg->endTransaction();
 	if ($status != 0) {
-		doAddColumn($lang['strcolumnaddedbad'], $_POST);
+		doAddColumn($lang['strcolumnaddedbad']);
 		return;
 	}
 

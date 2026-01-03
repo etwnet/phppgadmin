@@ -38,7 +38,7 @@ function addColumnRow() {
 	newRow.setAttribute("data-row-index", newRowIndex);
 
 	// Update alternating row class
-	if (newRowIndex % 2 == 0) {
+	if ((newRowIndex & 1) == 0) {
 		newRow.className = "data1";
 	} else {
 		newRow.className = "data2";
@@ -86,6 +86,18 @@ function addColumnRow() {
 				"checkLengths(this.value, " + newRowIndex + ");"
 			);
 		}
+
+		// Update onchange for default preset select
+		if (
+			input.tagName === "SELECT" &&
+			name &&
+			name.match(/^default_preset\[/)
+		) {
+			input.setAttribute(
+				"onchange",
+				"handleDefaultPresetChange(" + newRowIndex + ");"
+			);
+		}
 	}
 
 	// Append the new row to the table
@@ -98,5 +110,38 @@ function addColumnRow() {
 	var typeSelect = newRow.querySelector("select[name^='type']");
 	if (typeSelect) {
 		checkLengths(typeSelect.value, newRowIndex);
+	}
+
+	// Initialize the new row's default preset handling
+	handleDefaultPresetChange(newRowIndex);
+}
+
+function handleDefaultPresetChange(rowIndex) {
+	var presetSelect = document.getElementById("default_preset" + rowIndex);
+	var customInput = document.getElementById("default" + rowIndex);
+	var notnullCheckbox = document.getElementById("notnull" + rowIndex);
+
+	if (!presetSelect || !customInput) {
+		return;
+	}
+
+	var presetValue = presetSelect.value;
+
+	if (presetValue === "custom") {
+		// Show custom input field
+		customInput.style.display = "inline";
+		customInput.focus();
+	} else if (presetValue === "") {
+		// No default - hide custom input
+		customInput.style.display = "none";
+		customInput.value = "";
+	} else {
+		// Preset value selected - hide custom input and uncheck NOT NULL if NULL
+		customInput.style.display = "none";
+		customInput.value = "";
+
+		if (presetValue === "NULL" && notnullCheckbox) {
+			notnullCheckbox.checked = false;
+		}
 	}
 }

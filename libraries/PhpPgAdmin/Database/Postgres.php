@@ -815,4 +815,9 @@ class Postgres extends AbstractConnection
 		// Server OIDs are available only until PostgreSQL 11
 		return $this->major_version <= 11;
 	}
+
+	function hasAlterColumnType()
+	{
+		return true;
+	}
 }
