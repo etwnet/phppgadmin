@@ -84,17 +84,51 @@ function frameSetHandler() {
 			}
 		}
 
-		// Now bring scripts to life
+		// Now bring scripts to life...
+
+		// Separate external scripts from inline scripts
+		const externalScripts = [];
+		const inlineScripts = [];
+
 		content.querySelectorAll("script").forEach((oldScript) => {
-			const newScript = document.createElement("script");
 			if (oldScript.src) {
-				newScript.src = oldScript.src;
+				externalScripts.push(oldScript);
 			} else {
-				newScript.textContent = oldScript.textContent;
+				inlineScripts.push(oldScript);
 			}
-			content.appendChild(newScript);
 			oldScript.remove();
 		});
+
+		// Load all external scripts first and wait for them
+		const scriptPromises = externalScripts.map((oldScript) => {
+			return new Promise((resolve, reject) => {
+				const newScript = document.createElement("script");
+				newScript.src = oldScript.src;
+				newScript.onload = resolve;
+				newScript.onerror = reject;
+				content.appendChild(newScript);
+			});
+		});
+
+		// Wait for all external scripts to load, then execute inline scripts
+		Promise.all(scriptPromises)
+			.then(() => {
+				// Now execute inline scripts in order
+				inlineScripts.forEach((oldScript) => {
+					const newScript = document.createElement("script");
+					newScript.textContent = oldScript.textContent;
+					content.appendChild(newScript);
+				});
+			})
+			.catch((err) => {
+				console.error("Failed to load external script:", err);
+				// Execute inline scripts anyway to avoid breaking the page
+				inlineScripts.forEach((oldScript) => {
+					const newScript = document.createElement("script");
+					newScript.textContent = oldScript.textContent;
+					content.appendChild(newScript);
+				});
+			});
 	}
 
 	/**

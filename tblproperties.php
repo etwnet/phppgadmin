@@ -126,63 +126,72 @@ function doAlter($msg = '')
 		$_POST['tablespace'] = $table->fields['tablespace'];
 	}
 
-	echo "<form action=\"tblproperties.php\" method=\"post\">\n";
-	echo "<table>\n";
-	echo "<tr><th class=\"data left required\">{$lang['strname']}</th>\n";
-	echo "<td class=\"data1\">";
-	echo "<input name=\"name\" size=\"32\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-		html_esc($_POST['name'], ENT_QUOTES), "\" /></td></tr>\n";
+	?>
+	<form action="tblproperties.php" method="post">
+		<table>
+			<tr>
+				<th class="data left required"><?= $lang['strname'] ?></th>
+				<td class="data1">
+					<input name="name" size="32" maxlength="<?= $pg->_maxNameLen ?>"
+						value="<?= html_esc($_POST['name'], ENT_QUOTES) ?>" />
+				</td>
+			</tr>
 
-	if ($roleActions->isSuperUser()) {
-		echo "<tr><th class=\"data left required\">{$lang['strowner']}</th>\n";
-		echo "<td class=\"data1\"><select name=\"owner\">";
-		while (!$users->EOF) {
-			$uname = $users->fields['usename'];
-			echo "<option value=\"", html_esc($uname), "\"", ($uname == $_POST['owner']) ? ' selected="selected"' : '', ">", html_esc($uname), "</option>\n";
-			$users->moveNext();
-		}
-		echo "</select></td></tr>\n";
-	}
+			<?php if ($roleActions->isSuperUser()): ?>
+				<tr>
+					<th class="data left required"><?= $lang['strowner'] ?></th>
+					<td class="data1"><select name="owner">
+							<?php while (!$users->EOF):
+								$uname = $users->fields['usename']; ?>
+								<option value="<?= html_esc($uname) ?>" <?= ($uname == $_POST['owner']) ? ' selected="selected"' : '' ?>><?= html_esc($uname) ?></option>
+								<?php $users->moveNext(); endwhile; ?>
+						</select></td>
+				</tr>
+			<?php endif; ?>
 
-	if ($pg->hasAlterTableSchema()) {
-		$schemas = $schemaActions->getSchemas();
-		echo "<tr><th class=\"data left required\">{$lang['strschema']}</th>\n";
-		echo "<td class=\"data1\"><select name=\"newschema\">";
-		while (!$schemas->EOF) {
-			$schema = $schemas->fields['nspname'];
-			echo "<option value=\"", html_esc($schema), "\"", ($schema == $_POST['newschema']) ? ' selected="selected"' : '', ">", html_esc($schema), "</option>\n";
-			$schemas->moveNext();
-		}
-		echo "</select></td></tr>\n";
-	}
+			<?php if ($pg->hasAlterTableSchema()): ?>
+				<?php $schemas = $schemaActions->getSchemas(); ?>
+				<tr>
+					<th class="data left required"><?= $lang['strschema'] ?></th>
+					<td class="data1"><select name="newschema">
+							<?php while (!$schemas->EOF):
+								$schema = $schemas->fields['nspname']; ?>
+								<option value="<?= html_esc($schema) ?>" <?= ($schema == $_POST['newschema']) ? ' selected="selected"' : '' ?>><?= html_esc($schema) ?></option>
+								<?php $schemas->moveNext(); endwhile; ?>
+						</select></td>
+				</tr>
+			<?php endif; ?>
 
-	// Tablespace (if there are any)
-	if ($pg->hasTablespaces() && $tablespaces->recordCount() > 0) {
-		echo "\t<tr>\n\t\t<th class=\"data left\">{$lang['strtablespace']}</th>\n";
-		echo "\t\t<td class=\"data1\">\n\t\t\t<select name=\"tablespace\">\n";
-		// Always offer the default (empty) option
-		echo "\t\t\t\t<option value=\"\"", ($_POST['tablespace'] == '') ? ' selected="selected"' : '', "></option>\n";
-		// Display all other tablespaces
-		while (!$tablespaces->EOF) {
-			$spcname = html_esc($tablespaces->fields['spcname']);
-			echo "\t\t\t\t<option value=\"{$spcname}\"", ($spcname == $_POST['tablespace']) ? ' selected="selected"' : '', ">{$spcname}</option>\n";
-			$tablespaces->moveNext();
-		}
-		echo "\t\t\t</select>\n\t\t</td>\n\t</tr>\n";
-	}
+			<?php if ($pg->hasTablespaces() && $tablespaces->recordCount() > 0): ?>
+				<tr>
+					<th class="data left"><?= $lang['strtablespace'] ?></th>
+					<td class="data1">
+						<select name="tablespace">
+							<option value="" <?= ($_POST['tablespace'] == '') ? ' selected="selected"' : '' ?>></option>
+							<?php while (!$tablespaces->EOF):
+								$spcname = html_esc($tablespaces->fields['spcname']); ?>
+								<option value="<?= $spcname ?>" <?= ($spcname == $_POST['tablespace']) ? ' selected="selected"' : '' ?>><?= $spcname ?></option>
+								<?php $tablespaces->moveNext(); endwhile; ?>
+						</select>
+					</td>
+				</tr>
+			<?php endif; ?>
 
-	echo "<tr><th class=\"data left\">{$lang['strcomment']}</th>\n";
-	echo "<td class=\"data1\">";
-	echo "<textarea rows=\"3\" cols=\"32\" name=\"comment\">",
-		html_esc($_POST['comment'] ?? ''), "</textarea></td></tr>\n";
-	echo "</table>\n";
-	echo "<p><input type=\"hidden\" name=\"action\" value=\"alter\" />\n";
-	echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
-	echo $misc->form;
-	echo "<input type=\"submit\" name=\"alter\" value=\"{$lang['stralter']}\" />\n";
-	echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
-	echo "</form>\n";
-
+			<tr>
+				<th class="data left"><?= $lang['strcomment'] ?></th>
+				<td class="data1">
+					<textarea rows="3" cols="32" name="comment"><?= html_esc($_POST['comment'] ?? '') ?></textarea>
+				</td>
+			</tr>
+		</table>
+		<p><input type="hidden" name="action" value="alter" />
+			<input type="hidden" name="table" value="<?= html_esc($_REQUEST['table']) ?>" />
+			<?= $misc->form ?>
+			<input type="submit" name="alter" value="<?= $lang['stralter'] ?>" />
+			<input type="submit" name="cancel" value="<?= $lang['strcancel'] ?>" />
+		</p>
+	</form>
+	<?php
 }
 
 function doExport($msg = '')
@@ -221,35 +230,44 @@ function doImport($msg = '')
 		return;
 	}
 
-	echo "<form action=\"dataimport.php\" method=\"post\" enctype=\"multipart/form-data\">\n";
-	echo "<table>\n";
-	echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strformat']}</th>\n";
-	echo "\t\t<td><select name=\"format\">\n";
-	echo "\t\t\t<option value=\"auto\">{$lang['strauto']}</option>\n";
-	echo "\t\t\t<option value=\"csv\">CSV</option>\n";
-	echo "\t\t\t<option value=\"tab\">{$lang['strtabbed']}</option>\n";
-	if (function_exists('xml_parser_create')) {
-		echo "\t\t\t<option value=\"xml\">XML</option>\n";
-	}
-	echo "\t\t</select></td>\n\t</tr>\n";
-	echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strallowednulls']}</th>\n";
-	echo "\t\t<td><label><input type=\"checkbox\" name=\"allowednulls[0]\" value=\"\\N\" checked=\"checked\" />{$lang['strbackslashn']}</label><br />\n";
-	echo "\t\t<label><input type=\"checkbox\" name=\"allowednulls[1]\" value=\"NULL\" />NULL</label><br />\n";
-	echo "\t\t<label><input type=\"checkbox\" name=\"allowednulls[2]\" value=\"\" />{$lang['stremptystring']}</label></td>\n\t</tr>\n";
-	echo "\t<tr>\n\t\t<th class=\"data left required\">{$lang['strfile']}</th>\n";
-	echo "\t\t<td><input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"{$max_size}\" />";
-	echo "<input type=\"file\" name=\"source\" /></td>\n\t</tr>\n";
-	echo "</table>\n";
-	echo "<p><input type=\"hidden\" name=\"action\" value=\"import\" />\n";
-	echo $misc->form;
-	echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
-	echo "<input type=\"submit\" value=\"{$lang['strimport']}\" /></p>\n";
-	echo "</form>\n";
+	?>
+	<form action="dataimport.php" method="post" enctype="multipart/form-data">
+		<table>
+			<tr>
+				<th class="data left required"><?= $lang['strformat'] ?></th>
+				<td><select name="format">
+						<option value="auto"><?= $lang['strauto'] ?></option>
+						<option value="csv">CSV</option>
+						<option value="tab"><?= $lang['strtabbed'] ?></option>
+						<?php if (function_exists('xml_parser_create')): ?>
+							<option value="xml">XML</option>
+						<?php endif; ?>
+					</select></td>
+			</tr>
+			<tr>
+				<th class="data left required"><?= $lang['strallowednulls'] ?></th>
+				<td>
+					<label><input type="checkbox" name="allowednulls[0]" value="\N"
+							checked="checked" /><?= $lang['strbackslashn'] ?></label><br />
+					<label><input type="checkbox" name="allowednulls[1]" value="NULL" />NULL</label><br />
+					<label><input type="checkbox" name="allowednulls[2]" value="" /><?= $lang['stremptystring'] ?></label>
+				</td>
+			</tr>
+			<tr>
+				<th class="data left required"><?= $lang['strfile'] ?></th>
+				<td><input type="hidden" name="MAX_FILE_SIZE" value="<?= $max_size ?>" /><input type="file" name="source" />
+				</td>
+			</tr>
+		</table>
+		<p><input type="hidden" name="action" value="import" />
+			<?= $misc->form ?>
+			<input type="hidden" name="table" value="<?= html_esc($_REQUEST['table']) ?>" />
+			<input type="submit" value="<?= $lang['strimport'] ?>" />
+		</p>
+	</form>
+	<?php
 }
 
-/**
- * Displays a screen where they can add a column
- */
 function doAddColumn($msg = '')
 {
 
@@ -259,145 +277,158 @@ function doAddColumn($msg = '')
 	$typeActions = new TypeActions($pg);
 	$columnActions = new ColumnActions($pg);
 
-	if (!isset($_REQUEST['stage'])) {
+	if (!isset($_REQUEST['stage']))
 		$_REQUEST['stage'] = 1;
+
+	if ($_REQUEST['stage'] == 2) {
+		// Check inputs
+		if (trim($_POST['field']) == '') {
+			$_REQUEST['stage'] = 1;
+			doAddColumn($lang['strcolneedsname']);
+			return;
+		}
+		if (!isset($_POST['length'])) {
+			$_POST['length'] = '';
+		}
+
+		$status = $columnActions->addColumn(
+			$_POST['table'],
+			$_POST['field'],
+			$_POST['type'],
+			$_POST['array'] != '',
+			$_POST['length'],
+			isset($_POST['notnull']),
+			$_POST['default'],
+			$_POST['comment']
+		);
+		if ($status == 0) {
+			AppContainer::setShouldReloadTree(true);
+			doDefault($lang['strcolumnadded']);
+		} else {
+			$_REQUEST['stage'] = 1;
+			doAddColumn($lang['strcolumnaddedbad']);
+		}
+		return;
 	}
 
-	switch ($_REQUEST['stage']) {
-		case 1:
-			// Set variable defaults
-			if (!isset($_POST['field'])) {
-				$_POST['field'] = '';
-			}
+	if ($_REQUEST['stage'] != 1) {
+		?>
+		<p class="empty"><?= $lang['strinvalidparam'] ?></p>
+		<?php
+		return;
+	}
 
-			if (!isset($_POST['type'])) {
-				$_POST['type'] = '';
-			}
+	// Set variable defaults
+	if (!isset($_POST['field'])) {
+		$_POST['field'] = '';
+	}
 
-			if (!isset($_POST['array'])) {
-				$_POST['array'] = '';
-			}
+	if (!isset($_POST['type'])) {
+		$_POST['type'] = '';
+	}
 
-			if (!isset($_POST['length'])) {
-				$_POST['length'] = '';
-			}
+	if (!isset($_POST['array'])) {
+		$_POST['array'] = '';
+	}
 
-			if (!isset($_POST['default'])) {
-				$_POST['default'] = '';
-			}
+	if (!isset($_POST['length'])) {
+		$_POST['length'] = '';
+	}
 
-			if (!isset($_POST['comment'])) {
-				$_POST['comment'] = '';
-			}
+	if (!isset($_POST['default'])) {
+		$_POST['default'] = '';
+	}
 
-			// Fetch all available types
-			$types = $typeActions->getTypes(true, false, true);
-			$types_for_js = [];
+	if (!isset($_POST['comment'])) {
+		$_POST['comment'] = '';
+	}
 
-			$misc->printTrail('table');
-			$misc->printTitle($lang['straddcolumn'], 'pg.column.add');
-			$misc->printMsg($msg);
+	// Fetch all available types
+	$types = $typeActions->getTypes(true, false, true);
+	$types_for_js = [];
 
-			echo "<script src=\"js/tables.js\" type=\"text/javascript\"></script>";
-			echo "<form action=\"tblproperties.php\" method=\"post\">\n";
+	$misc->printTrail('table');
+	$misc->printTitle($lang['straddcolumn'], 'pg.column.add');
+	$misc->printMsg($msg);
 
-			// Output table header
-			echo "<table>\n";
-			echo "<tr><th class=\"data required\">{$lang['strname']}</th>\n<th colspan=\"2\" class=\"data required\">{$lang['strtype']}</th>\n";
-			echo "<th class=\"data\">{$lang['strlength']}</th>\n";
-			if ($pg->hasCreateFieldWithConstraints()) {
-				echo "<th class=\"data\">{$lang['strnotnull']}</th>\n<th class=\"data\">{$lang['strdefault']}</th>\n";
-			}
+	?>
+	<script src="js/tables.js" type="text/javascript"></script>
+	<form action="tblproperties.php" method="post">
+		<table>
+			<tr>
+				<th class="data required"><?= $lang['strname'] ?></th>
+				<th colspan="2" class="data required"><?= $lang['strtype'] ?></th>
+				<th class="data"><?= $lang['strlength'] ?></th>
+				<?php if ($pg->hasCreateFieldWithConstraints()): ?>
+					<th class="data"><?= $lang['strnotnull'] ?></th>
+					<th class="data"><?= $lang['strdefault'] ?></th>
+				<?php endif; ?>
+				<th class="data"><?= $lang['strcomment'] ?></th>
+			</tr>
 
-			echo "<th class=\"data\">{$lang['strcomment']}</th></tr>\n";
+			<tr>
+				<td><input name="field" size="16" maxlength="<?= $pg->_maxNameLen ?>"
+						value="<?= html_esc($_POST['field']) ?>" /></td>
+				<td><select name="type" id="type" onchange="checkLengths(document.getElementById('type').value,'');">
+						<?php
+						// Output any "magic" types.
+						if ($pg->hasMagicTypes()) {
+							foreach ($pg->extraTypes as $v) {
+								$types_for_js[] = strtolower($v);
+								$sel = ($v == $_POST['type']) ? ' selected="selected"' : '';
+								?>
+								<option value="<?= html_esc($v) ?>" <?= $sel ?>><?= $misc->printVal($v) ?></option>
+								<?php
+							}
+						}
+						while (!$types->EOF) {
+							$typname = $types->fields['typname'];
+							$types_for_js[] = $typname;
+							$sel = ($typname == $_POST['type']) ? ' selected="selected"' : '';
+							?>
+							<option value="<?= html_esc($typname) ?>" <?= $sel ?>><?= $misc->printVal($typname) ?></option>
+							<?php
+							$types->moveNext();
+						}
+						?>
+					</select></td>
 
-			echo "<tr><td><input name=\"field\" size=\"16\" maxlength=\"{$pg->_maxNameLen}\" value=\"",
-				html_esc($_POST['field']), "\" /></td>\n";
-			echo "<td><select name=\"type\" id=\"type\" onchange=\"checkLengths(document.getElementById('type').value,'');\">\n";
-			// Output any "magic" types.  This came in with the alter column type so we'll check that
-			if ($pg->hasMagicTypes()) {
-				foreach ($pg->extraTypes as $v) {
-					$types_for_js[] = strtolower($v);
-					echo "\t<option value=\"", html_esc($v), "\"", ($v == $_POST['type']) ? ' selected="selected"' : '', ">",
-						$misc->printVal($v), "</option>\n";
+				<td><select name="array">
+						<option value="" <?= ($_POST['array'] == '') ? ' selected="selected"' : '' ?>></option>
+						<option value="[]" <?= ($_POST['array'] == '[]') ? ' selected="selected"' : '' ?>>[ ]</option>
+					</select></td>
+				<?php
+				$predefined_size_types = array_intersect($pg->predefined_size_types, $types_for_js);
+				$escaped_predef_types = []; // the JS escaped array elements
+				foreach ($predefined_size_types as $value) {
+					$escaped_predef_types[] = "'{$value}'";
 				}
-			}
-			while (!$types->EOF) {
-				$typname = $types->fields['typname'];
-				$types_for_js[] = $typname;
-				echo "\t<option value=\"", html_esc($typname), "\"", ($typname == $_POST['type']) ? ' selected="selected"' : '', ">",
-					$misc->printVal($typname), "</option>\n";
-				$types->moveNext();
-			}
-			echo "</select></td>\n";
-
-			// Output array type selector
-			echo "<td><select name=\"array\">\n";
-			echo "\t<option value=\"\"", ($_POST['array'] == '') ? ' selected="selected"' : '', "></option>\n";
-			echo "\t<option value=\"[]\"", ($_POST['array'] == '[]') ? ' selected="selected"' : '', ">[ ]</option>\n";
-			echo "</select></td>\n";
-			$predefined_size_types = array_intersect($pg->predefined_size_types, $types_for_js);
-			$escaped_predef_types = []; // the JS escaped array elements
-			foreach ($predefined_size_types as $value) {
-				$escaped_predef_types[] = "'{$value}'";
-			}
-
-			echo "<td><input name=\"length\" id=\"lengths\" size=\"8\" value=\"",
-				html_esc($_POST['length']), "\" /></td>\n";
-			// Support for adding column with not null and default
-			if ($pg->hasCreateFieldWithConstraints()) {
-				echo "<td><input type=\"checkbox\" name=\"notnull\"", (isset($_REQUEST['notnull'])) ? ' checked="checked"' : '', " /></td>\n";
-				echo "<td><input name=\"default\" size=\"20\" value=\"",
-					html_esc($_POST['default']), "\" /></td>\n";
-			}
-			echo "<td><input name=\"comment\" size=\"40\" value=\"",
-				html_esc($_POST['comment']), "\" /></td></tr>\n";
-			echo "</table>\n";
-			echo "<p><input type=\"hidden\" name=\"action\" value=\"add_column\" />\n";
-			echo "<input type=\"hidden\" name=\"stage\" value=\"2\" />\n";
-			echo $misc->form;
-			echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
-			if (!$pg->hasCreateFieldWithConstraints()) {
-				echo "<input type=\"hidden\" name=\"default\" value=\"\" />\n";
-			}
-			echo "<input type=\"submit\" value=\"{$lang['stradd']}\" />\n";
-			echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" /></p>\n";
-			echo "</form>\n";
-			echo "<script type=\"text/javascript\">predefined_lengths = new Array(" . implode(",", $escaped_predef_types) . ");checkLengths(document.getElementById('type').value,'');</script>\n";
-			break;
-		case 2:
-			// Check inputs
-			if (trim($_POST['field']) == '') {
-				$_REQUEST['stage'] = 1;
-				doAddColumn($lang['strcolneedsname']);
-				return;
-			}
-			if (!isset($_POST['length'])) {
-				$_POST['length'] = '';
-			}
-
-			$status = $columnActions->addColumn(
-				$_POST['table'],
-				$_POST['field'],
-				$_POST['type'],
-				$_POST['array'] != '',
-				$_POST['length'],
-				isset($_POST['notnull']),
-				$_POST['default'],
-				$_POST['comment']
-			);
-			if ($status == 0) {
-				AppContainer::setShouldReloadTree(true);
-				doDefault($lang['strcolumnadded']);
-			} else {
-				$_REQUEST['stage'] = 1;
-				doAddColumn($lang['strcolumnaddedbad']);
-				return;
-			}
-			break;
-		default:
-			echo "<p>{$lang['strinvalidparam']}</p>\n";
-	}
+				?>
+				<td><input name="length" id="lengths" size="8" value="<?= html_esc($_POST['length']) ?>" /></td>
+				<?php if ($pg->hasCreateFieldWithConstraints()): ?>
+					<td><input type="checkbox" name="notnull" <?= (isset($_REQUEST['notnull'])) ? ' checked="checked"' : '' ?> />
+					</td>
+					<td><input name="default" size="20" value="<?= html_esc($_POST['default']) ?>" /></td>
+				<?php endif; ?>
+				<td><input name="comment" size="40" value="<?= html_esc($_POST['comment']) ?>" /></td>
+			</tr>
+		</table>
+		<p><input type="hidden" name="action" value="add_column" />
+			<input type="hidden" name="stage" value="2" />
+			<?= $misc->form ?>
+			<input type="hidden" name="table" value="<?= html_esc($_REQUEST['table']) ?>" />
+			<?php if (!$pg->hasCreateFieldWithConstraints()): ?>
+				<input type="hidden" name="default" value="" />
+			<?php endif; ?>
+			<input type="submit" value="<?= $lang['stradd'] ?>" />
+			<input type="submit" name="cancel" value="<?= $lang['strcancel'] ?>" />
+		</p>
+	</form>
+	<script type="text/javascript">
+		var predefined_lengths = new Array(<?= implode(",", $escaped_predef_types) ?>);
+		checkLengths(document.getElementById('type').value, '');
+	</script>
+	<?php
 }
 
 /**
@@ -413,22 +444,19 @@ function doDrop($confirm)
 	if ($confirm) {
 		$misc->printTrail('column');
 		$misc->printTitle($lang['strdrop'], 'pg.column.drop');
-
-		echo "<p>", sprintf(
-			$lang['strconfdropcolumn'],
-			$misc->printVal($_REQUEST['column']),
-			$misc->printVal($_REQUEST['table'])
-		), "</p>\n";
-
-		echo "<form action=\"tblproperties.php\" method=\"post\">\n";
-		echo "<input type=\"hidden\" name=\"action\" value=\"drop\" />\n";
-		echo "<input type=\"hidden\" name=\"table\" value=\"", html_esc($_REQUEST['table']), "\" />\n";
-		echo "<input type=\"hidden\" name=\"column\" value=\"", html_esc($_REQUEST['column']), "\" />\n";
-		echo $misc->form;
-		echo "<p><input type=\"checkbox\" id=\"cascade\" name=\"cascade\"> <label for=\"cascade\">{$lang['strcascade']}</label></p>\n";
-		echo "<input type=\"submit\" name=\"drop\" value=\"{$lang['strdrop']}\" />\n";
-		echo "<input type=\"submit\" name=\"cancel\" value=\"{$lang['strcancel']}\" />\n";
-		echo "</form>\n";
+		?>
+		<p><?= sprintf($lang['strconfdropcolumn'], $misc->printVal($_REQUEST['column']), $misc->printVal($_REQUEST['table'])) ?>
+		</p>
+		<form action="tblproperties.php" method="post">
+			<input type="hidden" name="action" value="drop" />
+			<input type="hidden" name="table" value="<?= html_esc($_REQUEST['table']) ?>" />
+			<input type="hidden" name="column" value="<?= html_esc($_REQUEST['column']) ?>" />
+			<?= $misc->form ?>
+			<p><input type="checkbox" id="cascade" name="cascade"> <label for="cascade"><?= $lang['strcascade'] ?></label></p>
+			<input type="submit" name="drop" value="<?= $lang['strdrop'] ?>" />
+			<input type="submit" name="cancel" value="<?= $lang['strcancel'] ?>" />
+		</form>
+		<?php
 	} else {
 		$status = $columnActions->dropColumn($_POST['table'], $_POST['column'], isset($_POST['cascade']));
 		if ($status == 0) {
@@ -520,7 +548,9 @@ function doDefault($msg = '')
 
 	// Show comment if any
 	if ($tdata->fields['relcomment'] !== null) {
-		echo '<p class="comment">', $misc->printVal($tdata->fields['relcomment']), "</p>\n";
+		?>
+		<p class="comment"><?= $misc->printVal($tdata->fields['relcomment']) ?></p>
+		<?php
 	}
 
 	$columns = [
