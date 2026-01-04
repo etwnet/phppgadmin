@@ -1,9 +1,9 @@
 <?php
 
 use PhpPgAdmin\Core\AppContainer;
-use PhpPgAdmin\Database\Actions\TypeActions;
 use PhpPgAdmin\Database\Actions\TableActions;
 use PhpPgAdmin\Database\Actions\ColumnActions;
+use PhpPgAdmin\Gui\ColumnFormRenderer;
 
 /**
  * List Columns properties in tables
@@ -25,187 +25,122 @@ function doAlter($msg = '')
 	$misc = AppContainer::getMisc();
 	$lang = AppContainer::getLang();
 	$tableActions = new TableActions($pg);
-	$typeActions = new TypeActions($pg);
 	$columnActions = new ColumnActions($pg);
 
 
-	if (!isset($_REQUEST['stage']))
-		$_REQUEST['stage'] = 1;
+	$misc->printTrail('column');
+	$misc->printTitle($lang['stralter'], 'pg.column.alter');
+	$misc->printMsg($msg);
 
-	switch ($_REQUEST['stage']) {
-		case 1:
-			$misc->printTrail('column');
-			$misc->printTitle($lang['stralter'], 'pg.column.alter');
-			$misc->printMsg($msg);
+	?>
+	<form action="colproperties.php" method="post">
 
-			?>
-			<script src="js/tables.js" type="text/javascript"></script>
-			<form action="colproperties.php" method="post">
-
-				<table>
-					<tr>
-						<th class="data required"><?= $lang['strname'] ?></th>
-						<?php if ($pg->hasAlterColumnType()): ?>
-							<th class="data required" colspan="2"><?= $lang['strtype'] ?></th>
-							<th class="data"><?= $lang['strlength'] ?></th>
-						<?php else: ?>
-							<th class="data required"><?= $lang['strtype'] ?></th>
-						<?php endif; ?>
-						<th class="data"><?= $lang['strnotnull'] ?></th>
-						<th class="data"><?= $lang['strdefault'] ?></th>
-						<th class="data"><?= $lang['strcomment'] ?></th>
-					</tr>
-					<?php
-
-					$column = $tableActions->getTableAttributes($_REQUEST['table'], $_REQUEST['column']);
-					$column->fields['attnotnull'] = $pg->phpBool($column->fields['attnotnull']);
-
-					// Upon first drawing the screen, load the existing column information
-					// from the database.
-					if (!isset($_REQUEST['default'])) {
-						$_REQUEST['field'] = $column->fields['attname'];
-						$_REQUEST['type'] = $column->fields['base_type'];
-						// Check to see if its' an array type...
-						// XXX: HACKY
-						if (substr($column->fields['base_type'], strlen($column->fields['base_type']) - 2) == '[]') {
-							$_REQUEST['type'] = substr($column->fields['base_type'], 0, strlen($column->fields['base_type']) - 2);
-							$_REQUEST['array'] = '[]';
-						} else {
-							$_REQUEST['type'] = $column->fields['base_type'];
-							$_REQUEST['array'] = '';
-						}
-						// To figure out the length, look in the brackets :(
-						// XXX: HACKY
-						if ($column->fields['type'] != $column->fields['base_type'] && preg_match('/\\(([0-9, ]*)\\)/', $column->fields['type'], $bits)) {
-							$_REQUEST['length'] = $bits[1];
-						} else
-							$_REQUEST['length'] = '';
-						$_REQUEST['default'] = $_REQUEST['olddefault'] = $column->fields['adsrc'];
-						if ($column->fields['attnotnull'])
-							$_REQUEST['notnull'] = 'YES';
-						$_REQUEST['comment'] = $column->fields['comment'];
-					}
-
-					// Column name
-					?>
-					<tr>
-						<td><input name="field" size="16" maxlength="<?= $pg->_maxNameLen ?>"
-								value="<?= html_esc($_REQUEST['field']) ?>" /></td>
-						<?php
-
-						// Column type
-						$escaped_predef_types = []; // the JS escaped array elements
-						if ($pg->hasAlterColumnType()) {
-							// Fetch all available types
-							$types = $typeActions->getTypes(true, false, true);
-							$types_for_js = [];
-
-							?>
-							<td><select name="type" id="type" onchange="checkLengths(document.getElementById('type').value,'');">
-									<?php while (!$types->EOF):
-										$typname = $types->fields['typname'];
-										$types_for_js[] = $typname; ?>
-										<option value="<?= html_esc($typname) ?>" <?= ($typname == $_REQUEST['type']) ? ' selected="selected"' : '' ?>><?= $misc->printVal($typname) ?></option>
-										<?php
-										$types->moveNext();
-									endwhile; ?>
-								</select></td>
-							<?php
-
-							// Output array type selector
-							?>
-							<td><select name="array">
-									<option value="" <?= ($_REQUEST['array'] == '') ? ' selected="selected"' : '' ?>></option>
-									<option value="[]" <?= ($_REQUEST['array'] == '[]') ? ' selected="selected"' : '' ?>>[ ]</option>
-								</select></td>
-							<?php
-							$predefined_size_types = array_intersect($pg->predefinedSizeTypes, $types_for_js);
-							foreach ($predefined_size_types as $value) {
-								$escaped_predef_types[] = "'{$value}'";
-							}
-							?>
-							<td><input name="length" id="lengths" size="8" value="<?= html_esc($_REQUEST['length']) ?>" /></td>
-							<?php
-						} else {
-							// Otherwise draw the read-only type name
-							?>
-							<td><?= $misc->printVal($pg->formatType($column->fields['type'], $column->fields['atttypmod'])) ?></td>
-							<?php
-						}
-
-						?>
-						<td><input type="checkbox" name="notnull" <?= (isset($_REQUEST['notnull'])) ? ' checked="checked"' : '' ?> />
-						</td>
-						<td><input name="default" size="20" value="<?= html_esc($_REQUEST['default']) ?>" /></td>
-						<td><input name="comment" size="40" value="<?= html_esc($_REQUEST['comment']) ?>" /></td>
-					</tr>
-				</table>
-				<p><input type="hidden" name="action" value="properties" />
-					<input type="hidden" name="stage" value="2" />
-					<?= $misc->form ?>
-					<input type="hidden" name="table" value="<?= html_esc($_REQUEST['table']) ?>" />
-					<input type="hidden" name="column" value="<?= html_esc($_REQUEST['column']) ?>" />
-					<input type="hidden" name="olddefault" value="<?= html_esc($_REQUEST['olddefault']) ?>" />
-					<?php if ($column->fields['attnotnull']): ?>
-						<input type="hidden" name="oldnotnull" value="on" />
-					<?php endif; ?>
-					<input type="hidden" name="oldtype"
-						value="<?= html_esc($pg->formatType($column->fields['type'], $column->fields['atttypmod'])) ?>" />
-					<?php
-					// Add hidden variables to suppress error notices if we don't support altering column type
-					if (!$pg->hasAlterColumnType()): ?>
-						<input type="hidden" name="type" value="<?= html_esc($_REQUEST['type']) ?>" />
-						<input type="hidden" name="length" value="<?= html_esc($_REQUEST['length']) ?>" />
-						<input type="hidden" name="array" value="<?= html_esc($_REQUEST['array']) ?>" />
-					<?php endif; ?>
-					<input type="submit" value="<?= $lang['stralter'] ?>" />
-					<input type="submit" name="cancel" value="<?= $lang['strcancel'] ?>" />
-				</p>
-			</form>
-			<script
-				type="text/javascript">predefined_lengths = new Array(<?= implode(",", $escaped_predef_types) ?>); checkLengths(document.getElementById('type').value, '');</script>
-			<?php
-			break;
-		case 2:
-			// Check inputs
-			if (trim($_REQUEST['field']) == '') {
-				$_REQUEST['stage'] = 1;
-				doAlter($lang['strcolneedsname']);
-				return;
-			}
-			if (!isset($_REQUEST['length']))
-				$_REQUEST['length'] = '';
-			$status = $columnActions->alterColumn(
-				$_REQUEST['table'],
-				$_REQUEST['column'],
-				$_REQUEST['field'],
-				isset($_REQUEST['notnull']),
-				isset($_REQUEST['oldnotnull']),
-				$_REQUEST['default'],
-				$_REQUEST['olddefault'],
-				$_REQUEST['type'],
-				$_REQUEST['length'],
-				$_REQUEST['array'],
-				$_REQUEST['oldtype'],
-				$_REQUEST['comment']
-			);
-			if ($status == 0) {
-				if ($_REQUEST['column'] != $_REQUEST['field']) {
-					$_REQUEST['column'] = $_REQUEST['field'];
-					AppContainer::setShouldReloadTree(true);
-				}
-				doDefault($lang['strcolumnaltered']);
-			} else {
-				$_REQUEST['stage'] = 1;
-				doAlter($lang['strcolumnalteredbad']);
-				return;
-			}
-			break;
-		default:
-			?>
-			<p><?= $lang['strinvalidparam'] ?></p>
 		<?php
+		$column = $tableActions->getTableAttributes($_REQUEST['table'], $_REQUEST['column']);
+		$column->fields['attnotnull'] = $pg->phpBool($column->fields['attnotnull']);
+
+		$length = '';
+		if (
+			isset($column->fields['type'], $column->fields['base_type'])
+			&& $column->fields['type'] != $column->fields['base_type']
+			&& preg_match('/\\(([0-9, ]*)\\)/', $column->fields['type'], $bits)
+		) {
+			$length = $bits[1];
+		}
+
+		$renderer = new ColumnFormRenderer();
+		$columns = [
+			[
+				'attname' => $column->fields['attname'],
+				'base_type' => $column->fields['base_type'],
+				'length' => $length,
+				'attnotnull' => $column->fields['attnotnull'],
+				'adsrc' => $column->fields['adsrc'],
+				'comment' => $column->fields['comment'],
+			]
+		];
+
+		$renderer->renderTable($columns, $_REQUEST);
+		?>
+		<p><input type="hidden" name="action" value="save_properties" />
+			<?= $misc->form ?>
+			<input type="hidden" name="table" value="<?= html_esc($_REQUEST['table']) ?>" />
+			<input type="hidden" name="column" value="<?= html_esc($_REQUEST['column']) ?>" />
+			<input type="hidden" name="olddefault" value="<?= html_esc($column->fields['adsrc']) ?>" />
+			<?php if ($column->fields['attnotnull']): ?>
+				<input type="hidden" name="oldnotnull" value="on" />
+			<?php endif; ?>
+			<input type="hidden" name="oldtype"
+				value="<?= html_esc($pg->formatType($column->fields['type'], $column->fields['atttypmod'])) ?>" />
+			<input type="submit" name="save" value="<?= $lang['stralter'] ?>" />
+			<input type="submit" name="cancel" value="<?= $lang['strcancel'] ?>" />
+		</p>
+	</form>
+	<?= $renderer->renderJavaScriptInit(1) ?>
+	<?php
+}
+
+function doSaveAlter()
+{
+
+	$pg = AppContainer::getPostgres();
+	$lang = AppContainer::getLang();
+	$columnActions = new ColumnActions($pg);
+
+
+	// Check inputs - support both array[0] and plain syntax for backwards compatibility
+	$field = $_REQUEST['field'][0] ?? '';
+	$type = $_REQUEST['type'][0] ?? '';
+	$length = $_REQUEST['length'][0] ?? '';
+	$array = $_REQUEST['array'][0] ?? '';
+	$comment = $_REQUEST['comment'][0] ?? '';
+	$notnull = isset($_REQUEST['notnull'][0]);
+
+	if (trim($field) == '') {
+		doAlter($lang['strcolneedsname']);
+		return;
 	}
+
+	// Determine the actual default value from preset
+	$defaultValue = '';
+	$default_preset = $_REQUEST['default_preset'][0] ?? '';
+	$default = $_REQUEST['default'][0] ?? '';
+
+	if ($default_preset) {
+		if ($default_preset === 'custom') {
+			$defaultValue = $default;
+		} elseif ($default_preset !== '') {
+			$defaultValue = $default_preset;
+		}
+	} else {
+		$defaultValue = $default;
+	}
+
+	$status = $columnActions->alterColumn(
+		$_REQUEST['table'],
+		$_REQUEST['column'],
+		$field,
+		$notnull,
+		isset($_REQUEST['oldnotnull']),
+		$defaultValue,
+		$_REQUEST['olddefault'],
+		$type,
+		$length,
+		$array,
+		$_REQUEST['oldtype'],
+		$comment
+	);
+	if ($status == 0) {
+		if ($_REQUEST['column'] != $field) {
+			$_REQUEST['column'] = $field;
+			AppContainer::setShouldReloadTree(true);
+		}
+		doDefault($lang['strcolumnaltered']);
+	} else {
+		doAlter($lang['strcolumnalteredbad']);
+		return;
+	}
+
 }
 
 /**
@@ -387,19 +322,20 @@ else
 $misc->printHeader($lang['strtables'] . ' - ' . $tableName);
 $misc->printBody();
 
-if (isset($_REQUEST['view']))
-	doDefault(null, false);
-else
-	switch ($action) {
-		case 'properties':
-			if (isset($_POST['cancel']))
-				doDefault();
-			else
-				doAlter();
-			break;
-		default:
+switch ($action) {
+	case 'alter':
+	case 'properties':
+		doAlter();
+		break;
+	case 'save_properties':
+		if (isset($_POST['save']))
+			doSaveAlter();
+		else
 			doDefault();
-			break;
-	}
+		break;
+	default:
+		doDefault(null, !isset($_REQUEST['view']));
+		break;
+}
 
 $misc->printFooter();

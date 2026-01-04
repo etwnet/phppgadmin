@@ -167,7 +167,9 @@ class TableRenderer extends AbstractContext
                                 }
                                 // Render icon if specified in column config
                                 if (isset($column['icon'])) {
-                                    echo '<img src="' . htmlspecialchars($column['icon']) . '" class="icon" alt="" />';
+                                    $icon = value($column['icon'], $tabledata->fields);
+                                    $icon = $this->misc()->icon($icon) ?: $icon;
+                                    echo '<img src="' . htmlspecialchars($icon) . '" class="icon" alt="" />';
                                 }
                                 $type = $column['type'] ?? null;
                                 $params = $column['params'] ?? [];

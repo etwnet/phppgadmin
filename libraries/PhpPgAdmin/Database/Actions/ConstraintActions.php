@@ -6,7 +6,13 @@ use PhpPgAdmin\Database\AbstractActions;
 
 class ConstraintActions extends AbstractActions
 {
-    // Base constructor inherited from Actions
+    public const FK_ACTIONS = ['NO ACTION', 'RESTRICT', 'CASCADE', 'SET NULL', 'SET DEFAULT'];
+
+    public const FK_MATCHES = ['MATCH SIMPLE', 'MATCH FULL', 'MATCH PARTIAL'];
+
+    public const FK_DEFERRABLE = ['NOT DEFERRABLE', 'DEFERRABLE'];
+
+    public const FK_INITIALLY = ['INITIALLY IMMEDIATE', 'INITIALLY DEFERRED'];
 
     /**
      * Returns a list of all constraints on a table.
@@ -268,23 +274,23 @@ class ConstraintActions extends AbstractActions
         }
         $sql .= "FOREIGN KEY (\"" . join('","', $sfields) . "\") ";
         $sql .= "REFERENCES \"{$targschema}\".\"{$targtable}\"(\"" . join('","', $tfields) . "\") ";
-        $fkmatches = ['MATCH SIMPLE', 'MATCH FULL', 'MATCH PARTIAL'];
-        $fkactions = ['NO ACTION', 'RESTRICT', 'CASCADE', 'SET NULL', 'SET DEFAULT'];
-        $fkdeferrable = ['NOT DEFERRABLE', 'DEFERRABLE'];
-        $fkinitial = ['IMMEDIATE', 'DEFERRED'];
-        if ($match != $fkmatches[0]) {
+        //$fkmatches = ['MATCH SIMPLE', 'MATCH FULL', 'MATCH PARTIAL'];
+        //$fkactions = ['NO ACTION', 'RESTRICT', 'CASCADE', 'SET NULL', 'SET DEFAULT'];
+        //$fkdeferrable = ['NOT DEFERRABLE', 'DEFERRABLE'];
+        //$fkinitial = ['IMMEDIATE', 'DEFERRED'];
+        if ($match != self::FK_MATCHES[0]) {
             $sql .= " {$match}";
         }
-        if ($upd_action != $fkactions[0]) {
+        if ($upd_action != self::FK_ACTIONS[0]) {
             $sql .= " ON UPDATE {$upd_action}";
         }
-        if ($del_action != $fkactions[0]) {
+        if ($del_action != self::FK_ACTIONS[0]) {
             $sql .= " ON DELETE {$del_action}";
         }
-        if ($deferrable != $fkdeferrable[0]) {
+        if ($deferrable != self::FK_DEFERRABLE[0]) {
             $sql .= " {$deferrable}";
         }
-        if ($initially != $fkinitial[0]) {
+        if ($initially != self::FK_INITIALLY[0]) {
             $sql .= " {$initially}";
         }
 

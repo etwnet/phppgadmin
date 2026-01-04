@@ -9,6 +9,7 @@ use PhpPgAdmin\Database\Actions\ColumnActions;
 use PhpPgAdmin\Database\Actions\SchemaActions;
 use PhpPgAdmin\Database\Actions\ConstraintActions;
 use PhpPgAdmin\Gui\DumpRenderer;
+use PhpPgAdmin\Gui\ColumnFormRenderer;
 
 /**
  * List tables in a database
@@ -273,7 +274,7 @@ function doAddColumn($msg = '')
 	$pg = AppContainer::getPostgres();
 	$lang = AppContainer::getLang();
 	$misc = AppContainer::getMisc();
-	$typeActions = new TypeActions($pg);
+	$renderer = new ColumnFormRenderer();
 
 	// Determine number of rows to display
 	if (!isset($_POST['num_columns'])) {
@@ -282,116 +283,24 @@ function doAddColumn($msg = '')
 		$numColumns = (int) $_POST['num_columns'];
 	}
 
-	// Initialize arrays for form values
-	for ($i = 0; $i < $numColumns; $i++) {
-		if (!isset($_POST['field'][$i])) {
-			$_POST['field'][$i] = '';
-		}
-		if (!isset($_POST['type'][$i])) {
-			$_POST['type'][$i] = '';
-		}
-		if (!isset($_POST['array'][$i])) {
-			$_POST['array'][$i] = '';
-		}
-		if (!isset($_POST['length'][$i])) {
-			$_POST['length'][$i] = '';
-		}
-		if (!isset($_POST['default_preset'][$i])) {
-			$_POST['default_preset'][$i] = '';
-		}
-		if (!isset($_POST['default'][$i])) {
-			$_POST['default'][$i] = '';
-		}
-		if (!isset($_POST['comment'][$i])) {
-			$_POST['comment'][$i] = '';
-		}
-	}
-
-	// Fetch all available types
-	$types = $typeActions->getTypes(true, false, true);
-	$allTypes = $pg->extraTypes;
-	while (!$types->EOF) {
-		$allTypes[] = $types->fields['typname'];
-		$types->moveNext();
-	}
-	$columnDefaults = [
-		'' => '',
-		'NULL' => 'NULL',
-		'CURRENT_TIMESTAMP' => 'CURRENT_TIMESTAMP',
-		'gen_random_uuid()' => 'gen_random_uuid()',
-		"'{}'::jsonb" => "'{}'::jsonb",
-		'custom' => $lang['strcustom'] ?? 'Custom:',
-	];
-
-	// Exclude types that cannot be used to create columns
-	$allTypes = array_diff($allTypes, ColumnActions::EXCLUDE_TYPES);
+	// Prepare empty columns array for rendering
+	$columns = array_fill(0, $numColumns, [
+		'attname' => '',
+		'base_type' => '',
+		'length' => '',
+		'attnotnull' => false,
+		'adsrc' => '',
+		'comment' => '',
+		'default_preset' => '',
+	]);
 
 	$misc->printTrail('table');
 	$misc->printTitle($lang['straddcolumn'], 'pg.column.add');
 	$misc->printMsg($msg);
 
 	?>
-	<script src="js/tables.js" type="text/javascript"></script>
 	<form action="tblproperties.php" method="post">
-		<table id="columnsTable">
-			<tr>
-				<th class="data required"><?= $lang['strname'] ?></th>
-				<th colspan="2" class="data required"><?= $lang['strtype'] ?></th>
-				<th class="data"><?= $lang['strlength'] ?></th>
-				<th class="data text-center"><?= $lang['strnotnull'] ?></th>
-				<th class="data"><?= $lang['strdefault'] ?></th>
-				<th class="data"><?= $lang['strcomment'] ?></th>
-			</tr>
-
-			<?php
-			$predefined_size_types = array_intersect($pg->predefinedSizeTypes, $allTypes);
-			$escaped_predef_types = []; // the JS escaped array elements
-			foreach ($predefined_size_types as $value) {
-				$escaped_predef_types[] = "'{$value}'";
-			}
-
-			for ($i = 0; $i < $numColumns; $i++) {
-				?>
-				<tr class="data<?= ($i & 1) == 0 ? '1' : '2' ?>" data-row-index="<?= $i ?>">
-					<td><input name="field[<?= $i ?>]" size="16" maxlength="<?= $pg->_maxNameLen ?>"
-							value="<?= html_esc($_POST['field'][$i]) ?>" /></td>
-					<td><select name="type[<?= $i ?>]" id="types<?= $i ?>" onchange="checkLengths(this.value, <?= $i ?>);">
-							<?php
-							foreach ($allTypes as $type) {
-								$sel = ($type == $_POST['type'][$i]) ? ' selected="selected"' : '';
-								?>
-								<option value="<?= html_esc($type) ?>" <?= $sel ?>><?= $misc->printVal($type) ?></option>
-								<?php
-							}
-							?>
-						</select></td>
-
-					<td><select name="array[<?= $i ?>]">
-							<option value="" <?= ($_POST['array'][$i] == '') ? ' selected="selected"' : '' ?>></option>
-							<option value="[]" <?= ($_POST['array'][$i] == '[]') ? ' selected="selected"' : '' ?>>[ ]</option>
-						</select></td>
-					<td><input name="length[<?= $i ?>]" id="lengths<?= $i ?>" size="8"
-							value="<?= html_esc($_POST['length'][$i]) ?>" /></td>
-					<td class="text-center"><input type="checkbox" name="notnull[<?= $i ?>]" id="notnull<?= $i ?>"
-							<?= (isset($_POST['notnull'][$i])) ? ' checked="checked"' : '' ?> />
-					</td>
-					<td>
-						<select name="default_preset[<?= $i ?>]" id="default_preset<?= $i ?>"
-							onchange="handleDefaultPresetChange(<?= $i ?>);" style="margin-bottom: 2px;">
-							<?php foreach ($columnDefaults as $value => $label): ?>
-								<option value="<?= html_esc($value) ?>" <?= ($_POST['default_preset'][$i] == $value) ? ' selected="selected"' : '' ?>><?= html_esc($label) ?></option>
-							<?php endforeach; ?>
-						</select>
-						<input name="default[<?= $i ?>]" id="default<?= $i ?>" size="7"
-							value="<?= html_esc($_POST['default'][$i]) ?>"
-							style="display: <?= ($_POST['default_preset'][$i] == 'custom' || ($_POST['default_preset'][$i] == '' && $_POST['default'][$i] != '')) ? 'inline' : 'none' ?>;" />
-					</td>
-					<td><input name="comment[<?= $i ?>]" size="40" value="<?= html_esc($_POST['comment'][$i]) ?>" /></td>
-				</tr>
-				<?php
-			}
-			?>
-		</table>
+		<?= $renderer->renderTable($columns, $_POST) ?>
 		<div class="flex-row my-3">
 			<input type="hidden" name="action" value="save_add_column" />
 			<input type="hidden" name="num_columns" id="num_columns" value="<?= $numColumns ?>" />
@@ -406,17 +315,7 @@ function doAddColumn($msg = '')
 			</div>
 		</div>
 	</form>
-	<script type="text/javascript">
-		var predefined_lengths = new Array(<?= implode(",", $escaped_predef_types) ?>);
-		var maxNameLen = <?= $pg->_maxNameLen ?>;
-		var allTypes = <?= json_encode(array_values($allTypes)) ?>;
-
-		// Initialize all rows
-		for (var i = 0; i < <?= $numColumns ?>; i++) {
-			checkLengths(document.getElementById('types' + i).value, i);
-			handleDefaultPresetChange(i);
-		}
-	</script>
+	<?= $renderer->renderJavaScriptInit($numColumns) ?>
 	<?php
 }
 
@@ -687,6 +586,14 @@ function doDefault($msg = '')
 	];
 
 	$actions = [
+		'multiactions' => [
+			'keycols' => ['column' => 'attname'],
+			'url' => 'tblproperties.php',
+			'vars' => [
+				'subject' => 'column',
+				'table' => $_REQUEST['table'],
+			],
+		],
 		'browse' => [
 			'icon' => $misc->icon('Table'),
 			'content' => $lang['strbrowse'],
@@ -703,6 +610,7 @@ function doDefault($msg = '')
 			],
 		],
 		'alter' => [
+			'multiaction' => 'edit_columns',
 			'icon' => $misc->icon('Edit'),
 			'content' => $lang['stredit'],
 			'attr' => [
@@ -732,6 +640,7 @@ function doDefault($msg = '')
 			],
 		],
 		'drop' => [
+			'multiaction' => 'confirm_drop_columns',
 			'icon' => $misc->icon('Delete'),
 			'content' => $lang['strdrop'],
 			'attr' => [
@@ -873,6 +782,274 @@ function doDefault($msg = '')
 	);
 }
 
+/**
+ * Edit multiple columns at once
+ */
+function doEditColumns($confirm, $msg = '')
+{
+	$pg = AppContainer::getPostgres();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
+	$tableActions = new TableActions($pg);
+	$columnActions = new ColumnActions($pg);
+	$renderer = new ColumnFormRenderer();
+
+	if ($confirm) {
+		$misc->printTrail('table');
+		$misc->printTitle($lang['stredit'], 'pg.column.alter');
+		$misc->printMsg($msg);
+
+		// Get selected columns from multi-action
+		$selectedColumns = [];
+		if (isset($_REQUEST['ma'])) {
+			foreach ($_REQUEST['ma'] as $v) {
+				$a = unserialize(htmlspecialchars_decode($v, ENT_QUOTES));
+				$selectedColumns[] = $a['column'];
+			}
+		} elseif (isset($_REQUEST['column'])) {
+			// Single column or already decoded array
+			$selectedColumns = is_array($_REQUEST['column']) ? $_REQUEST['column'] : [$_REQUEST['column']];
+		}
+
+		if (empty($selectedColumns)) {
+			doDefault($lang['strnoobjects']);
+			return;
+		}
+
+		// Load column data for each selected column
+		$columns = [];
+		foreach ($selectedColumns as $colname) {
+			$attrs = $tableActions->getTableAttributes($_REQUEST['table'], $colname);
+			if ($attrs->recordCount() > 0) {
+				$col = $attrs->fields;
+				$col['attnotnull'] = $pg->phpBool($col['attnotnull']);
+
+				// Extract length from type if present
+				$length = '';
+				if ($col['type'] != $col['base_type'] && preg_match('/\\(([0-9, ]*)\\)/', $col['type'], $bits)) {
+					$length = $bits[1];
+				}
+
+				$columns[] = [
+					'attname' => $col['attname'],
+					'base_type' => $col['base_type'],
+					'length' => $length,
+					'attnotnull' => $col['attnotnull'],
+					'adsrc' => $col['adsrc'],
+					'comment' => $col['comment'],
+				];
+			}
+		}
+
+		?>
+		<form action="tblproperties.php" method="post">
+			<?php $renderer->renderTable($columns, $_POST) ?>
+			<p>
+				<input type="hidden" name="action" value="edit_columns" />
+				<input type="hidden" name="num_columns" value="<?= count($columns) ?>" />
+				<?= $misc->form ?>
+				<input type="hidden" name="table" value="<?= html_esc($_REQUEST['table']) ?>" />
+				<?php foreach ($selectedColumns as $colname): ?>
+					<input type="hidden" name="original_columns[]" value="<?= html_esc($colname) ?>" />
+				<?php endforeach; ?>
+				<input type="submit" name="save" value="<?= $lang['strsave'] ?>" />
+				<input type="submit" name="cancel" value="<?= $lang['strcancel'] ?>" />
+			</p>
+		</form>
+		<?= $renderer->renderJavaScriptInit(count($columns)) ?>
+		<?php
+	} else {
+		// Process the edit
+		$numColumns = isset($_POST['num_columns']) ? (int) $_POST['num_columns'] : 0;
+		$originalColumns = $_POST['original_columns'] ?? [];
+
+		if ($numColumns == 0 || empty($originalColumns)) {
+			doDefault($lang['strinvalidparam']);
+			return;
+		}
+
+		// Begin transaction
+		$status = $pg->beginTransaction();
+		if ($status != 0) {
+			doEditColumns(true, $lang['strcolumnalteredbad']);
+			return;
+		}
+
+		$alteredCount = 0;
+		$errors = [];
+
+		for ($i = 0; $i < $numColumns; $i++) {
+			if (!isset($originalColumns[$i])) {
+				continue;
+			}
+
+			$originalName = $originalColumns[$i];
+			$newName = isset($_POST['field'][$i]) ? trim($_POST['field'][$i]) : '';
+
+			if ($newName == '') {
+				$errors[] = sprintf($lang['strcolneedsname'] . ' - Row %d', $i + 1);
+				continue;
+			}
+
+			// Get original column data
+			$attrs = $tableActions->getTableAttributes($_REQUEST['table'], $originalName);
+			if ($attrs->recordCount() == 0) {
+				continue;
+			}
+			$originalCol = $attrs->fields;
+
+			// Determine default value
+			$defaultValue = '';
+			if (isset($_POST['default_preset'][$i])) {
+				$preset = $_POST['default_preset'][$i];
+				if ($preset === 'custom') {
+					$defaultValue = $_POST['default'][$i] ?? '';
+				} elseif ($preset !== '') {
+					$defaultValue = $preset;
+				}
+			} elseif (isset($_POST['default'][$i])) {
+				$defaultValue = $_POST['default'][$i];
+			}
+
+			$type = $_POST['type'][$i] ?? $originalCol['base_type'];
+			$length = $_POST['length'][$i] ?? '';
+			$array = $_POST['array'][$i] ?? '';
+			$notnull = isset($_POST['notnull'][$i]);
+			$comment = $_POST['comment'][$i] ?? '';
+
+			// Build old type format
+			$oldType = $pg->formatType($originalCol['type'], $originalCol['atttypmod']);
+
+			$status = $columnActions->alterColumn(
+				$_POST['table'],
+				$originalName,
+				$newName,
+				$notnull,
+				$pg->phpBool($originalCol['attnotnull']),
+				$defaultValue,
+				$originalCol['adsrc'],
+				$type,
+				$length,
+				$array,
+				$oldType,
+				$comment
+			);
+
+			if ($status != 0) {
+				$errors[] = sprintf('%s: %s', html_esc($originalName), $lang['strcolumnalteredbad']);
+			} else {
+				$alteredCount++;
+			}
+		}
+
+		if (!empty($errors)) {
+			$pg->rollbackTransaction();
+			doEditColumns(true, implode('<br />', $errors));
+			return;
+		}
+
+		// Commit transaction
+		$status = $pg->endTransaction();
+		if ($status != 0) {
+			doEditColumns(true, $lang['strcolumnalteredbad']);
+			return;
+		}
+
+		// Success
+		AppContainer::setShouldReloadTree(true);
+		if ($alteredCount == 1) {
+			doDefault($lang['strcolumnaltered']);
+		} else {
+			doDefault(sprintf('%d %s', $alteredCount, $lang['strcolumnsaltered'] ?? 'columns altered'));
+		}
+	}
+}
+
+/**
+ * Drop multiple columns with confirmation
+ */
+function doDropMultiple($confirm)
+{
+	$pg = AppContainer::getPostgres();
+	$misc = AppContainer::getMisc();
+	$lang = AppContainer::getLang();
+	$columnActions = new ColumnActions($pg);
+
+	if ($confirm) {
+		$misc->printTrail('table');
+		$misc->printTitle($lang['strdrop'], 'pg.column.drop');
+
+		// Get selected columns
+		$selectedColumns = [];
+		if (isset($_REQUEST['ma'])) {
+			foreach ($_REQUEST['ma'] as $v) {
+				$a = unserialize(htmlspecialchars_decode($v, ENT_QUOTES));
+				$selectedColumns[] = $a['column'];
+			}
+		} elseif (isset($_REQUEST['column'])) {
+			$selectedColumns = is_array($_REQUEST['column']) ? $_REQUEST['column'] : [$_REQUEST['column']];
+		}
+
+		if (empty($selectedColumns)) {
+			doDefault($lang['strnoobjects']);
+			return;
+		}
+
+		?>
+		<p><?= sprintf($lang['strconfdropcolumns'] ?? 'Are you sure you want to drop the selected %d column(s) from table %s?', count($selectedColumns), $misc->printVal($_REQUEST['table'])) ?>
+		</p>
+		<ul>
+			<?php foreach ($selectedColumns as $colname): ?>
+				<li><?= $misc->printVal($colname) ?></li>
+			<?php endforeach; ?>
+		</ul>
+		<form action="tblproperties.php" method="post">
+			<input type="hidden" name="action" value="confirm_drop_columns" />
+			<input type="hidden" name="table" value="<?= html_esc($_REQUEST['table']) ?>" />
+			<?php foreach ($selectedColumns as $colname): ?>
+				<input type="hidden" name="column[]" value="<?= html_esc($colname) ?>" />
+			<?php endforeach; ?>
+			<?= $misc->form ?>
+			<p><input type="checkbox" id="cascade" name="cascade"> <label for="cascade"><?= $lang['strcascade'] ?></label></p>
+			<input type="submit" name="drop" value="<?= $lang['strdrop'] ?>" />
+			<input type="submit" name="cancel" value="<?= $lang['strcancel'] ?>" />
+		</form>
+		<?php
+	} else {
+		// Execute drop
+		$columns = $_POST['column'] ?? [];
+		$cascade = isset($_POST['cascade']);
+
+		if (empty($columns)) {
+			doDefault($lang['strnoobjects']);
+			return;
+		}
+
+		$droppedCount = 0;
+		$errors = [];
+
+		foreach ($columns as $colname) {
+			$status = $columnActions->dropColumn($_POST['table'], $colname, $cascade);
+			if ($status == 0) {
+				$droppedCount++;
+			} else {
+				$errors[] = $colname;
+			}
+		}
+
+		if (!empty($errors)) {
+			doDefault(sprintf($lang['strcolumndroppedbad'] . ' (%s)', implode(', ', $errors)));
+		} else {
+			AppContainer::setShouldReloadTree(true);
+			if ($droppedCount == 1) {
+				doDefault($lang['strcolumndropped']);
+			} else {
+				doDefault(sprintf('%d %s', $droppedCount, $lang['strcolumnsdropped'] ?? 'columns dropped'));
+			}
+		}
+	}
+}
+
 function doTree()
 {
 	$misc = AppContainer::getMisc();
@@ -958,6 +1135,24 @@ switch ($action) {
 			doSaveAddColumn();
 		} else {
 			doDefault();
+		}
+		break;
+	case 'edit_columns':
+		if (isset($_POST['save'])) {
+			doEditColumns(false);
+		} elseif (isset($_POST['cancel'])) {
+			doDefault();
+		} else {
+			doEditColumns(true);
+		}
+		break;
+	case 'confirm_drop_columns':
+		if (isset($_POST['drop'])) {
+			doDropMultiple(false);
+		} elseif (isset($_POST['cancel'])) {
+			doDefault();
+		} else {
+			doDropMultiple(true);
 		}
 		break;
 	case 'properties':

@@ -684,7 +684,7 @@ function doBrowse($msg = '')
 
 	// read table/view name from url parameters
 	$subject = $_REQUEST['subject'] ?? '';
-	$table_name = $_REQUEST[$subject] ?? null;
+	$table_name = $_REQUEST['table'] ?? $_REQUEST['view'] ?? null;
 
 	if (isset($table_name)) {
 		if (isset($_REQUEST['query'])) {
@@ -733,6 +733,7 @@ function doBrowse($msg = '')
 			if (count($parts) === 2) {
 				[$schema, $table] = $parts;
 				$changed = $_REQUEST['schema'] != $schema || $table_name != $table;
+				//var_dump($_REQUEST['schema'], $table_name);
 			} else {
 				[$table] = $parts;
 				$schema = $_REQUEST['schema'] ?? $pg->_schema;

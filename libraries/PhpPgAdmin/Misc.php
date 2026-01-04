@@ -624,7 +624,7 @@ class Misc extends AbstractContext
 	 */
 	function printTreeXML($treedata, $attrs, $section = null)
 	{
-		$conf = $this->conf();
+		//$conf = $this->conf();
 		$lang = $this->lang();
 
 		header("Content-Type: text/xml; charset=UTF-8");
@@ -724,7 +724,7 @@ class Misc extends AbstractContext
 	}
 
 	/**
-	 * @param string|string[] $icon
+	 * @param string|string[]|null $icon
 	 * @return string
 	 */
 	function icon($icon)
@@ -733,6 +733,9 @@ class Misc extends AbstractContext
 		static $cache = null;
 		if (!isset($cache)) {
 			$cache = self::buildIconCache();
+		}
+		if (!isset($icon)) {
+			return '';
 		}
 		if (is_string($icon)) {
 			// Icon from themes

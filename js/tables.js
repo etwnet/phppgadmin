@@ -116,10 +116,27 @@ function addColumnRow() {
 	handleDefaultPresetChange(newRowIndex);
 }
 
-function handleDefaultPresetChange(rowIndex) {
-	var presetSelect = document.getElementById("default_preset" + rowIndex);
-	var customInput = document.getElementById("default" + rowIndex);
-	var notnullCheckbox = document.getElementById("notnull" + rowIndex);
+function handleDefaultPresetChange(rowIndex, focusCustom) {
+	if (typeof rowIndex === "undefined" || rowIndex === null) {
+		rowIndex = "";
+	}
+	if (typeof focusCustom === "undefined") {
+		focusCustom = true;
+	}
+
+	function getMaybeIndexed(baseId) {
+		if (rowIndex === "") {
+			return document.getElementById(baseId);
+		}
+		return (
+			document.getElementById(baseId + rowIndex) ||
+			document.getElementById(baseId)
+		);
+	}
+
+	var presetSelect = getMaybeIndexed("default_preset");
+	var customInput = getMaybeIndexed("default");
+	var notnullCheckbox = getMaybeIndexed("notnull");
 
 	if (!presetSelect || !customInput) {
 		return;
@@ -130,7 +147,9 @@ function handleDefaultPresetChange(rowIndex) {
 	if (presetValue === "custom") {
 		// Show custom input field
 		customInput.style.display = "inline";
-		customInput.focus();
+		if (focusCustom) {
+			customInput.focus();
+		}
 	} else if (presetValue === "") {
 		// No default - hide custom input
 		customInput.style.display = "none";
