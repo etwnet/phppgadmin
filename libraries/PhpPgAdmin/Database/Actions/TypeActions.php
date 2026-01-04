@@ -8,7 +8,7 @@ class TypeActions extends AbstractActions
 {
     // Base constructor inherited from Actions
 
-    
+
 
     /**
      * Returns all details for a particular type.
@@ -292,47 +292,66 @@ class TypeActions extends AbstractActions
     }
 
     /**
-     * Returns a list of all casts in the database.
+     * Returns a list of all casts in the database,
+     * including a flag whether the cast is user-defined.
      */
     public function getCasts()
     {
         $conf = $this->conf();
 
         if ($conf['show_system']) {
+            // No restriction, show all CASTs
             $where = '';
         } else {
-            $where = "
-                AND n1.nspname NOT LIKE \$\$pg\_%\$\$
-                AND n2.nspname NOT LIKE \$\$pg\_%\$\$
-                AND n3.nspname NOT LIKE \$\$pg\_%\$\$
-            ";
+            // Only show CASTs with user-defined function:
+            // - castfunc != 0 (there is a function)
+            // - Function schema not pg_%
+            $where = <<<'SQL'
+            AND c.castfunc <> 0
+            AND n3.nspname NOT LIKE $$pg_%$$
+            SQL;
         }
 
-        $sql = "
-            SELECT
-                c.castsource::pg_catalog.regtype AS castsource,
-                c.casttarget::pg_catalog.regtype AS casttarget,
-                CASE WHEN c.castfunc=0 THEN NULL
-                ELSE c.castfunc::pg_catalog.regprocedure END AS castfunc,
-                c.castcontext,
-                obj_description(c.oid, 'pg_cast') as castcomment
-            FROM
-                (pg_catalog.pg_cast c LEFT JOIN pg_catalog.pg_proc p ON c.castfunc=p.oid JOIN pg_catalog.pg_namespace n3 ON p.pronamespace=n3.oid),
-                pg_catalog.pg_type t1,
-                pg_catalog.pg_type t2,
-                pg_catalog.pg_namespace n1,
-                pg_catalog.pg_namespace n2
-            WHERE
-                c.castsource=t1.oid
-                AND c.casttarget=t2.oid
-                AND t1.typnamespace=n1.oid
-                AND t2.typnamespace=n2.oid
-                {$where}
-            ORDER BY 1, 2
-        ";
+        $sql = <<<"SQL"
+        SELECT
+            c.castsource::pg_catalog.regtype AS castsource,
+            c.casttarget::pg_catalog.regtype AS casttarget,
+            CASE WHEN c.castfunc = 0 THEN NULL
+                 ELSE c.castfunc::pg_catalog.regprocedure
+            END AS castfunc,
+            c.castcontext,
+            obj_description(c.oid, 'pg_cast') AS castcomment,
+
+            -- User cast, if function exists and is not in pg_catalog
+            CASE
+                WHEN c.castfunc = 0 THEN false
+                WHEN n3.nspname NOT LIKE 'pg_%' THEN true
+                ELSE false
+            END AS is_user_cast
+
+        FROM
+            pg_catalog.pg_cast c
+            LEFT JOIN pg_catalog.pg_proc p
+                ON c.castfunc = p.oid
+            LEFT JOIN pg_catalog.pg_namespace n3
+                ON p.pronamespace = n3.oid,
+            pg_catalog.pg_type t1,
+            pg_catalog.pg_type t2,
+            pg_catalog.pg_namespace n1,
+            pg_catalog.pg_namespace n2
+        WHERE
+            c.castsource = t1.oid
+            AND c.casttarget = t2.oid
+            AND t1.typnamespace = n1.oid
+            AND t2.typnamespace = n2.oid
+            {$where}
+        ORDER BY 1, 2
+        SQL;
 
         return $this->connection->selectSet($sql);
     }
+
+
 
     /**
      * Returns a list of all conversions in the database.
@@ -357,104 +376,104 @@ class TypeActions extends AbstractActions
         return $this->connection->selectSet($sql);
     }
 
-	/**
-	 * Renames a type.
-	 */
-	public function renameType($typename, $newname)
-	{
-		$f_schema = $this->connection->_schema;
-		$this->connection->fieldClean($f_schema);
-		$this->connection->fieldClean($typename);
-		$this->connection->fieldClean($newname);
+    /**
+     * Renames a type.
+     */
+    public function renameType($typename, $newname)
+    {
+        $f_schema = $this->connection->_schema;
+        $this->connection->fieldClean($f_schema);
+        $this->connection->fieldClean($typename);
+        $this->connection->fieldClean($newname);
 
-		$sql = "ALTER TYPE \"{$f_schema}\".\"{$typename}\" RENAME TO \"{$newname}\"";
+        $sql = "ALTER TYPE \"{$f_schema}\".\"{$typename}\" RENAME TO \"{$newname}\"";
 
-		return $this->connection->execute($sql);
-	}
+        return $this->connection->execute($sql);
+    }
 
-	/**
-	 * Changes the owner of a type.
-	 */
-	public function changeTypeOwner($typename, $newowner)
-	{
-		$f_schema = $this->connection->_schema;
-		$this->connection->fieldClean($f_schema);
-		$this->connection->fieldClean($typename);
-		$this->connection->fieldClean($newowner);
+    /**
+     * Changes the owner of a type.
+     */
+    public function changeTypeOwner($typename, $newowner)
+    {
+        $f_schema = $this->connection->_schema;
+        $this->connection->fieldClean($f_schema);
+        $this->connection->fieldClean($typename);
+        $this->connection->fieldClean($newowner);
 
-		$sql = "ALTER TYPE \"{$f_schema}\".\"{$typename}\" OWNER TO \"{$newowner}\"";
+        $sql = "ALTER TYPE \"{$f_schema}\".\"{$typename}\" OWNER TO \"{$newowner}\"";
 
-		return $this->connection->execute($sql);
-	}
+        return $this->connection->execute($sql);
+    }
 
-	/**
-	 * Changes the schema of a type.
-	 */
-	public function changeTypeSchema($typename, $newschema)
-	{
-		$f_schema = $this->connection->_schema;
-		$this->connection->fieldClean($f_schema);
-		$this->connection->fieldClean($typename);
-		$this->connection->fieldClean($newschema);
+    /**
+     * Changes the schema of a type.
+     */
+    public function changeTypeSchema($typename, $newschema)
+    {
+        $f_schema = $this->connection->_schema;
+        $this->connection->fieldClean($f_schema);
+        $this->connection->fieldClean($typename);
+        $this->connection->fieldClean($newschema);
 
-		$sql = "ALTER TYPE \"{$f_schema}\".\"{$typename}\" SET SCHEMA \"{$newschema}\"";
+        $sql = "ALTER TYPE \"{$f_schema}\".\"{$typename}\" SET SCHEMA \"{$newschema}\"";
 
-		return $this->connection->execute($sql);
-	}
+        return $this->connection->execute($sql);
+    }
 
-	/**
-	 * Renames an enum type value.
-	 */
-	public function renameEnumTypeValue($type, $oldValue, $newValue)
-	{
-		$f_schema = $this->connection->_schema;
-		$this->connection->fieldClean($f_schema);
-		$this->connection->fieldClean($type);
-		$this->connection->clean($oldValue);
-		$this->connection->clean($newValue);
+    /**
+     * Renames an enum type value.
+     */
+    public function renameEnumTypeValue($type, $oldValue, $newValue)
+    {
+        $f_schema = $this->connection->_schema;
+        $this->connection->fieldClean($f_schema);
+        $this->connection->fieldClean($type);
+        $this->connection->clean($oldValue);
+        $this->connection->clean($newValue);
 
-		$sql = "ALTER TYPE \"{$f_schema}\".\"{$type}\" RENAME VALUE '{$oldValue}' TO '{$newValue}'";
+        $sql = "ALTER TYPE \"{$f_schema}\".\"{$type}\" RENAME VALUE '{$oldValue}' TO '{$newValue}'";
 
-		return $this->connection->execute($sql);
-	}
+        return $this->connection->execute($sql);
+    }
 
-	/**
-	 * Adds a new value to an enum type.
-	 */
-	public function addEnumTypeValue($type, $newValue, $before = null, $after = null)
-	{
-		$f_schema = $this->connection->_schema;
-		$this->connection->fieldClean($f_schema);
-		$this->connection->fieldClean($type);
-		$this->connection->clean($newValue);
+    /**
+     * Adds a new value to an enum type.
+     */
+    public function addEnumTypeValue($type, $newValue, $before = null, $after = null)
+    {
+        $f_schema = $this->connection->_schema;
+        $this->connection->fieldClean($f_schema);
+        $this->connection->fieldClean($type);
+        $this->connection->clean($newValue);
 
-		$sql = "ALTER TYPE \"{$f_schema}\".\"{$type}\" ADD VALUE '{$newValue}'";
+        $sql = "ALTER TYPE \"{$f_schema}\".\"{$type}\" ADD VALUE '{$newValue}'";
 
-		if ($before !== null) {
-			$this->connection->clean($before);
-			$sql .= " BEFORE '{$before}'";
-		} elseif ($after !== null) {
-			$this->connection->clean($after);
-			$sql .= " AFTER '{$after}'";
-		}
+        if ($before !== null) {
+            $this->connection->clean($before);
+            $sql .= " BEFORE '{$before}'";
+        } elseif ($after !== null) {
+            $this->connection->clean($after);
+            $sql .= " AFTER '{$after}'";
+        }
 
-		return $this->connection->execute($sql);
-	}
+        return $this->connection->execute($sql);
+    }
 
-	public function hasTypeAddValue(): bool
-	{
-		return $this->connection->major_version >= 9.1;
-	}
+    public function hasTypeAddValue(): bool
+    {
+        return $this->connection->major_version >= 9.1;
+    }
 
-	public function hasTypeRenameValue(): bool
-	{
-		return $this->connection->major_version >= 10;
-	}
+    public function hasTypeRenameValue(): bool
+    {
+        return $this->connection->major_version >= 10;
+    }
 
-	public function hasEnumTypes(): bool
-	{
-		// Todo remove validation?
-		return true;
-	}
+    public function hasEnumTypes(): bool
+    {
+        // Todo remove validation?
+        return true;
+    }
 
 }
